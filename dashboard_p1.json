@@ -1,0 +1,123 @@
+{
+  "total_runs": 2,
+  "total_pubs": 2,
+  "valid_pass": 2,
+  "policy_pass": 2,
+  "by_platform": {
+    "site_estatico": 2
+  },
+  "by_program": {
+    "mercado_livre": 2
+  },
+  "runs": [
+    {
+      "id": "b5b9598d",
+      "link": "https://www.mercadolivre.com.br/p/MLB999999999?matt_word=x",
+      "link_id": "b5b9598d",
+      "status_validacao": "PASS",
+      "status_politica": "PASS",
+      "titulo": "Oferta Especial",
+      "preco": null,
+      "roi_json": null,
+      "wp_post_id": null,
+      "wp_link": null,
+      "created_at": "2026-08-30T11:39:08.272676"
+    },
+    {
+      "id": "ad365b2f",
+      "link": "https://www.mercadolivre.com.br/p/MLB999999999?matt_word=demoDashboard",
+      "link_id": "ad365b2f",
+      "status_validacao": "PASS",
+      "status_politica": "PASS",
+      "titulo": "Oferta Especial",
+      "preco": null,
+      "roi_json": null,
+      "wp_post_id": null,
+      "wp_link": null,
+      "created_at": "2026-08-30T11:35:08.355389"
+    }
+  ],
+  "pubs": [
+    {
+      "id": "d279ebd3-8e91-44ed-8b34-a50e99656451",
+      "link_id": "b5b9598d",
+      "link_original": "https://www.mercadolivre.com.br/p/MLB999999999?matt_word=x",
+      "plataforma": "site_estatico",
+      "programa": "mercado_livre",
+      "url_publicacao": "C:\\Users\\LIVE2PC\\Desktop\\MY PROJECTS FLOW\\landing_b5b9598d.html",
+      "status_validacao": "PASS",
+      "created_at": "2026-08-30T11:39:08.313848"
+    },
+    {
+      "id": "51077967-642c-41cd-89ef-aad85644a086",
+      "link_id": "ad365b2f",
+      "link_original": "https://www.mercadolivre.com.br/p/MLB999999999?matt_word=demoDashboard",
+      "plataforma": "site_estatico",
+      "programa": "mercado_livre",
+      "url_publicacao": "C:\\Users\\LIVE2PC\\Desktop\\MY PROJECTS FLOW\\landing_ad365b2f.html",
+      "status_validacao": "PASS",
+      "created_at": "2026-08-30T11:35:08.411957"
+    }
+  ],
+  "costs": [
+    {
+      "id": 7,
+      "date": "2026-08-28T16:28:59.172381",
+      "provider": "openai/gpt-oss-120b",
+      "tokens_input": 1055,
+      "tokens_output": 1479,
+      "cost": 0.0012675
+    },
+    {
+      "id": 6,
+      "date": "2026-08-28T16:28:19.789665",
+      "provider": "openai/gpt-oss-120b",
+      "tokens_input": 519,
+      "tokens_output": 939,
+      "cost": 0.0007821
+    },
+    {
+      "id": 5,
+      "date": "2026-08-28T16:28:17.428116",
+      "provider": "openai/gpt-oss-120b",
+      "tokens_input": 595,
+      "tokens_output": 1932,
+      "cost": 0.00153825
+    },
+    {
+      "id": 4,
+      "date": "2026-08-28T16:26:50.146893",
+      "provider": "openai/gpt-oss-120b",
+      "tokens_input": 540,
+      "tokens_output": 1499,
+      "cost": 0.00120525
+    },
+    {
+      "id": 3,
+      "date": "2026-08-28T16:26:36.851478",
+      "provider": "openai/gpt-oss-120b",
+      "tokens_input": 596,
+      "tokens_output": 1261,
+      "cost": 0.0010351499999999999
+    },
+    {
+      "id": 2,
+      "date": "2026-08-28T16:25:52.072501",
+      "provider": "openai/gpt-oss-120b",
+      "tokens_input": 611,
+      "tokens_output": 1300,
+      "cost": 0.0010666500000000002
+    },
+    {
+      "id": 1,
+      "date": "2026-08-28T16:19:13.716026",
+      "provider": "openai/gpt-oss-120b",
+      "tokens_input": 1040,
+      "tokens_output": 1342,
+      "cost": 0.0011625
+    }
+  ],
+  "total_roi_liquido": 0.0,
+  "total_custo": 0.0,
+  "cost_total": 0.00806
+}

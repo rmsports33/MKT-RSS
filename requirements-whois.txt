@@ -1,0 +1,5 @@
+# Whois Tool dependencies
+requests>=2.28.0
+idna>=3.0
+# Opcional: python-whois como fallback extra (não obrigatório, pois usamos binário local + RDAP)
+# python-whois>=0.8.0

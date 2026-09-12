@@ -1,0 +1,29 @@
+
+# === segredos — nunca commitar ===
+.env
+.env.local
+token.json
+credentials.json
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# whois cache
+.cache/whois/
+whois_report.json
+.domains_test.txt
+
+__pycache__/
+*.pyc
+.cache/
+whois_report.*
+*.zip
+*.bak
+.vault_key
+MKTFLOW/temp/
+MKTFLOW/venv/
+MKTFLOW/output/
+MKTFLOW/site/.vercel
+MKTFLOW/site/node_modules
+

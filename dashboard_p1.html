@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MKT Flow — Dashboard P1.2</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0} body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f8fafc;color:#1e293b;padding:20px}
+.header{background:white;padding:20px;border-radius:12px;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:20px}
+.header h1{font-size:22px} .header p{color:#64748b;font-size:13px;margin-top:4px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.card{background:white;padding:14px;border-radius:8px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 2px rgba(0,0,0,0.05)}
+.card-icon{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-weight:bold}
+.card-count{font-size:18px;font-weight:bold} .card-label{font-size:12px;font-weight:600} .card-desc{font-size:11px;color:#64748b}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px} @media(max-width:800px){.grid2{grid-template-columns:1fr}}
+.panel{background:white;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);padding:16px}
+.panel h3{font-size:13px;text-transform:uppercase;color:#475569;margin-bottom:10px}
+.table-wrap{background:white;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.1);margin-bottom:20px}
+table{width:100%;border-collapse:collapse;font-size:13px} th{background:#f1f5f9;text-align:left;padding:10px 12px;font-weight:600;color:#475569;font-size:11px;text-transform:uppercase} td{padding:10px 12px;border-top:1px solid #f1f5f9}
+.badge{color:white;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600}
+.footer{text-align:center;color:#94a3b8;font-size:12px;margin-top:16px}
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>MKT Flow — Dashboard P1.2</h1>
+    <p>2 runs · 2 publicações · Custo LLM $0.00806 · Atualizado 30/08/2026 11:41 — <a href="dashboard_p1.json" style="color:#2563eb">JSON</a></p>
+</div>
+<div class="cards">
+        <div class="card" style="border-left:4px solid #16a34a"><div class="card-icon" style="background:#16a34a">✓</div><div><div class="card-count">2</div><div class="card-label">PASS validação</div><div class="card-desc">Links aprovados</div></div></div>
+        <div class="card" style="border-left:4px solid #2563eb"><div class="card-icon" style="background:#2563eb">◉</div><div><div class="card-count">2</div><div class="card-label">Pipeline runs</div><div class="card-desc">Total processado</div></div></div>
+        <div class="card" style="border-left:4px solid #9333ea"><div class="card-icon" style="background:#9333ea">#</div><div><div class="card-count">2</div><div class="card-label">Publicações</div><div class="card-desc">Onde foi publicado</div></div></div>
+        <div class="card" style="border-left:4px solid #ea580c"><div class="card-icon" style="background:#ea580c">$</div><div><div class="card-count">R$ 0.0</div><div class="card-label">Lucro est.</div><div class="card-desc">ROI estimado (P0)</div></div></div>
+        <div class="card" style="border-left:4px solid #6b7280"><div class="card-icon" style="background:#6b7280">¢</div><div><div class="card-count">$0.00806</div><div class="card-label">Custo LLM</div><div class="card-desc">Groq até agora</div></div></div>
+    </div>
+<div class="grid2">
+    <div class="panel"><h3>Por plataforma</h3><ul style="font-size:13px;line-height:1.8"><li><strong>site_estatico:</strong> 2</li></ul></div>
+    <div class="panel"><h3>Por programa</h3><ul style="font-size:13px;line-height:1.8"><li><strong>mercado_livre:</strong> 2</li></ul></div>
+</div>
+<div class="table-wrap">
+<table><thead><tr><th>Validação</th><th>Link ID</th><th>Link</th><th>Título</th><th>Preço</th><th>Data</th></tr></thead><tbody><tr><td><span class="badge" style="background:#16a34a">PASS</span></td><td><strong>b5b9598d</strong></td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="https://www.mercadolivre.com.br/p/MLB999999999?matt_word=x">https://www.mercadolivre.com.br/p/MLB999999999?matt_word=x</span></td><td>Oferta Especial</td><td>None</td><td>2026-08-30T11:39</td></tr><tr><td><span class="badge" style="background:#16a34a">PASS</span></td><td><strong>ad365b2f</strong></td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="https://www.mercadolivre.com.br/p/MLB999999999?matt_word=demoDashboard">https://www.mercadolivre.com.br/p/MLB999999999?matt_word=dem</span></td><td>Oferta Especial</td><td>None</td><td>2026-08-30T11:35</td></tr></tbody></table>
+</div>
+<div class="table-wrap">
+<table><thead><tr><th>Link ID</th><th>Plataforma</th><th>URL Publicação</th><th>Programa</th><th>Status</th><th>Data</th></tr></thead><tbody><tr><td>b5b9598d</td><td>site_estatico</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="C:\Users\LIVE2PC\Desktop\MY PROJECTS FLOW\landing_b5b9598d.html">C:\Users\LIVE2PC\Desktop\MY PROJECTS FLOW\landing_b5b9598d.h</td><td>mercado_livre</td><td>PASS</td><td>2026-08-30T11:39</td></tr><tr><td>ad365b2f</td><td>site_estatico</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="C:\Users\LIVE2PC\Desktop\MY PROJECTS FLOW\landing_ad365b2f.html">C:\Users\LIVE2PC\Desktop\MY PROJECTS FLOW\landing_ad365b2f.h</td><td>mercado_livre</td><td>PASS</td><td>2026-08-30T11:35</td></tr></tbody></table>
+</div>
+<p class="footer">Gerado por mkt_flow_p0.dashboard — P1.2 · Draft local é aceitável (como whois_dashboard.html)</p>
+</body>
+</html>
