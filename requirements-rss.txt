@@ -1,0 +1,9 @@
+# Dependências mínimas do pipeline RSS diário (nuvem).
+# Instalação local: pip install -r requirements-rss.txt
+# Versões = as validadas localmente em 12/09/2026 (nada de "latest" no cron).
+requests==2.34.2
+feedparser==6.0.14
+trafilatura==2.2.0
+groq==1.6.0
+python-dotenv==1.2.3
+Pillow==12.3.0
