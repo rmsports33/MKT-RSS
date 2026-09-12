@@ -41,8 +41,26 @@ FEEDS_PADRAO: Dict[str, str] = {
 _session = requests.Session()
 _session.headers.update({"User-Agent": "Mozilla/5.0 (MKT-Flow-P0 RSS)"})
 
+try:
+    from .cloud_db import turso_enabled, turso_execute, turso_init_rss
+except ImportError:  # uso standalone sem pacote
+    from mkt_flow_p0.cloud_db import turso_enabled, turso_execute, turso_init_rss  # type: ignore
+
+
+def _nuvem() -> bool:
+    """True quando TURSO_* configurado (Actions/produção). Local segue SQLite."""
+    try:
+        return turso_enabled()
+    except Exception:
+        return False
+
 
 def init_rss_tables():
+    if _nuvem():
+        r = turso_init_rss()
+        if "erro" in r:
+            logger.warning(f"rss turso init: {r['erro']}")
+        return
     con = sqlite3.connect(DB_PATH)
     con.execute("""CREATE TABLE IF NOT EXISTS rss_vistos (
         id TEXT PRIMARY KEY,
@@ -71,10 +89,20 @@ def _similar(a: str, b: str) -> float:
 
 
 def item_ja_visto(url: str, titulo: str) -> bool:
-    """Dedup: mesma URL ou título >=85% similar já registrado."""
+    """Dedup: mesma URL ou título >=85% similar já registrado (SQLite local ou Turso)."""
     init_rss_tables()
     norm = _normalizar_titulo(titulo)
     uid = _id_url(url)
+    if _nuvem():
+        r = turso_execute("SELECT 1 FROM rss_vistos WHERE id=?", (uid,))
+        if r.get("rows"):
+            return True
+        r = turso_execute("SELECT titulo_norm FROM rss_vistos ORDER BY created_at DESC LIMIT 200")
+        for linha in r.get("rows", []):
+            existente = (linha or [None])[0]
+            if existente and norm and _similar(norm, existente) >= 0.85:
+                return True
+        return False
     con = sqlite3.connect(DB_PATH)
     cur = con.execute("SELECT 1 FROM rss_vistos WHERE id=?", (uid,))
     if cur.fetchone():
@@ -92,6 +120,14 @@ def item_ja_visto(url: str, titulo: str) -> bool:
 
 def marcar_visto(fonte: str, url: str, titulo: str):
     init_rss_tables()
+    if _nuvem():
+        r = turso_execute(
+            "INSERT OR IGNORE INTO rss_vistos (id, fonte, url, titulo_norm, created_at) VALUES (?,?,?,?,?)",
+            (_id_url(url), fonte, url, _normalizar_titulo(titulo), datetime.now().isoformat()),
+        )
+        if "erro" in r:
+            logger.warning(f"rss turso insert: {r['erro']}")
+        return
     con = sqlite3.connect(DB_PATH)
     con.execute(
         "INSERT OR IGNORE INTO rss_vistos (id, fonte, url, titulo_norm, created_at) VALUES (?,?,?,?,?)",

@@ -23,8 +23,29 @@ Crie um por um (valores estão no seu `.env` local):
 |---|---|
 | `GROQ_API_KEY` | sim (reescrita) |
 | `WP_URL`, `WP_USER`, `WP_APP_PASSWORD` | sim (draft no WP) |
+| `TURSO_DATABASE_URL`, `TURSO_AUTH_TOKEN` | sim (dedup entre dias — seção 2B) |
 | `GROQ_MODEL` | não (default `llama-3.3-70b-versatile`) |
 | `UNSPLASH_ACCESS_KEY` | não (só fallback de capa) |
+
+## 2B. Turso — a listinha que sobrevive ao dia seguinte (10 min, grátis)
+
+Sem isso, todo dia o robô esquece o que já viu (runner efêmero).
+Com isso, a "lista de vistos" mora na nuvem e vale para todos os dias.
+
+1. Entra em `turso.tech` e cria conta (botão Sign up, pode usar o GitHub).
+2. No painel, clica em Create Database, nome `mkt-flow`, região mais perto
+   (São Paulo, se aparecer `gru`; senão a padrão). Cria.
+3. Abre o banco → aba Tokens (ou Settings) → Create Token → copia o código
+   comprido (é a senha, guarde bem).
+4. Na página do banco, copia a URL — parece com
+   `libsql://mkt-flow-seu-usuario.turso.io`.
+5. No GitHub (repo → Settings → Secrets → Actions), cria 2 secrets:
+   `TURSO_DATABASE_URL` (a URL do passo 4) e `TURSO_AUTH_TOKEN` (passo 3).
+6. Pronto — no próximo run o log mostra dedup funcionando entre dias.
+   No seu PC nada muda (sem essas variáveis, continua SQLite local).
+
+Plano grátis: 5GB + 500 milhões de leituras/mês. Nosso uso (~100
+leituras/dia) não chega nem perto do teto.
 
 ## 3. Testar manual (antes de esperar o cron)
 
@@ -43,9 +64,8 @@ body `{"ref":"master"}`, 1x/dia às 09:05 BRT.
 
 ## 5. Limites conhecidos (sem surpresa)
 
-- Runner é **efêmero**: `rss_vistos` (dedup) zera a cada run. Na prática,
-  feeds tech giram rápido e `--limit 2` evita reprise; a correção definitiva
-  é o item 9 (Turso) quando o volume justificar.
+- Dedup entre dias **exige os 2 secrets do Turso** (seção 2B). Sem eles,
+  o run usa SQLite descartável e pode repetir pauta de dias anteriores.
 - Groq tier grátis tem rate limit: 429 → o `rewriter.py` já orienta esperar.
 - Logs do Actions nunca mostram secrets (o GitHub mascara `***`).
 
