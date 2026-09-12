@@ -33,9 +33,14 @@ def coletar_dados():
         pubs = _query("SELECT * FROM link_publicacoes ORDER BY created_at DESC")
     except Exception:
         pubs = []
-    # Cost log do MKTFLOW (se existir)
+    # Cost log do MKTFLOW (se existir). Path relativo ao projeto com
+    # fallback legado absoluto (refactor 12/09/2026 — sem C:\ hardcoded).
     costs = []
-    cost_db = Path(r"C:\MKTFLOW\mkt_flow.db")
+    _candidatos = [
+        Path(__file__).parent.parent / "MKTFLOW" / "mkt_flow.db",
+        Path(r"C:\MKTFLOW\mkt_flow.db"),
+    ]
+    cost_db = next((p for p in _candidatos if p.exists()), _candidatos[0])
     if cost_db.exists():
         try:
             con = sqlite3.connect(cost_db)

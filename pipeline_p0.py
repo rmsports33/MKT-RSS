@@ -13,14 +13,6 @@ import uuid
 from datetime import datetime
 from pathlib import Path
 
-# Carrega .env antes de tudo
-try:
-    from dotenv import load_dotenv
-    load_dotenv(Path(__file__).parent / ".env")
-    load_dotenv(Path(__file__).parent / "MKTFLOW" / ".env", override=False)
-except Exception:
-    pass
-
 from mkt_flow_p0.validator import validar_link_afiliado
 from mkt_flow_p0.api_ml import consultar_api_publica_mercado_livre
 from mkt_flow_p0.policy_engine import avaliar_politica, construir_contexto_politica_llm
@@ -48,6 +40,14 @@ def extrair_item_id(url: str) -> str:
     return m.group(1).upper() if m else ""
 
 def main():
+    # .env carregado aqui (não no import): evita poluir os.environ de quem
+    # importa este módulo (ex.: suíte de testes) — refactor 12/09/2026.
+    try:
+        from dotenv import load_dotenv
+        load_dotenv(Path(__file__).parent / ".env")
+        load_dotenv(Path(__file__).parent / "MKTFLOW" / ".env", override=False)
+    except Exception:
+        pass
     parser = argparse.ArgumentParser(description="Pipeline P0 MKT Flow — ML afiliado → WP draft")
     parser.add_argument("link", help="Link de afiliado (Mercado Livre com matt_word/matt_tool/tag)")
     parser.add_argument("--publish", action="store_true", help="Tenta publicar como publish (só se PASS). Default é draft")
