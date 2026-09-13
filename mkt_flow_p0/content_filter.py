@@ -13,6 +13,35 @@ import unicodedata
 
 logger = logging.getLogger("content_filter")
 
+# --- Filtro de tema (whitelist/blacklist do ConexoTech) ---
+# Arquivo editável sem mexer em código: mkt_flow_p0/tema_keywords.json
+import json as _json
+from pathlib import Path as _Path
+_TEMA_PATH = _Path(__file__).parent / "tema_keywords.json"
+try:
+    _TEMA = _json.loads(_TEMA_PATH.read_text(encoding="utf-8"))
+except Exception:
+    _TEMA = {"incluir": [], "excluir": []}
+
+
+def filtrar_por_tema(titulo: str = "", texto: str = "") -> dict:
+    """Whitelist/blacklist de tema. Retorna {veredito, motivo, termos_encontrados}."""
+    alvo = _norm(f"{titulo or ''} {texto or ''}")
+    incluir = [t.lower() for t in (_TEMA.get("incluir") or [])]
+    excluir = [t.lower() for t in (_TEMA.get("excluir") or [])]
+    # Excluir tem prioridade
+    for termo in excluir:
+        if termo and termo in alvo:
+            return {"veredito": "BLOQUEADO", "motivo": "off_topic", "termo": termo, "lista": "excluir"}
+    if incluir:
+        for termo in incluir:
+            if termo and termo in alvo:
+                return {"veredito": "APROVADO", "motivo": "tema_ok", "termo": termo, "lista": "incluir"}
+        return {"veredito": "BLOQUEADO", "motivo": "off_topic", "termo": "", "lista": "incluir",
+                "aviso": "nenhum termo da whitelist encontrado"}
+    return {"veredito": "APROVADO", "motivo": "sem_filtro", "termo": ""}
+
+
 # Categorias que BLOQUEIAM (políticas AdSense + programa de afiliados)
 PADROES_BLOQUEIO = {
     "apostas": [r"bet365", r"\bbet\b", r"aposta(s)? (esportiva|online)", r"cassino", r"tigrinho",
@@ -30,6 +59,7 @@ PADROES_REVISAO = {
     "politica": [r"eleiç", r"ministro", r"presidente lula", r"bolsonaro", r"deputad[oa]", r"senado"],
     "saude_milagre": [r"cura (definitiva|milagrosa|garantida)", r"tratamento milagroso", r"emagreça .* dias"],
     "urgencia_suspeita": [r"\d{2}% de desconto", r"últim[oa]s? \d+ unidades", r"saia do ar em"],
+    "off_topic": [r"fase da lua", r"calendário lunar", r"horóscopo", r"signo", r"receita culinária", r"futebol"],
 }
 
 _COMPILADOS = None

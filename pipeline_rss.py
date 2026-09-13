@@ -35,10 +35,15 @@ def init_db():
 
 def processar_item(item: dict, dry_run: bool = False) -> dict:
     """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
-    from mkt_flow_p0.content_filter import filtrar_item_rss, filtrar_conteudo
+    from mkt_flow_p0.content_filter import filtrar_item_rss, filtrar_conteudo, filtrar_por_tema
     from mkt_flow_p0.extractor import extrair_conteudo
     from mkt_flow_p0.rewriter import reescrever_materia, adicionar_atribuicao
     from mkt_flow_p0.image_handler import preparar_capa
+
+    # 1. Tema (whitelist tech) — antes de gastar rede/LLM
+    tema = filtrar_por_tema(item.get("titulo", ""), item.get("resumo", ""))
+    if tema["veredito"] == "BLOQUEADO":
+        return {"acao": "bloqueado", "motivo": [tema["motivo"]], "termo": tema.get("termo",""), "url": item.get("link", "")}
 
     gate = filtrar_item_rss(item)
     if gate["veredito"] == "BLOQUEADO":

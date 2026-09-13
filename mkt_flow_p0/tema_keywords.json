@@ -1,0 +1,21 @@
+{
+  "descricao": "Só entra pauta que contenha ao menos 1 termo de incluir E nenhum de excluir. Edite livremente.",
+  "incluir": [
+    "celular", "smartphone", "iphone", "samsung", "xiaomi", "motorola", "pixel",
+    "notebook", "laptop", "chromebook", "tablet", "ipad",
+    "placa de video", "gpu", "nvidia", "amd", "intel", "processador", "ryzen", "snapdragon", "exynos", "dimensity",
+    "memoria ram", "ssd", "hd", "armazenamento",
+    "headset", "vr", "realidade virtual", "realidade aumentada", "oculos", "meta quest", "phoenix", "ray-ban",
+    "inteligencia artificial", "ia", "chatgpt", "claude", "gemini", "anthropic", "openai", "google",
+    "android", "ios", "windows", "linux",
+    "tv", "smart tv", "monitor", "mouse", "teclado", "fone", "headphone", "earbud", "caixa de som",
+    "roteador", "wifi", "5g", "bluetooth",
+    "eletrodomestico", "lavadora", "geladeira", "ar condicionado",
+    "review", "comparativo", "benchmark", "vazamento", "lançamento"
+  ],
+  "excluir": [
+    "fase da lua", "lua cheia", "lua nova", "calendario lunar", "horoscopo", "signo", "zodiaco",
+    "receita", "culinaria", "futebol", "cbf", "brasileirão", "bbb", "novela", "famosos",
+    "loto", "mega sena", "aposta", "cassino"
+  ]
+}

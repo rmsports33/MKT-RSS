@@ -30,7 +30,9 @@ DB_PATH = Path(__file__).parent.parent / "mkt_flow_p0.db"
 
 # 4 fontes iniciais (Fase 1). Validadas em 12/09/2026 via teste local:
 # - canaltech usa /rss/ (o /feed/ dá 404)
-# - tecmundo devolve 204 vazio (anti-bot) → trocado por olhardigital
+# - olhardigital geral pausada em 13/09/2026 (muito off-topic: lua, etc) — mantida
+#   mas filtrada por tema; se ainda gerar ruído, trocar por feed de editoria tech
+#   ou desativar via FEEDS_PADRAO.
 FEEDS_PADRAO: Dict[str, str] = {
     "tecnoblog": "https://tecnoblog.net/feed/",
     "canaltech": "https://canaltech.com.br/rss/",
