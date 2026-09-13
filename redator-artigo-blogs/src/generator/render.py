@@ -15,6 +15,8 @@ ALUSOES_TESTE = [
     r"mediç[ãa]o própria", r"em nossos laborat", r"unidade que testamos",
 ]
 VALOR_NUMERICO = re.compile(r"\d[\d.,]*\s?(GB|MB|mAh|Hz|g\b|px|ppi|pol(?:egadas)?|nits?|min\b|horas?|dias?|%|R\$|x\d+)", re.IGNORECASE)
+# Tokens de spec (chipset, GPU, padrão, certificação): "Adreno 618", "UFS 3.0", "IP67"
+TOKEN_SPEC = re.compile(r"\b(?:Adreno|Snapdragon|Exynos|Mali|Dimensity|Helio|Tensor|Oryon|Cortex|Kryo|UFS|eMMC|LPDDR|IP|Gorilla|Wi-?Fi|Bluetooth|USB)\s?[\w.-]*\d[\w.-]*", re.IGNORECASE)
 
 
 def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
@@ -63,14 +65,24 @@ def _remover_alusao_teste(texto: str) -> str:
 
 
 def _detectar_hallucination(texto: str, specs_pass: dict) -> list:
-    """Valores numéricos do texto que NÃO constam em specs_PASS."""
+    """Valores numéricos E tokens de spec do texto que NÃO constam em specs_PASS.
+
+    Limite honesto: detecta token desconhecido ("Adreno 618" com specs dizendo
+    "Adreno 610"), mas não má-atribuição ("ambos têm IP67" quando só um tem).
+    """
     base = " ".join(str(v) for v in (specs_pass or {}).values())
+    base_num = re.sub(r"[^\d ]", " ", base)
+    base_token = re.sub(r"[^a-z0-9]", "", base.lower())
     suspeitas = []
     for m in VALOR_NUMERICO.finditer(texto or ""):
         val = m.group(0).strip()
         numero = re.sub(r"[^\d]", "", val)
-        if numero and numero not in re.sub(r"[^\d ]", " ", base):
+        if numero and numero not in base_num:
             suspeitas.append(f"{val} não consta em specs_PASS")
+    for m in TOKEN_SPEC.finditer(texto or ""):
+        tok, norm = m.group(0).strip(), re.sub(r"[^a-z0-9]", "", m.group(0).lower())
+        if norm and norm not in base_token:
+            suspeitas.append(f"{tok} não consta em specs_PASS")
     return sorted(set(suspeitas))
 
 

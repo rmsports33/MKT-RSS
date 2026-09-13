@@ -41,6 +41,16 @@ def test_detecta_numero_fora_das_specs():
     assert any("120" in s for s in sus) and not any("5000" in s for s in sus)
 
 
+def test_detecta_token_spec_fora():
+    specs = {"gpu": "Adreno 610", "armazenamento.tipo": "UFS 2.2"}
+    sus = _detectar_hallucination("GPU Adreno 618 com UFS 3.0 e Snapdragon 685.", specs)
+    assert any("Adreno 618" in s for s in sus)
+    assert any("UFS 3.0" in s for s in sus)
+    assert any("685" in s for s in sus)  # 685 também não está neste dict
+    sus2 = _detectar_hallucination("GPU Adreno 610 com UFS 2.2.", specs)
+    assert sus2 == []
+
+
 def test_tabela_e_pagina():
     tab = montar_tabela_specs(_modelos())
     assert "bateria.mah" in tab and "5000" in tab and "compare-table" in tab
