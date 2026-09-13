@@ -129,7 +129,8 @@ def main():
         sys.exit(2)
     total = {"publicado_rascunho": 0, "bloqueado": 0, "falha": 0, "dry_run_ok": 0}
     for fonte, url in alvos.items():
-        nov = buscar_novidades(url, fonte=fonte, limit=args.limit)
+        # dry-run nunca marca como visto (não gasta a pauta do dia)
+        nov = buscar_novidades(url, fonte=fonte, limit=args.limit, marcar=not args.dry_run)
         if "erro" in nov:
             print(json.dumps({"fonte": fonte, "erro": nov["erro"]}, ensure_ascii=False))
             continue

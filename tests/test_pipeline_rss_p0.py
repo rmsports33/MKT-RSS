@@ -23,6 +23,16 @@ def test_bloqueado_na_pauta():
         assert r["acao"] == "bloqueado"
 
 
+def test_dry_run_nao_marca_visto(monkeypatch):
+    import pipeline_rss as P
+    import sys as _sys
+    monkeypatch.setattr(_sys, "argv", ["pipeline_rss.py", "--limit", "1", "--dry-run"])
+    # main() importa buscar_novidades do módulo de origem a cada chamada
+    with patch("mkt_flow_p0.rss_ingestor.buscar_novidades", return_value={"novos": []}) as mb:
+        P.main()
+        assert mb.call_args.kwargs.get("marcar") is False
+
+
 def test_falha_texto_curto():
     with patch("mkt_flow_p0.content_filter.filtrar_item_rss",
                return_value={"veredito": "APROVADO", "categorias": []}), \
