@@ -19,19 +19,65 @@ VALOR_NUMERICO = re.compile(r"\d[\d.,]*\s?(GB|MB|mAh|Hz|g\b|px|ppi|pol(?:egadas)
 TOKEN_SPEC = re.compile(r"\b(?:Adreno|Snapdragon|Exynos|Mali|Dimensity|Helio|Tensor|Oryon|Cortex|Kryo|UFS|eMMC|LPDDR|IP|Gorilla|Wi-?Fi|Bluetooth|USB)\s?[\w.-]*\d[\w.-]*", re.IGNORECASE)
 
 
+def _eh_separador_tabela(s: str) -> bool:
+    cels = [c.strip() for c in s.strip().strip("|").split("|")]
+    return bool(cels) and all(c and set(c) <= set("-: ") for c in cels)
+
+
+def _tabela_html(linhas: list) -> str:
+    """Bloco de linhas '|' -> 1 <table> (primeira linha vira th)."""
+    uteis = [ln for ln in linhas if not _eh_separador_tabela(ln)]
+    if not uteis:
+        return ""
+    head = [c.strip() for c in uteis[0].strip().strip("|").split("|")]
+    thead = "<thead><tr>" + "".join(f"<th>{html.escape(c)}</th>" for c in head) + "</tr></thead>"
+    corpo = ""
+    for ln in uteis[1:]:
+        cels = [c.strip() for c in ln.strip().strip("|").split("|")]
+        corpo += "<tr>" + "".join(f"<td>{html.escape(c)}</td>" for c in cels) + "</tr>"
+    return f'<table class="compare-table">\n{thead}\n<tbody>{corpo}</tbody>\n</table>'
+
+
 def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
     """Markdown residual -> HTML; mantém [fonte: X] só de fonte permitida."""
     t = html.escape(texto or "")
     t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
-    linhas, out, lista = t.split("\n"), [], None
+    linhas, out, lista, tbl = t.split("\n"), [], None, []
+
+    def _descarrega_tabela():
+        if tbl:
+            out.append(_tabela_html(tbl))
+            tbl.clear()
+
     for ln in linhas:
         s = ln.strip()
+        if not s:
+            if lista:
+                out.append(f"</{lista}>")
+                lista = None
+            _descarrega_tabela()
+            continue
+        if s in ("---", "***", "___", "—", "–"):
+            if lista:
+                out.append(f"</{lista}>")
+                lista = None
+            _descarrega_tabela()
+            out.append("<hr>")
+            continue
+        if s.startswith("|"):
+            if lista:
+                out.append(f"</{lista}>")
+                lista = None
+            tbl.append(s)
+            continue
+        _descarrega_tabela()
         m = re.match(r"^(#{1,3})\s+(.*)$", s)
         if m:
             if lista:
                 out.append(f"</{lista}>")
                 lista = None
-            out.append(f"<h{min(len(m.group(1)) + 1, 3)}>{m.group(2)}</h{min(len(m.group(1)) + 1, 3)}>")
+            nivel = 2 if len(m.group(1)) <= 2 else 3
+            out.append(f"<h{nivel}>{m.group(2)}</h{nivel}>")
         elif re.match(r"^(\d+[.)]|[-*])\s+", s):
             tag = "ol" if re.match(r"^\d", s) else "ul"
             if lista != tag:
@@ -39,7 +85,7 @@ def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
                     out.append(f"</{lista}>")
                 out.append(f"<{tag}>")
                 lista = tag
-            out.append(f"<li>{re.sub(r'^(\d+[.)]|[-*])\s+', '', s)}</li>")
+            out.append(f"<li>{re.sub(r'^(\\d+[.)]|[-*])\\s+', '', s)}</li>")
         elif s:
             if lista:
                 out.append(f"</{lista}>")
@@ -47,6 +93,7 @@ def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
             out.append(f"<p>{s}</p>")
     if lista:
         out.append(f"</{lista}>")
+    _descarrega_tabela()
     t = "\n".join(out)
     if fontes_permitidas is not None:
         permitidas = {f.lower() for f in fontes_permitidas}
@@ -69,15 +116,20 @@ def _detectar_hallucination(texto: str, specs_pass: dict) -> list:
 
     Limite honesto: detecta token desconhecido ("Adreno 618" com specs dizendo
     "Adreno 610"), mas não má-atribuição ("ambos têm IP67" quando só um tem).
+    Aceita specs como {chave: valor} ou {chave: [valores]} (multi-modelo).
     """
-    base = " ".join(str(v) for v in (specs_pass or {}).values())
+    vals = []
+    for v in (specs_pass or {}).values():
+        vals.extend(v if isinstance(v, list) else [v])
+    base = " ".join(str(x) for x in vals)
     base_num = re.sub(r"[^\d ]", " ", base)
+    base_flat = re.sub(r"\D", "", base)  # "188,5" do texto vira 1885; "188.5" da ficha também
     base_token = re.sub(r"[^a-z0-9]", "", base.lower())
     suspeitas = []
     for m in VALOR_NUMERICO.finditer(texto or ""):
         val = m.group(0).strip()
         numero = re.sub(r"[^\d]", "", val)
-        if numero and numero not in base_num:
+        if numero and numero not in base_num and numero not in base_flat:
             suspeitas.append(f"{val} não consta em specs_PASS")
     for m in TOKEN_SPEC.finditer(texto or ""):
         tok, norm = m.group(0).strip(), re.sub(r"[^a-z0-9]", "", m.group(0).lower())
@@ -191,9 +243,11 @@ def gerar_comparativo(modelos: list, categoria: str = "celular", price_history: 
         texto_llm = chamar_llm(system, payload)
         provedor = "injetado"
     texto_llm = _remover_alusao_teste(texto_llm)
-    uniao_specs = {}
+    # Une specs dos modelos SEM sobrescrever (mesma chave, valores diferentes)
+    uniao_specs: dict = {}
     for s in specs_pass.values():
-        uniao_specs.update(s)
+        for k, v in (s or {}).items():
+            uniao_specs.setdefault(k, []).append(v)
     suspeitas = _detectar_hallucination(texto_llm, uniao_specs)
     secoes = _sanitizar_llm_html(texto_llm, fontes)
     nomes = " vs ".join(m.get("nome", "") for m in modelos)

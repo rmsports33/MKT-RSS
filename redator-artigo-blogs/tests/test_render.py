@@ -26,8 +26,14 @@ def test_prompt_tem_regras():
 
 def test_sanitiza_e_filtra_fonte():
     h = _sanitizar_llm_html("## T\nTexto **forte** [fonte: fab A] [fonte: blog X]", ["fab A"])
-    assert "<h3>" in h and "<strong>forte</strong>" in h
+    assert "<h2>" in h and "<strong>forte</strong>" in h
     assert "[fonte: fab A]" in h and "blog X" not in h
+
+
+def test_tabela_hr_e_h2():
+    h = _sanitizar_llm_html("## T\n\n| a | b |\n|---|---|\n| 1 | 2 |\n\n—\n\nTexto")
+    assert h.count("<table") == 1 and "<th>a</th>" in h and "<td>1</td>" in h
+    assert "<hr>" in h and "<p>---</p>" not in h and "<p>—</p>" not in h
 
 
 def test_remove_bancada():
