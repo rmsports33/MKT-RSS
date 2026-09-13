@@ -85,3 +85,48 @@ def turso_init_rss() -> dict:
     if "erro" in r:
         return r
     return turso_execute("CREATE INDEX IF NOT EXISTS idx_rss_vistos_titulo ON rss_vistos(titulo_norm)")
+
+
+def turso_batch(operacoes: list, timeout: int = TIMEOUT) -> dict:
+    """Executa N statements numa chamada (BEGIN...COMMIT = atômico).
+
+    operacoes: [{"sql":..., "args":(...)}]. Retorna {"resultados":[...]} ou
+    {"erro":..., "indice": i} (i = operação que falhou; anteriores fizeram
+    rollback via ROLLBACK explícito).
+    """
+    reqs = [{"type": "execute", "stmt": {"sql": "BEGIN"}}]
+    for op in operacoes or []:
+        reqs.append({"type": "execute",
+                     "stmt": {"sql": op.get("sql", ""),
+                              "args": [_encode_arg(a) for a in (op.get("args") or [])]}})
+    reqs.append({"type": "execute", "stmt": {"sql": "COMMIT"}})
+    reqs.append({"type": "close"})
+    try:
+        resp = requests.post(
+            _base_url(),
+            headers={"Authorization": f"Bearer {os.getenv('TURSO_AUTH_TOKEN', '').strip()}",
+                     "Content-Type": "application/json"},
+            json={"requests": reqs},
+            timeout=timeout,
+        )
+    except requests.Timeout:
+        return {"erro": f"Turso timeout após {timeout}s"}
+    except Exception as e:
+        return {"erro": f"Turso indisponível: {str(e)[:120]}"}
+    if resp.status_code == 401:
+        return {"erro": "Turso 401 — token inválido ou expirado (gere outro no dashboard)"}
+    if resp.status_code >= 400:
+        return {"erro": f"Turso HTTP {resp.status_code}: {resp.text[:150]}"}
+    try:
+        resultados = resp.json().get("results") or []
+        meio = resultados[1:-2]  # exclui BEGIN, COMMIT e close
+        for i, res in enumerate(meio):
+            if (res or {}).get("type") == "error":
+                return {"erro": f"Turso SQL na op {i}: {str(res.get('error'))[:150]}", "indice": i}
+        saidas = []
+        for res in meio:
+            result = ((res or {}).get("response") or {}).get("result") or {}
+            saidas.append({"affected": result.get("affected_row_count", 0)})
+        return {"resultados": saidas, "total": len(saidas)}
+    except Exception as e:
+        return {"erro": f"Resposta Turso ilegível: {str(e)[:120]}"}

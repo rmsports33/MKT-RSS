@@ -33,6 +33,11 @@ def coletar_dados():
         pubs = _query("SELECT * FROM link_publicacoes ORDER BY created_at DESC")
     except Exception:
         pubs = []
+    # RSS runs (pipeline_rss) — unificação 12 (dashboard único)
+    try:
+        rss = _query("SELECT * FROM rss_runs ORDER BY created_at DESC")
+    except Exception:
+        rss = []
     # Cost log do MKTFLOW (se existir). Path relativo ao projeto com
     # fallback legado absoluto (refactor 12/09/2026 — sem C:\ hardcoded).
     costs = []
@@ -50,6 +55,16 @@ def coletar_dados():
             con.close()
         except Exception:
             pass
+    aff_total = 0
+    if cost_db.exists():
+        try:
+            con = sqlite3.connect(cost_db)
+            cur = con.execute("SELECT COUNT(*) FROM affiliate_runs")
+            aff_total = int(cur.fetchone()[0] or 0)
+            con.close()
+        except Exception:
+            pass
+    # affiliate_runs do clássico (mesmo DB acima, se existir)
 
     total_runs = len(runs)
     total_pubs = len(pubs)
@@ -73,6 +88,8 @@ def coletar_dados():
         except Exception:
             pass
     cost_total = sum(float(c.get("cost", 0) or 0) for c in costs)
+    rss_ok = sum(1 for r in rss if r.get("wp_post_id"))
+    rss_bloq = sum(1 for r in rss if (r.get("veredito") or "") == "BLOQUEADO" or not r.get("wp_post_id"))
 
     return {
         "total_runs": total_runs,
@@ -87,31 +104,46 @@ def coletar_dados():
         "total_roi_liquido": round(total_roi_liquido, 2),
         "total_custo": round(total_custo, 2),
         "cost_total": round(cost_total, 5),
+        # Unificação 12: RSS + clássico
+        "rss_total": len(rss),
+        "rss_publicados": rss_ok,
+        "rss_bloqueados": rss_bloq,
+        "rss": rss[:20],
+        "affiliate_runs_classico": aff_total,
     }
 
 
 def gerar_html(dados: dict):
     now = datetime.now().strftime("%d/%m/%Y %H:%M")
+    g = lambda k, d=0: dados.get(k, d)
     # Cards
     cards = f"""
-        <div class="card" style="border-left:4px solid #16a34a"><div class="card-icon" style="background:#16a34a">✓</div><div><div class="card-count">{dados['valid_pass']}</div><div class="card-label">PASS validação</div><div class="card-desc">Links aprovados</div></div></div>
-        <div class="card" style="border-left:4px solid #2563eb"><div class="card-icon" style="background:#2563eb">◉</div><div><div class="card-count">{dados['total_runs']}</div><div class="card-label">Pipeline runs</div><div class="card-desc">Total processado</div></div></div>
-        <div class="card" style="border-left:4px solid #9333ea"><div class="card-icon" style="background:#9333ea">#</div><div><div class="card-count">{dados['total_pubs']}</div><div class="card-label">Publicações</div><div class="card-desc">Onde foi publicado</div></div></div>
-        <div class="card" style="border-left:4px solid #ea580c"><div class="card-icon" style="background:#ea580c">$</div><div><div class="card-count">R$ {dados['total_roi_liquido']}</div><div class="card-label">Lucro est.</div><div class="card-desc">ROI estimado (P0)</div></div></div>
-        <div class="card" style="border-left:4px solid #6b7280"><div class="card-icon" style="background:#6b7280">¢</div><div><div class="card-count">${dados['cost_total']}</div><div class="card-label">Custo LLM</div><div class="card-desc">Groq até agora</div></div></div>
+        <div class="card" style="border-left:4px solid #16a34a"><div class="card-icon" style="background:#16a34a">✓</div><div><div class="card-count">{g('valid_pass')}</div><div class="card-label">PASS validação</div><div class="card-desc">Links aprovados</div></div></div>
+        <div class="card" style="border-left:4px solid #2563eb"><div class="card-icon" style="background:#2563eb">◉</div><div><div class="card-count">{g('total_runs')}</div><div class="card-label">Pipeline runs</div><div class="card-desc">Total processado</div></div></div>
+        <div class="card" style="border-left:4px solid #9333ea"><div class="card-icon" style="background:#9333ea">#</div><div><div class="card-count">{g('total_pubs')}</div><div class="card-label">Publicações</div><div class="card-desc">Onde foi publicado</div></div></div>
+        <div class="card" style="border-left:4px solid #0ea5e9"><div class="card-icon" style="background:#0ea5e9">R</div><div><div class="card-count">{g('rss_publicados')}/{g('rss_total')}</div><div class="card-label">RSS publicados</div><div class="card-desc">Rascunhos no WP ({g('rss_bloqueados')} filtrados)</div></div></div>
+        <div class="card" style="border-left:4px solid #ea580c"><div class="card-icon" style="background:#ea580c">$</div><div><div class="card-count">R$ {g('total_roi_liquido')}</div><div class="card-label">Lucro est.</div><div class="card-desc">ROI estimado (P0)</div></div></div>
+        <div class="card" style="border-left:4px solid #6b7280"><div class="card-icon" style="background:#6b7280">¢</div><div><div class="card-count">${g('cost_total')}</div><div class="card-label">Custo LLM</div><div class="card-desc">Groq até agora (+{g('affiliate_runs_classico')} runs clássicos)</div></div></div>
     """
     rows_runs = ""
-    for r in dados["runs"]:
+    for r in g("runs", []):
         status = r.get("status_validacao", "")
         color = "#16a34a" if status == "PASS" else "#dc2626" if status == "FAIL" else "#ca8a04"
         rows_runs += f'<tr><td><span class="badge" style="background:{color}">{status}</span></td><td><strong>{r.get("link_id","")}</strong></td><td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{r.get("link","")}">{r.get("link","")[:60]}</span></td><td>{r.get("titulo","")[:40]}</td><td>{r.get("preco","")}</td><td>{r.get("created_at","")[:16]}</td></tr>'
 
     rows_pubs = ""
-    for p in dados["pubs"]:
+    for p in g("pubs", []):
         rows_pubs += f'<tr><td>{p.get("link_id","")}</td><td>{p.get("plataforma","")}</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{p.get("url_publicacao","")}">{p.get("url_publicacao","")[:60]}</td><td>{p.get("programa","")}</td><td>{p.get("status_validacao","")}</td><td>{p.get("created_at","")[:16]}</td></tr>'
 
-    by_plat = "".join(f"<li><strong>{k}:</strong> {v}</li>" for k, v in dados["by_platform"].items()) or "<li>Nenhum dado</li>"
-    by_prog = "".join(f"<li><strong>{k}:</strong> {v}</li>" for k, v in dados["by_program"].items()) or "<li>Nenhum dado</li>"
+    rows_rss = ""
+    for r in g("rss", []):
+        ok = bool(r.get("wp_post_id"))
+        color = "#16a34a" if ok else "#ca8a04"
+        rot = "rascunho" if ok else (r.get("veredito") or "—")
+        rows_rss += f'<tr><td><span class="badge" style="background:{color}">{rot}</span></td><td>{r.get("fonte","")}</td><td style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{r.get("titulo_seo","")}">{r.get("titulo_seo","")[:60]}</td><td>{r.get("palavras","")}</td><td>{r.get("created_at","")[:16]}</td></tr>'
+
+    by_plat = "".join(f"<li><strong>{k}:</strong> {v}</li>" for k, v in g("by_platform", {}).items()) or "<li>Nenhum dado</li>"
+    by_prog = "".join(f"<li><strong>{k}:</strong> {v}</li>" for k, v in g("by_program", {}).items()) or "<li>Nenhum dado</li>"
 
     html = f"""<!DOCTYPE html>
 <html lang="pt-BR">
@@ -138,7 +170,7 @@ table{{width:100%;border-collapse:collapse;font-size:13px}} th{{background:#f1f5
 <body>
 <div class="header">
     <h1>MKT Flow — Dashboard P1.2</h1>
-    <p>{dados['total_runs']} runs · {dados['total_pubs']} publicações · Custo LLM ${dados['cost_total']} · Atualizado {now} — <a href="dashboard_p1.json" style="color:#2563eb">JSON</a></p>
+    <p>{g('total_runs')} runs afiliados · {g('rss_total')} pautas RSS · {g('total_pubs')} publicações · Custo LLM ${g('cost_total')} · Atualizado {now} — <a href="dashboard_p1.json" style="color:#2563eb">JSON</a></p>
 </div>
 <div class="cards">{cards}</div>
 <div class="grid2">
@@ -150,6 +182,9 @@ table{{width:100%;border-collapse:collapse;font-size:13px}} th{{background:#f1f5
 </div>
 <div class="table-wrap">
 <table><thead><tr><th>Link ID</th><th>Plataforma</th><th>URL Publicação</th><th>Programa</th><th>Status</th><th>Data</th></tr></thead><tbody>{rows_pubs or '<tr><td colspan=6 style="text-align:center;color:#94a3b8">Nenhuma publicação — P1.1 registra após pipeline</td></tr>'}</tbody></table>
+</div>
+<div class="table-wrap">
+<table><thead><tr><th>RSS</th><th>Fonte</th><th>Título SEO</th><th>Palavras</th><th>Data</th></tr></thead><tbody>{rows_rss or '<tr><td colspan=5 style="text-align:center;color:#94a3b8">Nenhuma pauta RSS ainda — rode pipeline_rss.py</td></tr>'}</tbody></table>
 </div>
 <p class="footer">Gerado por mkt_flow_p0.dashboard — P1.2 · Draft local é aceitável (como whois_dashboard.html)</p>
 </body>

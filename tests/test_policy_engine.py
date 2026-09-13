@@ -1,12 +1,14 @@
 """
-Testes legados — MKTFLOW.policy_engine (via adapter determinístico)
+Testes — policy engine via NÚCLEO (migrado do legado em 12/09/2026, item 19).
+MKTFLOW/policy_engine.py virou adapter fino sobre o mesmo núcleo.
 pytest tests/test_policy_engine.py -v
 """
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent / "MKTFLOW"))
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from MKTFLOW.policy_engine import avaliar_politica, construir_contexto_politica_llm, construir_contexto_minimo_llm, listar_programas
+from mkt_flow_p0.policy_engine import avaliar_politica, construir_contexto_politica_llm
+from MKTFLOW.policy_engine import construir_contexto_minimo_llm, listar_programas
+
 
 
 def test_programas():

@@ -87,3 +87,34 @@ def test_garantir_categoria_existente_e_nova():
     with patch("mkt_flow_p0.wp_publisher.requests.get", return_value=get_vazio), \
          patch("mkt_flow_p0.wp_publisher.requests.post", return_value=criado):
         assert garantir_tag("https://site.com", "u", "p", "Fone JBL") == 9
+
+
+def _page_get(vazio=True):
+    m = MagicMock()
+    m.status_code = 200
+    m.json.return_value = [] if vazio else [{"id": 44, "slug": "mapa-do-site"}]
+    return m
+
+
+def _page_post(pid=44):
+    m = MagicMock()
+    m.status_code = 201 if pid != 44 else 200
+    m.json.return_value = {"id": pid, "link": "https://site.com/mapa-do-site"}
+    return m
+
+
+def test_publicar_pagina_cria():
+    from mkt_flow_p0.wp_publisher import publicar_pagina
+    with patch("mkt_flow_p0.wp_publisher.requests.get", return_value=_page_get(True)), \
+         patch("mkt_flow_p0.wp_publisher.requests.post", return_value=_page_post(45)):
+        r = publicar_pagina("Mapa", "<ul><li>x</li></ul>", "mapa-do-site", "https://site.com", "u", "p")
+        assert r["page_id"] == 45 and r["atualizada"] is False
+
+
+def test_publicar_pagina_atualiza():
+    from mkt_flow_p0.wp_publisher import publicar_pagina
+    with patch("mkt_flow_p0.wp_publisher.requests.get", return_value=_page_get(False)), \
+         patch("mkt_flow_p0.wp_publisher.requests.post", return_value=_page_post(44)) as mp:
+        r = publicar_pagina("Mapa", "<ul><li>y</li></ul>", "mapa-do-site", "https://site.com", "u", "p")
+        assert r["atualizada"] is True
+        assert "/pages/44" in mp.call_args.args[0]

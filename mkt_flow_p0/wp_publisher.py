@@ -175,3 +175,45 @@ def publicar_no_wordpress(
         return {"erro": f"WP timeout após {timeout}s"}
     except Exception as e:
         return {"erro": f"Falha WP: {str(e)[:200]}"}
+
+
+def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_user: str,
+                    wp_app_password: str, timeout: int = 10) -> dict:
+    """Cria ou atualiza 1 página pelo slug (idempotente — ex.: sitemap editorial).
+
+    Sem gate de afiliado: páginas de índice não divulgam produto.
+    Retorna {"page_id":..., "link":..., "atualizada":bool} ou {"erro":...}.
+    """
+    wp_url = (wp_url or "").rstrip("/")
+    if not wp_url or not wp_user or not wp_app_password:
+        return {"erro": "WP_URL/WP_USER/WP_APP_PASSWORD ausentes no .env"}
+    headers = {"Authorization": _auth_header(wp_user, wp_app_password),
+               "Content-Type": "application/json", "User-Agent": "MKT-Flow-P0/3.6"}
+    try:
+        busca = requests.get(f"{wp_url}/wp-json/wp/v2/pages",
+                             headers=headers, params={"slug": slug}, timeout=timeout)
+        existente = (busca.json() or [None])[0] if busca.status_code == 200 else None
+    except Exception as e:
+        return {"erro": f"Falha ao buscar página: {str(e)[:120]}"}
+    try:
+        if existente and existente.get("id"):
+            resp = requests.post(f"{wp_url}/wp-json/wp/v2/pages/{existente['id']}",
+                                 headers=headers,
+                                 json={"title": titulo, "content": conteudo_html, "slug": slug},
+                                 timeout=timeout)
+            atualizada = True
+        else:
+            resp = requests.post(f"{wp_url}/wp-json/wp/v2/pages",
+                                 headers=headers,
+                                 json={"title": titulo, "content": conteudo_html, "slug": slug,
+                                       "status": "publish"},
+                                 timeout=timeout)
+            atualizada = False
+        if resp.status_code in (200, 201):
+            data = resp.json()
+            return {"page_id": data.get("id"), "link": data.get("link"), "atualizada": atualizada}
+        return {"erro": f"WP {resp.status_code}: {resp.text[:200]}"}
+    except requests.Timeout:
+        return {"erro": f"WP timeout após {timeout}s"}
+    except Exception as e:
+        return {"erro": f"Falha WP: {str(e)[:150]}"}

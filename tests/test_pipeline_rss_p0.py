@@ -23,6 +23,38 @@ def test_bloqueado_na_pauta():
         assert r["acao"] == "bloqueado"
 
 
+def test_publicar_indice_sem_links(tmp_path, monkeypatch):
+    import pipeline_rss as P
+    monkeypatch.setattr(P, "DB_PATH", tmp_path / "idx.db")
+    assert "aviso" in P.publicar_indice()
+
+
+def test_publicar_indice_gera_arquivos_e_pagina(tmp_path, monkeypatch):
+    import pipeline_rss as P
+    import sqlite3
+    db = tmp_path / "idx2.db"
+    monkeypatch.setattr(P, "DB_PATH", db)
+    P.init_db()
+    con = sqlite3.connect(db)
+    con.execute("INSERT INTO rss_runs (id, fonte, url, titulo_seo, palavras, veredito, wp_post_id, wp_link, created_at)"
+                " VALUES (?,?,?,?,?,?,?,?,?)",
+                ("a1", "blog", "https://x", "Titulo", 500, "APROVADO", 9, "https://w/?p=9", "2026-01-01"))
+    con.commit()
+    con.close()
+    monkeypatch.chdir(tmp_path)
+    from unittest.mock import MagicMock as _M
+    getm, postm = _M(), _M()
+    getm.status_code = 200
+    getm.json.return_value = []
+    postm.status_code = 201
+    postm.json.return_value = {"id": 77, "link": "https://w/mapa-do-site"}
+    with patch.dict("os.environ", {"WP_URL": "https://w", "WP_USER": "u", "WP_APP_PASSWORD": "p"}), \
+         patch("mkt_flow_p0.wp_publisher.requests.get", return_value=getm), \
+         patch("mkt_flow_p0.wp_publisher.requests.post", return_value=postm):
+        r = P.publicar_indice()
+        assert r["page_id"] == 77 and (tmp_path / "sitemap.xml").exists() and (tmp_path / "llms.txt").exists()
+
+
 def test_dry_run_nao_marca_visto(monkeypatch):
     import pipeline_rss as P
     import sys as _sys
