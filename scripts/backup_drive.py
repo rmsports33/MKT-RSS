@@ -20,7 +20,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logger = logging.getLogger("backup_drive")
 
-ROOT = Path(__file__).parent
+ROOT = Path(__file__).parent.parent
 ARQUIVOS_BASE = ["mkt_flow_p0.db", "dashboard_p1.json", "sitemap.xml", "llms.txt"]
 
 

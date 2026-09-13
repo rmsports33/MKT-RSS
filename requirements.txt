@@ -1,44 +1,4 @@
-# MKT Flow P0 — requirements consolidados (raiz)
-# Instalação: pip install -r requirements.txt
-# Para dev: pip install -r requirements.txt
-
-# --- Core ---
-python-dotenv>=1.0.0
-requests>=2.31.0
-httpx>=0.25.0
-pydantic>=2.0.0
-tenacity>=8.0.0
-
-# --- LLM ---
-groq>=0.9.0
-openai>=1.0.0
-tiktoken>=0.5.0
-langdetect>=1.0.9
-
-# --- API ---
-fastapi>=0.100.0
-uvicorn>=0.23.0
-redis>=5.0.0
-
-# --- Google Drive / Sheets ---
-google-api-python-client>=2.0.0
-google-auth>=2.0.0
-google-auth-oauthlib>=1.0.0
-gspread>=5.0.0
-
-# --- RSS / Extração full-text (P0 ingestão própria) ---
-feedparser>=6.0.0
-trafilatura>=1.8.0
-
-# --- Site / Imagem ---
-Pillow>=10.0.0
-
-# --- Whois (legado) ---
-idna>=3.0
-
-# --- Testes ---
-pytest>=7.0.0
-pytest-asyncio>=0.21.0
-
-# --- Opcional (dashboard) ---
-streamlit>=1.25.0
+# Instalação base: pip install -r requirements/base.txt
+# RSS slim (nuvem, daily): pip install -r requirements/rss.txt
+# Whois legado: pip install -r requirements/whois.txt
+-r base.txt

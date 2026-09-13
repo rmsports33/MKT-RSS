@@ -27,12 +27,12 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-          cache-dependency-path: requirements-rss.txt
+          cache-dependency-path: requirements/rss.txt
 
       - name: Instalar deps (slim)
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements-rss.txt
+          pip install -r requirements/rss.txt
 
       - name: Rodar pipeline RSS
         env:
