@@ -39,51 +39,62 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     from mkt_flow_p0.extractor import extrair_conteudo
     from mkt_flow_p0.rewriter import reescrever_materia, adicionar_atribuicao
     from mkt_flow_p0.image_handler import preparar_capa
+    from mkt_flow_p0.format import markdown_para_html, sanitizar_url
 
-    gate = filtrar_item_rss(item)
+    url_fonte = sanitizar_url(item.get("link", ""))
+    gate = filtrar_item_rss({**item, "link": url_fonte})
     if gate["veredito"] == "BLOQUEADO":
-        return {"acao": "bloqueado", "motivo": gate["categorias"], "url": item.get("link", "")}
+        return {"acao": "bloqueado", "motivo": gate["categorias"], "url": url_fonte}
 
-    ext = extrair_conteudo(item.get("link", ""))
+    ext = extrair_conteudo(url_fonte)
     if "erro" in ext:
-        return {"acao": "falha", "motivo": ext["erro"], "url": item.get("link", "")}
+        return {"acao": "falha", "motivo": ext["erro"], "url": url_fonte}
     if not ext.get("qualidade_ok"):
-        return {"acao": "falha", "motivo": f"texto curto ({ext.get('palavras', 0)} palavras)", "url": item.get("link", "")}
+        return {"acao": "falha", "motivo": f"texto curto ({ext.get('palavras', 0)} palavras)", "url": url_fonte}
 
     # Revalida o corpo extraído (o excerpt do feed pode ser limpo e o corpo não)
     gate2 = filtrar_conteudo(ext.get("titulo", ""), (ext.get("texto") or "")[:4000])
     if gate2["veredito"] == "BLOQUEADO":
-        return {"acao": "bloqueado", "motivo": gate2["categorias"], "url": item.get("link", "")}
+        return {"acao": "bloqueado", "motivo": gate2["categorias"], "url": url_fonte}
 
     if dry_run:
         return {"acao": "dry_run_ok", "palavras": ext["palavras"], "titulo": ext.get("titulo", "")}
 
     rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
-                            fonte_nome=item.get("fonte", ""), url_fonte=item.get("link", ""))
+                            fonte_nome=item.get("fonte", ""), url_fonte=url_fonte)
     if "erro" in rw:
-        return {"acao": "falha", "motivo": rw["erro"], "url": item.get("link", "")}
+        return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
 
-    texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), item.get("link", ""))
-    html = (f"<h1>{rw['titulo_seo']}</h1>\n"
-            f"<!-- meta: {rw['meta_description']} | tags: {', '.join(rw['tags'])} -->\n"
-            + "\n".join(f"<p>{p.strip('# ').strip()}</p>" if not p.startswith("#") else f"<h2>{p.strip('# ').strip()}</h2>"
-                        for p in texto_final.split("\n\n") if p.strip()))
+    texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
+    html = markdown_para_html(texto_final)
 
-    imagem_url = ""
+    imagem_url, credito_foto = "", ""
     if ext.get("imagem"):
-        capa = preparar_capa(ext["imagem"], consulta_fallback=rw["titulo_seo"])
+        capa = preparar_capa(sanitizar_url(ext["imagem"]), consulta_fallback=rw["titulo_seo"])
         if "bytes" in capa:
-            imagem_url = ext["imagem"]  # WP baixa e define como destacada
+            imagem_url = sanitizar_url(ext["imagem"])  # WP baixa e define como destacada
+            credito_foto = capa.get("credito", "")
         else:
             logger.warning(f"sem capa: {capa.get('erro')}")
+    if credito_foto:
+        html += f'\n<p class="credito-foto"><small>{credito_foto}</small></p>'
 
     wp_url = os.getenv("WP_URL", "")
     wp_result: dict = {"aviso": "WP_* não configurado — rascunho só local"}
     if wp_url and os.getenv("WP_USER", "") and os.getenv("WP_APP_PASSWORD", ""):
-        from mkt_flow_p0.wp_publisher import publicar_no_wordpress
-        wp_result = publicar_no_wordpress(rw["titulo_seo"], html, "PASS", wp_url,
-                                          os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", ""),
-                                          status_desejado="draft", imagem_url=imagem_url)
+        from mkt_flow_p0.wp_publisher import publicar_no_wordpress, garantir_categoria, garantir_tag
+        wp_user, wp_pwd = os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", "")
+        cat_id = garantir_categoria(wp_url, wp_user, wp_pwd, os.getenv("CATEGORIA_PADRAO", "Notícias"))
+        tag_ids = [t for t in (garantir_tag(wp_url, wp_user, wp_pwd, t) for t in rw["tags"]) if t]
+        wp_result = publicar_no_wordpress(
+            rw["titulo_seo"], html, "PASS", wp_url, wp_user, wp_pwd,
+            status_desejado="draft", imagem_url=imagem_url,
+            categoria_ids=[cat_id] if cat_id else None,
+            tag_ids=tag_ids or None,
+            slug=rw["slug"],
+            rank_math={"title": rw["titulo_seo"], "description": rw["meta_description"],
+                       "focus": (rw["tags"] or [""])[0]},
+        )
 
     run_id = str(uuid.uuid4())[:8]
     init_db()

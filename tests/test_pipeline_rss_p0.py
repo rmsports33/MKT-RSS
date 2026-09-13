@@ -60,3 +60,30 @@ def test_publicado_rascunho_mockado(tmp_path, monkeypatch):
         monkeypatch.delenv("WP_URL", raising=False)
         r = P.processar_item(ITEM)
         assert r["acao"] == "publicado_rascunho" and r["run_id"]
+
+
+def test_publicado_com_slug_tags_rank_math_e_sem_markdown():
+    import pipeline_rss as P
+    ext = {"titulo": "T", "texto": "corpo " * 500, "palavras": 500, "qualidade_ok": True, "imagem": ""}
+    rw = {"titulo_seo": "Titulo SEO", "meta_description": "Descricao", "slug": "titulo-seo",
+          "tags": ["Fone", "Tech"], "texto_markdown": "Intro com **negrito**.\n\n## Secao\n\nTexto.", "palavras": 300}
+    with patch("mkt_flow_p0.content_filter.filtrar_item_rss",
+               return_value={"veredito": "APROVADO", "categorias": []}), \
+         patch("mkt_flow_p0.extractor.extrair_conteudo", return_value=ext), \
+         patch("mkt_flow_p0.content_filter.filtrar_conteudo",
+               return_value={"veredito": "APROVADO", "categorias": [], "trechos": [], "total_sinais": 0}), \
+         patch("mkt_flow_p0.rewriter.reescrever_materia", return_value=rw), \
+         patch("mkt_flow_p0.wp_publisher.garantir_categoria", return_value=11), \
+         patch("mkt_flow_p0.wp_publisher.garantir_tag", side_effect=[21, 22]) as mg, \
+         patch("mkt_flow_p0.wp_publisher.publicar_no_wordpress",
+               return_value={"post_id": 5, "link": "https://w/?p=5", "status": "draft"}) as mp, \
+         patch.dict("os.environ", {"WP_URL": "https://w", "WP_USER": "u", "WP_APP_PASSWORD": "p"}):
+        import tempfile
+        P.DB_PATH = str(Path(tempfile.mkdtemp()) / "t.db")
+        r = P.processar_item(ITEM)
+        assert r["acao"] == "publicado_rascunho"
+        kw = mp.call_args.kwargs
+        assert kw["slug"] == "titulo-seo" and kw["categoria_ids"] == [11] and kw["tag_ids"] == [21, 22]
+        assert kw["rank_math"]["focus"] == "Fone"
+        html_enviado = mp.call_args.args[1]
+        assert "**" not in html_enviado and "<strong>negrito</strong>" in html_enviado

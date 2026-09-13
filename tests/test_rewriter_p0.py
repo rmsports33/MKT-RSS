@@ -73,3 +73,62 @@ def test_atribuicao():
     t = adicionar_atribuicao("texto", "Adrenaline", "https://adrenaline.com.br/x")
     assert "Fonte original" in t and "adrenaline.com.br/x" in t
     assert adicionar_atribuicao("texto", "", "") == "texto"
+
+
+def test_titulo_trunca_em_palavra():
+    import mkt_flow_p0.rewriter as R
+
+    corpo = "palavra " * 150
+    fake_json = ('{"titulo_seo":"Pastilha para esterilizar máquina: funciona? Fabricantes opinam sobre tudo",'
+                 ' "meta_description":"m", "slug":"s","tags":[],'
+                 ' "texto_markdown":"' + ("conteudo reescrito " * 120) + '"}')
+
+    class FakeMsg:
+        content = fake_json
+
+    class FakeChoice:
+        message = FakeMsg()
+
+    class FakeResp:
+        choices = [FakeChoice()]
+        usage = type("U", (), {"prompt_tokens": 1, "completion_tokens": 1, "total_tokens": 2})()
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            return FakeResp()
+
+    class FakeChat:
+        completions = FakeCompletions()
+
+    class FakeClient:
+        chat = FakeChat()
+
+    import unittest.mock as _m
+    with _m.patch.object(R, "_get_client", return_value=(FakeClient(), "")):
+        r = R.reescrever_materia("Orig", corpo)
+        assert r["titulo_seo"] == "Pastilha para esterilizar máquina: funciona? Fabricantes"
+        assert "opi" not in r["titulo_seo"].split()[-1:]
+
+
+def test_opiniao_off_por_padrao_e_on_no_prompt():
+    import mkt_flow_p0.rewriter as R
+    import unittest.mock as _m
+
+    vistos = {}
+
+    class FakeCompletions:
+        def create(self, **kwargs):
+            vistos["system"] = kwargs["messages"][0]["content"]
+            raise RuntimeError("para aqui")
+
+    class FakeChat:
+        completions = FakeCompletions()
+
+    class FakeClient:
+        chat = FakeChat()
+
+    with _m.patch.object(R, "_get_client", return_value=(FakeClient(), "")):
+        R.reescrever_materia("T", "palavra " * 150)
+        assert "Nossa leitura" not in vistos["system"]
+        R.reescrever_materia("T", "palavra " * 150, incluir_opiniao=True)
+        assert "Nossa leitura" in vistos["system"]
