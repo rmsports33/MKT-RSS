@@ -1,0 +1,41 @@
+name: Keepalive (anti-pausa 60 dias)
+
+# O GitHub pausa crons sem commits por 60 dias. Este workflow garante 1 commit/mês
+# sem mexer em código de produção — só atualiza .github/keepalive.txt.
+
+on:
+  schedule:
+    - cron: "0 10 1 * *" # dia 1, 10h UTC (07h BRT)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Atualiza keepalive
+        run: |
+          date -u +"%Y-%m-%dT%H:%M:%SZ" > .github/keepalive.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .github/keepalive.txt
+          git diff --staged --quiet || git commit -m "chore: keepalive $(cat .github/keepalive.txt)"
+          git push
+
+      - name: Dispara RSS diario se necessário
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Se o cron do daily atrasou >30min, dispara via API (fallback local)
+          gh workflow run daily.yml --ref master 2>/dev/null || \
+          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/${{ github.repository }}/actions/workflows/daily.yml/dispatches \
+            -d '{"ref":"master"}' || true

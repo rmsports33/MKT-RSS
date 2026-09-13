@@ -53,14 +53,39 @@ Repo → Actions → "RSS diario (WP draft)" → Run workflow → Run.
 Verde = rascunhos caíram em Postagens → Rascunhos no WordPress.
 O artefato `rss-runs-N` guarda o `mkt_flow_p0.db` do dia (14 dias).
 
-## 4. Watchdog (grátis, 5 min)
+## 4. Watchdog — 2 camadas (grátis)
 
-O cron do Actions atrasa 5–15 min e pausa sem commits por 60 dias.
-Contorno: conta grátis em `cron-job.org` → Create cronjob → URL:
-`https://api.github.com/repos/SEU-USUARIO/mkt-flow/actions/workflows/daily.yml/dispatches`
-método POST, header `Authorization: Bearer SEU_TOKEN` (token com escopo
-`repo` → Settings do GitHub → Developer settings → Personal access tokens),
-body `{"ref":"master"}`, 1x/dia às 09:05 BRT.
+### 4A. Keepalive interno (já ativo)
+`.github/workflows/keepalive.yml` roda dia 1 de cada mês às 07h BRT:
+atualiza `.github/keepalive.txt` e faz 1 commit vazio se preciso. Sozinho
+já impede a pausa de 60 dias — zero config sua.
+
+### 4B. Watchdog externo — cron-job.org (5 min, recomendado)
+
+O cron do Actions atrasa 5–15 min por natureza. Para garantir pontualidade,
+crie 1 gatilho externo:
+
+1. Crie conta grátis em `cron-job.org` → Create cronjob.
+2. Título: `MKT-RSS daily`.
+3. URL: `https://api.github.com/repos/SEU-USUARIO/MKT-RSS/actions/workflows/daily.yml/dispatches`
+4. Método: POST. Header: `Authorization: Bearer SEU_TOKEN`
+   (token com escopo `repo` → GitHub → Settings → Developer settings →
+   Personal access tokens → Tokens (classic) → Generate).
+   Header `Accept: application/vnd.github+json`.
+   Body: `{"ref":"master"}`.
+5. Schedule: todo dia às 09:05 BRT (12:05 UTC) — 5 min após o cron nativo.
+6. Salve. Se o cron nativo falhar/atrasar, este dispara o workflow.
+
+### 4C. Watchdog local (opcional, para teste)
+
+No seu PC, com `GITHUB_TOKEN` (PAT com `repo`):
+```
+cd "C:\Users\LIVE2PC\Desktop\MY PROJECTS FLOW"
+python scripts/watchdog.py --repo rmsports33/MKT-RSS --token SEU_TOKEN
+python scripts/watchdog.py --repo rmsports33/MKT-RSS --token SEU_TOKEN --disparar
+```
+Sem `--disparar`, só relata. Com `--disparar`, chama `daily.yml` se o último
+run estiver há >20h ou falhou.
 
 ## 5. Limites conhecidos (sem surpresa)
 
