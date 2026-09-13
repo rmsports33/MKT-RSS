@@ -1,0 +1,54 @@
+name: Backup semanal (Drive)
+
+# Gera zip do núcleo (DB + JSON + policies) e sobe para o Google Drive.
+# Requer secrets GOOGLE_DRIVE_CLIENT_ID/SECRET + token.json já autorizado
+# na primeira execução local (ver docs/PUBLICAR_BACKUP.md).
+
+on:
+  schedule:
+    - cron: "0 13 * * 0" # domingo 10h BRT (13h UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements/base.txt
+
+      - name: Instalar deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements/base.txt
+
+      - name: Gerar artefatos locais (dashboard + sitemap se houver)
+        run: |
+          python -m mkt_flow_p0.dashboard || true
+          ls -lh mkt_flow_p0.db dashboard_p1.json sitemap.xml 2>/dev/null || true
+
+      - name: Backup para Drive
+        env:
+          GOOGLE_DRIVE_CLIENT_ID: ${{ secrets.GOOGLE_DRIVE_CLIENT_ID }}
+          GOOGLE_DRIVE_CLIENT_SECRET: ${{ secrets.GOOGLE_DRIVE_CLIENT_SECRET }}
+        run: |
+          # token.json não existe na nuvem na primeira vez — o script avisa e salva zip local
+          python scripts/backup_drive.py --pasta "MKT-Flow-Backup" || echo "backup local gerado, configure OAuth para enviar ao Drive"
+
+      - name: Anexar zip (sempre)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-semanal-${{ github.run_number }}
+          path: /tmp/mktflow-backup-*.zip
+          if-no-files-found: ignore
+          retention-days: 30

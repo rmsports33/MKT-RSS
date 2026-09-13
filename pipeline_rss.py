@@ -27,8 +27,19 @@ def init_db():
     con = sqlite3.connect(DB_PATH)
     con.execute("""CREATE TABLE IF NOT EXISTS rss_runs (
         id TEXT PRIMARY KEY, fonte TEXT, url TEXT, titulo_seo TEXT,
-        palavras INTEGER, veredito TEXT, wp_post_id INTEGER, wp_link TEXT, created_at TEXT
+        palavras INTEGER, veredito TEXT, wp_post_id INTEGER, wp_link TEXT,
+        custo_usd REAL DEFAULT 0, tokens_total INTEGER DEFAULT 0,
+        created_at TEXT
     )""")
+    # Migração suave se DB antigo não tem colunas novas
+    try:
+        con.execute("ALTER TABLE rss_runs ADD COLUMN custo_usd REAL DEFAULT 0")
+    except Exception:
+        pass
+    try:
+        con.execute("ALTER TABLE rss_runs ADD COLUMN tokens_total INTEGER DEFAULT 0")
+    except Exception:
+        pass
     con.commit()
     con.close()
 
@@ -93,15 +104,17 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     run_id = str(uuid.uuid4())[:8]
     init_db()
     con = sqlite3.connect(DB_PATH)
-    con.execute("INSERT INTO rss_runs (id, fonte, url, titulo_seo, palavras, veredito, wp_post_id, wp_link, created_at)"
-                " VALUES (?,?,?,?,?,?,?,?,?)",
+    con.execute("INSERT INTO rss_runs (id, fonte, url, titulo_seo, palavras, veredito, wp_post_id, wp_link, custo_usd, tokens_total, created_at)"
+                " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 (run_id, item.get("fonte", ""), item.get("link", ""), rw["titulo_seo"], rw["palavras"],
                  gate2["veredito"], (wp_result or {}).get("post_id"), (wp_result or {}).get("link"),
+                 float(rw.get("custo_usd_estimado", 0) or 0), int((rw.get("uso_tokens") or {}).get("total", 0) or 0),
                  datetime.now().isoformat()))
     con.commit()
     con.close()
     return {"acao": "publicado_rascunho", "run_id": run_id, "titulo_seo": rw["titulo_seo"],
-            "palavras": rw["palavras"], "wp": wp_result}
+            "palavras": rw["palavras"], "custo_usd": rw.get("custo_usd_estimado", 0),
+            "tokens": (rw.get("uso_tokens") or {}).get("total", 0), "wp": wp_result}
 
 
 def main():
