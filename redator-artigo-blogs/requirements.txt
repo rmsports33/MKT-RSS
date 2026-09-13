@@ -1,0 +1,6 @@
+# redator-artigo-blogs — requirements
+# Gerador de comparativos com specs verificadas (cadeia 100% grátis)
+openai>=1.0.0
+python-dotenv>=1.0.0
+requests>=2.31.0
+pytest>=7.0.0
