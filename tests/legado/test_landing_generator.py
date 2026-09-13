@@ -1,11 +1,12 @@
 """
-Testes — landing via NÚCLEO (migrado do legado em 12/09/2026, item 19).
+Testes legados — MKTFLOW.landing_generator
 pytest tests/test_landing_generator.py -v
 """
 import sys
 from pathlib import Path
+sys.path.insert(0, str(Path(__file__).parent.parent / "MKTFLOW"))
 sys.path.insert(0, str(Path(__file__).parent.parent))
-from mkt_flow_p0.landing import gerar_template_landing_page, gerar_landing_page_completa, slugify
+from MKTFLOW.landing_generator import gerar_template_landing_page, gerar_landing_page_completa, slugify
 
 
 def test_template_pass():

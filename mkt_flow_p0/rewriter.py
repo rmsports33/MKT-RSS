@@ -63,14 +63,8 @@ SYSTEM_PROMPT = (
     "Reescreve a matéria com outras palavras, estrutura própria e tom jornalístico humano. "
     "REGRAS DURAS: não invente fatos, números, specs ou datas; mantenha só o que está no texto original; "
     "não copie frases; não opine como se tivesse testado o produto; "
-    "não repita o título no lead nem no primeiro H2 — o lead complementa, não duplica; "
     "texto final em Markdown com H2/H3, lead direto (4Ws), 500-800 palavras, conclusão curta. "
     "Responda SOMENTE um JSON válido com as chaves: titulo_seo, meta_description, slug, tags, texto_markdown."
-)
-
-OPINIAO_INSTRUCAO = (
-    "Ao final, acrescente 1 parágrafo curto de contexto editorial começando exatamente por "
-    "'Nossa leitura:' com a avaliação da redação (sem inventar fatos novos)."
 )
 
 
@@ -133,13 +127,10 @@ def reescrever_materia(
     temperature: float = 0.5,
     max_tokens: int = 2500,
     timeout: int = 60,
-    incluir_opiniao: bool = False,
 ) -> dict:
     """
     Reescreve 1 matéria. Gate de entrada: texto <100 palavras = {"erro"}
     (não reescreve excerpt — mesma trava do fiscal AINP manual).
-    incluir_opiniao=True acrescenta parágrafo "Nossa leitura:" (voz editorial,
-    sem fatos novos) — desligado por padrão até validação editorial.
     Retorna dict com titulo_seo/meta_description/slug/tags/texto_markdown/
     palavras/modelo/uso_tokens/custo_usd_estimado ou {"erro":...}.
     Atribuição de fonte é adicionada pelo chamador no WP (não no corpo).
@@ -153,12 +144,11 @@ def reescrever_materia(
         return {"erro": erro}
 
     modelo = _modelo()
-    system = SYSTEM_PROMPT + (" " + OPINIAO_INSTRUCAO if incluir_opiniao else "")
     try:
         resp = client.chat.completions.create(
             model=modelo,
             messages=[
-                {"role": "system", "content": system},
+                {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": montar_prompt(titulo_original, texto_original, fonte_nome)},
             ],
             temperature=temperature,
@@ -184,9 +174,8 @@ def reescrever_materia(
     except Exception as e:
         return {"erro": f"Resposta IA fora do JSON esperado: {str(e)[:120]}"}
 
-    from .format import truncar_palavras
-    titulo_seo = truncar_palavras(str(dados.get("titulo_seo") or titulo_original), META_TITULO_MAX)
-    meta = truncar_palavras(str(dados.get("meta_description") or ""), META_DESC_MAX)
+    titulo_seo = str(dados.get("titulo_seo") or titulo_original)[:META_TITULO_MAX]
+    meta = str(dados.get("meta_description") or "")[:META_DESC_MAX]
     slug = gerar_slug(str(dados.get("slug") or titulo_seo))
     tags = [str(t).lower().strip()[:30] for t in (dados.get("tags") or []) if str(t).strip()][:5]
     texto = str(dados.get("texto_markdown") or "").strip()

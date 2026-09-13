@@ -39,62 +39,51 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     from mkt_flow_p0.extractor import extrair_conteudo
     from mkt_flow_p0.rewriter import reescrever_materia, adicionar_atribuicao
     from mkt_flow_p0.image_handler import preparar_capa
-    from mkt_flow_p0.format import markdown_para_html, sanitizar_url
 
-    url_fonte = sanitizar_url(item.get("link", ""))
-    gate = filtrar_item_rss({**item, "link": url_fonte})
+    gate = filtrar_item_rss(item)
     if gate["veredito"] == "BLOQUEADO":
-        return {"acao": "bloqueado", "motivo": gate["categorias"], "url": url_fonte}
+        return {"acao": "bloqueado", "motivo": gate["categorias"], "url": item.get("link", "")}
 
-    ext = extrair_conteudo(url_fonte)
+    ext = extrair_conteudo(item.get("link", ""))
     if "erro" in ext:
-        return {"acao": "falha", "motivo": ext["erro"], "url": url_fonte}
+        return {"acao": "falha", "motivo": ext["erro"], "url": item.get("link", "")}
     if not ext.get("qualidade_ok"):
-        return {"acao": "falha", "motivo": f"texto curto ({ext.get('palavras', 0)} palavras)", "url": url_fonte}
+        return {"acao": "falha", "motivo": f"texto curto ({ext.get('palavras', 0)} palavras)", "url": item.get("link", "")}
 
     # Revalida o corpo extraído (o excerpt do feed pode ser limpo e o corpo não)
     gate2 = filtrar_conteudo(ext.get("titulo", ""), (ext.get("texto") or "")[:4000])
     if gate2["veredito"] == "BLOQUEADO":
-        return {"acao": "bloqueado", "motivo": gate2["categorias"], "url": url_fonte}
+        return {"acao": "bloqueado", "motivo": gate2["categorias"], "url": item.get("link", "")}
 
     if dry_run:
         return {"acao": "dry_run_ok", "palavras": ext["palavras"], "titulo": ext.get("titulo", "")}
 
     rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
-                            fonte_nome=item.get("fonte", ""), url_fonte=url_fonte)
+                            fonte_nome=item.get("fonte", ""), url_fonte=item.get("link", ""))
     if "erro" in rw:
-        return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
+        return {"acao": "falha", "motivo": rw["erro"], "url": item.get("link", "")}
 
-    texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
-    html = markdown_para_html(texto_final)
+    texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), item.get("link", ""))
+    html = (f"<h1>{rw['titulo_seo']}</h1>\n"
+            f"<!-- meta: {rw['meta_description']} | tags: {', '.join(rw['tags'])} -->\n"
+            + "\n".join(f"<p>{p.strip('# ').strip()}</p>" if not p.startswith("#") else f"<h2>{p.strip('# ').strip()}</h2>"
+                        for p in texto_final.split("\n\n") if p.strip()))
 
-    imagem_url, credito_foto = "", ""
+    imagem_url = ""
     if ext.get("imagem"):
-        capa = preparar_capa(sanitizar_url(ext["imagem"]), consulta_fallback=rw["titulo_seo"])
+        capa = preparar_capa(ext["imagem"], consulta_fallback=rw["titulo_seo"])
         if "bytes" in capa:
-            imagem_url = sanitizar_url(ext["imagem"])  # WP baixa e define como destacada
-            credito_foto = capa.get("credito", "")
+            imagem_url = ext["imagem"]  # WP baixa e define como destacada
         else:
             logger.warning(f"sem capa: {capa.get('erro')}")
-    if credito_foto:
-        html += f'\n<p class="credito-foto"><small>{credito_foto}</small></p>'
 
     wp_url = os.getenv("WP_URL", "")
     wp_result: dict = {"aviso": "WP_* não configurado — rascunho só local"}
     if wp_url and os.getenv("WP_USER", "") and os.getenv("WP_APP_PASSWORD", ""):
-        from mkt_flow_p0.wp_publisher import publicar_no_wordpress, garantir_categoria, garantir_tag
-        wp_user, wp_pwd = os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", "")
-        cat_id = garantir_categoria(wp_url, wp_user, wp_pwd, os.getenv("CATEGORIA_PADRAO", "Notícias"))
-        tag_ids = [t for t in (garantir_tag(wp_url, wp_user, wp_pwd, t) for t in rw["tags"]) if t]
-        wp_result = publicar_no_wordpress(
-            rw["titulo_seo"], html, "PASS", wp_url, wp_user, wp_pwd,
-            status_desejado="draft", imagem_url=imagem_url,
-            categoria_ids=[cat_id] if cat_id else None,
-            tag_ids=tag_ids or None,
-            slug=rw["slug"],
-            rank_math={"title": rw["titulo_seo"], "description": rw["meta_description"],
-                       "focus": (rw["tags"] or [""])[0]},
-        )
+        from mkt_flow_p0.wp_publisher import publicar_no_wordpress
+        wp_result = publicar_no_wordpress(rw["titulo_seo"], html, "PASS", wp_url,
+                                          os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", ""),
+                                          status_desejado="draft", imagem_url=imagem_url)
 
     run_id = str(uuid.uuid4())[:8]
     init_db()
@@ -108,41 +97,6 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     con.close()
     return {"acao": "publicado_rascunho", "run_id": run_id, "titulo_seo": rw["titulo_seo"],
             "palavras": rw["palavras"], "wp": wp_result}
-
-
-def publicar_indice() -> dict:
-    """Sitemap editorial: página WP 'mapa-do-site' + arquivos sitemap.xml/llms.txt.
-
-    Chamado no fim do run (sem WP configurado, só gera arquivos locais).
-    """
-    from mkt_flow_p0.seo import gerar_sitemap, gerar_llms_txt
-    from mkt_flow_p0.wp_publisher import publicar_pagina
-
-    init_db()
-    con = sqlite3.connect(DB_PATH)
-    con.row_factory = sqlite3.Row
-    try:
-        cur = con.execute("SELECT titulo_seo, wp_link FROM rss_runs WHERE wp_link IS NOT NULL "
-                          "ORDER BY created_at DESC LIMIT 100")
-        links = [(r["titulo_seo"] or "Post", r["wp_link"]) for r in cur.fetchall()]
-    except Exception:
-        links = []
-    finally:
-        con.close()
-    if not links:
-        return {"aviso": "sem links publicados ainda — índice na próxima"}
-    base = os.getenv("WP_URL", "https://conexotech.com.br").rstrip("/")
-    Path("./sitemap.xml").write_text(gerar_sitemap([u for _, u in links], base), encoding="utf-8")
-    Path("./llms.txt").write_text(
-        gerar_llms_txt(base, [u for _, u in links], "Notícias tech reescritas do ConexoTech."), encoding="utf-8")
-    itens = "\n".join(f"<li><a href='{u}'>{t}</a></li>" for t, u in links)
-    html = f"<h2>Últimas notícias publicadas</h2>\n<ul>\n{itens}\n</ul>"
-    if not (os.getenv("WP_URL", "") and os.getenv("WP_USER", "") and os.getenv("WP_APP_PASSWORD", "")):
-        return {"arquivos": ["sitemap.xml", "llms.txt"], "aviso": "WP ausente — suba llms.txt na raiz via hospedagem"}
-    r = publicar_pagina("Mapa do Site — Automático", html, "mapa-do-site",
-                        os.getenv("WP_URL", ""), os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", ""))
-    r["arquivos"] = ["sitemap.xml", "llms.txt"]
-    return r
 
 
 def main():
@@ -164,8 +118,7 @@ def main():
         sys.exit(2)
     total = {"publicado_rascunho": 0, "bloqueado": 0, "falha": 0, "dry_run_ok": 0}
     for fonte, url in alvos.items():
-        # dry-run nunca marca como visto (não gasta a pauta do dia)
-        nov = buscar_novidades(url, fonte=fonte, limit=args.limit, marcar=not args.dry_run)
+        nov = buscar_novidades(url, fonte=fonte, limit=args.limit)
         if "erro" in nov:
             print(json.dumps({"fonte": fonte, "erro": nov["erro"]}, ensure_ascii=False))
             continue
@@ -173,11 +126,6 @@ def main():
             r = processar_item(item, dry_run=args.dry_run)
             total[r["acao"]] = total.get(r["acao"], 0) + 1
             print(json.dumps({"fonte": fonte, **r}, ensure_ascii=False))
-    if not args.dry_run and total.get("publicado_rascunho"):
-        try:
-            print(json.dumps({"indice": publicar_indice()}, ensure_ascii=False))
-        except Exception as e:
-            print(json.dumps({"indice_erro": str(e)[:150]}, ensure_ascii=False))
     print(json.dumps({"resumo": total}, ensure_ascii=False))
 
 
