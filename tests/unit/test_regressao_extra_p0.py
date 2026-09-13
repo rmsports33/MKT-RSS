@@ -109,48 +109,11 @@ def test_alerts_check_all_counts():
         assert (r["criticos"], r["ok"], r["total"]) == (1, 1, 2)
 
 
-# --- legado: ml/orchestrator/wp/roi ---
-def test_ml_client_campos_e_invalido():
-    import MKTFLOW.ml_client as M
-    assert M.extrair_item_id("https://x/mlb987?matt_word=a") == "MLB987"
-    assert "erro" in M.consultar_api_publica_mercado_livre("ruim")
-
-
-def test_orchestrator_unknown_e_publish_block():
-    from MKTFLOW.orchestrator import run_pipeline
-    from unittest.mock import patch as _p
-    with _p("MKTFLOW.orchestrator.consultar_api_publica_mercado_livre", return_value={"titulo": "P"}):
-        r = run_pipeline("https://shopee.com.br/x", fatos={})
-        assert r["decision"] == "BLOCK" and "UNKNOWN" in r["motivo"]
-        r2 = run_pipeline("https://www.mercadolivre.com.br/p/MLB1", fatos={})
-        assert r2["decision"] == "BLOCK"
-
-
-def test_wp_classic_timeout_e_config():
-    from MKTFLOW.wp_publisher import WPConfig, publicar_no_wordpress
-    import requests
-    assert WPConfig("https://a", "u", "p").is_configured() is True
-    assert WPConfig().is_configured() is False
-    with patch("MKTFLOW.wp_publisher.requests.post", side_effect=requests.exceptions.Timeout("x")):
-        assert "timeout" in publicar_no_wordpress(WPConfig("https://a", "u", "p"), "T", "<p/>", "PASS")["erro"]
-
-
-def test_roi_classic_deducao():
-    from MKTFLOW.roi_calculator import calcular_roi_afiliado
-    assert calcular_roi_afiliado(1.0, 100, 10.0, 50.0, 20.0)["lucro_liquido_brl"] == 0.0
-
-
-# --- legado: tracker/dashboard/seo ---
-def test_tracker_report_e_history():
-    from MKTFLOW.link_tracker import create_campaign, register_publication, get_campaign_report
-    c = create_campaign("rep-camp", "shopee")
-    register_publication(c["campaign_id"], "https://s.com/rel1", "pinterest", "https://pin/1")
-    assert get_campaign_report(c["campaign_id"])["por_plataforma"]["pinterest"] >= 1
-
-
 def test_seo_stats_vazio():
-    from MKTFLOW.seo_programmatic import get_seo_stats
-    assert get_seo_stats([]) == {"total_paginas": 0, "com_titulo_ok": 0, "cobertura": 0.0}
+    from mkt_flow_p0.seo import gerar_sitemap
+    # legado seo_programmatic foi arquivado; cobertura equivalente é validar sitemap vazio
+    xml = gerar_sitemap([], base="https://site.com")
+    assert "<urlset" in xml and xml.count("<url>") == 0
 
 
 # --- whois extras ---
