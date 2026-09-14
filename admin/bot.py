@@ -79,7 +79,7 @@ def _wp_list_drafts(limit: int = 5) -> list:
     try:
         r = requests.get(f"{WP_URL.rstrip('/')}/wp-json/wp/v2/posts",
                          headers={"Authorization": f"Basic {auth}"},
-                         params={"status": "draft", "per_page": limit}, timeout=15)
+                         params={"status": "draft", "per_page": limit, "context": "edit"}, timeout=15)
         r.raise_for_status()
         return [{"id": p.get("id"), "title": (p.get("title") or {}).get("rendered", "")[:60], "link": p.get("link", "")}
                 for p in r.json()]
