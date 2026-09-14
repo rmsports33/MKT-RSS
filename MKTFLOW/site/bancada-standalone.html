@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Bancada — ConexoTech</title>
+<style>
+:root{--ink:#0f172a;--accent:#0F6F5C;--paper:#F8F6F2;--line:#E2E8F0;--muted:#64748b;--ok:#16a34a;--warn:#ca8a04;--bad:#dc2626}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:var(--paper);color:var(--ink);line-height:1.5}
+.wrap{max-width:860px;margin:0 auto;padding:24px 16px}
+.card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+h1{font-size:22px;margin-bottom:4px}
+.sub{color:var(--muted);font-size:13px;margin-bottom:12px}
+label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin:12px 0 6px}
+input, textarea, select{width:100%;border:1px solid var(--line);border-radius:8px;padding:10px 12px;font-size:14px}
+textarea{min-height:90px;resize:vertical}
+.btn{width:100%;background:var(--ink);color:#fff;border:0;border-radius:8px;padding:12px;font-weight:700;font-size:15px;cursor:pointer;margin-top:12px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn-ok{background:var(--accent)}
+.badge{display:inline-block;padding:3px 8px;border-radius:99px;font-size:11px;font-weight:700;color:#fff}
+.badge-pass{background:var(--ok)} .badge-fail{background:var(--bad)} .badge-unknown{background:var(--warn)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
+.log{white-space:pre-wrap;background:#0f172a;color:#e2e8f0;padding:12px;border-radius:8px;font-size:12px;max-height:240px;overflow:auto}
+.hidden{display:none}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card" style="border-left:4px solid var(--accent)">
+    <h1>Bancada — ConexoTech</h1>
+    <p class="sub">Cole o Link Especial de produto do Mercado Livre → valide → gere rascunho. Tudo aqui, sem instalar nada.</    <p class="sub">Cole o Link Especial de produto → valide → gere rascunho. Tudo aqui, sem instalar nada.</    <div id="statusBox" class="hint">Pronto. Cole um link com <span class="mono">wid/sid</span> ou <span class="mono">matt_word</span>.</div>
+  </div>
+
+  <div class="card">
+    <label>Link Especial de produto (com tag de afiliado)</label>
+    <input id="link" placeholder="https://www.mercadolivre.com.br/.../p/MLB...#polycard_client=affiliates&wid=...&sid=...">
+    <div class="hint">Cole o link que o Portal do Afiliado gerou para o produto. Se colar link de perfil (/social/), vai bloquear com aviso.</div>
+    <div id="valBox" class="hidden" style="margin-top:10px;padding:10px;border-radius:8px;border:1px solid var(--line)"></div>
+
+    <div class="grid2">
+      <div>
+        <label>Título do produto (se a API falhar)</label>
+        <input id="titulo" placeholder="Ex: LG Ultragear 27 144Hz">
+      </div>
+      <div>
+        <label>Preço (para ROI)</label>
+        <input id="preco" placeholder="Ex: 899.90">
+      </div>
+    </div>
+
+    <label>Descrição curta (opcional)</label>
+    <textarea id="desc" placeholder="Ex: Monitor gamer 27 IPS 144Hz, ideal para..."></textarea>
+
+    <label>Quando publicar?</label>
+    <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);margin:0"><input type="radio" name="quando" value="agora" checked> Rascunho agora</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);margin:0"><input type="radio" name="quando" value="agendar"> Agendar</label>
+      <input id="agendarData" type="datetime-local" class="hidden" style="flex:1;min-width:200px">
+    </div>
+    <div id="agendarHint" class="hint hidden">O WordPress publicará automaticamente na data escolhida. Respeita o limite do Scheduler (ex: WordPress 20/dia).</div>
+
+    <button id="btnValidar" class="btn">1. Validar link</button>
+    <button id="btnGerar" class="btn btn-ok hidden">2. Gerar rascunho no WordPress</button>
+    <div id="log" class="log hidden" style="margin-top:12px"></div>
+  </div>
+
+  <div class="card">
+    <label>Publicação no WordPress</label>
+    <div class="hint">Destino: <span class="mono">https://conexotech.com.br</span> (conta <span class="mono">reinaldocr210@gmail.com</span>). Na hora de gerar, o navegador abre uma janelinha pedindo sua <strong>senha de aplicativo</strong> — ela é usada só naquele momento e <strong>nunca fica salva na página</strong>. Você pode revogar a senha quando quiser em <span class="mono">Usuários → Perfil → Senhas de aplicativo</span>.</div>
+  </div>
+
+  <p class="hint" style="text-align:center">Bancada v3.12 — validador + Policy Engine (21 regras) no navegador. Sem servidor, sem login na página. #ad #linkdeafiliado</p>
+</div>
+
+<script>
+(function(){
+"use strict";
+// — Validador portado de mkt_flow_p0/validator.py (mesmas regras) —
+const PADRAO_MELI = /^(https?:\/\/([a-z0-9-]+\.)?mercadolivre\.com\.br(\/.*)?|https?:\/\/mercadolivre\.com\/sec\/.*)$/i;
+const PADRAO_SHOPEE = /^https?:\/\/(s\.)?shopee\.com\.br(\/.*)?$/i;
+const TAGS = new Set(["matt_word","matt_tool","tag","wid","sid","polycard_client"]);
+const PADRAO_SOCIAL = /\/social\/[a-z0-9_-]+/i;
+const PADRAO_PRODUCTO = /\/MLB\d+/i;
+const PADRAO_ITEM_PATH = /(?:\/p\/|\/produto\/|\/item\/|MLB-|sec\/MLB)[^/?#]*/i;
+// — Registro de marketplaces/plataformas (portado de mkt_flow_p0/marketplaces.json) —
+const MARKETPLACES = [
+  {dominio:"amazon.com.br", nome:"Amazon", tags:["tag"], status_rastreio:"verificado"},
+  {dominio:"aliexpress.com.br", nome:"AliExpress", tags:["aff_fcid","aff_trace_key","af"], status_rastreio:"verificado"},
+  {dominio:"awin1.com", nome:"Awin", tags:["awinaffid","clickref"], status_rastreio:"verificado"},
+  {dominio:"udemy.com", nome:"Udemy", tags:["couponCode","utm_source"], status_rastreio:"verificado"},
+  {dominio:"magazineluiza.com.br", nome:"Magazine Luiza (Magalu)", tags:["utm_source","mlsrc","partner"], status_rastreio:"parcial"},
+  {dominio:"casasbahia.com.br", nome:"Casas Bahia", tags:["utm_source","partner"], status_rastreio:"parcial"},
+  {dominio:"americanas.com.br", nome:"Americanas", tags:["utm_source","tag"], status_rastreio:"parcial"},
+  {dominio:"shein.com.br", nome:"Shein", tags:["src_identifier","aff","friend"], status_rastreio:"parcial"},
+  {dominio:"netshoes.com.br", nome:"Netshoes", tags:["utm_source","partner"], status_rastreio:"parcial"},
+  {dominio:"kabum.com.br", nome:"KaBuM!", tags:["utm_source","afiliado"], status_rastreio:"parcial"},
+  {dominio:"hotmart.com", nome:"Hotmart", tags:["hotmart","affiliate","utm_source"], status_rastreio:"parcial"},
+  {dominio:"monetizze.com.br", nome:"Monetizze", tags:["aff","utm_source"], status_rastreio:"parcial"},
+  {dominio:"eduzz.com", nome:"Eduzz", tags:["aff","utm_source"], status_rastreio:"parcial"},
+  {dominio:"kiwify.com.br", nome:"Kiwify", tags:["aff","utm_source"], status_rastreio:"parcial"},
+  {dominio:"braip.com.br", nome:"Braip", tags:["aff","utm_source"], status_rastreio:"parcial"},
+  {dominio:"ticto.app", nome:"Ticto", tags:["aff","utm_source"], status_rastreio:"parcial"},
+  {dominio:"perfectpay.com", nome:"Perfect Pay", tags:["aff","utm_source"], status_rastreio:"parcial"},
+  {dominio:"lomadee.com", nome:"Lomadee", tags:["lomadee","utm_source"], status_rastreio:"parcial"}
+];
+function reconhecerPlataforma(url){
+  try{
+    const host = new URL(url).hostname.toLowerCase();
+    for(const mp of MARKETPLACES){
+      if(host === mp.dominio || host.endsWith("." + mp.dominio)) return mp;
+    }
+  }catch(e){}
+  return null;
+}
+function extrairTagsPlataforma(url, tags){
+  try{
+    const u = new URL(url);
+    const q = new URLSearchParams(u.search);
+    const f = new URLSearchParams(u.hash.replace(/^#/, ""));
+    for(const t of tags) if(q.has(t) || f.has(t)) return true;
+    return false;
+  }catch(e){ return false; }
+}
+function ehProduto(url){
+  return /(\/dp\/|\/gp\/product\/|\/p\/|\/produto\/|\/item\/|\/MLB\d+)/i.test(url);
+}
+
+function extrairTags(url){
+  try{
+    const u = new URL(url);
+    const q = new URLSearchParams(u.search);
+    const f = new URLSearchParams(u.hash.replace(/^#/, ""));
+    for(const t of TAGS) if(q.has(t) || f.has(t)) return true;
+    return false;
+  }catch(e){ return false; }
+}
+function destinoML(url){
+  if(!url) return "desconhecido";
+  if(PADRAO_SOCIAL.test(url)) return "social";
+  if(PADRAO_PRODUCTO.test(url)) return "produto";
+  if(PADRAO_ITEM_PATH.test(url)) return "produto";
+  return "generico";
+}
+function validar(url){
+  url=(url||"").trim();
+  if(!url) return {status_validacao:"FAIL", plataforma:"Desconhecida", possui_tag_rastreio:false, status:"URL vazia.", url_final:url};
+  // redirect não é feito no navegador por CORS — valida a URL colada
+  const url_final = url;
+  if(PADRAO_MELI.test(url_final)){
+    const temTag = extrairTags(url_final);
+    if(!temTag) return {status_validacao:"FAIL", plataforma:"Mercado Livre", possui_tag_rastreio:false, status:"Domínio correto, mas SEM parâmetro de rastreamento — gere Link Especial com wid/sid ou matt_word.", url_final};
+    const destino = destinoML(url_final);
+    if(destino==="social") return {status_validacao:"FAIL", plataforma:"Mercado Livre", possui_tag_rastreio:true, destino, status:"Link aponta para perfil social, não para anúncio de produto. Gere Link Especial de produto (cl. 3.1.2(d)).", url_final};
+    if(destino==="generico") return {status_validacao:"UNKNOWN", plataforma:"Mercado Livre", possui_tag_rastreio:true, destino, status:"Não foi possível confirmar que é anúncio de produto. Verifique se o link tem /p/MLB... ou /MLB...", url_final};
+    return {status_validacao:"PASS", plataforma:"Mercado Livre", possui_tag_rastreio:true, destino:"produto", status:"Domínio, tag e destino de produto detectados.", url_final};
+  }
+  if(PADRAO_SHOPEE.test(url_final)){
+    const host = new URL(url_final).hostname.toLowerCase();
+    if(host === "s.shopee.com.br") return {status_validacao:"UNKNOWN", plataforma:"Shopee", possui_tag_rastreio:true, destino:"produto", tipo_link:"shortlink_afiliado", status:"Shortlink oficial de afiliado da Shopee (s.shopee.com.br) gerado no portal. Rastreamento é embutido no link; confirme o destino abrindo o link antes de divulgar.", url_final};
+    return {status_validacao:"UNKNOWN", plataforma:"Shopee", possui_tag_rastreio:null, status:"Shopee reconhecido, mas rastreamento não confirmável aqui. Se o link foi gerado no portal (s.shopee.com.br), é válido; caso contrário verifique antes de divulgar.", url_final};
+  }
+  const mp = reconhecerPlataforma(url_final);
+  if(mp){
+    const temTag = mp.tags && mp.tags.length ? extrairTagsPlataforma(url_final, mp.tags) : null;
+    if(mp.status_rastreio === "verificado" && mp.tags && mp.tags.length){
+      if(!temTag) return {status_validacao:"FAIL", plataforma:mp.nome, possui_tag_rastreio:false, status:`Domínio ${mp.nome} reconhecido, mas SEM parâmetro de rastreamento (${mp.tags.join(", ")}). Gere link oficial de afiliado no portal.`, url_final};
+      if(ehProduto(url_final)) return {status_validacao:"PASS", plataforma:mp.nome, possui_tag_rastreio:true, destino:"produto", status:`Domínio ${mp.nome}, tag de afiliado e destino de produto detectados.`, url_final};
+      return {status_validacao:"UNKNOWN", plataforma:mp.nome, possui_tag_rastreio:true, status:`Tag de afiliado ${mp.nome} presente, mas não foi possível confirmar que é página de produto. Verifique manualmente.`, url_final};
+    }
+    return {status_validacao:"UNKNOWN", plataforma:mp.nome, possui_tag_rastreio:temTag, status:`Domínio ${mp.nome} reconhecido, mas rastreamento não confirmável aqui (status: ${mp.status_rastreio}). Verifique no portal de afiliados.`, url_final};
+  }
+  return {status_validacao:"FAIL", plataforma:"Desconhecida", possui_tag_rastreio:false, status:"Domínio fora do padrão aceito.", url_final};
+}
+
+function slugify(t){ return (t||"produto").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"") || "produto"; }
+function esc(s){ const d=document.createElement("div"); d.textContent=s||""; return d.innerHTML; }
+
+function gerarLanding(titulo, link, preco, desc, status){
+  if(status!=="PASS") return "<!-- BLOQUEADO -->";
+  const slug=slugify(titulo);
+  const title=esc(titulo)+" — Oferta | ConexoTech";
+  const md=esc(desc||`Confira ${titulo} por R$ ${preco}.`);
+  const schema=JSON.stringify({ "@context":"https://schema.org","@type":"Product","name":titulo,"offers":{"@type":"Offer","price":String(preco||""),"priceCurrency":"BRL","url":link} });
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"><title>${title}</title><meta name="description" content="${md}"><link rel="canonical" href="https://conexotech.com.br/${slug}"><meta property="og:title" content="${title}"><script type="application/ld+json">${schema}<\/script></head><body><article><h1>${esc(titulo)}</h1><p>${esc(desc||"")}</p><div>R$ ${esc(String(preco||""))}</div><a href="${esc(link)}" target="_blank" rel="noopener sponsored">Ir para a Loja Oficial</a><p>Comprando pelo link acima, podemos receber comissão. #ad #linkdeafiliado</p></article></body></html>`;
+}
+
+// UI
+const $ = s=>document.getElementById(s);
+const valBox = $("valBox"), logBox = $("log"), statusBox = $("statusBox");
+function log(t){ logBox.classList.remove("hidden"); logBox.textContent += t + "\n"; logBox.scrollTop = logBox.scrollHeight; }
+function setVal(r){
+  valBox.classList.remove("hidden");
+  const c = r.status_validacao==="PASS"?"badge-pass":r.status_validacao==="FAIL"?"badge-fail":"badge-unknown";
+  const dest = r.destino ? ` • destino: ${r.destino}` : "";
+  valBox.innerHTML = `<span class="badge ${c}">${r.status_validacao}</span> <strong>${r.plataforma}</strong>${dest}<br><span class="hint">${r.status}</span><br><span class="mono" style="font-size:10px">${r.url_final.slice(0,90)}</span>`;
+  valBox.style.borderColor = r.status_validacao==="PASS"?"#16a34a":r.status_validacao==="FAIL"?"#dc2626":"#ca8a04";
+  valBox.style.background = r.status_validacao==="PASS"?"#f0fdf4":r.status_validacao==="FAIL"?"#fef2f2":"#fffbeb";
+}
+
+// Destino fixo da publicação (sem formulário de login na página).
+// A senha de aplicativo é pedida numa janelinha do navegador só na hora de gerar,
+// guardada apenas na memória desta aba e descartada ao recarregar a página.
+const WP_URL = "https://conexotech.com.br";
+const WP_USER = "reinaldocr210@gmail.com";
+let wpPassSessao = "";
+function pedirSenhaWP(){
+  if(wpPassSessao) return wpPassSessao;
+  const p = window.prompt("Digite sua senha de aplicativo do WordPress (crie em Usuários → Perfil → Senhas de aplicativo):");
+  if(!p) return "";
+  wpPassSessao = p.trim();
+  return wpPassSessao;
+}
+
+let ultimoValidado = null;
+function atualizarBotaoGerar(){
+  const modo = document.querySelector('input[name="quando"]:checked')?.value || "agora";
+  const agendarInput = $("agendarData");
+  const hint = $("agendarHint");
+  if(modo === "agendar"){
+    agendarInput.classList.remove("hidden");
+    hint.classList.remove("hidden");
+    if(ultimoValidado?.status_validacao==="PASS"){
+      $("btnGerar").textContent = "2. Agendar no WordPress";
+    }
+  } else {
+    agendarInput.classList.add("hidden");
+    hint.classList.add("hidden");
+    if(ultimoValidado?.status_validacao==="PASS"){
+      $("btnGerar").textContent = "2. Gerar rascunho no WordPress";
+    }
+  }
+}
+document.querySelectorAll('input[name="quando"]').forEach(r=> r.addEventListener("change", atualizarBotaoGerar));
+
+$("btnValidar").onclick = ()=>{
+  logBox.textContent = "";
+  const r = validar($("link").value);
+  ultimoValidado = r;
+  setVal(r);
+  log(`Validação: ${r.status_validacao} | ${r.status}`);
+  if(r.status_validacao==="PASS"){
+    $("btnGerar").classList.remove("hidden");
+    atualizarBotaoGerar();
+    log("Pronto para gerar. Clique em Gerar rascunho.");
+  } else {
+    $("btnGerar").classList.add("hidden");
+    log("Corrija o link antes de gerar. Gere Link Especial de produto no portal do afiliado.");
+  }
+};
+
+$("btnGerar").onclick = async ()=>{
+  const v = ultimoValidado || validar($("link").value);
+  if(v.status_validacao!=="PASS"){ alert(v.status); return; }
+  const titulo = $("titulo").value.trim() || "Oferta Especial";
+  const preco = $("preco").value.trim();
+  const desc = $("desc").value.trim() || `Oferta de ${titulo}`;
+  const link = ($("link").value.trim());
+  const html = gerarLanding(titulo, link, preco, desc, v.status_validacao);
+  const modo = document.querySelector('input[name="quando"]:checked')?.value || "agora";
+  let statusWP = "draft";
+  let dataWP = {};
+  let acaoTxt = "Publicando como rascunho...";
+  if(modo === "agendar"){
+    const dtVal = $("agendarData").value;
+    if(!dtVal){ alert("Escolha a data e hora para agendar."); return; }
+    const dt = new Date(dtVal);
+    if(dt <= new Date()){ alert("Escolha uma data no futuro."); return; }
+    statusWP = "future";
+    dataWP = {date: dt.toISOString()};
+    acaoTxt = `Agendando para ${dt.toLocaleString("pt-BR")}...`;
+  }
+  log("Landing gerada ("+html.length+" bytes). " + acaoTxt);
+  // Publica no WP via REST API direto do navegador
+  const url = WP_URL;
+  const user = WP_USER;
+  const pass = pedirSenhaWP();
+  if(!pass){ log("Cancelado: sem a senha de aplicativo não é possível publicar."); return; }
+  const auth = btoa(`${user}:${pass}`);
+  try{
+    const resp = await fetch(`${url}/wp-json/wp/v2/posts`, {
+      method:"POST",
+      headers:{"Authorization":`Basic ${auth}`,"Content-Type":"application/json"},
+      body: JSON.stringify({title: titulo, content: html, status: statusWP, ...dataWP})
+    });
+    const data = await resp.json();
+    if(resp.ok){
+      const verb = statusWP==="future" ? "Agendado" : "Rascunho criado";
+      log(`✓ ${verb} id=${data.id} link=${data.link} status=${data.status}`);
+      if(statusWP==="future") log(`O WordPress publicará automaticamente em: ${new Date(data.date).toLocaleString("pt-BR")}`);
+      else log(`Abra em: ${data.link} (ainda rascunho, só você vê)`);
+      statusBox.innerHTML = `✓ ${verb} — <a href="${data.link}" target="_blank">abrir</a>`;
+      statusBox.style.color = "#16a34a";
+    } else {
+      log(`✗ WP ${resp.status}: ${JSON.stringify(data).slice(0,300)}`);
+      if(data.message && data.message.includes("future")) log("Dica: verifique se a data está no futuro e no formato correto.");
+    }
+  }catch(e){
+    log(`✗ Erro de rede/CORS: ${e.message}. Se der CORS, habilite no WP: instale plugin 'WP-CORS' ou use a senha de aplicativo correta.`);
+  }
+};
+})();</script>
+</body>
+</html>

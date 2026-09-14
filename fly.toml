@@ -1,0 +1,12 @@
+app = "mkt-rss-bot"
+primary_region = "gru"
+
+[build]
+  dockerfile = "admin/Dockerfile"
+
+[env]
+  PYTHONUNBUFFERED = "1"
+
+# Bot é polling, não precisa de porta HTTP. Mantém processo sempre vivo.
+[processes]
+  app = "python admin/bot.py"
