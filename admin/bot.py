@@ -76,16 +76,20 @@ def _wp_list_drafts(limit: int = 5) -> list:
     if not (WP_URL and WP_USER and WP_APP_PASSWORD):
         return []
     auth = base64.b64encode(f"{WP_USER}:{WP_APP_PASSWORD}".encode()).decode()
+    url = f"{WP_URL.rstrip('/')}/wp-json/wp/v2/posts"
     try:
-        r = requests.get(f"{WP_URL.rstrip('/')}/wp-json/wp/v2/posts",
-                         headers={"Authorization": f"Basic {auth}"},
-                         params={"status": "draft", "per_page": limit, "context": "edit"}, timeout=15)
-        r.raise_for_status()
-        return [{"id": p.get("id"), "title": (p.get("title") or {}).get("rendered", "")[:60], "link": p.get("link", "")}
-                for p in r.json()]
+        for params in ({"status": "draft", "per_page": limit, "context": "edit"},
+                       {"status": "draft", "per_page": limit}):
+            r = requests.get(url, headers={"Authorization": f"Basic {auth}"},
+                             params=params, timeout=15)
+            if r.status_code == 200:
+                return [{"id": p.get("id"), "title": (p.get("title") or {}).get("rendered", "")[:60], "link": p.get("link", "")}
+                        for p in r.json()]
+            logger.warning(f"WP list drafts tentativa {params} -> HTTP {r.status_code}: {r.text[:200]}")
     except Exception as e:
         logger.warning(f"WP list drafts falhou: {e}")
         return [{"id": 0, "title": f"erro: {str(e)[:80]}", "link": ""}]
+    return [{"id": 0, "title": "erro: WP retornou erro ao listar drafts (ver log)", "link": ""}]
 
 def _wp_publish(post_id: int) -> dict:
     import requests, base64
