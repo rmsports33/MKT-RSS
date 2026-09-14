@@ -40,6 +40,9 @@ jobs:
           mkdir -p _site
           cp dashboard_p1.html _site/index.html
           cp dashboard_p1.json _site/ 2>/dev/null || true
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

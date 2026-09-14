@@ -14,6 +14,18 @@ OUT_JSON = Path(__file__).parent.parent / "dashboard_p1.json"
 
 
 def _query(sql, params=()):
+    # Nuvem (Turso) quando configurado — sem Turso, SQLite local
+    try:
+        from .cloud_db import turso_enabled, turso_execute
+        if turso_enabled():
+            # Converte ? para execução via HTTP
+            r = turso_execute(sql, params)
+            if "erro" not in r:
+                # turso_execute retorna cols/rows; reconstrói dicts
+                cols = r.get("cols", [])
+                return [dict(zip(cols, row)) for row in r.get("rows", [])]
+    except Exception:
+        pass
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
     cur = con.execute(sql, params)
