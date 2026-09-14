@@ -27,18 +27,49 @@ except Exception:
 st.set_page_config(page_title="ConexoTech — Admin", layout="wide")
 st.title("ConexoTech — Admin (celular/PC)")
 
-# Secrets: local .env ou Streamlit Cloud Secrets
-WP_URL = os.getenv("WP_URL", "") or st.secrets.get("WP_URL", "") if hasattr(st, "secrets") else ""
-GROQ_KEY = os.getenv("GROQ_API_KEY", "")
+# --- Secrets: .env local → Streamlit Cloud Secrets (fix precedência) ---
+def _get_secret(name: str, default: str = "") -> str:
+    v = (os.getenv(name, "") or "").strip()
+    if v:
+        return v
+    try:
+        if hasattr(st, "secrets") and name in st.secrets:
+            return str(st.secrets[name]).strip()
+    except Exception:
+        pass
+    return default
 
-col1, col2, col3 = st.columns(3)
+WP_URL = _get_secret("WP_URL", "")
+WP_USER = _get_secret("WP_USER", "")
+WP_APP_PASSWORD = _get_secret("WP_APP_PASSWORD", "")
+GROQ_KEY = _get_secret("GROQ_API_KEY", "")
+GROQ_MODEL = _get_secret("GROQ_MODEL", "llama-3.3-70b-versatile")
+TURSO_URL = _get_secret("TURSO_DATABASE_URL", "")
+TURSO_TOKEN = _get_secret("TURSO_AUTH_TOKEN", "")
+
+# FEEDS para param (hardening: não hardcode)
+try:
+    from mkt_flow_p0.rss_ingestor import FEEDS_PADRAO
+except Exception:
+    FEEDS_PADRAO = {"tecnoblog": "https://tecnoblog.net/feed/"}
+
+col1, col2, col3, col4 = st.columns(4)
 with col1:
     st.metric("WP", WP_URL or "não configurado")
 with col2:
-    st.metric("Groq", "ok" if GROQ_KEY else "sem chave")
+    st.metric("Groq", GROQ_MODEL if GROQ_KEY else "sem chave")
 with col3:
+    st.metric("Turso dedup", "nuvem" if (TURSO_URL and TURSO_TOKEN) else "local")
+with col4:
     if st.button("Atualizar dashboard"):
         st.rerun()
+
+# Alerta de secrets faltando
+faltando = [k for k, v in [("WP_URL", WP_URL), ("WP_USER", WP_USER), ("WP_APP_PASSWORD", WP_APP_PASSWORD)] if not v]
+if faltando:
+    st.caption(f"⚠️ Secrets faltando: {', '.join(faltando)} — defina em .env ou Streamlit Secrets (Settings→Secrets).")
+if not GROQ_KEY:
+    st.caption("⚠️ GROQ_API_KEY ausente — dry-run funciona, reescrita real falhará (429).")
 
 # Dashboard
 try:
@@ -58,24 +89,46 @@ except Exception as e:
 
 st.divider()
 
-# Ações
+# Ações — feed param (hardening)
 st.subheader("Ações")
-url = st.text_input("URL da matéria para virar rascunho (opcional)", placeholder="https://...")
+opcoes_fonte = list(FEEDS_PADRAO.keys())
+fonte_sel = st.selectbox("Fonte RSS", opcoes_fonte, index=0, help="Escolhe feed; evita hardcode tecnoblog")
+feed_url = FEEDS_PADRAO.get(fonte_sel, "")
+with st.expander("Feed custom / URL direta (opcional)", expanded=False):
+    custom = st.text_input("URL feed custom (sobrescreve seleção)", placeholder="https://...")
+    if custom.strip():
+        feed_url = custom.strip()
+        fonte_sel = "custom"
+    url_direta = st.text_input("URL da matéria para virar rascunho (bypass feed)", placeholder="https://...")
+    limite = st.slider("Itens por execução", 1, 5, 1)
+
 col_a, col_b = st.columns(2)
 with col_a:
-    if st.button("Rodar pipeline RSS (1 item, dry-run)"):
-        with st.spinner("Extraindo e reescrevendo..."):
-            try:
-                from mkt_flow_p0.rss_ingestor import buscar_novidades
-                from pipeline_rss import processar_item
-                nov = buscar_novidades("https://tecnoblog.net/feed/", limit=1)
-                if nov.get("novos"):
-                    r = processar_item(nov["novos"][0], dry_run=True)
-                    st.json(r)
-                else:
-                    st.info("Nenhuma pauta nova (dedup Turso).")
-            except Exception as e:
-                st.error(str(e))
+    if st.button(f"Rodar pipeline RSS ({fonte_sel}, {limite} item, dry-run)"):
+        if not feed_url and not url_direta.strip():
+            st.warning("Informe feed ou URL direta.")
+        else:
+            with st.spinner("Extraindo e reescrevendo..."):
+                try:
+                    from mkt_flow_p0.rss_ingestor import buscar_novidades
+                    from pipeline_rss import processar_item
+                    # URL direta tem prioridade (sem dedup de feed)
+                    if url_direta.strip():
+                        r = processar_item({"titulo": "URL direta", "link": url_direta.strip(), "fonte": "manual", "resumo": ""}, dry_run=True)
+                        st.json(r)
+                    else:
+                        nov = buscar_novidades(feed_url, fonte=fonte_sel, limit=limite)
+                        if "erro" in nov:
+                            st.error(nov["erro"])
+                        elif nov.get("novos"):
+                            for item in nov["novos"]:
+                                r = processar_item(item, dry_run=True)
+                                st.json(r)
+                        else:
+                            st.info(f"Nenhuma pauta nova em {fonte_sel} (dedup Turso/SQLite).")
+                except Exception as e:
+                    st.error(str(e))
+                    st.exception(e)
 with col_b:
     if st.button("Ver rascunhos no WP"):
         if WP_URL:
