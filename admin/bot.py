@@ -17,11 +17,15 @@ Requer: pip install python-telegram-bot==20.* requests
 """
 import logging
 import os
+import sys
 from pathlib import Path
+
+ROOT = Path(__file__).parent.parent
+sys.path.insert(0, str(ROOT))
 
 try:
     from dotenv import load_dotenv
-    load_dotenv(Path(__file__).parent.parent / ".env")
+    load_dotenv(ROOT / ".env")
 except Exception:
     pass
 
