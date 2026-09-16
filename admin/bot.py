@@ -210,6 +210,20 @@ try:
                 pass
             await q.edit_message_text(f"{'✅ Publicado' if res.get('ok') else '❌ Falhou'}: {res.get('link') or res.get('erro', '')}")
 
+    async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """Diagnostico claro de conflito 409 (duas instancias com o mesmo token)."""
+        err = getattr(context, "error", None)
+        msg = str(err)
+        if ("onflict" in type(err).__name__
+                or "terminated by other getUpdates" in msg
+                or " 409" in msg or msg.startswith("409")):
+            logger.error(
+                "CONFLITO 409: outra instancia do bot esta rodando com este token! "
+                "Solucao: Fly.io = 1 machine, nada rodando local, nenhum workflow paralelo. "
+                "Depois, reinicie esta instancia.")
+        else:
+            logger.warning(f"Erro no bot: {msg[:200]}")
+
     def main():
         if not TOKEN:
             print("TELEGRAM_BOT_TOKEN ausente — defina no .env ou Secrets (e TELEGRAM_ALLOWED_IDS para travar)")
@@ -222,6 +236,7 @@ try:
         app.add_handler(CommandHandler("drafts", cmd_drafts))
         app.add_handler(CommandHandler("health", cmd_health))
         app.add_handler(CallbackQueryHandler(on_callback))
+        app.add_error_handler(on_error)
         print(f"Bot rodando — envie /drafts no Telegram (allowlist: {ALLOWED_IDS or 'aberta'})")
         # polling com drop_pending e timeout explícito (host always-on: ver docs/ADMIN_MULTI.md)
         app.run_polling(drop_pending_updates=True, allowed_updates=["message","callback_query"])

@@ -26,8 +26,8 @@ Local: `streamlit run admin/app.py` (precisa `pip install streamlit feedparser t
 |---|---|---|
 | **Fly.io (recomendado)** | `fly launch --dockerfile admin/Dockerfile` → `fly secrets set TELEGRAM_BOT_TOKEN=... TELEGRAM_ALLOWED_IDS=... WP_*` | free tier 3 VMs |
 | **Render** | New Web Service → Dockerfile `admin/Dockerfile` → env vars | free dorme se sem ping — use `cron-job.org` ping |
-| **GitHub Actions (fallback)** | `.github/workflows/bot.yml:1` polling 350min + cron 6h auto-restart (zero infra) | 2000min/mês free — ~720min/dia se ligado 24h → use só se Fly/Render indisponível |
-| **VM própria** | `systemd` + `python admin/bot.py` |  |
+| ~~**GitHub Actions (fallback)**~~ | ❌ **REMOVIDO em 14/09/2026 (commit 5853ab2): causava conflito 409 com o Fly.io — NÃO recriar** | — |
+| **VM própria** | `systemd` + `python admin/bot.py` | |
 
 > Sem `TELEGRAM_ALLOWED_IDS`, bot fica aberto (log `AVISO: allowlist aberta`). Defina antes de ir a prod.
 
