@@ -85,7 +85,7 @@ def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
                     out.append(f"</{lista}>")
                 out.append(f"<{tag}>")
                 lista = tag
-            out.append("<li>" + re.sub(r"^(\d+[.)]|[-*])\s+", "", s) + "</li>")
+            out.append(f"<li>{re.sub(r'^(\\d+[.)]|[-*])\\s+', '', s)}</li>")
         elif s:
             if lista:
                 out.append(f"</{lista}>")

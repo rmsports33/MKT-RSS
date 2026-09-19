@@ -21,8 +21,7 @@ System prompts + processo controlado de escrita acadêmica:
 | `MDA_AUTO_Controlador_Autonomo.md` | Persona controlador de processo acadêmico |
 | `Assistente_de_Escrita_Academica_Prompt_Controlador.md` | Escrita acadêmica controlada |
 | `prompt-mestre%20de%20escrita.md` | Processo interno de geração + checklist |
-| `MCA_AUTO_2.9.md` | Conteúdo comercial (versão vigente) |
-| `legado/MCA_AUTO_2.8.md` + `legado/MCA_AUTO_Manual_2.8.md` | Versão 2.8 superada integralmente pela 2.9 (arquivada, não usar) |
+| `MCA_AUTO_2.8.md` / `MCA_AUTO_2.9.md` / `MCA_AUTO_Manual_2.8.md` | Conteúdo comercial (legado) |
 | `MDA_piloto_revisao_estrutural.docx` | Piloto de revisão estrutural |
 
 ## Como usar

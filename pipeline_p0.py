@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+﻿#!/usr/bin/env python3
 """
 pipeline_p0.py — Orquestrador P0 ponta a ponta
 Uso: python pipeline_p0.py "https://mercadolivre.com/sec/MLB123?matt_word=xxx" [--publish] [--cpc 0.5 --cliques 1000 --conversao 2.0 --comissao 10]
