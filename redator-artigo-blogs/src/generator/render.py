@@ -39,8 +39,15 @@ def _tabela_html(linhas: list) -> str:
 
 
 def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
-    """Markdown residual -> HTML; mantém [fonte: X] só de fonte permitida."""
+    """Markdown residual -> HTML; mantém [fonte: X] só de fonte permitida.
+
+    Remove marcadores de placeholder em caixa alta (ex.: [TABELA INSERIDA],
+    [FOTO: X]) para nenhum rastro do prompt vazar para o leitor.
+    """
     t = html.escape(texto or "")
+    # Placeholders de caixa alta (ex.: [TABELA INSERIDA], [FOTO: galeria])
+    # nunca chegam ao leitor. [fonte: X] fica de fora (convertido adiante).
+    t = re.sub(r"\[(?!fonte:)[^\]]+\]", "", t, flags=re.IGNORECASE)
     t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
     linhas, out, lista, tbl = t.split("\n"), [], None, []
 
@@ -85,7 +92,7 @@ def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
                     out.append(f"</{lista}>")
                 out.append(f"<{tag}>")
                 lista = tag
-            out.append(f"<li>{re.sub(r'^(\\d+[.)]|[-*])\\s+', '', s)}</li>")
+            out.append("<li>" + re.sub(r"^(\d+[.)]|[-*])\s+", "", s) + "</li>")
         elif s:
             if lista:
                 out.append(f"</{lista}>")
@@ -96,10 +103,21 @@ def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
     _descarrega_tabela()
     t = "\n".join(out)
     if fontes_permitidas is not None:
-        permitidas = {f.lower() for f in fontes_permitidas}
+        permitidas = {f.strip().lower(): f.strip() for f in fontes_permitidas}
+        ordem = []
+
         def _fonte(m):
-            return m.group(0) if m.group(1).strip().lower() in permitidas else ""
-        t = re.sub(r"\[fonte:\s*([^\]]+)\]", _fonte, t)
+            chave = m.group(1).strip().lower()
+            if chave not in permitidas:
+                return ""
+            if chave not in ordem:
+                ordem.append(chave)
+            return f'<sup class="fonte-ref">[{ordem.index(chave) + 1}]</sup>'
+
+        t = re.sub(r"\[fonte:\s*([^\]]+)\]", _fonte, t, flags=re.IGNORECASE)
+        if ordem:
+            lis = "".join(f'<li id="fonte-{i + 1}">{html.escape(permitidas[c])}</li>' for i, c in enumerate(ordem))
+            t += f'\n<section class="fonte-list"><h3>Fontes</h3><ol>{lis}</ol></section>'
     return t
 
 
@@ -138,8 +156,36 @@ def _detectar_hallucination(texto: str, specs_pass: dict) -> list:
     return sorted(set(suspeitas))
 
 
+LABEL_SPEC = {
+    "tela.polegadas": "Tela (pol)",
+    "tela.hz": "Taxa de atualização (Hz)",
+    "tela.resolucao": "Resolução",
+    "tela.painel": "Tipo de tela",
+    "tela.protecao": "Proteção da tela",
+    "armazenamento.gb": "Armazenamento (GB)",
+    "bateria.mah": "Bateria (mAh)",
+    "bateria.carregamento_w": "Carregamento (W)",
+    "ram.gb": "RAM (GB)",
+    "chipset.modelo": "Chipset",
+    "peso.g": "Peso (g)",
+    "so": "Sistema operacional",
+    "antutu": "AnTuTu (pontos)",
+    "camera.frontal_mp": "Câmera frontal (MP)",
+    "camera.traseira_mp": "Câmera traseira (MP)",
+    "conectividade": "Conectividade",
+    "construcao": "Construção",
+    "dimensoes": "Dimensões (mm)",
+    "protecao_agua": "Proteção",
+    "usb": "USB",
+}
+
+
 def montar_tabela_specs(modelos: list) -> str:
-    """Tabela comparativa a partir das chaves de specs (só dados verificados)."""
+    """Tabela comparativa a partir das chaves de specs (só dados verificados).
+
+    Chave conhecida vira rótulo pt-BR (LABEL_SPEC); chave desconhecida é
+    exibida como está para não inventar nome. Valor ausente sai '—'.
+    """
     chaves = []
     for m in modelos:
         for k in (m.get("specs") or {}):
@@ -147,15 +193,59 @@ def montar_tabela_specs(modelos: list) -> str:
                 chaves.append(k)
     if not chaves:
         return ""
-    th = "".join(f"<th>{html.escape(m.get('nome', ''))}</th>" for m in modelos)
+    th = "".join(f'<th scope="col">{html.escape(m.get("nome", ""))}</th>' for m in modelos)
     trs = "".join(
-        f"<tr><th>{html.escape(k)}</th>"
-        + "".join(f"<td>{html.escape(str((m.get('specs') or {}).get(k, '— não informado')))}</td>" for m in modelos)
+        f'<tr><th scope="row">{html.escape(LABEL_SPEC.get(k, k))}</th>'
+        + "".join(f"<td>{html.escape(str((m.get('specs') or {}).get(k, '—')))}</td>" for m in modelos)
         + "</tr>"
         for k in chaves
     )
     return (f'<table class="compare-table" border="1" cellpadding="8" cellspacing="0">\n'
-            f"  <thead><tr><th>Especificação</th>{th}</tr></thead>\n  <tbody>{trs}\n</tbody>\n</table>")
+            f'  <thead><tr><th scope="col">Especificação</th>{th}</tr></thead>\n  <tbody>{trs}\n</tbody>\n</table>')
+
+
+def _preco_br(valor) -> str:
+    """Formata preço em pt-BR (R$ 1.500,50). Ausente/inválido -> ''.
+
+    Aceita número (int/float) ou string ('1600', '1.600,00', '1500.5',
+    'R$ 1.600,00'). Valor nulo/None nunca vira 'R$ None'.
+    """
+    if valor is None:
+        return ""
+    if isinstance(valor, (int, float)):
+        return f"{float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    s = str(valor).strip().replace("R$", "").replace("\xa0", "").replace(" ", "")
+    if not s:
+        return ""
+    s = re.sub(r"(?<=\d)\.(?=\d{3}(?:[.,]|$))", "", s)  # tira ponto de milhar
+    s = s.replace(",", ".")
+    try:
+        return _preco_br(float(s))
+    except ValueError:
+        return str(valor).strip()
+
+
+def _precos_em_texto(price_history: dict) -> str:
+    """Fallback textual do gráfico de preço (a informação não some sem Chart.js).
+
+    Ponto sem preço válido (None/vazio) é ignorado — nunca vira 'R$ None'.
+    """
+    itens = []
+    for modelo, pontos in (price_history or {}).items():
+        if not pontos:
+            continue
+        pedacos = []
+        for p in pontos:
+            pr = _preco_br(p.get("preco"))
+            if not pr:
+                continue
+            pedacos.append(f"{p.get('data', '?')}: R$ {pr}")
+        if pedacos:
+            itens.append(f"<li><b>{html.escape(modelo)}</b>: {html.escape(', '.join(pedacos))}</li>")
+    if not itens:
+        return ""
+    return (f'<details class="price-fallback"><summary>Ver histórico em texto</summary>'
+            f'<ul>{"".join(itens)}</ul></details>')
 
 
 def montar_pagina(titulo: str, descricao: str, modelos: list, categoria: str,
@@ -170,11 +260,12 @@ def montar_pagina(titulo: str, descricao: str, modelos: list, categoria: str,
     tabela = montar_tabela_specs(modelos)
     hist_json = json.dumps(price_history or {}, ensure_ascii=False)
     grafico = ""
-    if price_history:
+    if price_history and any(pts for pts in price_history.values()) and _precos_em_texto(price_history):
         grafico = f"""
     <section id="price-history">
       <h2>Variação de preço (30 dias)</h2>
       <canvas id="priceChart" width="600" height="300"></canvas>
+      {_precos_em_texto(price_history)}
       <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
       <script>
         const hist = {hist_json};
@@ -193,11 +284,11 @@ def montar_pagina(titulo: str, descricao: str, modelos: list, categoria: str,
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{html.escape(titulo)} | Redator</title>
+  <title>{html.escape(titulo)} | ConexoTech</title>
   <meta name="description" content="{html.escape(descricao)}">
   <script type="application/ld+json">{{"@context": "https://schema.org", "@type": "Article",
 "headline": "{html.escape(nomes)}", "datePublished": "{data_iso}", "dateModified": "{data_iso}",
-"author": {{"@type": "Organization", "name": "Equipe Redator"}},
+"author": {{"@type": "Organization", "name": "Redação ConexoTech"}},
 "about": [{about}]}}</script>
 </head>
 <body>
