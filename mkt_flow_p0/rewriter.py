@@ -90,14 +90,22 @@ def gerar_slug(titulo: str) -> str:
     return re.sub(r"-+", "-", s).strip("-")[:80] or "materia"
 
 
-def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "") -> str:
+def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "",
+                   keywords: list = None) -> str:
     fonte = f"\nFonte original: {fonte_nome}" if fonte_nome else ""
+    kws = ", ".join([str(k) for k in (keywords or []) if str(k).strip()][:8])
+    linha_kw = (f"\nPalavras-chave reais de busca (use no titulo_seo, texto e tags quando couber): {kws}."
+                if kws else "")
     return (
         f"Título original: {titulo_original[:200]}\n{fonte}\n\n"
         f"Texto original (Markdown):\n{texto_original[:9000]}\n\n"
+        "Escreva TUDO em português brasileiro (se o original estiver em outro idioma, "
+        "traduza integralmente; mantenha nomes próprios, modelos e specs em inglês quando for nome oficial). "
+        "Números, specs, preços e datas: copie exatos, nunca converta nem arredonde."
+        f"{linha_kw}\n"
         "Gere o JSON com: titulo_seo (até 60 chars, com palavra-chave), "
         "meta_description (145-160 chars, persuasiva), slug (url, minúsculas, hífens), "
-        "tags (até 5, minúsculas), texto_markdown (500-800 palavras, H2/H3, sem link da fonte no corpo)."
+        "tags (até 5, minúsculas, em português), texto_markdown (500-800 palavras, H2/H3, sem link da fonte no corpo)."
     )
 
 
@@ -127,6 +135,7 @@ def reescrever_materia(
     temperature: float = 0.5,
     max_tokens: int = 2500,
     timeout: int = 60,
+    keywords: list = None,
 ) -> dict:
     """
     Reescreve 1 matéria. Gate de entrada: texto <100 palavras = {"erro"}
@@ -149,7 +158,7 @@ def reescrever_materia(
             model=modelo,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": montar_prompt(titulo_original, texto_original, fonte_nome)},
+                {"role": "user", "content": montar_prompt(titulo_original, texto_original, fonte_nome, keywords)},
             ],
             temperature=temperature,
             max_tokens=max_tokens,

@@ -69,6 +69,16 @@ def test_rewrite_mockado(monkeypatch):
     assert r["custo_usd_estimado"] >= 0
 
 
+def test_prompt_ptbr_e_keywords():
+    from mkt_flow_p0.rewriter import montar_prompt
+    p = montar_prompt("Apple launches X", "Some english body text here.", "9to5Mac",
+                      keywords=["apple x preço", "apple x vale a pena"])
+    assert "português brasileiro" in p
+    assert "apple x preço" in p
+    p2 = montar_prompt("T", "corpo", "Blog")
+    assert "Palavras-chave" not in p2
+
+
 def test_atribuicao():
     t = adicionar_atribuicao("texto", "Adrenaline", "https://adrenaline.com.br/x")
     assert "Fonte original" in t and "adrenaline.com.br/x" in t

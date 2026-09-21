@@ -14,7 +14,7 @@ def montar_system_prompt(categoria: str = "geral") -> str:
         "você não testou nada.\n"
         "3. Cite a origem de cada afirmação como [fonte: <nome>] (com espaço após "
         "os dois pontos) usando só fontes presentes na entrada.\n"
-        "4. Estrutura: TL;DR, Intro, seções por critério, Prós e Contras, "
+        "4. Estrutura: Resumo, Intro, seções por critério, Prós e Contras, "
         "Preço, Veredito, FAQ, Ficha Técnica. Sem conclusão genérica além do veredito. "
         "Nunca escreva marcadores como 'TABELA INSERIDA'.\n"
         "5. Unidades com espaço fino e formatação pt-BR (R$ 1.600,00). "

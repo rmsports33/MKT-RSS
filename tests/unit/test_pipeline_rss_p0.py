@@ -55,8 +55,60 @@ def test_publicado_rascunho_mockado(tmp_path, monkeypatch):
          patch("mkt_flow_p0.extractor.extrair_conteudo", return_value=ext), \
          patch("mkt_flow_p0.content_filter.filtrar_conteudo",
                return_value={"veredito": "APROVADO", "categorias": [], "trechos": [], "total_sinais": 0}), \
+         patch("mkt_flow_p0.seo.enriquecer_com_keywords", return_value=["kw1", "kw2"]), \
          patch("mkt_flow_p0.rewriter.reescrever_materia", return_value=rw), \
          patch.dict("os.environ", {}, clear=False):
         monkeypatch.delenv("WP_URL", raising=False)
         r = P.processar_item(ITEM)
         assert r["acao"] == "publicado_rascunho" and r["run_id"]
+
+
+def test_keywords_chegam_ao_rewriter(tmp_path, monkeypatch):
+    """KW do Autocomplete (mockado, sem rede) deve chegar ao reescrever_materia."""
+    import pipeline_rss as P
+    monkeypatch.setattr(P, "DB_PATH", tmp_path / "rss.db")
+    ext = {"titulo": "Galaxy X", "texto": "corpo " * 500, "palavras": 500,
+           "qualidade_ok": True, "imagem": ""}
+    rw = {"titulo_seo": "T", "meta_description": "m", "slug": "s", "tags": ["t"],
+          "texto_markdown": "texto " * 300, "palavras": 300}
+    chamadas = {}
+    def fake_rewrite(*a, **kw):
+        chamadas.update(kw)
+        return rw
+    with patch("mkt_flow_p0.content_filter.filtrar_item_rss",
+               return_value={"veredito": "APROVADO", "categorias": []}), \
+         patch("mkt_flow_p0.extractor.extrair_conteudo", return_value=ext), \
+         patch("mkt_flow_p0.content_filter.filtrar_conteudo",
+               return_value={"veredito": "APROVADO", "categorias": [], "trechos": [], "total_sinais": 0}), \
+         patch("mkt_flow_p0.seo.enriquecer_com_keywords", return_value=["galaxy x preço"]), \
+         patch("mkt_flow_p0.rewriter.reescrever_materia", side_effect=fake_rewrite), \
+         patch.dict("os.environ", {}, clear=False):
+        monkeypatch.delenv("WP_URL", raising=False)
+        r = P.processar_item(ITEM)
+        assert r["acao"] == "publicado_rascunho"
+        assert chamadas.get("keywords") == ["galaxy x preço"]
+
+
+def test_keywords_falha_nao_trava(tmp_path, monkeypatch):
+    """Se o Autocomplete falhar, a pauta segue sem keywords (falha limpa)."""
+    import pipeline_rss as P
+    monkeypatch.setattr(P, "DB_PATH", tmp_path / "rss.db")
+    ext = {"titulo": "T", "texto": "corpo " * 500, "palavras": 500, "qualidade_ok": True, "imagem": ""}
+    rw = {"titulo_seo": "T", "meta_description": "m", "slug": "s", "tags": ["t"],
+          "texto_markdown": "texto " * 300, "palavras": 300}
+    chamadas = {}
+    def fake_rewrite(*a, **kw):
+        chamadas.update(kw)
+        return rw
+    with patch("mkt_flow_p0.content_filter.filtrar_item_rss",
+               return_value={"veredito": "APROVADO", "categorias": []}), \
+         patch("mkt_flow_p0.extractor.extrair_conteudo", return_value=ext), \
+         patch("mkt_flow_p0.content_filter.filtrar_conteudo",
+               return_value={"veredito": "APROVADO", "categorias": [], "trechos": [], "total_sinais": 0}), \
+         patch("mkt_flow_p0.seo.enriquecer_com_keywords", side_effect=RuntimeError("sem rede")), \
+         patch("mkt_flow_p0.rewriter.reescrever_materia", side_effect=fake_rewrite), \
+         patch.dict("os.environ", {}, clear=False):
+        monkeypatch.delenv("WP_URL", raising=False)
+        r = P.processar_item(ITEM)
+        assert r["acao"] == "publicado_rascunho"
+        assert chamadas.get("keywords") == []

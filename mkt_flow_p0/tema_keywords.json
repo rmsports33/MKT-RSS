@@ -11,7 +11,10 @@
     "tv", "smart tv", "monitor", "mouse", "teclado", "fone", "headphone", "earbud", "caixa de som",
     "roteador", "wifi", "5g", "bluetooth",
     "eletrodomestico", "lavadora", "geladeira", "ar condicionado",
-    "review", "comparativo", "benchmark", "vazamento", "lançamento"
+    "review", "comparativo", "benchmark", "vazamento", "lançamento",
+    "launch", "launches", "leak", "leaks", "leaked", "rumor", "rumors",
+    "hands-on", "unveil", "unveiled", "unboxing", "preorder", "pre-order",
+    "announced", "announcement", "goes on sale", "chipset", "soc"
   ],
   "excluir": [
     "fase da lua", "lua cheia", "lua nova", "calendario lunar", "horoscopo", "signo", "zodiaco",

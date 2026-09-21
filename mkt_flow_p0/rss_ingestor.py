@@ -28,16 +28,24 @@ logger = logging.getLogger("rss_ingestor")
 
 DB_PATH = Path(__file__).parent.parent / "mkt_flow_p0.db"
 
-# 4 fontes iniciais (Fase 1). Validadas em 12/09/2026 via teste local:
+# Fontes BR (Fase 1, validadas em 12/09/2026 via teste local) + estrangeiras
+# (Fase 2, validadas em 18/09/2026 via tools/validar_feeds_estrangeiros_2026-09-18.py,
+# revalidadas em 21/09/2026 após reversão do worktree):
 # - canaltech usa /rss/ (o /feed/ dá 404)
 # - olhardigital geral pausada em 13/09/2026 (muito off-topic: lua, etc) — mantida
 #   mas filtrada por tema; se ainda gerar ruído, trocar por feed de editoria tech
 #   ou desativar via FEEDS_PADRAO.
+# - gsmarena usa rss-news-reviews.php3 (com "3"; o .php dá 404)
+# - itens EN passam pelo mesmo gate de tema (whitelist tem termos EN) e o
+#   rewriter traduz para pt-BR (prompt); dedup EN→PT não pega — gate humano decide.
 FEEDS_PADRAO: Dict[str, str] = {
     "tecnoblog": "https://tecnoblog.net/feed/",
     "canaltech": "https://canaltech.com.br/rss/",
     "olhardigital": "https://olhardigital.com.br/feed/",
     "adrenaline": "https://adrenaline.com.br/feed/",
+    "gsmarena": "https://www.gsmarena.com/rss-news-reviews.php3",
+    "9to5google": "https://9to5google.com/feed/",
+    "sammobile": "https://www.sammobile.com/feed/",
 }
 
 _session = requests.Session()
@@ -197,7 +205,7 @@ def buscar_novidades(feed_url: str, fonte: str = "", limit: int = 3, marcar: boo
 
 
 def buscar_todos(limit_per_feed: int = 2) -> dict:
-    """Roda os 4 feeds padrão. Retorna agregado por fonte."""
+    """Roda todos os feeds de FEEDS_PADRAO. Retorna agregado por fonte."""
     resultado: Dict[str, dict] = {}
     total = 0
     for fonte, url in FEEDS_PADRAO.items():

@@ -76,8 +76,19 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     if dry_run:
         return {"acao": "dry_run_ok", "palavras": ext["palavras"], "titulo": ext.get("titulo", "")}
 
+    # Keywords reais (Autocomplete Google, grátis) — só após os gates passarem,
+    # para não gastar autocomplete em item bloqueado. Falha aqui nunca trava a pauta.
+    kws: list = []
+    try:
+        from mkt_flow_p0.seo import enriquecer_com_keywords
+        kws = enriquecer_com_keywords(ext.get("titulo") or item.get("titulo", ""),
+                                      categoria="", limit=8) or []
+    except Exception as e:
+        logger.warning(f"keywords puladas: {e}")
+
     rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
-                            fonte_nome=item.get("fonte", ""), url_fonte=url_fonte)
+                            fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
+                            keywords=kws)
     if "erro" in rw:
         return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
 
@@ -102,6 +113,12 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
         wp_user, wp_pwd = os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", "")
         cat_id = garantir_categoria(wp_url, wp_user, wp_pwd, os.getenv("CATEGORIA_PADRAO", "Notícias"))
         tag_ids = [t for t in (garantir_tag(wp_url, wp_user, wp_pwd, t) for t in rw["tags"]) if t]
+        try:
+            from mkt_flow_p0.links_internos import sugerir, inserir_box
+            _links = sugerir(html, ",".join(rw.get("tags", []) or []), wp_url)
+            html = inserir_box(html, _links)
+        except Exception as e:
+            logger.warning(f"links internos pulados: {e}")
         wp_result = publicar_no_wordpress(
             rw["titulo_seo"], html, "PASS", wp_url, wp_user, wp_pwd,
             status_desejado="draft", imagem_url=imagem_url,

@@ -21,3 +21,4 @@ técnicas **fornecidas por você**. Cadeia 100% gratuita: OpenRouter (Gemini fre
 > Reconstruído em 12/09/2026 após incidente de disco (ver
 > `RESTAURACAO_2026-09-12.md` na raiz): funcionalmente equivalente ao
 > original, validado por testes mockados. Geração real exige `.env`.
+
