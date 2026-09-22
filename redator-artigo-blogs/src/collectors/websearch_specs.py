@@ -31,11 +31,27 @@ def _salvar_cache(cache: dict):
         logger.warning(f"cache specs falhou: {e}")
 
 
-def buscar_specs(modelo: str, categoria: str = "geral", fetcher=None, usar_cache: bool = True) -> dict:
+def _fetcher_ponte(modelo: str, categoria: str = "geral") -> dict:
+    """Adapta ponte_redator (dict rico) p/ contrato fetcher (dict de specs).
+
+    Import lazy + fail-open: sem a ponte, levanta ImportError e o chamador
+    segue como se a ponte não existisse. Nunca faz rede no import.
+    """
+    from src.collectors import ponte_redator as _ponte
+    r = _ponte.buscar_specs(modelo, categoria) or {}
+    return dict(r.get("specs") or {})
+
+
+def buscar_specs(modelo: str, categoria: str = "geral", fetcher=None,
+                 usar_cache: bool = True, usar_ponte: bool = False) -> dict:
     """Retorna {"specs": {...}, "fonte": "..."}.
 
-    Ordem: cache → curated_specs.json → fetcher (se fornecido).
+    Ordem: cache → curated_specs.json → fetcher (se fornecido) →
+    ponte_redator (se usar_ponte=True) → aviso.
     Sem nenhuma fonte: {"specs": {}, "fonte": "", "aviso": ...}.
+    Ligar a ponte num job (as "3 linhas"):
+        from src.collectors.websearch_specs import buscar_specs
+        specs = buscar_specs("Galaxy A54", "celular", usar_ponte=True)
     """
     chave = f"{categoria}::{modelo}".lower()
     if usar_cache:
@@ -60,4 +76,12 @@ def buscar_specs(modelo: str, categoria: str = "geral", fetcher=None, usar_cache
             return {"specs": specs, "fonte": "websearch", "origem": "websearch"}
         except Exception as e:
             return {"specs": {}, "fonte": "", "erro": str(e)[:120]}
+    if usar_ponte:
+        try:
+            specs = _fetcher_ponte(modelo, categoria)
+            if specs:
+                _salvar_cache({**_ler_cache(), chave: {"specs": specs, "fonte": "ponte"}})
+                return {"specs": specs, "fonte": "ponte", "origem": "ponte"}
+        except Exception as e:
+            logger.warning(f"ponte indisponível p/ {modelo}: {e}")
     return {"specs": {}, "fonte": "", "aviso": "sem fonte de specs — gerador usará '— não informado'"}

@@ -30,3 +30,17 @@ def test_fetcher_e_sem_fonte(tmp_path, monkeypatch):
     assert r["specs"]["tela.hz"] == "120" and r["origem"] == "websearch"
     r2 = W.buscar_specs("Fone W")
     assert r2["specs"] == {} and "aviso" in r2
+
+
+def test_usar_ponte_stub_sem_rede(tmp_path, monkeypatch):
+    import sys
+    import types
+    cache = tmp_path / "c.json"
+    monkeypatch.setattr(W, "CACHE_PATH", cache)
+    monkeypatch.setattr(W, "CURATED_PATH", tmp_path / "inexistente.json")
+    stub = types.ModuleType("src.collectors.ponte_redator")
+    stub.buscar_specs = lambda m, c="geral", **k: {"specs": {"tela.hz": "120"},
+                                                  "fonte": "fab"}
+    monkeypatch.setitem(sys.modules, "src.collectors.ponte_redator", stub)
+    r = W.buscar_specs("Fone P", usar_ponte=True)
+    assert r["specs"]["tela.hz"] == "120" and r["origem"] == "ponte"

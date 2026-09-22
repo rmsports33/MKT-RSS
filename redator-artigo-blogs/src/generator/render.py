@@ -15,8 +15,21 @@ ALUSOES_TESTE = [
     r"mediç[ãa]o própria", r"em nossos laborat", r"unidade que testamos",
 ]
 VALOR_NUMERICO = re.compile(r"\d[\d.,]*\s?(GB|MB|mAh|Hz|g\b|px|ppi|pol(?:egadas)?|nits?|min\b|horas?|dias?|%|R\$|x\d+)", re.IGNORECASE)
-# Tokens de spec (chipset, GPU, padrão, certificação): "Adreno 618", "UFS 3.0", "IP67"
-TOKEN_SPEC = re.compile(r"\b(?:Adreno|Snapdragon|Exynos|Mali|Dimensity|Helio|Tensor|Oryon|Cortex|Kryo|UFS|eMMC|LPDDR|IP|Gorilla|Wi-?Fi|Bluetooth|USB)\s?[\w.-]*\d[\w.-]*", re.IGNORECASE)
+# Tokens de spec (chipset, GPU, padrão, certificação): "Adreno 618", "UFS 3.0", "IP67",
+# "GPU 4-core" (núcleos fora da ficha NUNCA são legítimos — ver gate em gerar_comparativo).
+TOKEN_SPEC = re.compile(r"\b(?:Adreno|Snapdragon|Exynos|Mali|Dimensity|Helio|Tensor|Oryon|Cortex|Kryo|UFS|eMMC|LPDDR|IP|Gorilla|Wi-?Fi|Bluetooth|USB)\s?[\w.-]*\d[\w.-]*|(?:GPU|CPU|NPU)\s+\d+\s*-?cores?", re.IGNORECASE)
+# Placeholders em prosa (o sanitizer de [CAIXA ALTA] não pega estes).
+PROSE_PLACEHOLDERS = [
+    r"ser[áa] inserid[oa]s? automaticamente",
+    r"tabela (comparativa )?abaixo",
+    r"conforme tabela abaixo",
+    r"nesta se[çc][aã]o em breve",
+    r"em breve nesta se[çc][aã]o",
+]
+# Chaves de metadado que vivem em specs mas NUNCA viram linha de tabela.
+META_SPEC_KEYS = {"youtube_id"}
+# ID de vídeo YouTube: exatamente 11 chars [A-Za-z0-9_-].
+YOUTUBE_ID_RE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 
 
 def _eh_separador_tabela(s: str) -> bool:
@@ -48,6 +61,9 @@ def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
     # Placeholders de caixa alta (ex.: [TABELA INSERIDA], [FOTO: galeria])
     # nunca chegam ao leitor. [fonte: X] fica de fora (convertido adiante).
     t = re.sub(r"\[(?!fonte:)[^\]]+\]", "", t, flags=re.IGNORECASE)
+    # Placeholders em prosa (ex.: "a tabela será inserida automaticamente").
+    for p in PROSE_PLACEHOLDERS:
+        t = re.sub(p, "", t, flags=re.IGNORECASE)
     t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
     linhas, out, lista, tbl = t.split("\n"), [], None, []
 
@@ -129,12 +145,30 @@ def _remover_alusao_teste(texto: str) -> str:
     return re.sub(r"\n{3,}", "\n\n", t).strip()
 
 
+def _tokens_spec_suspeitos(texto: str, specs_pass: dict) -> list:
+    """Subconjunto duro da detecção: tokens de spec (chip/GPU/padrão) ausentes
+    da ficha. Um token desses fora da ficha NUNCA é legítimo (alucinação ou
+    variante errada) — por isso alimenta o gate de bloqueio em gerar_comparativo.
+    """
+    vals = []
+    for v in (specs_pass or {}).values():
+        vals.extend(v if isinstance(v, list) else [v])
+    base_token = re.sub(r"[^a-z0-9]", "", " ".join(str(x) for x in vals).lower())
+    achados = []
+    for m in TOKEN_SPEC.finditer(texto or ""):
+        norm = re.sub(r"[^a-z0-9]", "", m.group(0).lower())
+        if norm and norm not in base_token:
+            achados.append(m.group(0).strip())
+    return sorted(set(achados))
+
+
 def _detectar_hallucination(texto: str, specs_pass: dict) -> list:
     """Valores numéricos E tokens de spec do texto que NÃO constam em specs_PASS.
 
     Limite honesto: detecta token desconhecido ("Adreno 618" com specs dizendo
     "Adreno 610"), mas não má-atribuição ("ambos têm IP67" quando só um tem).
     Aceita specs como {chave: valor} ou {chave: [valores]} (multi-modelo).
+    Números (preços etc.) são SÓ aviso — o bloqueio usa _tokens_spec_suspeitos.
     """
     vals = []
     for v in (specs_pass or {}).values():
@@ -201,15 +235,102 @@ LABEL_SPEC = {
 }
 
 
+def _video_valido(video: dict) -> bool:
+    """Só aceita dict com youtube_id de 11 chars; resto nunca quebra a página."""
+    return bool(video) and bool(YOUTUBE_ID_RE.match(str(video.get("youtube_id", ""))))
+
+
+def montar_bloco_video(video: dict) -> str:
+    """Seção 'review em vídeo' com facade: player só carrega após o clique.
+
+    video: {youtube_id (obrigatório, 11 chars), titulo, canal,
+            resumo?, pontos? (lista, máx 4), duracao? (texto, ex. '8:32')}.
+    ID inválido/ausente -> "" (sem iframe, sem schema, sem erro).
+    """
+    if not _video_valido(video):
+        return ""
+    vid = str(video["youtube_id"])
+    titulo = str(video.get("titulo") or "Review em vídeo").strip()
+    canal = str(video.get("canal") or "").strip()
+    resumo = str(video.get("resumo") or "").strip()
+    pontos = [str(p).strip() for p in (video.get("pontos") or []) if str(p).strip()][:4]
+    duracao = str(video.get("duracao") or "").strip()
+    thumb = f"https://i.ytimg.com/vi/{vid}/hqdefault.jpg"
+    watch = f"https://www.youtube.com/watch?v={vid}"
+    if resumo:
+        paras = f"<p>{html.escape(resumo)}</p>"
+    elif canal:
+        paras = f"<p>Review em vídeo do canal {html.escape(canal)}: {html.escape(titulo)}.</p>"
+    else:
+        paras = f"<p>{html.escape(titulo)}.</p>"
+    ul = "".join(f"<li>{html.escape(p)}</li>" for p in pontos)
+    ul = f"<ul>{ul}</ul>" if ul else ""
+    credito_nome = f"canal {html.escape(canal)}" if canal else "YouTube"
+    dur = f" ({html.escape(duracao)})" if duracao else ""
+    return f"""<section class="video-review">
+      <h2>O que dizem os reviews em vídeo</h2>
+      {paras}
+      {ul}
+      <div class="cxaf-video" data-video-id="{vid}">
+        <button type="button" class="cxaf-video-play" aria-label="Carregar e reproduzir {html.escape(titulo)}">
+          <img src="{thumb}" alt="{html.escape(titulo)}" loading="lazy" width="480" height="360">
+          <span class="cxaf-video-ico" aria-hidden="true">▶</span>
+        </button>
+        <p class="cxaf-video-credito">Vídeo: {html.escape(titulo)}{dur} — <a href="{watch}" target="_blank" rel="noopener">Assistir no YouTube ({credito_nome})</a></p>
+      </div>
+      <script>
+      if (!window.__cxafVideo) {{ window.__cxafVideo = true;
+        document.addEventListener("click", function (ev) {{
+          var btn = ev.target.closest ? ev.target.closest(".cxaf-video-play") : null;
+          if (!btn) return;
+          var box = btn.closest(".cxaf-video");
+          var id = box && box.getAttribute("data-video-id");
+          if (!id) return;
+          var frame = document.createElement("iframe");
+          frame.setAttribute("src", "https://www.youtube-nocookie.com/embed/" + id + "?autoplay=1&rel=0");
+          frame.setAttribute("title", btn.getAttribute("aria-label") || "Vídeo do YouTube");
+          frame.setAttribute("allow", "accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture");
+          frame.setAttribute("allowfullscreen", "");
+          frame.setAttribute("loading", "lazy");
+          frame.style.cssText = "position:absolute;top:0;left:0;width:100%;height:100%;border:0";
+          btn.replaceWith(frame);
+        }});
+      }}
+      </script>
+    </section>"""
+
+
+def videoobject_jsonld(video: dict) -> str:
+    """JSON-LD VideoObject só com dados conhecidos (nunca inventa uploadDate/duração)."""
+    if not _video_valido(video):
+        return ""
+    vid = str(video["youtube_id"])
+    titulo = str(video.get("titulo") or "Review em vídeo").strip()
+    desc = str(video.get("resumo") or titulo).strip()
+    campos = [f'"name": "{html.escape(titulo)}"',
+              f'"description": "{html.escape(desc)}"',
+              f'"thumbnailUrl": "https://i.ytimg.com/vi/{vid}/hqdefault.jpg"',
+              f'"embedUrl": "https://www.youtube-nocookie.com/embed/{vid}"']
+    if str(video.get("uploadDate") or "").strip():
+        campos.append(f'"uploadDate": "{html.escape(str(video["uploadDate"]).strip())}"')
+    if str(video.get("duracao_iso") or "").strip():
+        campos.append(f'"duration": "{html.escape(str(video["duracao_iso"]).strip())}"')
+    inner = ",\n".join(campos)
+    return f'<script type="application/ld+json">{{"@context": "https://schema.org", "@type": "VideoObject",\n{inner}}}</script>'
+
+
 def montar_tabela_specs(modelos: list) -> str:
     """Tabela comparativa a partir das chaves de specs (só dados verificados).
 
     Chave conhecida vira rótulo pt-BR (LABEL_SPEC); chave desconhecida é
     exibida como está para não inventar nome. Valor ausente sai '—'.
+    Metadados (META_SPEC_KEYS, ex. youtube_id) nunca viram linha.
     """
     chaves = []
     for m in modelos:
         for k in (m.get("specs") or {}):
+            if k in META_SPEC_KEYS:
+                continue
             if k not in chaves:
                 chaves.append(k)
     if not chaves:
@@ -270,8 +391,12 @@ def _precos_em_texto(price_history: dict) -> str:
 
 
 def montar_pagina(titulo: str, descricao: str, modelos: list, categoria: str,
-                  secoes_html: str, price_history: dict = None, data_iso: str = "") -> str:
-    """Página completa no padrão publicado (head/meta/JSON-LD/Chart/AdSense)."""
+                  secoes_html: str, price_history: dict = None, data_iso: str = "",
+                  video: dict = None) -> str:
+    """Página completa no padrão publicado (head/meta/JSON-LD/Chart/AdSense).
+
+    video: dict do bloco de review em vídeo (ver montar_bloco_video) ou None.
+    """
     data_iso = data_iso or datetime.now(timezone.utc).isoformat()
     nomes = " vs ".join(m.get("nome", "") for m in modelos)
     about = ",\n".join(
@@ -279,6 +404,8 @@ def montar_pagina(titulo: str, descricao: str, modelos: list, categoria: str,
         for m in modelos
     )
     tabela = montar_tabela_specs(modelos)
+    bloco_video = montar_bloco_video(video)
+    video_ld = videoobject_jsonld(video)
     hist_json = json.dumps(price_history or {}, ensure_ascii=False)
     grafico = ""
     if price_history and any(pts for pts in price_history.values()) and _precos_em_texto(price_history):
@@ -311,11 +438,13 @@ def montar_pagina(titulo: str, descricao: str, modelos: list, categoria: str,
 "headline": "{html.escape(nomes)}", "datePublished": "{data_iso}", "dateModified": "{data_iso}",
 "author": {{"@type": "Organization", "name": "Redação ConexoTech"}},
 "about": [{about}]}}</script>
+{video_ld}
 </head>
 <body>
   <article>
     <h1>{html.escape(titulo)}</h1>
 {secoes_html}
+    {bloco_video}
     <section id="tabela-comparativa">
       <h2>Tabela comparativa</h2>
       {tabela}
@@ -329,20 +458,59 @@ def montar_pagina(titulo: str, descricao: str, modelos: list, categoria: str,
 </html>"""
 
 
+CAMPOS_VIDEO_FICHA = {
+    "youtube_id": "youtube_id", "youtube_titulo": "titulo", "youtube_canal": "canal",
+    "youtube_resumo": "resumo", "youtube_pontos": "pontos", "youtube_duracao": "duracao",
+    "youtube_uploadDate": "uploadDate", "youtube_duracao_iso": "duracao_iso",
+}
+
+
+def _video_da_ficha(modelos: list) -> dict:
+    """Monta o dict do bloco de vídeo a partir dos campos youtube_* da ficha.
+
+    Primeiro modelo com youtube_id válido vence. Sem campo válido -> {}.
+    """
+    for m in modelos or []:
+        specs = m.get("specs") or {}
+        vid = str(specs.get("youtube_id", ""))
+        if not YOUTUBE_ID_RE.match(vid):
+            continue
+        video = {"youtube_id": vid}
+        for campo_ficha, chave in CAMPOS_VIDEO_FICHA.items():
+            if chave == "youtube_id":
+                continue
+            valor = specs.get(campo_ficha)
+            if isinstance(valor, list):
+                itens = [str(p).strip() for p in valor if str(p).strip()]
+                if itens:
+                    video[chave] = itens
+            elif valor is not None and str(valor).strip():
+                video[chave] = str(valor).strip()
+        return video
+    return {}
+
+
 def gerar_comparativo(modelos: list, categoria: str = "celular", price_history: dict = None,
-                      chamar_llm=None, unknown_fields: list = None) -> dict:
+                      chamar_llm=None, unknown_fields: list = None, video: dict = None,
+                      forcar: bool = False) -> dict:
     """Orquestra: prompt -> LLM (injetável p/ testes) -> travas -> página + auditoria.
 
     modelos: [{nome, specs:{...}, fonte}]. chamar_llm(system, user_payload) -> str.
+    video: dict do bloco de review em vídeo (ver montar_bloco_video); quando None,
+    é montado automaticamente dos campos youtube_* da ficha (ver _video_da_ficha).
     Nunca inventa: sem specs, seções saem com '— não informado'.
+    Gate: spec fora da ficha (chip/GPU/padrão) BLOQUEIA a saída, salvo forcar=True
+    (override explícito humano, registrado na auditoria).
     """
     from .prompt import montar_system_prompt
     specs_pass = {m.get("nome", ""): dict(m.get("specs") or {}) for m in modelos}
     fontes = sorted({m.get("fonte", "") for m in modelos if m.get("fonte")})
+    if video is None:
+        video = _video_da_ficha(modelos)
     system = montar_system_prompt(categoria)
     payload = {"modelos": [m.get("nome") for m in modelos], "categoria": categoria,
                "specs_PASS": specs_pass, "price_history": price_history or {},
-               "unknown_fields": unknown_fields or []}
+               "unknown_fields": unknown_fields or [], "video_review": video or {}}
     if chamar_llm is None:
         from src.evergreen import gerar_texto
         import json as _j
@@ -361,12 +529,22 @@ def gerar_comparativo(modelos: list, categoria: str = "celular", price_history: 
         for k, v in (s or {}).items():
             uniao_specs.setdefault(k, []).append(v)
     suspeitas = _detectar_hallucination(texto_llm, uniao_specs)
+    duras = _tokens_spec_suspeitos(texto_llm, uniao_specs)
+    if duras and not forcar:
+        return {"erro": "BLOQUEADO: spec fora da ficha: " + "; ".join(duras[:8]),
+                "suspeitas_hallucination": suspeitas, "bloqueio_specs": duras,
+                "auditoria": {"specs_usadas": list(uniao_specs), "fontes": fontes,
+                              "unknown_fields": unknown_fields or [],
+                              "video_id": (video or {}).get("youtube_id", ""),
+                              "forcar": False}}
     secoes = _sanitizar_llm_html(texto_llm, fontes)
     nomes = " vs ".join(m.get("nome", "") for m in modelos)
     titulo = f"{nomes} — Comparativo completo ({categoria})"
     html_pag = montar_pagina(titulo, f"Comparativo {nomes}: ficha técnica, prós e contras verificados e veredito para {categoria}.",
-                             modelos, categoria, secoes, price_history)
+                             modelos, categoria, secoes, price_history, video=video)
     return {"titulo": titulo, "html": html_pag, "provedor": provedor,
             "suspeitas_hallucination": suspeitas,
             "auditoria": {"specs_usadas": list(uniao_specs), "fontes": fontes,
-                          "unknown_fields": unknown_fields or []}}
+                          "unknown_fields": unknown_fields or [],
+                          "video_id": (video or {}).get("youtube_id", ""),
+                          "forcar": forcar}}
