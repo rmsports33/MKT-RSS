@@ -29,12 +29,18 @@ def _cfg():
     }
 
 
+LLM_TIMEOUT_S = 120
+
+
 def _try_call(api_key: str, base_url: str, model: str, temp: float, system: str, user: str):
     from openai import OpenAI
     if not api_key or not base_url:
         raise RuntimeError("sem credencial")
     c = OpenAI(api_key=api_key, base_url=base_url)
+    # Timeout explícito: sem ele, uma chamada travada estoura a janela do cron
+    # (daily.yml tem 15 min p/ todos os feeds).
     return c.chat.completions.create(model=model, temperature=temp, max_tokens=4000,
+                                     timeout=LLM_TIMEOUT_S,
                                      messages=[{"role": "system", "content": system},
                                                {"role": "user", "content": user}])
 
