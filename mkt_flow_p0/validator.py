@@ -28,9 +28,9 @@ PADRAO_SHOPEE = re.compile(
     re.IGNORECASE,
 )
 
-# Parâmetros de rastreamento do ML — confirmar nomes exatos no Portal do Afiliado
-# antes de usar em produção; matt_word/matt_tool/tag são os mais comumente relatados.
-TAGS_RASTREIO_MELI = {"matt_word", "matt_tool", "tag"}
+# Parâmetros de rastreamento do ML — formato novo usa fragmento (#wid/#sid).
+# wid/sid = tag oficial atual do Link Especial; matt_word/matt_tool/tag = legado.
+TAGS_RASTREIO_MELI = {"matt_word", "matt_tool", "tag", "wid", "sid", "polycard_client"}
 
 # Sinais de página de produto (para ML-GENERIC-DESTINATION, cl. 3.1.2(d))
 PADRAO_PRODUTO_ML = re.compile(r"(MLB\d+|/p/|/produto/|/sec/)", re.IGNORECASE)
@@ -96,7 +96,9 @@ def validar_link_afiliado(url: str, timeout: int = 5, resolver_redirect: bool = 
             "status": "Domínio fora do padrão aceito.",
         }
 
-    query = parse_qs(urlparse(url).query)
+    _partes = urlparse(url)
+    # Tags podem estar na query (?matt_word=) ou no fragmento (#wid=) — formato novo do ML usa #wid
+    query = {**parse_qs(_partes.query), **parse_qs(_partes.fragment)}
 
     if plataforma == "Mercado Livre":
         possui_tag = any(tag in query for tag in TAGS_RASTREIO_MELI)
@@ -110,6 +112,17 @@ def validar_link_afiliado(url: str, timeout: int = 5, resolver_redirect: bool = 
             }
 
         url_final = _resolver_redirect(url, timeout=timeout) if resolver_redirect else url
+        # Perfil social não é anúncio de produto (ML-GENERIC-DESTINATION, cl. 3.1.2(d)) — igual à Bancada
+        if re.search(r"/social/", url_final or "", re.IGNORECASE):
+            return {
+                "status_validacao": "FAIL",
+                "valido": False,
+                "plataforma": plataforma,
+                "possui_tag_rastreio": True,
+                "status": "Link aponta para perfil social, não para anúncio de produto. Gere Link Especial de produto (cl. 3.1.2(d)).",
+                "url_final": url_final,
+                "destino": "social",
+            }
         destino = _destino_ml(url_final)
         resultado = {
             "status_validacao": "PASS",

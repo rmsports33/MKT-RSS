@@ -7,6 +7,14 @@ from pathlib import Path
 from unittest.mock import patch, MagicMock
 sys.path.insert(0, str(Path(__file__).parent.parent))
 import mkt_flow_p0.rss_ingestor as R
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _sem_turso_no_ambiente(monkeypatch):
+    """Estes testes assumem SQLite local; TURSO_* vazado (ex.: via main()+.env) os jogaria para a nuvem."""
+    monkeypatch.delenv("TURSO_DATABASE_URL", raising=False)
+    monkeypatch.delenv("TURSO_AUTH_TOKEN", raising=False)
 
 RSS_XML = """<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0"><channel><title>Tech</title>

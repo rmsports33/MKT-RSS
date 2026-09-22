@@ -11,6 +11,15 @@ import os
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _sem_turso_no_ambiente(monkeypatch):
+    """E2E chama main(), que carrega .env (efeito global); não vazar TURSO_* para a sessão."""
+    monkeypatch.delenv("TURSO_DATABASE_URL", raising=False)
+    monkeypatch.delenv("TURSO_AUTH_TOKEN", raising=False)
+
 def test_e2e_pipeline_completo(tmp_path, monkeypatch):
     # Isola DB
     db_path = tmp_path / "e2e.db"

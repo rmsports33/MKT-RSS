@@ -5,7 +5,15 @@ pytest tests/test_pipeline_p0.py -v
 import sys
 from pathlib import Path
 from unittest.mock import patch
+import pytest
 sys.path.insert(0, str(Path(__file__).parent.parent))
+
+
+@pytest.fixture(autouse=True)
+def _sem_turso_no_ambiente(monkeypatch):
+    """main() carrega .env (efeito global); este teste não pode vazar TURSO_* para a sessão."""
+    monkeypatch.delenv("TURSO_DATABASE_URL", raising=False)
+    monkeypatch.delenv("TURSO_AUTH_TOKEN", raising=False)
 
 
 def _argv(link, *extra):

@@ -66,3 +66,31 @@ def test_lote_e_resumo():
     rs = validar_lote(["https://shopee.com.br/a", "https://x.com"], resolver_redirect=False)
     s = resumo_validacao(rs)
     assert s["total"] == 2 and s["UNKNOWN"] == 1 and s["FAIL"] == 1
+
+
+def test_ml_wid_fragmento_pass():
+    # Formato novo do Link Especial: tag wid/sid no fragmento (#)
+    r = validar_link_afiliado(
+        "https://www.mercadolivre.com.br/monitor-gamer-27/p/MLB64311324#polycard_client=affiliates&wid=MLB6194005242&sid=affiliates",
+        resolver_redirect=False,
+    )
+    assert r["status_validacao"] == "PASS"
+    assert r["possui_tag_rastreio"] is True
+    assert r["destino"] == "produto"
+
+
+def test_ml_sid_query_pass():
+    r = validar_link_afiliado(
+        "https://www.mercadolivre.com.br/monitor-gamer-27/p/MLB64311324?sid=affiliates&wid=MLB6194005242",
+        resolver_redirect=False,
+    )
+    assert r["status_validacao"] == "PASS"
+
+
+def test_ml_social_com_wid_bloqueia():
+    # Mesmo com wid, link de perfil social não é anúncio de produto
+    r = validar_link_afiliado(
+        "https://www.mercadolivre.com.br/social/reinaldomcarvalho?matt_word=conexotech&matt_tool=39107843",
+        resolver_redirect=False,
+    )
+    assert r["status_validacao"] in ("FAIL", "UNKNOWN")
