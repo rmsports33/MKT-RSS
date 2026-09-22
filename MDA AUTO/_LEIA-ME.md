@@ -2,7 +2,7 @@
 
 Esta pasta agora guarda **só o núcleo MKT** (histórico do projeto).
 O domínio **acadêmico** (MCA/MDA/Prompt-Mestre, Ficha de Pauta, Appendix)
-foi consolidado em `mkt-flow-escrita/` (única fonte). Em 12/09/2026 as cópias
+foi consolidado em `_arquivo/mkt-flow-escrita/` (única fonte). Em 12/09/2026 as cópias
 foram removidas daqui após backup `_backup_MDA_duplicatas_2026-09-12.zip`
 na raiz do projeto — restauração é só descompactar.
 
@@ -14,7 +14,7 @@ na raiz do projeto — restauração é só descompactar.
 - `avaliacao_api_oficial_vs_scraping_2026-08-28.md`
 - `MDA_piloto_revisao_estrutural.docx` (legado)
 
-## Foi para `mkt-flow-escrita/` (não duplicar aqui)
+## Foi para `_arquivo/mkt-flow-escrita/` (não duplicar aqui)
 - `MCA_AUTO_*`, `MDA_AUTO_Controlador*`, `Assistente_de_Escrita...`,
   `prompt-mestre%20de%20escrita.md`, `CONEXO_APPENDIX.md`,
   `FICHA_DE_PAUTA.md`, `README.md`, `pautas/`

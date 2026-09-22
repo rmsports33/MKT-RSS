@@ -183,6 +183,12 @@ def test_tabela_ignora_youtube_id():
     assert "youtube_id" not in tab and "Bateria (mAh)" in tab
 
 
+def test_tabela_ignora_todos_campos_youtube():
+    tab = montar_tabela_specs([{"nome": "X", "specs": {"bateria.mah": "5000", "youtube_id": "dQw4w9WgXcQ",
+        "youtube_titulo": "Review", "youtube_canal": "Canal", "youtube_resumo": "R"}}])
+    assert "youtube" not in tab.lower() and "Review" not in tab and "Bateria (mAh)" in tab
+
+
 def test_pagina_sem_video_sem_videoobject():
     pag = montar_pagina("A vs B", "d", _modelos(), "audio", "<p>x</p>")
     assert "VideoObject" not in pag and "video-review" not in pag
@@ -277,3 +283,16 @@ def test_ficha_sem_video_nao_cria_bloco():
     r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm)
     assert r["auditoria"]["video_id"] == ""
     assert "video-review" not in r["html"]
+
+
+def test_datas_lancamento_vai_ao_payload_e_nao_vaza_na_tabela():
+    modelos = [
+        {"nome": "Fone A", "specs": {"bateria.mah": "5000"}, "fonte": "fab A",
+         "data_lancamento": "2024-01"},
+        {"nome": "Fone B", "specs": {"bateria.mah": "4000"}, "fonte": "fab B"},
+    ]
+    def fake_llm(system, payload):
+        assert payload["datas_lancamento"] == {"Fone A": "2024-01"}
+        return "## Resumo\nTexto. [fonte: fab A]"
+    r = gerar_comparativo(modelos, "audio", chamar_llm=fake_llm)
+    assert "html" in r and "2024-01" not in r["html"]

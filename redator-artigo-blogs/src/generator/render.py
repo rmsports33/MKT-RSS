@@ -329,7 +329,7 @@ def montar_tabela_specs(modelos: list) -> str:
     chaves = []
     for m in modelos:
         for k in (m.get("specs") or {}):
-            if k in META_SPEC_KEYS:
+            if k in META_SPEC_KEYS or k.startswith("youtube_"):
                 continue
             if k not in chaves:
                 chaves.append(k)
@@ -495,7 +495,8 @@ def gerar_comparativo(modelos: list, categoria: str = "celular", price_history: 
                       forcar: bool = False) -> dict:
     """Orquestra: prompt -> LLM (injetável p/ testes) -> travas -> página + auditoria.
 
-    modelos: [{nome, specs:{...}, fonte}]. chamar_llm(system, user_payload) -> str.
+    modelos: [{nome, specs:{...}, fonte, data_lancamento?}]. chamar_llm(system, user_payload) -> str.
+    data_lancamento (AAAA-MM) vai ao payload p/ a regra de recência do prompt.
     video: dict do bloco de review em vídeo (ver montar_bloco_video); quando None,
     é montado automaticamente dos campos youtube_* da ficha (ver _video_da_ficha).
     Nunca inventa: sem specs, seções saem com '— não informado'.
@@ -505,12 +506,15 @@ def gerar_comparativo(modelos: list, categoria: str = "celular", price_history: 
     from .prompt import montar_system_prompt
     specs_pass = {m.get("nome", ""): dict(m.get("specs") or {}) for m in modelos}
     fontes = sorted({m.get("fonte", "") for m in modelos if m.get("fonte")})
+    datas_lancamento = {m.get("nome", ""): m.get("data_lancamento", "") for m in modelos
+                        if m.get("data_lancamento")}
     if video is None:
         video = _video_da_ficha(modelos)
     system = montar_system_prompt(categoria)
     payload = {"modelos": [m.get("nome") for m in modelos], "categoria": categoria,
                "specs_PASS": specs_pass, "price_history": price_history or {},
-               "unknown_fields": unknown_fields or [], "video_review": video or {}}
+               "unknown_fields": unknown_fields or [], "video_review": video or {},
+               "datas_lancamento": datas_lancamento}
     if chamar_llm is None:
         from src.evergreen import gerar_texto
         import json as _j

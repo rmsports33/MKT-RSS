@@ -1,6 +1,6 @@
 # Relatório de Implementação — SEO, GEO, Ferramentas e Extensões
 
-Data: 08/09/2026 — Status: 239 testes passando
+Data: 08/09/2026 (revisado 22/09/2026) — Status: suíte verde (total atual: `python -m pytest tests/ -q`)
 
 ## O que já foi implementado no código (nada a fazer)
 

@@ -29,7 +29,7 @@ e `platform_schedules` (schema do `scheduler.py`). `health_check` retorna `ok: T
 ## Decisões aprovadas (30/08/2026)
 
 1. **Núcleo único = `mkt_flow_p0/`** — o módulo A é o núcleo consolidado.
-2. **Domínio acadêmico separado = `mkt-flow-escrita/`** — docs MDA/EAC/Prompt-Mestre/MCA foram movidos
+2. **Domínio acadêmico separado = `_arquivo/mkt-flow-escrita/`** — docs MDA/EAC/Prompt-Mestre/MCA foram movidos
    (copiados) para pasta própria, fora do pipeline de afiliados.
 3. **Segredos/backups fora de produção** — `MKTFLOW.zip` (127 MB), `mkt_flow_backup_*.zip` (534 MB),
    `token.json`, `MKTFLOW/credentials.json` movidos para `C:\Users\LIVE2PC\Desktop\arquivos_mkt_flow\`.
@@ -44,7 +44,7 @@ e `platform_schedules` (schema do `scheduler.py`). `health_check` retorna `ok: T
 - `mkt_flow_p0/validator.py` — aceita `resolve` (alias do clássico) e `resolver_redirect`.
 - `mkt_flow_p0/landing.py` — `gerar_landing_page_completa()` retorna dict rico
   (html/slug/url_amigavel/meta), mantendo `gerar_template_landing_page()` (str).
-- `mkt-flow-escrita/` — pasta separada com README + docs acadêmicos.
+- `_arquivo/mkt-flow-escrita/` — pasta separada com README + docs acadêmicos.
 
 ## Estado após consolidação
 

@@ -5,8 +5,11 @@ Uso: python -m mkt_flow_p0.dashboard
 """
 import sqlite3
 import json
+import logging
 from pathlib import Path
 from datetime import datetime
+
+logger = logging.getLogger("dashboard")
 
 DB_PATH = Path(__file__).parent.parent / "mkt_flow_p0.db"
 OUT_HTML = Path(__file__).parent.parent / "dashboard_p1.html"
@@ -50,14 +53,13 @@ def coletar_dados():
         rss = _query("SELECT * FROM rss_runs ORDER BY created_at DESC")
     except Exception:
         rss = []
-    # Cost log do MKTFLOW (se existir). Path relativo ao projeto com
-    # fallback legado absoluto (refactor 12/09/2026 — sem C:\ hardcoded).
+    # Custo LLM + runs clássicos: DB OFICIAL é mkt_flow_p0.db.
+    # Migração 22/09/2026 trouxe affiliate_runs do legado mkt_flow.db
+    # (arquivado em _arquivo/). Nunca engolir falha em silêncio.
     costs = []
-    _candidatos = [
-        Path(__file__).parent.parent / "MKTFLOW" / "mkt_flow.db",
-        Path(r"C:\MKTFLOW\mkt_flow.db"),
-    ]
-    cost_db = next((p for p in _candidatos if p.exists()), _candidatos[0])
+    cost_db = DB_PATH
+    if not cost_db.exists():
+        logger.warning(f"dashboard: DB oficial ausente em {cost_db} — seção de custos vazia")
     if cost_db.exists():
         try:
             con = sqlite3.connect(cost_db)
@@ -65,8 +67,8 @@ def coletar_dados():
             cur = con.execute("SELECT * FROM cost_log ORDER BY id DESC LIMIT 100")
             costs = [dict(r) for r in cur.fetchall()]
             con.close()
-        except Exception:
-            pass
+        except Exception as e:
+            logger.warning(f"dashboard: falha lendo cost_log: {e}")
     aff_total = 0
     if cost_db.exists():
         try:
@@ -74,9 +76,9 @@ def coletar_dados():
             cur = con.execute("SELECT COUNT(*) FROM affiliate_runs")
             aff_total = int(cur.fetchone()[0] or 0)
             con.close()
-        except Exception:
-            pass
-    # affiliate_runs do clássico (mesmo DB acima, se existir)
+        except Exception as e:
+            logger.warning(f"dashboard: falha lendo affiliate_runs: {e}")
+    # affiliate_runs migrado do legado para o DB oficial (22/09/2026)
 
     total_runs = len(runs)
     total_pubs = len(pubs)

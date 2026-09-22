@@ -15,7 +15,7 @@ dashboards, clientes Drive, planilha modelo, PDFs/DOCXs da raiz.
 - `MKTFLOW/` — parcial: `MKTFLOW.zip` (MKT FLOW 3\backup_mkt_flow) é snapshot
   antigo (só módulos iniciais + prompts + `.env` + `mkt_flow.db` + venv).
   Faltavam 13 módulos → **reconstruídos** (ver abaixo). B1 reaplicado em `db.py`.
-- `mkt-flow-escrita/` + base de `MDA AUTO/` — cópia integral de
+- `_arquivo/mkt-flow-escrita/` + base de `MDA AUTO/` — cópia integral de
   `site do projeto\mkt-flow-escrita` (12 arquivos).
 
 ## O que foi RECONSTRUÍDO (equivalente funcional, não byte-idêntico)
