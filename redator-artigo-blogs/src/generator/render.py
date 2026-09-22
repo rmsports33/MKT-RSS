@@ -64,6 +64,8 @@ def _sanitizar_llm_html(texto: str, fontes_permitidas: list = None) -> str:
     # Placeholders em prosa (ex.: "a tabela será inserida automaticamente").
     for p in PROSE_PLACEHOLDERS:
         t = re.sub(p, "", t, flags=re.IGNORECASE)
+    # Normaliza qualquer variante de "não informado" p/ o padrão honesto.
+    t = re.sub(r"não informad[oa]s?", "não divulgado pela fabricante", t, flags=re.IGNORECASE)
     t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
     linhas, out, lista, tbl = t.split("\n"), [], None, []
 

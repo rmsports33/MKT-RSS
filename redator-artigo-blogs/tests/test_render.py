@@ -27,7 +27,7 @@ def test_prompt_tem_regras():
 
 def test_prompt_nao_manda_placeholder_em_texto():
     s = montar_system_prompt("celular")
-    assert "NUNCA escreva '— não informado'" in s and "inches" in s
+    assert "não informada" in s and "qualquer" in s and "inches" in s
 
 
 def test_sanitiza_e_filtra_fonte():
@@ -296,3 +296,16 @@ def test_datas_lancamento_vai_ao_payload_e_nao_vaza_na_tabela():
         return "## Resumo\nTexto. [fonte: fab A]"
     r = gerar_comparativo(modelos, "audio", chamar_llm=fake_llm)
     assert "html" in r and "2024-01" not in r["html"]
+
+
+def test_normaliza_qualquer_nao_informado():
+    h = _sanitizar_llm_html("Bateria não informada. Preço não informado. Sem informação adicional. [fonte: fab A]",
+                            ["fab A"])
+    assert "não informado" not in h.lower() and "não informada" not in h.lower()
+    assert h.count("não divulgado pela fabricante") == 2
+    assert "Sem informação adicional" in h
+
+
+def test_prompt_regra_10_contagem_camera():
+    s = montar_system_prompt("celular")
+    assert "tripla" in s and "única" in s
