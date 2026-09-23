@@ -1,0 +1,419 @@
+{
+  "queries": [
+    {
+      "id": "Q01",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 440,
+      "leve_ev": {
+        "url": "https://www.samsung.com/br/smartphones/galaxy-a/galaxy-a54-5g-awesome-white-128gb-sm-a546ezwczto/",
+        "title": "Galaxy A54 5G",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q02",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 360,
+      "leve_ev": {
+        "url": "https://www.mibrasil.com.br/smartphone-xiaomi-redmi-note-13-5g-br-6-67-120hz-8-256gb-prin-p5235",
+        "title": "Redmi Note 13 5G 256GB | Xiaomi Brasil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q03",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 730,
+      "leve_ev": {
+        "url": "https://www.samsung.com/br/smartphones/galaxy-s26-ultra/specs/",
+        "title": "Especificações | Samsung Galaxy S26 Ultra | Samsung Brasil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q04",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 800,
+      "leve_ev": {
+        "url": "https://www.samsung.com/br/watches/galaxy-watch/galaxy-watch9-44mm-graphite-bluetooth-sm-l350nzkpzto/",
+        "title": "Galaxy Watch9 (Bluetooth, 44 mm) Graphite | Samsung Brasil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q05",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 360,
+      "leve_ev": {
+        "url": "https://www.samsung.com/br/watches/galaxy-watch/galaxy-watch-ultra2-titanium-gray-lte-sm-l715fzkpzto/",
+        "title": "Galaxy Watch Ultra2 Titanium Gray | Samsung Brasil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q06",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 380,
+      "leve_ev": {
+        "url": "https://www.samsung.com/br/smartphones/galaxy-a/galaxy-a37-5g-awesome-charcoal-256gb-sm-a376bzakzto/",
+        "title": "Galaxy A37 5G Preto 256 GB, Câmera 50 MP | Samsung Brasil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q07",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 360,
+      "leve_ev": {
+        "url": "https://www.apple.com/iphone-18-pro/specs/",
+        "title": "iPhone 18 Pro and 18 Pro Max - Technical Specifications - Apple",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q08",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": false,
+      "leve_ms": 370,
+      "leve_ev": {
+        "dominios_vistos": [
+          "support.apple.com",
+          "www.apple.com"
+        ],
+        "n": 5
+      },
+      "completo_hit": false,
+      "completo_ms": 1500,
+      "completo_ev": {
+        "dominios_vistos": [
+          "antihype.com.br",
+          "infodev.com.br",
+          "smartphonecerto.com.br",
+          "tek.sapo.pt",
+          "www.estadao.com.br",
+          "www.maiscelular.com.br"
+        ],
+        "n": 8
+      },
+      "gate_certo_final": false
+    },
+    {
+      "id": "Q09",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": false,
+      "leve_ms": 770,
+      "leve_ev": {
+        "dominios_vistos": [
+          "support.apple.com",
+          "www.apple.com"
+        ],
+        "n": 5
+      },
+      "completo_hit": false,
+      "completo_ms": 1580,
+      "completo_ev": {
+        "dominios_vistos": [
+          "bdmshopping.com.br",
+          "store.vivo.com.br",
+          "support.apple.com",
+          "teccelularesoficial.com.br",
+          "www.apple.com",
+          "www.techtudo.com.br"
+        ],
+        "n": 8
+      },
+      "gate_certo_final": false
+    },
+    {
+      "id": "Q10",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 390,
+      "leve_ev": {
+        "url": "https://www.motorola.com/pt/pt/p/phones/motorola-edge/50/pmipmgx38ml",
+        "title": "Fast charging HD Android smartphone | motorola edge 50 | motorola",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q11",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 390,
+      "leve_ev": {
+        "url": "https://www.lg.com/br/tvs-e-soundbars/oled-evo/oled55c4psa/",
+        "title": "Smart TV LG OLED evo AI C4 4K de 55 polegadas 2024 - OLED55C4PSA | LG Brasil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q12",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 370,
+      "leve_ev": {
+        "url": "https://www.samsung.com/br/tvs/uhd-4k-tv/u8600f-55-inch-crystal-uhd-4k-smart-tv-un55u8600fgxzd/",
+        "title": "Smart TV 55 polegadas Crystal UHD 4K U8600F 2025 | Samsung Brasil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q13",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 760,
+      "leve_ev": {
+        "url": "https://www.sony.com.br/electronics/headphones-sobre-as-orelhas/wh-1000xm5/specifications",
+        "title": "Especificações do WH-1000XM5  | Headphones | Sony Brazil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q14",
+      "tipo": "ficha",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 370,
+      "leve_ev": {
+        "url": "https://store.google.com/pt/product/pixel_10_pro?hl=pt-PT",
+        "title": "Pixel 10 Pro e 10 Pro XL - IA Avançada, Desempenho e Câmara Pro",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q15",
+      "tipo": "leak-recusa",
+      "expected_hit": false,
+      "leve_hit": false,
+      "leve_ms": 360,
+      "leve_ev": {
+        "dominios_vistos": [
+          "shop.samsung.com",
+          "www.samsung.com"
+        ],
+        "n": 5
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q16",
+      "tipo": "rumor-recusa",
+      "expected_hit": false,
+      "leve_hit": false,
+      "leve_ms": 780,
+      "leve_ev": {
+        "dominios_vistos": [
+          "www.meta.com"
+        ],
+        "n": 5
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q17",
+      "tipo": "atualidade",
+      "expected_hit": true,
+      "leve_hit": false,
+      "leve_ms": 370,
+      "leve_ev": {
+        "dominios_vistos": [
+          "www.apple.com"
+        ],
+        "n": 5
+      },
+      "completo_hit": false,
+      "completo_ms": 1380,
+      "completo_ev": {
+        "dominios_vistos": [
+          "blogdoiphone.com",
+          "tecfoco.com.br",
+          "timesbrasil.com.br",
+          "www.em.com.br",
+          "www.estadao.com.br",
+          "www.maiscelular.com.br"
+        ],
+        "n": 8
+      },
+      "gate_certo_final": false
+    },
+    {
+      "id": "Q18",
+      "tipo": "atualidade",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 1700,
+      "leve_ev": {
+        "url": "https://www.samsung.com/br/watches/galaxy-watch/galaxy-watch9-44mm-graphite-bluetooth-sm-l350nzkpzto/",
+        "title": "Galaxy Watch9 (Bluetooth, 44 mm) Graphite | Samsung Brasil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q19",
+      "tipo": "atualidade",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 320,
+      "leve_ev": {
+        "url": "https://www.meta.com/connect/",
+        "title": "Meta Connect 2026: Register for Sept 23–24 | Meta",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": false
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "Q20",
+      "tipo": "atualidade",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 370,
+      "leve_ev": {
+        "url": "https://www.samsung.com/br/watches/galaxy-watch/galaxy-watch9-44mm-graphite-bluetooth-sm-l350nzkpzto/",
+        "title": "Galaxy Watch9 (Bluetooth, 44 mm) Graphite | Samsung Brasil",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "C1-POS",
+      "tipo": "controle-positivo",
+      "expected_hit": true,
+      "leve_hit": true,
+      "leve_ms": 800,
+      "leve_ev": {
+        "url": "https://www.samsung.com/br/smartphones/galaxy-a/galaxy-a54-5g-awesome-white-128gb-sm-a546ezwczto/",
+        "title": "Galaxy A54 5G",
+        "marcador": "FABRICANTE+TOKENS_TODOS",
+        "rota_produto": true
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    },
+    {
+      "id": "C2-NEG",
+      "tipo": "controle-negativo",
+      "expected_hit": false,
+      "leve_hit": false,
+      "leve_ms": 380,
+      "leve_ev": {
+        "dominios_vistos": [
+          "support.apple.com",
+          "www.samsung.com"
+        ],
+        "n": 5
+      },
+      "completo_hit": null,
+      "completo_ms": 0,
+      "completo_ev": null,
+      "gate_certo_final": true
+    }
+  ],
+  "resumo": {
+    "n": 22,
+    "leve_hits": 19,
+    "gate_ok": 19,
+    "resgates": 3,
+    "resgatados": 0
+  }
+}

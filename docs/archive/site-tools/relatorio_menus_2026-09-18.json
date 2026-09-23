@@ -1,0 +1,457 @@
+{
+  "timestamp": "2026-09-18 14:54:46",
+  "base": "https://conexotech.com.br",
+  "home_status": 200,
+  "blocos": [
+    "utility (topo)",
+    "primary (mainnav)",
+    "footer",
+    "nav[0]"
+  ],
+  "links_extraidos": [
+    {
+      "bloco": "utility (topo)",
+      "href": "https://conexotech.com.br/#laboratorio",
+      "texto": "Metodologia",
+      "html_snippet": "<a href=\"https://conexotech.com.br/#laboratorio\">Metodologia</a>"
+    },
+    {
+      "bloco": "utility (topo)",
+      "href": "https://conexotech.com.br/#laboratorio",
+      "texto": "Sobre nós",
+      "html_snippet": "<a href=\"https://conexotech.com.br/#laboratorio\">Sobre nós</a>"
+    },
+    {
+      "bloco": "utility (topo)",
+      "href": "https://conexotech.com.br/#newsletter",
+      "texto": "Contato",
+      "html_snippet": "<a href=\"https://conexotech.com.br/#newsletter\">Contato</a>"
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "href": "https://conexotech.com.br/inicio/",
+      "texto": "início",
+      "html_snippet": "<a href=\"https://conexotech.com.br/inicio/\">início</a>"
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "href": "https://conexotech.com.br/#noticias",
+      "texto": "Notícias",
+      "html_snippet": "<a href=\"https://conexotech.com.br/#noticias\" aria-current=\"page\">Notícias</a>"
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "href": "https://conexotech.com.br/reviews",
+      "texto": "Reviews",
+      "html_snippet": "<a href=\"https://conexotech.com.br/reviews\">Reviews</a>"
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "href": "https://conexotech.com.br/category/guias/",
+      "texto": "Guias",
+      "html_snippet": "<a href=\"https://conexotech.com.br/category/guias/\">Guias</a>"
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "href": "https://conexotech.com.br/comparativos",
+      "texto": "Comparativos",
+      "html_snippet": "<a href=\"https://conexotech.com.br/comparativos\">Comparativos</a>"
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "href": "https://conexotech.com.br/#ranking",
+      "texto": "Ranking",
+      "html_snippet": "<a href=\"https://conexotech.com.br/#ranking\" aria-current=\"page\">Ranking</a>"
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "href": "https://conexotech.com.br/#newsletter",
+      "texto": "Assinar grátis",
+      "html_snippet": "<a href=\"https://conexotech.com.br/#newsletter\" class=\"btn btn-ink btn-sm\">Assinar grátis</a>"
+    },
+    {
+      "bloco": "nav[0]",
+      "href": "https://conexotech.com.br/#laboratorio",
+      "texto": "Metodologia",
+      "html_snippet": "<a href=\"https://conexotech.com.br/#laboratorio\">Metodologia</a>"
+    },
+    {
+      "bloco": "nav[0]",
+      "href": "https://conexotech.com.br/#laboratorio",
+      "texto": "Sobre nós",
+      "html_snippet": "<a href=\"https://conexotech.com.br/#laboratorio\">Sobre nós</a>"
+    },
+    {
+      "bloco": "nav[0]",
+      "href": "https://conexotech.com.br/#newsletter",
+      "texto": "Contato",
+      "html_snippet": "<a href=\"https://conexotech.com.br/#newsletter\">Contato</a>"
+    }
+  ],
+  "checks": [
+    {
+      "bloco": "utility (topo)",
+      "texto": "Metodologia",
+      "href": "https://conexotech.com.br/#laboratorio",
+      "normalized": "https://conexotech.com.br/#laboratorio",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/#laboratorio",
+        "requested_url": "https://conexotech.com.br/#laboratorio",
+        "url_no_anchor": "https://conexotech.com.br/",
+        "anchor": "laboratorio",
+        "final_url": "https://conexotech.com.br/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.24,
+        "anchor_ok": true,
+        "anchor_msg": "âncora #laboratorio encontrada (id)",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 43976,
+        "history": []
+      }
+    },
+    {
+      "bloco": "utility (topo)",
+      "texto": "Sobre nós",
+      "href": "https://conexotech.com.br/#laboratorio",
+      "normalized": "https://conexotech.com.br/#laboratorio",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/#laboratorio",
+        "requested_url": "https://conexotech.com.br/#laboratorio",
+        "url_no_anchor": "https://conexotech.com.br/",
+        "anchor": "laboratorio",
+        "final_url": "https://conexotech.com.br/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.24,
+        "anchor_ok": true,
+        "anchor_msg": "âncora #laboratorio encontrada (id)",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 43976,
+        "history": []
+      }
+    },
+    {
+      "bloco": "utility (topo)",
+      "texto": "Contato",
+      "href": "https://conexotech.com.br/#newsletter",
+      "normalized": "https://conexotech.com.br/#newsletter",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/#newsletter",
+        "requested_url": "https://conexotech.com.br/#newsletter",
+        "url_no_anchor": "https://conexotech.com.br/",
+        "anchor": "newsletter",
+        "final_url": "https://conexotech.com.br/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.21,
+        "anchor_ok": true,
+        "anchor_msg": "âncora #newsletter encontrada (id)",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 43976,
+        "history": []
+      }
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "texto": "início",
+      "href": "https://conexotech.com.br/inicio/",
+      "normalized": "https://conexotech.com.br/inicio/",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/inicio/",
+        "requested_url": "https://conexotech.com.br/inicio/",
+        "url_no_anchor": "https://conexotech.com.br/inicio/",
+        "anchor": "",
+        "final_url": "https://conexotech.com.br/inicio/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.51,
+        "anchor_ok": null,
+        "anchor_msg": "",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 33478,
+        "history": []
+      }
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "texto": "Notícias",
+      "href": "https://conexotech.com.br/#noticias",
+      "normalized": "https://conexotech.com.br/#noticias",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/#noticias",
+        "requested_url": "https://conexotech.com.br/#noticias",
+        "url_no_anchor": "https://conexotech.com.br/",
+        "anchor": "noticias",
+        "final_url": "https://conexotech.com.br/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.2,
+        "anchor_ok": true,
+        "anchor_msg": "âncora #noticias encontrada (id)",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 43976,
+        "history": []
+      }
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "texto": "Reviews",
+      "href": "https://conexotech.com.br/reviews",
+      "normalized": "https://conexotech.com.br/reviews",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/reviews",
+        "requested_url": "https://conexotech.com.br/reviews",
+        "url_no_anchor": "https://conexotech.com.br/reviews",
+        "anchor": "",
+        "final_url": "https://conexotech.com.br/reviews/",
+        "status": 200,
+        "redirect_chain": 1,
+        "elapsed": 0.69,
+        "anchor_ok": null,
+        "anchor_msg": "",
+        "nivel": "REDIRECT",
+        "error": "Redirecionou 1x para https://conexotech.com.br/reviews/",
+        "content_len": 32715,
+        "history": [
+          "https://conexotech.com.br/reviews -> 301"
+        ]
+      }
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "texto": "Guias",
+      "href": "https://conexotech.com.br/category/guias/",
+      "normalized": "https://conexotech.com.br/category/guias/",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/category/guias/",
+        "requested_url": "https://conexotech.com.br/category/guias/",
+        "url_no_anchor": "https://conexotech.com.br/category/guias/",
+        "anchor": "",
+        "final_url": "https://conexotech.com.br/category/guias/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.45,
+        "anchor_ok": null,
+        "anchor_msg": "",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 32128,
+        "history": []
+      }
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "texto": "Comparativos",
+      "href": "https://conexotech.com.br/comparativos",
+      "normalized": "https://conexotech.com.br/comparativos",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/comparativos",
+        "requested_url": "https://conexotech.com.br/comparativos",
+        "url_no_anchor": "https://conexotech.com.br/comparativos",
+        "anchor": "",
+        "final_url": "https://conexotech.com.br/comparativos/",
+        "status": 200,
+        "redirect_chain": 1,
+        "elapsed": 0.63,
+        "anchor_ok": null,
+        "anchor_msg": "",
+        "nivel": "REDIRECT",
+        "error": "Redirecionou 1x para https://conexotech.com.br/comparativos/",
+        "content_len": 31700,
+        "history": [
+          "https://conexotech.com.br/comparativos -> 301"
+        ]
+      }
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "texto": "Ranking",
+      "href": "https://conexotech.com.br/#ranking",
+      "normalized": "https://conexotech.com.br/#ranking",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/#ranking",
+        "requested_url": "https://conexotech.com.br/#ranking",
+        "url_no_anchor": "https://conexotech.com.br/",
+        "anchor": "ranking",
+        "final_url": "https://conexotech.com.br/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.23,
+        "anchor_ok": true,
+        "anchor_msg": "âncora #ranking encontrada (id)",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 43976,
+        "history": []
+      }
+    },
+    {
+      "bloco": "primary (mainnav)",
+      "texto": "Assinar grátis",
+      "href": "https://conexotech.com.br/#newsletter",
+      "normalized": "https://conexotech.com.br/#newsletter",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/#newsletter",
+        "requested_url": "https://conexotech.com.br/#newsletter",
+        "url_no_anchor": "https://conexotech.com.br/",
+        "anchor": "newsletter",
+        "final_url": "https://conexotech.com.br/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.21,
+        "anchor_ok": true,
+        "anchor_msg": "âncora #newsletter encontrada (id)",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 43976,
+        "history": []
+      }
+    },
+    {
+      "bloco": "nav[0]",
+      "texto": "Metodologia",
+      "href": "https://conexotech.com.br/#laboratorio",
+      "normalized": "https://conexotech.com.br/#laboratorio",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/#laboratorio",
+        "requested_url": "https://conexotech.com.br/#laboratorio",
+        "url_no_anchor": "https://conexotech.com.br/",
+        "anchor": "laboratorio",
+        "final_url": "https://conexotech.com.br/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.24,
+        "anchor_ok": true,
+        "anchor_msg": "âncora #laboratorio encontrada (id)",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 43976,
+        "history": []
+      }
+    },
+    {
+      "bloco": "nav[0]",
+      "texto": "Sobre nós",
+      "href": "https://conexotech.com.br/#laboratorio",
+      "normalized": "https://conexotech.com.br/#laboratorio",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/#laboratorio",
+        "requested_url": "https://conexotech.com.br/#laboratorio",
+        "url_no_anchor": "https://conexotech.com.br/",
+        "anchor": "laboratorio",
+        "final_url": "https://conexotech.com.br/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.24,
+        "anchor_ok": true,
+        "anchor_msg": "âncora #laboratorio encontrada (id)",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 43976,
+        "history": []
+      }
+    },
+    {
+      "bloco": "nav[0]",
+      "texto": "Contato",
+      "href": "https://conexotech.com.br/#newsletter",
+      "normalized": "https://conexotech.com.br/#newsletter",
+      "cat": "absolute",
+      "result": {
+        "original_href": "https://conexotech.com.br/#newsletter",
+        "requested_url": "https://conexotech.com.br/#newsletter",
+        "url_no_anchor": "https://conexotech.com.br/",
+        "anchor": "newsletter",
+        "final_url": "https://conexotech.com.br/",
+        "status": 200,
+        "redirect_chain": 0,
+        "elapsed": 0.21,
+        "anchor_ok": true,
+        "anchor_msg": "âncora #newsletter encontrada (id)",
+        "nivel": "OK",
+        "error": null,
+        "content_len": 43976,
+        "history": []
+      }
+    }
+  ],
+  "extras": [
+    [
+      "/reviews/",
+      "Reviews archive (CPT)"
+    ],
+    [
+      "/comparativos/",
+      "Comparativos archive"
+    ],
+    [
+      "/blog/",
+      "Blog page"
+    ],
+    [
+      "/sobre-nos/",
+      "Sobre nós (criada hoje)"
+    ],
+    [
+      "/contato/",
+      "Contato - esperada mas não existe ainda"
+    ],
+    [
+      "/categoria/smartphones",
+      "Categoria exemplo"
+    ],
+    [
+      "/#reviews",
+      "Anchor home reviews"
+    ],
+    [
+      "/#comparativos",
+      "Anchor home comparativos"
+    ],
+    [
+      "/#ranking",
+      "Anchor home ranking"
+    ],
+    [
+      "/#laboratorio",
+      "Anchor home laboratorio/metodologia"
+    ],
+    [
+      "/#newsletter",
+      "Anchor home newsletter"
+    ],
+    [
+      "/metodologia/",
+      "Página metodologia dedicada?"
+    ],
+    [
+      "/politica-editorial/",
+      "Política editorial"
+    ]
+  ],
+  "api_pages": "[('sobre-nos', 'https://conexotech.com.br/sobre-nos/', 'publish'), ('mapa-do-site', 'https://conexotech.com.br/mapa-do-site/', 'publish'), ('bancada', 'https://conexotech.com.br/bancada/', 'publish'), ('blog', 'https://conexotech.com.br/blog/', 'publish'), ('inicio', 'https://conexotech.com.br/inicio/', 'publish')]",
+  "sitemap_sample": [
+    "https://conexotech.com.br/post-sitemap.xml",
+    "https://conexotech.com.br/page-sitemap.xml",
+    "https://conexotech.com.br/review-sitemap.xml",
+    "https://conexotech.com.br/category-sitemap.xml"
+  ]
+}

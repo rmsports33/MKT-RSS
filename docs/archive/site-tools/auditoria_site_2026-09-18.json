@@ -1,0 +1,228 @@
+{
+ "paginas": [
+  {
+   "url": "https://conexotech.com.br/",
+   "titulo": "ConexoTech - O seu guia tech definitivo.",
+   "h1_qtd": 1,
+   "h1": [
+    "Galaxy S26 Ultra: a melhor câmera que já testamos — por um preço que dói"
+   ],
+   "meta_description": true,
+   "meta_desc_len": 27,
+   "canonical": "https://conexotech.com.br/",
+   "schemas": [
+    "CollectionPage",
+    "Person",
+    "SearchAction",
+    "WebSite"
+   ],
+   "og_image": "",
+   "noindex": false,
+   "bytes": 52950
+  },
+  {
+   "url": "https://conexotech.com.br/comparativo-galaxy-s24-vs-iphone-15/",
+   "titulo": "Galaxy S24 vs iPhone 15 — Comparativo completo (celular) | Redator - ConexoTech",
+   "h1_qtd": 1,
+   "h1": [
+    "Galaxy S24 vs iPhone 15 — Comparativo completo (celular) | Redator"
+   ],
+   "meta_description": true,
+   "meta_desc_len": 146,
+   "canonical": "https://conexotech.com.br/comparativo-galaxy-s24-vs-iphone-15/",
+   "schemas": [
+    "BlogPosting",
+    "ImageObject",
+    "Person",
+    "WebPage",
+    "WebSite"
+   ],
+   "og_image": "",
+   "noindex": false,
+   "bytes": 56161
+  },
+  {
+   "url": "https://conexotech.com.br/comparativo-galaxy-a54-vs-redmi-note-13/",
+   "titulo": "Galaxy A54 vs Redmi Note 13 — Comparativo completo (celular) | Redator - ConexoTech",
+   "h1_qtd": 1,
+   "h1": [
+    "Galaxy A54 vs Redmi Note 13 — Comparativo completo (celular) | Redator"
+   ],
+   "meta_description": true,
+   "meta_desc_len": 150,
+   "canonical": "https://conexotech.com.br/comparativo-galaxy-a54-vs-redmi-note-13/",
+   "schemas": [
+    "BlogPosting",
+    "ImageObject",
+    "Person",
+    "WebPage",
+    "WebSite"
+   ],
+   "og_image": "",
+   "noindex": false,
+   "bytes": 54127
+  },
+  {
+   "url": "https://conexotech.com.br/preco-alto-cancelamentos-game-pass-ps-plus/",
+   "titulo": "Preço alto leva 40% dos cancelamentos de Game Pass e PS Plus - ConexoTech",
+   "h1_qtd": 1,
+   "h1": [
+    "Preço alto leva 40% dos cancelamentos de Game Pass e PS Plus"
+   ],
+   "meta_description": true,
+   "meta_desc_len": 119,
+   "canonical": "https://conexotech.com.br/preco-alto-cancelamentos-game-pass-ps-plus/",
+   "schemas": [
+    "BlogPosting",
+    "ImageObject",
+    "Person",
+    "WebPage",
+    "WebSite"
+   ],
+   "og_image": "https://conexotech.com.br/wp-content/uploads/2026/09/featured-5.webp",
+   "noindex": false,
+   "bytes": 42913
+  },
+  {
+   "url": "https://conexotech.com.br/",
+   "titulo": "ConexoTech - O seu guia tech definitivo.",
+   "h1_qtd": 1,
+   "h1": [
+    "Galaxy S26 Ultra: a melhor câmera que já testamos — por um preço que dói"
+   ],
+   "meta_description": true,
+   "meta_desc_len": 27,
+   "canonical": "https://conexotech.com.br/",
+   "schemas": [
+    "CollectionPage",
+    "Person",
+    "SearchAction",
+    "WebSite"
+   ],
+   "og_image": "",
+   "noindex": false,
+   "bytes": 52950
+  },
+  {
+   "url": "https://conexotech.com.br/sobre-nos/",
+   "titulo": "Sobre nós - ConexoTech",
+   "h1_qtd": 1,
+   "h1": [
+    "Sobre nós"
+   ],
+   "meta_description": true,
+   "meta_desc_len": 111,
+   "canonical": "https://conexotech.com.br/sobre-nos/",
+   "schemas": [
+    "Article",
+    "ImageObject",
+    "Person",
+    "WebPage",
+    "WebSite"
+   ],
+   "og_image": "",
+   "noindex": false,
+   "bytes": 37153
+  },
+  {
+   "url": "https://conexotech.com.br/mapa-do-site/",
+   "titulo": "Mapa do Site — Automático - ConexoTech",
+   "h1_qtd": 1,
+   "h1": [
+    "Mapa do Site — Automático"
+   ],
+   "meta_description": true,
+   "meta_desc_len": 158,
+   "canonical": "https://conexotech.com.br/mapa-do-site/",
+   "schemas": [
+    "Article",
+    "ImageObject",
+    "Person",
+    "WebPage",
+    "WebSite"
+   ],
+   "og_image": "",
+   "noindex": false,
+   "bytes": 35881
+  },
+  {
+   "url": "https://conexotech.com.br/blog/",
+   "titulo": "Blog - ConexoTech",
+   "h1_qtd": 1,
+   "h1": [
+    "Blog"
+   ],
+   "meta_description": false,
+   "meta_desc_len": 0,
+   "canonical": "https://conexotech.com.br/blog/",
+   "schemas": [
+    "Article",
+    "ImageObject",
+    "Person",
+    "WebPage",
+    "WebSite"
+   ],
+   "og_image": "",
+   "noindex": false,
+   "bytes": 34419
+  },
+  {
+   "url": "https://conexotech.com.br/reviews/",
+   "titulo": "Reviews - ConexoTech",
+   "h1_qtd": 1,
+   "h1": [
+    "Arquivos: Reviews"
+   ],
+   "meta_description": true,
+   "meta_desc_len": 28,
+   "canonical": "https://conexotech.com.br/reviews/",
+   "schemas": [
+    "CollectionPage",
+    "Person",
+    "WebSite"
+   ],
+   "og_image": "",
+   "noindex": false,
+   "bytes": 33794
+  },
+  {
+   "url": "https://conexotech.com.br/reviews/galaxy-s26-ultra-review/",
+   "titulo": "Galaxy S26 Ultra: a melhor câmera que já testamos — por um preço que dói - ConexoTech",
+   "h1_qtd": 1,
+   "h1": [
+    "Galaxy S26 Ultra: a melhor câmera que já testamos — por um preço que dói"
+   ],
+   "meta_description": true,
+   "meta_desc_len": 130,
+   "canonical": "https://conexotech.com.br/reviews/galaxy-s26-ultra-review/",
+   "schemas": [
+    "Person",
+    "Product",
+    "Rating",
+    "Review"
+   ],
+   "og_image": "https://conexotech.com.br/wp-content/uploads/2026/09/galaxy-s26-ultra.jpg",
+   "noindex": false,
+   "bytes": 44539
+  },
+  {
+   "url": "https://conexotech.com.br/category/noticias/",
+   "titulo": "Notícias - ConexoTech",
+   "h1_qtd": 1,
+   "h1": [
+    "Categoria: Notícias"
+   ],
+   "meta_description": false,
+   "meta_desc_len": 0,
+   "canonical": "https://conexotech.com.br/category/noticias/",
+   "schemas": [
+    "CollectionPage",
+    "Person",
+    "WebSite"
+   ],
+   "og_image": "",
+   "noindex": false,
+   "bytes": 35145
+  }
+ ]
+}

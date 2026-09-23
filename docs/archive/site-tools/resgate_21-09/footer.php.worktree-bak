@@ -1,0 +1,46 @@
+<footer class="site-footer">
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <span class="foot-brand">Conexo<em>Tech</em></span>
+        <p style="margin-top:14px;max-width:21rem"><?php esc_html_e( 'Reviews independentes, comparativos justos e notícias diárias. Pesquisa técnica séria, em português claro.', 'conexotech' ); ?></p>
+      </div>
+      <div>
+        <h4><?php esc_html_e( 'CONTEÚDO', 'conexotech' ); ?></h4>
+        <ul>
+          <li><a href="<?php echo esc_url( get_post_type_archive_link( 'review' ) ); ?>"><?php esc_html_e( 'Reviews', 'conexotech' ); ?></a></li>
+          <li><a href="<?php echo esc_url( get_post_type_archive_link( 'comparativo' ) ); ?>"><?php esc_html_e( 'Comparativos', 'conexotech' ); ?></a></li>
+          <li><a href="<?php echo esc_url( home_url( '/#ranking' ) ); ?>"><?php esc_html_e( 'Rankings', 'conexotech' ); ?></a></li>
+          <li><a href="<?php echo esc_url( home_url( '/#noticias' ) ); ?>"><?php esc_html_e( 'Notícias', 'conexotech' ); ?></a></li>
+        </ul>
+      </div>
+      <div>
+        <h4><?php esc_html_e( 'REDAÇÃO', 'conexotech' ); ?></h4>
+        <?php
+        wp_nav_menu( array(
+          'theme_location' => 'footer',
+          'container'      => false,
+          'fallback_cb'    => 'conexo_footer_fallback',
+        ) );
+        ?>
+      </div>
+      <div>
+        <h4><?php esc_html_e( 'SIGA', 'conexotech' ); ?></h4>
+        <ul>
+          <li><a href="#topo">YouTube</a></li>
+          <li><a href="#topo">Instagram</a></li>
+          <li><a href="#topo">X / Twitter</a></li>
+          <li><a href="<?php echo esc_url( get_bloginfo( 'rss2_url' ) ); ?>">Feed RSS</a></li>
+        </ul>
+      </div>
+    </div>
+    <p style="font-size:.76rem;max-width:62rem;margin-bottom:24px"><?php esc_html_e( 'Aviso de afiliados: o ConexoTech participa de programas de afiliados (Amazon, Shopee, Mercado Livre e outros). Quando você compra através dos nossos links, podemos receber uma comissão — o preço final não muda para você. Isso mantém nossos reviews independentes.', 'conexotech' ); ?></p>
+    <div class="foot-bottom">
+      <span>© <?php echo esc_html( date_i18n( 'Y' ) ); ?> <?php bloginfo( 'name' ); ?> — <?php esc_html_e( 'todos os direitos reservados.', 'conexotech' ); ?></span>
+      <span class="mono"><?php esc_html_e( 'PESQUISADO • COMPARADO • PUBLICADO', 'conexotech' ); ?></span>
+    </div>
+  </div>
+</footer>
+<?php wp_footer(); ?>
+</body>
+</html>

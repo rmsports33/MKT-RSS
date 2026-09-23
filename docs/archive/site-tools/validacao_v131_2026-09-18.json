@@ -1,0 +1,36 @@
+{
+  "version": "1.3.1",
+  "files": [
+    "404.php",
+    "archive.php",
+    "footer.php",
+    "front-page.php",
+    "functions.php",
+    "header.php",
+    "index.php",
+    "page.php",
+    "README.txt",
+    "screenshot.png",
+    "search.php",
+    "searchform.php",
+    "single-comparativo.php",
+    "single-review.php",
+    "single.php",
+    "style.css",
+    "template-comparador.php",
+    "assets/js/main.js"
+  ],
+  "checks": {
+    "versão functions 1.3.1": true,
+    "versão style 1.3.1": true,
+    "automatic-feed-links": true,
+    "feed_clean só no is_feed": true,
+    "feed_clean remove scripts": true,
+    "feed_clean remove price-history": true,
+    "feed_cpt_links hook": true,
+    "footer 3 RSS": true,
+    "não unificamos feed": true
+  },
+  "size": 80805,
+  "sha256": "9bbede98b2a1612e"
+}

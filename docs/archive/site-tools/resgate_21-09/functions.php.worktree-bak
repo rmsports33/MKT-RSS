@@ -1,0 +1,836 @@
+<?php
+/**
+ * ConexoTech — functions.php
+ * Configuração do tema: CPTs, taxonomias, meta boxes, menus e assets.
+ *
+ * @package ConexoTech
+ */
+
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
+define( 'CONEXO_VERSION', '1.3.0' );
+
+/* ============================================================
+ * 1. CONFIGURAÇÃO BASE
+ * ============================================================ */
+function conexo_setup() {
+	add_theme_support( 'title-tag' );
+	add_theme_support( 'post-thumbnails' );
+	add_theme_support( 'html5', array( 'search-form', 'comment-form', 'comment-list', 'gallery', 'caption', 'style', 'script' ) );
+	add_theme_support( 'custom-logo', array( 'height' => 88, 'width' => 300, 'flex-height' => true, 'flex-width' => true ) );
+	add_theme_support( 'responsive-embeds' );
+
+	add_image_size( 'conexo-thumb', 800, 525, true );   // lista de reviews
+	add_image_size( 'conexo-wide', 1200, 675, true );   // destaque / notícias
+	add_image_size( 'conexo-mini', 400, 400, true );    // ranking / comparativo
+
+	register_nav_menus( array(
+		'primary' => __( 'Navegação principal', 'conexotech' ),
+		'utility' => __( 'Barra superior (institucional)', 'conexotech' ),
+		'footer'  => __( 'Rodapé', 'conexotech' ),
+	) );
+}
+add_action( 'after_setup_theme', 'conexo_setup' );
+
+/* Termos padrão da taxonomia (criados uma vez) */
+function conexo_default_terms() {
+	$defaults = array( 'Smartphones', 'Notebooks', 'Áudio' );
+	foreach ( $defaults as $name ) {
+		if ( ! term_exists( $name, 'tipo_produto' ) ) {
+			wp_insert_term( $name, 'tipo_produto' );
+		}
+	}
+}
+
+/* ============================================================
+ * 2. TIPOS DE CONTEÚDO
+ * ============================================================ */
+function conexo_register_types() {
+
+	/* --- Taxonomia compartilhada: categoria de produto --- */
+	register_taxonomy( 'tipo_produto', array( 'review', 'comparativo', 'post' ), array(
+		'labels' => array(
+			'name'          => __( 'Categorias de produto', 'conexotech' ),
+			'singular_name' => __( 'Categoria de produto', 'conexotech' ),
+		),
+		'hierarchical'      => true,
+		'show_ui'           => true,
+		'show_admin_column' => true,
+		'show_in_rest'      => true,
+		'rewrite'           => array( 'slug' => 'categoria' ),
+	) );
+
+	/* --- CPT: Reviews --- */
+	register_post_type( 'review', array(
+		'labels' => array(
+			'name'          => __( 'Reviews', 'conexotech' ),
+			'singular_name' => __( 'Review', 'conexotech' ),
+			'add_new_item'  => __( 'Adicionar review', 'conexotech' ),
+			'edit_item'     => __( 'Editar review', 'conexotech' ),
+		),
+		'public'       => true,
+		'has_archive'  => true,
+		'rewrite'      => array( 'slug' => 'reviews' ),
+		'show_in_rest' => true,
+		'menu_icon'    => 'dashicons-star-filled',
+		'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'author' ),
+	) );
+
+	/* --- CPT: Comparativos --- */
+	register_post_type( 'comparativo', array(
+		'labels' => array(
+			'name'          => __( 'Comparativos', 'conexotech' ),
+			'singular_name' => __( 'Comparativo', 'conexotech' ),
+			'add_new_item'  => __( 'Adicionar comparativo', 'conexotech' ),
+			'edit_item'     => __( 'Editar comparativo', 'conexotech' ),
+		),
+		'public'       => true,
+		'has_archive'  => true,
+		'rewrite'      => array( 'slug' => 'comparativos' ),
+		'show_in_rest' => true,
+		'menu_icon'    => 'dashicons-columns',
+		'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt', 'author' ),
+	) );
+
+	conexo_default_terms();
+}
+add_action( 'init', 'conexo_register_types' );
+
+/* Reescreve regras ao ativar o tema */
+function conexo_activate() {
+	conexo_register_types();
+	flush_rewrite_rules();
+}
+add_action( 'after_switch_theme', 'conexo_activate' );
+
+/* ============================================================
+ * 3. META BOXES — REVIEW
+ * Campos: nota, lede, amostra, tempo, destaque, prós, contras,
+ * specs (linhas "Rótulo | Valor") e benchmarks ("Rótulo | Detalhe | 0-100").
+ * ============================================================ */
+function conexo_review_boxes() {
+	add_meta_box( 'conexo_review', __( 'Ficha do review', 'conexotech' ), 'conexo_review_box_html', 'review', 'normal', 'high' );
+}
+add_action( 'add_meta_boxes', 'conexo_review_boxes' );
+
+function conexo_review_box_html( $post ) {
+	wp_nonce_field( 'conexo_review_save', 'conexo_review_nonce' );
+	$nota     = get_post_meta( $post->ID, '_conexo_nota', true );
+	$lede     = get_post_meta( $post->ID, '_conexo_lede', true );
+	$amostra  = get_post_meta( $post->ID, '_conexo_amostra', true );
+	$tempo    = get_post_meta( $post->ID, '_conexo_tempo', true );
+	$veredito = get_post_meta( $post->ID, '_conexo_veredito', true );
+	$pros     = get_post_meta( $post->ID, '_conexo_pros', true );
+	$contras  = get_post_meta( $post->ID, '_conexo_contras', true );
+	$specs    = get_post_meta( $post->ID, '_conexo_specs', true );
+	$benchs   = get_post_meta( $post->ID, '_conexo_benchs', true );
+	$destaque = get_post_meta( $post->ID, '_conexo_destaque', true );
+	?>
+	<style>.conexo-field{margin-bottom:14px}.conexo-field label{display:block;font-weight:600;margin-bottom:4px}.conexo-field input[type=text],.conexo-field textarea{width:100%}.conexo-hint{color:#646970;font-size:12px}</style>
+	<div class="conexo-field">
+		<label for="conexo_nota"><?php esc_html_e( 'Nota final (0 a 10, ex.: 9,2)', 'conexotech' ); ?></label>
+		<input type="text" id="conexo_nota" name="conexo_nota" value="<?php echo esc_attr( $nota ); ?>" style="max-width:120px">
+	</div>
+	<div class="conexo-field">
+		<label for="conexo_lede"><?php esc_html_e( 'Lede (resumo de abertura)', 'conexotech' ); ?></label>
+		<textarea id="conexo_lede" name="conexo_lede" rows="2"><?php echo esc_textarea( $lede ); ?></textarea>
+	</div>
+	<div class="conexo-field" style="display:flex;gap:16px;flex-wrap:wrap">
+		<div style="flex:1;min-width:200px">
+			<label for="conexo_amostra"><?php esc_html_e( 'Código interno (opcional, ex.: S26U-041)', 'conexotech' ); ?></label>
+			<input type="text" id="conexo_amostra" name="conexo_amostra" value="<?php echo esc_attr( $amostra ); ?>">
+		</div>
+		<div style="flex:1;min-width:200px">
+			<label for="conexo_tempo"><?php esc_html_e( 'Tempo de leitura (ex.: 12 min)', 'conexotech' ); ?></label>
+			<input type="text" id="conexo_tempo" name="conexo_tempo" value="<?php echo esc_attr( $tempo ); ?>">
+		</div>
+	</div>
+	<div class="conexo-field">
+		<label for="conexo_veredito"><?php esc_html_e( 'Veredito em uma frase', 'conexotech' ); ?></label>
+		<textarea id="conexo_veredito" name="conexo_veredito" rows="2"><?php echo esc_textarea( $veredito ); ?></textarea>
+	</div>
+	<div class="conexo-field" style="display:flex;gap:16px;flex-wrap:wrap">
+		<div style="flex:1;min-width:220px">
+			<label for="conexo_pros"><?php esc_html_e( 'Pontos fortes (um por linha)', 'conexotech' ); ?></label>
+			<textarea id="conexo_pros" name="conexo_pros" rows="4"><?php echo esc_textarea( $pros ); ?></textarea>
+		</div>
+		<div style="flex:1;min-width:220px">
+			<label for="conexo_contras"><?php esc_html_e( 'Pontos fracos (um por linha)', 'conexotech' ); ?></label>
+			<textarea id="conexo_contras" name="conexo_contras" rows="4"><?php echo esc_textarea( $contras ); ?></textarea>
+		</div>
+	</div>
+	<div class="conexo-field">
+		<label for="conexo_specs"><?php esc_html_e( 'Ficha técnica (uma por linha, formato: Rótulo | Valor)', 'conexotech' ); ?></label>
+		<textarea id="conexo_specs" name="conexo_specs" rows="4" placeholder="TELA | 6,9&quot; AMOLED • 120 Hz"><?php echo esc_textarea( $specs ); ?></textarea>
+	</div>
+	<div class="conexo-field">
+			<label for="conexo_benchs"><?php esc_html_e( 'Barras de destaque (uma por linha: Rótulo | Detalhe | 0–100)', 'conexotech' ); ?></label>
+		<textarea id="conexo_benchs" name="conexo_benchs" rows="4" placeholder="Bateria | 21h04 de tela | 93"><?php echo esc_textarea( $benchs ); ?></textarea>
+		<p class="conexo-hint"><?php esc_html_e( 'A primeira linha vira a barra de destaque (azul).', 'conexotech' ); ?></p>
+	</div>
+	<div class="conexo-field">
+		<label><input type="checkbox" name="conexo_destaque" value="1" <?php checked( $destaque, '1' ); ?>> <?php esc_html_e( 'Destacar este review na home (Review da semana)', 'conexotech' ); ?></label>
+	</div>
+	<?php
+}
+
+function conexo_review_save( $post_id ) {
+	if ( ! isset( $_POST['conexo_review_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['conexo_review_nonce'] ), 'conexo_review_save' ) ) {
+		return;
+	}
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+	if ( ! current_user_can( 'edit_post', $post_id ) || get_post_type( $post_id ) !== 'review' ) {
+		return;
+	}
+	$nota_raw = isset( $_POST['conexo_nota'] ) ? sanitize_text_field( wp_unslash( $_POST['conexo_nota'] ) ) : '';
+	$nota     = (float) str_replace( ',', '.', $nota_raw );
+	$nota     = max( 0, min( 10, $nota ) );
+	update_post_meta( $post_id, '_conexo_nota', $nota > 0 ? number_format( $nota, 1, ',', '' ) : '' );
+
+	$text_fields = array( 'lede', 'amostra', 'tempo' );
+	foreach ( $text_fields as $f ) {
+		$key = 'conexo_' . $f;
+		update_post_meta( $post_id, '_conexo_' . $f, isset( $_POST[ $key ] ) ? sanitize_text_field( wp_unslash( $_POST[ $key ] ) ) : '' );
+	}
+	$area_fields = array( 'veredito', 'pros', 'contras', 'specs', 'benchs' );
+	foreach ( $area_fields as $f ) {
+		$key = 'conexo_' . $f;
+		update_post_meta( $post_id, '_conexo_' . $f, isset( $_POST[ $key ] ) ? sanitize_textarea_field( wp_unslash( $_POST[ $key ] ) ) : '' );
+	}
+	update_post_meta( $post_id, '_conexo_destaque', isset( $_POST['conexo_destaque'] ) ? '1' : '0' );
+}
+add_action( 'save_post', 'conexo_review_save' );
+
+/* ============================================================
+ * 4. META BOXES — COMPARATIVO
+ * 3 produtos + notas + 6 critérios (rótulo, 3 valores, vencedor).
+ * ============================================================ */
+function conexo_comp_boxes() {
+	add_meta_box( 'conexo_comp', __( 'Montar comparativo', 'conexotech' ), 'conexo_comp_box_html', 'comparativo', 'normal', 'high' );
+}
+add_action( 'add_meta_boxes', 'conexo_comp_boxes' );
+
+function conexo_comp_box_html( $post ) {
+	wp_nonce_field( 'conexo_comp_save', 'conexo_comp_nonce' );
+	$prods   = array();
+	$notas   = array();
+	for ( $i = 1; $i <= 3; $i++ ) {
+		$prods[ $i ] = get_post_meta( $post->ID, '_conexo_prod_' . $i, true );
+		$notas[ $i ] = get_post_meta( $post->ID, '_conexo_nota_' . $i, true );
+	}
+	$veredito = get_post_meta( $post->ID, '_conexo_comp_veredito', true );
+	?>
+	<style>.conexo-field{margin-bottom:14px}.conexo-field label{display:block;font-weight:600;margin-bottom:4px}.conexo-field input[type=text]{width:100%}.conexo-grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}.conexo-crit{border:1px solid #c3c4c7;padding:12px;margin-bottom:12px;background:#f6f7f7}.conexo-crit h4{margin:0 0 8px}</style>
+	<div class="conexo-field">
+		<label><?php esc_html_e( 'Produtos (nome de cada coluna)', 'conexotech' ); ?></label>
+		<div class="conexo-grid3">
+			<?php for ( $i = 1; $i <= 3; $i++ ) : ?>
+				<input type="text" name="conexo_prod_<?php echo esc_attr( $i ); ?>" value="<?php echo esc_attr( $prods[ $i ] ); ?>" placeholder="<?php echo esc_attr__( 'Produto ', 'conexotech' ) . esc_attr( $i ); ?>">
+			<?php endfor; ?>
+		</div>
+	</div>
+	<div class="conexo-field">
+		<label><?php esc_html_e( 'Notas finais (0 a 10)', 'conexotech' ); ?></label>
+		<div class="conexo-grid3">
+			<?php for ( $i = 1; $i <= 3; $i++ ) : ?>
+				<input type="text" name="conexo_nota_<?php echo esc_attr( $i ); ?>" value="<?php echo esc_attr( $notas[ $i ] ); ?>" placeholder="9,0" style="max-width:120px">
+			<?php endfor; ?>
+		</div>
+	</div>
+	<?php for ( $r = 1; $r <= 6; $r++ ) :
+		$label = get_post_meta( $post->ID, '_conexo_crit_' . $r . '_label', true );
+		$win   = get_post_meta( $post->ID, '_conexo_crit_' . $r . '_win', true );
+		?>
+		<div class="conexo-crit">
+			<h4><?php echo esc_html__( 'Critério ', 'conexotech' ) . esc_html( $r ); ?></h4>
+			<div class="conexo-field">
+				<label><?php esc_html_e( 'Rótulo do critério', 'conexotech' ); ?></label>
+				<input type="text" name="conexo_crit_<?php echo esc_attr( $r ); ?>_label" value="<?php echo esc_attr( $label ); ?>" placeholder="Ex.: Bateria (teste)">
+			</div>
+			<div class="conexo-grid3">
+				<?php for ( $i = 1; $i <= 3; $i++ ) :
+					$v = get_post_meta( $post->ID, '_conexo_crit_' . $r . '_v' . $i, true );
+					?>
+					<input type="text" name="conexo_crit_<?php echo esc_attr( $r ); ?>_v<?php echo esc_attr( $i ); ?>" value="<?php echo esc_attr( $v ); ?>" placeholder="<?php echo esc_attr__( 'Valor produto ', 'conexotech' ) . esc_attr( $i ); ?>">
+				<?php endfor; ?>
+			</div>
+			<div class="conexo-field" style="margin-top:8px">
+				<label><?php esc_html_e( 'Vencedor do critério', 'conexotech' ); ?></label>
+				<select name="conexo_crit_<?php echo esc_attr( $r ); ?>_win">
+					<option value="-1" <?php selected( $win, '-1' ); ?>><?php esc_html_e( 'Nenhum / empate', 'conexotech' ); ?></option>
+					<option value="0" <?php selected( $win, '0' ); ?>><?php esc_html_e( 'Produto 1', 'conexotech' ); ?></option>
+					<option value="1" <?php selected( $win, '1' ); ?>><?php esc_html_e( 'Produto 2', 'conexotech' ); ?></option>
+					<option value="2" <?php selected( $win, '2' ); ?>><?php esc_html_e( 'Produto 3', 'conexotech' ); ?></option>
+				</select>
+			</div>
+		</div>
+	<?php endfor; ?>
+	<div class="conexo-field">
+		<label for="conexo_comp_veredito"><?php esc_html_e( 'Texto do veredito (placar calculado sozinho)', 'conexotech' ); ?></label>
+		<textarea id="conexo_comp_veredito" name="conexo_comp_veredito" rows="3" style="width:100%"><?php echo esc_textarea( $veredito ); ?></textarea>
+	</div>
+	<?php
+}
+
+function conexo_comp_save( $post_id ) {
+	if ( ! isset( $_POST['conexo_comp_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['conexo_comp_nonce'] ), 'conexo_comp_save' ) ) {
+		return;
+	}
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+	if ( ! current_user_can( 'edit_post', $post_id ) || get_post_type( $post_id ) !== 'comparativo' ) {
+		return;
+	}
+	for ( $i = 1; $i <= 3; $i++ ) {
+		$pk = 'conexo_prod_' . $i;
+		update_post_meta( $post_id, '_conexo_prod_' . $i, isset( $_POST[ $pk ] ) ? sanitize_text_field( wp_unslash( $_POST[ $pk ] ) ) : '' );
+		$nk      = 'conexo_nota_' . $i;
+		$nraw    = isset( $_POST[ $nk ] ) ? sanitize_text_field( wp_unslash( $_POST[ $nk ] ) ) : '';
+		$n       = (float) str_replace( ',', '.', $nraw );
+		$n       = max( 0, min( 10, $n ) );
+		update_post_meta( $post_id, '_conexo_nota_' . $i, $n > 0 ? number_format( $n, 1, ',', '' ) : '' );
+	}
+	for ( $r = 1; $r <= 6; $r++ ) {
+		$lk = 'conexo_crit_' . $r . '_label';
+		update_post_meta( $post_id, '_conexo_crit_' . $r . '_label', isset( $_POST[ $lk ] ) ? sanitize_text_field( wp_unslash( $_POST[ $lk ] ) ) : '' );
+		for ( $i = 1; $i <= 3; $i++ ) {
+			$vk = 'conexo_crit_' . $r . '_v' . $i;
+			update_post_meta( $post_id, '_conexo_crit_' . $r . '_v' . $i, isset( $_POST[ $vk ] ) ? sanitize_text_field( wp_unslash( $_POST[ $vk ] ) ) : '' );
+		}
+		$wk  = 'conexo_crit_' . $r . '_win';
+		$win = isset( $_POST[ $wk ] ) ? intval( $_POST[ $wk ] ) : -1;
+		if ( $win < -1 || $win > 2 ) {
+			$win = -1;
+		}
+		update_post_meta( $post_id, '_conexo_crit_' . $r . '_win', (string) $win );
+	}
+	update_post_meta( $post_id, '_conexo_comp_veredito', isset( $_POST['conexo_comp_veredito'] ) ? sanitize_textarea_field( wp_unslash( $_POST['conexo_comp_veredito'] ) ) : '' );
+}
+add_action( 'save_post', 'conexo_comp_save' );
+
+/* ============================================================
+ * 5. ASSETS
+ * ============================================================ */
+function conexo_assets() {
+	wp_enqueue_style( 'conexo-fonts', 'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,600;0,8..60,700;0,8..60,900;1,8..60,600&family=Space+Grotesk:wght@500;700&family=JetBrains+Mono:wght@400;500;700&display=swap', array(), CONEXO_VERSION );
+	wp_enqueue_style( 'conexo-style', get_stylesheet_uri(), array( 'conexo-fonts' ), CONEXO_VERSION );
+
+	wp_enqueue_script( 'conexo-main', get_template_directory_uri() . '/assets/js/main.js', array(), CONEXO_VERSION, true );
+
+	$ticks = array();
+	$recent = new WP_Query( array( 'posts_per_page' => 4, 'post_status' => 'publish', 'ignore_sticky_posts' => true ) );
+	while ( $recent->have_posts() ) {
+		$recent->the_post();
+		$ticks[] = get_the_title();
+	}
+	wp_reset_postdata();
+	wp_localize_script( 'conexo-main', 'conexoTicks', $ticks );
+}
+add_action( 'wp_enqueue_scripts', 'conexo_assets' );
+
+/* ============================================================
+ * 6. HELPERS
+ * ============================================================ */
+
+/* Nota do review formatada (ex.: "9,2") */
+function conexo_nota( $post_id = null ) {
+	$post_id = $post_id ? $post_id : get_the_ID();
+	return get_post_meta( $post_id, '_conexo_nota', true );
+}
+
+/* Review em destaque (checkbox) ou o mais recente */
+function conexo_review_destaque() {
+	$q = new WP_Query( array(
+		'post_type'      => 'review',
+		'posts_per_page' => 1,
+		'post_status'    => 'publish',
+		'meta_key'       => '_conexo_destaque',
+		'meta_value'     => '1',
+	) );
+	if ( ! $q->have_posts() ) {
+		$q = new WP_Query( array( 'post_type' => 'review', 'posts_per_page' => 1, 'post_status' => 'publish' ) );
+	}
+	return $q;
+}
+
+/* Primeiro termo da taxonomia (nome) */
+function conexo_term_nome( $post_id = null, $taxonomy = 'tipo_produto' ) {
+	$post_id = $post_id ? $post_id : get_the_ID();
+	$terms = get_the_terms( $post_id, $taxonomy );
+	if ( $terms && ! is_wp_error( $terms ) ) {
+		return $terms[0]->name;
+	}
+	return '';
+}
+
+/* Primeiro termo (slug) — para filtros JS */
+function conexo_term_slug( $post_id = null, $taxonomy = 'tipo_produto' ) {
+	$post_id = $post_id ? $post_id : get_the_ID();
+	$terms = get_the_terms( $post_id, $taxonomy );
+	if ( $terms && ! is_wp_error( $terms ) ) {
+		return $terms[0]->slug;
+	}
+	return 'geral';
+}
+
+/* Figura com foto destacada ou fallback elegante */
+function conexo_thumb( $size = 'conexo-thumb', $ph = 'CT', $class = '' ) {
+	$html = '<span class="ph ' . esc_attr( $class ) . '" data-ph="' . esc_attr( $ph ) . '" style="display:block">';
+	if ( has_post_thumbnail() ) {
+		$html .= get_the_post_thumbnail( get_the_ID(), $size, array( 'alt' => esc_attr( get_the_title() ) ) );
+	}
+	$html .= '</span>';
+	return $html;
+}
+
+/* Iniciais do autor para o avatar */
+function conexo_iniciais( $author_id = null ) {
+	$author_id = $author_id ? $author_id : get_the_author_meta( 'ID' );
+	$name  = get_the_author_meta( 'display_name', $author_id );
+	$parts = preg_split( '/\s+/', trim( $name ) );
+	$ini   = '';
+	if ( ! empty( $parts[0] ) ) {
+		$ini .= mb_strtoupper( mb_substr( $parts[0], 0, 1 ) );
+	}
+	if ( count( $parts ) > 1 ) {
+		$ini .= mb_strtoupper( mb_substr( end( $parts ), 0, 1 ) );
+	}
+	return $ini ? $ini : 'CT';
+}
+
+/* Quebra textarea em linhas não vazias */
+function conexo_linhas( $text ) {
+	$lines = preg_split( '/\r\n|\r|\n/', (string) $text );
+	return array_values( array_filter( array_map( 'trim', $lines ) ) );
+}
+
+/* Excerpt mais curto no tema */
+function conexo_excerpt_length() {
+	return 24;
+}
+add_filter( 'excerpt_length', 'conexo_excerpt_length' );
+
+/* ============================================================
+ * 7. FALLBACKS DE MENU (quando nenhum menu foi criado)
+ * ============================================================ */
+function conexo_primary_fallback() {
+	$items = array(
+		'#reviews'      => __( 'Reviews', 'conexotech' ),
+		'#comparativos' => __( 'Comparativos', 'conexotech' ),
+		'#ranking'      => __( 'Rankings', 'conexotech' ),
+		'#noticias'     => __( 'Notícias', 'conexotech' ),
+		'#laboratorio'  => __( 'Metodologia', 'conexotech' ),
+	);
+	echo '<ul class="links" id="menu">';
+	foreach ( $items as $href => $label ) {
+		echo '<li><a href="' . esc_url( home_url( '/' . $href ) ) . '">' . esc_html( $label ) . '</a></li>';
+	}
+	echo '</ul>';
+}
+
+function conexo_utility_fallback() {
+	echo '<nav aria-label="' . esc_attr__( 'Links institucionais', 'conexotech' ) . '"><ul>';
+	echo '<li><a href="' . esc_url( home_url( '/#laboratorio' ) ) . '">' . esc_html__( 'Metodologia', 'conexotech' ) . '</a></li>';
+	echo '<li><a href="' . esc_url( home_url( '/#laboratorio' ) ) . '">' . esc_html__( 'Sobre nós', 'conexotech' ) . '</a></li>';
+	echo '<li><a href="' . esc_url( home_url( '/#newsletter' ) ) . '">' . esc_html__( 'Contato', 'conexotech' ) . '</a></li>';
+	echo '</ul></nav>';
+}
+
+function conexo_footer_fallback() {
+	echo '<ul>';
+	echo '<li><a href="' . esc_url( home_url( '/#laboratorio' ) ) . '">' . esc_html__( 'Metodologia', 'conexotech' ) . '</a></li>';
+	echo '<li><a href="' . esc_url( home_url( '/#laboratorio' ) ) . '">' . esc_html__( 'Política editorial', 'conexotech' ) . '</a></li>';
+	echo '<li><a href="' . esc_url( home_url( '/#newsletter' ) ) . '">' . esc_html__( 'Newsletter', 'conexotech' ) . '</a></li>';
+	echo '<li><a href="' . esc_url( home_url( '/#newsletter' ) ) . '">' . esc_html__( 'Contato', 'conexotech' ) . '</a></li>';
+	echo '</ul>';
+}
+
+/* ============================================================
+ * 8. KIT AFILIADO — Onde comprar, links patrocinados e schema
+ * ============================================================ */
+
+/* --- Meta box: Onde comprar (até 3 lojas no review) --- */
+function conexo_lojas_boxes() {
+	add_meta_box( 'conexo_lojas', __( 'Onde comprar (afiliados)', 'conexotech' ), 'conexo_lojas_box_html', 'review', 'normal', 'default' );
+}
+add_action( 'add_meta_boxes', 'conexo_lojas_boxes' );
+
+function conexo_lojas_box_html( $post ) {
+	wp_nonce_field( 'conexo_lojas_save', 'conexo_lojas_nonce' );
+	?>
+	<p style="color:#646970"><?php esc_html_e( 'Preencha até 3 lojas com seus links de afiliado. O preço é digitado por você (ex.: R$ 8.499) — confira e atualize 1–2x por semana. Deixe em branco o que não usar.', 'conexotech' ); ?></p>
+	<?php
+	for ( $i = 1; $i <= 3; $i++ ) :
+		$nome  = get_post_meta( $post->ID, '_conexo_loja_' . $i . '_nome', true );
+		$url   = get_post_meta( $post->ID, '_conexo_loja_' . $i . '_url', true );
+		$preco = get_post_meta( $post->ID, '_conexo_loja_' . $i . '_preco', true );
+		?>
+		<div style="border:1px solid #c3c4c7;padding:12px;margin-bottom:12px;background:#f6f7f7">
+			<strong><?php echo esc_html__( 'Loja ', 'conexotech' ) . esc_html( $i ); ?></strong>
+			<p><label><?php esc_html_e( 'Nome da loja', 'conexotech' ); ?><br><input type="text" name="conexo_loja_<?php echo esc_attr( $i ); ?>_nome" value="<?php echo esc_attr( $nome ); ?>" style="width:100%" placeholder="Amazon"></label></p>
+			<p><label><?php esc_html_e( 'Link de afiliado (URL completa)', 'conexotech' ); ?><br><input type="url" name="conexo_loja_<?php echo esc_attr( $i ); ?>_url" value="<?php echo esc_attr( $url ); ?>" style="width:100%" placeholder="https://..."></label></p>
+			<p><label><?php esc_html_e( 'Preço exibido', 'conexotech' ); ?><br><input type="text" name="conexo_loja_<?php echo esc_attr( $i ); ?>_preco" value="<?php echo esc_attr( $preco ); ?>" placeholder="R$ 8.499"></label></p>
+		</div>
+		<?php
+	endfor;
+}
+
+function conexo_lojas_save( $post_id ) {
+	if ( ! isset( $_POST['conexo_lojas_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['conexo_lojas_nonce'] ), 'conexo_lojas_save' ) ) {
+		return;
+	}
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+	if ( ! current_user_can( 'edit_post', $post_id ) || get_post_type( $post_id ) !== 'review' ) {
+		return;
+	}
+	for ( $i = 1; $i <= 3; $i++ ) {
+		$nk = 'conexo_loja_' . $i . '_nome';
+		$uk = 'conexo_loja_' . $i . '_url';
+		$pk = 'conexo_loja_' . $i . '_preco';
+		update_post_meta( $post_id, '_conexo_loja_' . $i . '_nome', isset( $_POST[ $nk ] ) ? sanitize_text_field( wp_unslash( $_POST[ $nk ] ) ) : '' );
+		update_post_meta( $post_id, '_conexo_loja_' . $i . '_url', isset( $_POST[ $uk ] ) ? esc_url_raw( wp_unslash( $_POST[ $uk ] ) ) : '' );
+		update_post_meta( $post_id, '_conexo_loja_' . $i . '_preco', isset( $_POST[ $pk ] ) ? sanitize_text_field( wp_unslash( $_POST[ $pk ] ) ) : '' );
+	}
+}
+add_action( 'save_post', 'conexo_lojas_save' );
+
+/* --- Meta box: links de compra por produto (comparativo) --- */
+function conexo_comp_links_boxes() {
+	add_meta_box( 'conexo_comp_links', __( 'Links de compra (afiliados)', 'conexotech' ), 'conexo_comp_links_box_html', 'comparativo', 'normal', 'default' );
+}
+add_action( 'add_meta_boxes', 'conexo_comp_links_boxes' );
+
+function conexo_comp_links_box_html( $post ) {
+	wp_nonce_field( 'conexo_comp_links_save', 'conexo_comp_links_nonce' );
+	?>
+	<p style="color:#646970"><?php esc_html_e( 'Um link de afiliado para cada produto do comparativo (o botão "Ver preço" aparece na tabela).', 'conexotech' ); ?></p>
+	<?php
+	for ( $i = 1; $i <= 3; $i++ ) :
+		$url = get_post_meta( $post->ID, '_conexo_buy_' . $i, true );
+		?>
+		<p><label><?php echo esc_html__( 'Link de compra — Produto ', 'conexotech' ) . esc_html( $i ); ?><br><input type="url" name="conexo_buy_<?php echo esc_attr( $i ); ?>" value="<?php echo esc_attr( $url ); ?>" style="width:100%" placeholder="https://..."></label></p>
+		<?php
+	endfor;
+}
+
+function conexo_comp_links_save( $post_id ) {
+	if ( ! isset( $_POST['conexo_comp_links_nonce'] ) || ! wp_verify_nonce( sanitize_key( $_POST['conexo_comp_links_nonce'] ), 'conexo_comp_links_save' ) ) {
+		return;
+	}
+	if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
+		return;
+	}
+	if ( ! current_user_can( 'edit_post', $post_id ) || get_post_type( $post_id ) !== 'comparativo' ) {
+		return;
+	}
+	for ( $i = 1; $i <= 3; $i++ ) {
+		$k = 'conexo_buy_' . $i;
+		update_post_meta( $post_id, '_conexo_buy_' . $i, isset( $_POST[ $k ] ) ? esc_url_raw( wp_unslash( $_POST[ $k ] ) ) : '' );
+	}
+}
+add_action( 'save_post', 'conexo_comp_links_save' );
+
+/* --- Lojas de um review (só as preenchidas) --- */
+function conexo_lojas( $post_id = null ) {
+	$post_id = $post_id ? $post_id : get_the_ID();
+	$lojas   = array();
+	for ( $i = 1; $i <= 3; $i++ ) {
+		$url = get_post_meta( $post_id, '_conexo_loja_' . $i . '_url', true );
+		if ( ! $url ) {
+			continue;
+		}
+		$lojas[] = array(
+			'nome'  => get_post_meta( $post_id, '_conexo_loja_' . $i . '_nome', true ),
+			'url'   => $url,
+			'preco' => get_post_meta( $post_id, '_conexo_loja_' . $i . '_preco', true ),
+		);
+	}
+	return $lojas;
+}
+
+/* --- Menor preço entre as lojas (para o selo) --- */
+function conexo_menor_preco( $lojas ) {
+	$best = null;
+	foreach ( (array) $lojas as $l ) {
+		$raw = preg_replace( '/[^\d.,]/', '', (string) $l['preco'] );
+		if ( $raw === '' ) {
+			continue;
+		}
+		$n = (float) str_replace( ',', '.', str_replace( '.', '', $raw ) );
+		if ( $n <= 0 ) {
+			continue;
+		}
+		if ( null === $best || $n < $best['num'] ) {
+			$best = array( 'num' => $n, 'loja' => $l );
+		}
+	}
+	return $best;
+}
+
+/* --- Link de afiliado com atributos corretos (SEO + segurança) --- */
+function conexo_aff( $url, $label, $class = 'btn btn-ink' ) {
+	if ( ! $url ) {
+		return '';
+	}
+	return '<a class="' . esc_attr( $class ) . '" href="' . esc_url( $url ) . '" target="_blank" rel="sponsored nofollow noopener">' . esc_html( $label ) . '</a>';
+}
+
+/* --- Schema.org Review (estrelas nos resultados do Google) --- */
+function conexo_jsonld() {
+	if ( ! is_singular( 'review' ) ) {
+		return;
+	}
+	$id       = get_the_ID();
+	$nota_raw = str_replace( ',', '.', (string) conexo_nota( $id ) );
+	$post     = get_post( $id );
+	$author_name = $post ? get_the_author_meta( 'display_name', $post->post_author ) : get_bloginfo( 'name' );
+	$has_rating  = is_numeric( $nota_raw ) && (float) $nota_raw > 0;
+	$rating      = array(
+		'@type'       => 'Rating',
+		'ratingValue' => (float) $nota_raw,
+		'bestRating'  => 10,
+		'worstRating' => 0,
+	);
+	$product = array(
+		'@type' => 'Product',
+		'name'  => get_the_title( $id ),
+	);
+	if ( has_post_thumbnail( $id ) ) {
+		$img = wp_get_attachment_image_src( get_post_thumbnail_id( $id ), 'conexo-wide' );
+		if ( $img ) {
+			$product['image'] = $img[0];
+		}
+	}
+	/* O Google exige que todo Product tenha offers, review ou
+	 * aggregateRating — por isso aninhamos o review no produto. */
+	if ( $has_rating ) {
+		$product['review'] = array(
+			'@type'         => 'Review',
+			'author'        => array(
+				'@type' => 'Person',
+				'name'  => $author_name,
+			),
+			'datePublished' => get_the_date( 'c', $id ),
+			'reviewRating'  => $rating,
+		);
+	}
+	$data = array(
+		'@context'      => 'https://schema.org',
+		'@type'         => 'Review',
+		'itemReviewed'  => $product,
+		'author'        => array(
+			'@type' => 'Person',
+			'name'  => $author_name,
+		),
+		'datePublished' => get_the_date( 'c', $id ),
+		'reviewBody'    => has_excerpt( $id ) ? get_the_excerpt( $id ) : '',
+	);
+	if ( $has_rating ) {
+		$data['reviewRating'] = $rating;
+	}
+	if ( isset( $product['image'] ) ) {
+		$data['image'] = $product['image'];
+	}
+	echo '<script type="application/ld+json">' . wp_json_encode( $data, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n"; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+}
+add_action( 'wp_head', 'conexo_jsonld' );
+
+/* ============================================================
+ * 9. FASE B — Shortcode de rankings [conexo_ranking]
+ * Uso na página: [conexo_ranking tipo="smartphones" qtd="7"]
+ * "tipo" é o slug da categoria (Reviews → Categorias de produto).
+ * ============================================================ */
+function conexo_ranking_shortcode( $atts ) {
+	$a   = shortcode_atts( array( 'tipo' => '', 'qtd' => 5 ), $atts, 'conexo_ranking' );
+	$qtd = max( 1, min( 20, (int) $a['qtd'] ) );
+	$args = array(
+		'post_type'      => 'review',
+		'posts_per_page' => $qtd,
+		'post_status'    => 'publish',
+		'meta_key'       => '_conexo_nota',
+		'orderby'        => 'meta_value_num',
+		'order'          => 'DESC',
+		'meta_query'     => array( array( 'key' => '_conexo_nota', 'value' => '', 'compare' => '!=' ) ),
+	);
+	if ( $a['tipo'] !== '' ) {
+		$args['tax_query'] = array( array( 'taxonomy' => 'tipo_produto', 'field' => 'slug', 'terms' => sanitize_text_field( $a['tipo'] ) ) );
+	}
+	$q = new WP_Query( $args );
+	if ( ! $q->have_posts() ) {
+		return '<p>' . esc_html__( 'Ranking em construção — publique reviews com nota para vê-lo aqui.', 'conexotech' ) . '</p>';
+	}
+	ob_start();
+	$pos = 1;
+	while ( $q->have_posts() ) {
+		$q->the_post();
+		$lojas = conexo_lojas();
+		$first = $lojas ? $lojas[0] : null;
+		$selo  = '';
+		if ( 1 === $pos ) {
+			$selo = __( 'ESCOLHA CONEXOTECH', 'conexotech' );
+		} elseif ( 2 === $pos ) {
+			$selo = __( 'CUSTO-BENEFÍCIO', 'conexotech' );
+		}
+		?>
+		<article class="review-row" style="grid-template-columns:64px 200px 1fr auto">
+			<span style="font-family:var(--serif);font-weight:900;font-size:2.4rem;line-height:1;color:var(--line)"><?php echo esc_html( sprintf( '%02d', $pos ) ); ?></span>
+			<?php echo conexo_thumb( 'conexo-mini', 'CT' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+			<div>
+				<?php if ( $selo ) : ?><span class="best-tag"><?php echo esc_html( $selo ); ?></span><?php endif; ?>
+				<h3 style="font-size:1.2rem;margin:6px 0 8px"><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+				<p style="font-size:.88rem"><?php echo wp_kses_post( get_the_excerpt() ); ?></p>
+				<?php if ( $first ) : ?>
+				<div style="margin-top:12px"><?php echo conexo_aff( $first['url'], sprintf( __( 'Ver preço%s', 'conexotech' ), $first['preco'] ? ': ' . $first['preco'] : '' ), 'btn btn-ink btn-sm' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?></div>
+				<?php endif; ?>
+			</div>
+			<?php if ( conexo_nota() ) : ?>
+			<div class="scorebox<?php echo 1 === $pos ? ' gold' : ''; ?>"><b><?php echo esc_html( conexo_nota() ); ?></b><span><?php esc_html_e( 'NOTA', 'conexotech' ); ?></span></div>
+			<?php endif; ?>
+		</article>
+		<?php
+		$pos++;
+	}
+	wp_reset_postdata();
+	return ob_get_clean();
+}
+add_shortcode( 'conexo_ranking', 'conexo_ranking_shortcode' );
+
+/* ============================================================
+ * 10. API REST — libera ficha e categoria para automação
+ * Permite publicar reviews/comparativos COMPLETOS via API
+ * (nota, specs, lojas, categoria) com senha de aplicativo.
+ * Leitura pública; escrita só para quem pode publicar.
+ * ============================================================ */
+function conexo_rest_auth() {
+	return current_user_can( 'edit_posts' );
+}
+
+function conexo_register_rest_meta() {
+	$review_keys = array(
+		'_conexo_nota', '_conexo_lede', '_conexo_amostra', '_conexo_tempo',
+		'_conexo_veredito', '_conexo_pros', '_conexo_contras', '_conexo_specs',
+		'_conexo_benchs', '_conexo_destaque',
+		'_conexo_loja_1_nome', '_conexo_loja_1_url', '_conexo_loja_1_preco',
+		'_conexo_loja_2_nome', '_conexo_loja_2_url', '_conexo_loja_2_preco',
+		'_conexo_loja_3_nome', '_conexo_loja_3_url', '_conexo_loja_3_preco',
+	);
+	foreach ( $review_keys as $key ) {
+		register_meta( 'post', $key, array(
+			'object_subtype' => 'review',
+			'type'           => 'string',
+			'single'         => true,
+			'show_in_rest'   => true,
+			'auth_callback'  => 'conexo_rest_auth',
+		) );
+	}
+	$comp_keys = array(
+		'_conexo_prod_1', '_conexo_prod_2', '_conexo_prod_3',
+		'_conexo_nota_1', '_conexo_nota_2', '_conexo_nota_3',
+		'_conexo_comp_veredito',
+		'_conexo_buy_1', '_conexo_buy_2', '_conexo_buy_3',
+	);
+	for ( $r = 1; $r <= 6; $r++ ) {
+		$comp_keys[] = '_conexo_crit_' . $r . '_label';
+		$comp_keys[] = '_conexo_crit_' . $r . '_v1';
+		$comp_keys[] = '_conexo_crit_' . $r . '_v2';
+		$comp_keys[] = '_conexo_crit_' . $r . '_v3';
+		$comp_keys[] = '_conexo_crit_' . $r . '_win';
+	}
+	foreach ( $comp_keys as $key ) {
+		register_meta( 'post', $key, array(
+			'object_subtype' => 'comparativo',
+			'type'           => 'string',
+			'single'         => true,
+			'show_in_rest'   => true,
+			'auth_callback'  => 'conexo_rest_auth',
+		) );
+	}
+}
+add_action( 'init', 'conexo_register_rest_meta' );
+
+/* ============================================================
+ * 10b. API REST — campo ficha (mecanismo direto, sem falha muda)
+ * Expõe TODOS os campos da ficha num único campo `conexo_ficha`
+ * (objeto), com leitura e escrita explícitas. Leitura pública;
+ * escrita só para quem pode editar o post.
+ * ============================================================ */
+function conexo_ficha_keys( $post_type = 'review' ) {
+	if ( 'comparativo' === $post_type ) {
+		$keys = array(
+			'_conexo_prod_1', '_conexo_prod_2', '_conexo_prod_3',
+			'_conexo_nota_1', '_conexo_nota_2', '_conexo_nota_3',
+			'_conexo_comp_veredito',
+			'_conexo_buy_1', '_conexo_buy_2', '_conexo_buy_3',
+		);
+		for ( $r = 1; $r <= 6; $r++ ) {
+			$keys[] = '_conexo_crit_' . $r . '_label';
+			$keys[] = '_conexo_crit_' . $r . '_v1';
+			$keys[] = '_conexo_crit_' . $r . '_v2';
+			$keys[] = '_conexo_crit_' . $r . '_v3';
+			$keys[] = '_conexo_crit_' . $r . '_win';
+		}
+		return $keys;
+	}
+	return array(
+		'_conexo_nota', '_conexo_lede', '_conexo_amostra', '_conexo_tempo',
+		'_conexo_veredito', '_conexo_pros', '_conexo_contras', '_conexo_specs',
+		'_conexo_benchs', '_conexo_destaque',
+		'_conexo_loja_1_nome', '_conexo_loja_1_url', '_conexo_loja_1_preco',
+		'_conexo_loja_2_nome', '_conexo_loja_2_url', '_conexo_loja_2_preco',
+		'_conexo_loja_3_nome', '_conexo_loja_3_url', '_conexo_loja_3_preco',
+	);
+}
+
+function conexo_ficha_get( $object ) {
+	$id  = isset( $object['id'] ) ? (int) $object['id'] : 0;
+	$out = array();
+	if ( ! $id ) {
+		return $out;
+	}
+	foreach ( conexo_ficha_keys( get_post_type( $id ) ) as $k ) {
+		$out[ $k ] = get_post_meta( $id, $k, true );
+	}
+	return $out;
+}
+
+function conexo_ficha_update( $value, $object ) {
+	$pid = $object instanceof WP_Post ? $object->ID : 0;
+	if ( ! $pid || ! is_array( $value ) ) {
+		return false;
+	}
+	if ( ! current_user_can( 'edit_post', $pid ) ) {
+		return new WP_Error( 'conexo_forbidden', __( 'Sem permissão.', 'conexotech' ), array( 'status' => 403 ) );
+	}
+	foreach ( conexo_ficha_keys( get_post_type( $pid ) ) as $k ) {
+		if ( array_key_exists( $k, $value ) ) {
+			$v = $value[ $k ];
+			if ( substr( $k, -4 ) === '_url' ) {
+				update_post_meta( $pid, $k, esc_url_raw( $v ) );
+			} else {
+				update_post_meta( $pid, $k, sanitize_textarea_field( (string) $v ) );
+			}
+		}
+	}
+	return true;
+}
+
+function conexo_register_rest_ficha() {
+	$args = array(
+		'get_callback'    => 'conexo_ficha_get',
+		'update_callback' => 'conexo_ficha_update',
+		'schema'          => array(
+			'type'        => 'object',
+			'description' => __( 'Ficha do review/comparativo (ConexoTech).', 'conexotech' ),
+		),
+	);
+	register_rest_field( 'review', 'conexo_ficha', $args );
+	register_rest_field( 'comparativo', 'conexo_ficha', $args );
+}
+add_action( 'rest_api_init', 'conexo_register_rest_ficha' );

@@ -1,0 +1,470 @@
+<?php
+/**
+ * Home do ConexoTech.
+ *
+ * @package ConexoTech
+ */
+
+get_header();
+?>
+
+<main id="topo">
+
+<?php
+/* ================= HERO — REVIEW DA SEMANA ================= */
+$destaque = conexo_review_destaque();
+if ( $destaque->have_posts() ) :
+	$destaque->the_post();
+	$nota     = conexo_nota();
+	$lede     = get_post_meta( get_the_ID(), '_conexo_lede', true );
+	$amostra  = get_post_meta( get_the_ID(), '_conexo_amostra', true );
+	$tempo    = get_post_meta( get_the_ID(), '_conexo_tempo', true );
+	$veredito = get_post_meta( get_the_ID(), '_conexo_veredito', true );
+	$benchs   = conexo_linhas( get_post_meta( get_the_ID(), '_conexo_benchs', true ) );
+	$pros     = conexo_linhas( get_post_meta( get_the_ID(), '_conexo_pros', true ) );
+	$contras  = conexo_linhas( get_post_meta( get_the_ID(), '_conexo_contras', true ) );
+	$cat      = conexo_term_nome();
+	$bio      = get_the_author_meta( 'description' );
+	?>
+	<header class="hero">
+		<div class="wrap">
+			<span class="kicker">
+				<?php esc_html_e( 'Review da semana', 'conexotech' ); ?>
+				<?php if ( $cat ) : ?><span class="dot">●</span><?php echo esc_html( $cat ); ?><?php endif; ?>
+			</span>
+			<div class="hero-grid">
+				<div>
+					<h1><?php the_title(); ?></h1>
+					<?php if ( $lede ) : ?><p class="lede"><?php echo esc_html( $lede ); ?></p><?php endif; ?>
+					<div class="byline">
+						<span class="avatar" aria-hidden="true"><?php echo esc_html( conexo_iniciais() ); ?></span>
+						<div class="who">
+							<b><?php echo esc_html__( 'Por ', 'conexotech' ) . esc_html( get_the_author() ); ?></b>
+							<span><?php echo $bio ? esc_html( $bio ) : esc_html__( 'Redação ConexoTech', 'conexotech' ); ?></span>
+						</div>
+						<time datetime="<?php echo esc_attr( get_the_date( 'c' ) ); ?>"><?php echo esc_html( get_the_date() ); ?><br><?php echo $tempo ? esc_html( $tempo ) . esc_html__( ' de leitura', 'conexotech' ) : ''; ?></time>
+					</div>
+					<?php if ( $benchs ) : ?>
+					<div class="lab" aria-label="<?php esc_attr_e( 'Pontos-chave do produto', 'conexotech' ); ?>">
+						<div class="lab-title"><?php esc_html_e( 'Destaques da ficha oficial', 'conexotech' ); ?></div>
+						<?php foreach ( $benchs as $i => $linha ) :
+							$p = array_map( 'trim', explode( '|', $linha ) );
+							$rotulo  = isset( $p[0] ) ? $p[0] : '';
+							$detalhe = isset( $p[1] ) ? $p[1] : '';
+							$larg    = isset( $p[2] ) ? max( 0, min( 100, (int) $p[2] ) ) : 0;
+							if ( $rotulo === '' ) { continue; }
+							?>
+							<div class="meter<?php echo 0 === $i ? ' top' : ''; ?>">
+								<div class="row"><b><?php echo esc_html( $rotulo ) . ( $detalhe !== '' ? ' (' . esc_html( $detalhe ) . ')' : '' ); ?></b><span class="v"><?php echo esc_html( number_format( $larg / 10, 1, ',', '' ) . ' / 10' ); ?></span></div>
+								<div class="track"><i class="fill" data-w="<?php echo esc_attr( $larg ); ?>"></i></div>
+							</div>
+						<?php endforeach; ?>
+					</div>
+					<?php endif; ?>
+					<div class="hero-actions">
+						<?php
+						$lojas_fp = conexo_lojas();
+						if ( $lojas_fp ) {
+							echo conexo_aff( $lojas_fp[0]['url'], sprintf( __( 'Ver melhor preço%s', 'conexotech' ), $lojas_fp[0]['preco'] ? ' — ' . $lojas_fp[0]['preco'] : '' ), 'btn btn-ink' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						}
+						?>
+						<a href="<?php the_permalink(); ?>" class="btn btn-ink"><?php esc_html_e( 'Ler a análise completa', 'conexotech' ); ?></a>
+						<a href="<?php echo esc_url( get_post_type_archive_link( 'comparativo' ) ); ?>" class="btn btn-line"><?php esc_html_e( 'Comparar com rivais', 'conexotech' ); ?></a>
+					</div>
+				</div>
+				<div class="hero-photo">
+					<?php echo conexo_thumb( 'conexo-wide', 'FOTO', '' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+					<?php if ( $nota ) : ?>
+					<div class="stamp" role="img" aria-label="<?php esc_attr_e( 'Selo: escolha do editor, análise verificada', 'conexotech' ); ?>">
+						<svg viewBox="0 0 120 120" aria-hidden="true">
+							<defs><path id="circ" d="M60,60 m-45,0 a45,45 0 1,1 90,0 a45,45 0 1,1 -90,0"/></defs>
+							<circle cx="60" cy="60" r="58" fill="#A3E635"/>
+							<circle cx="60" cy="60" r="34" fill="none" stroke="#0B1220" stroke-width="2"/>
+							<text font-family="JetBrains Mono, monospace" font-size="11.5" font-weight="700" fill="#0B1220" letter-spacing="2.5">
+								<textPath href="#circ">ANÁLISE VERIFICADA • ESCOLHA DO EDITOR • </textPath>
+							</text>
+							<text x="60" y="68" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="22" font-weight="700" fill="#0B1220"><?php echo esc_html( $nota ); ?></text>
+						</svg>
+					</div>
+					<?php endif; ?>
+					<p class="photocredit"><?php esc_html_e( 'Fotos: divulgação dos fabricantes, salvo indicação em contrário.', 'conexotech' ); ?></p>
+				</div>
+			</div>
+
+			<?php if ( $pros || $contras ) : ?>
+			<div class="verdict-strip">
+				<div class="pros">
+					<h3><?php esc_html_e( 'PONTOS FORTES', 'conexotech' ); ?></h3>
+					<ul><?php foreach ( $pros as $p ) : ?><li><?php echo esc_html( $p ); ?></li><?php endforeach; ?></ul>
+				</div>
+				<div class="cons">
+					<h3><?php esc_html_e( 'PONTOS FRACOS', 'conexotech' ); ?></h3>
+					<ul><?php foreach ( $contras as $c ) : ?><li><?php echo esc_html( $c ); ?></li><?php endforeach; ?></ul>
+				</div>
+			</div>
+			<?php endif; ?>
+			<?php if ( $veredito ) : ?>
+			<div class="verdict-line"><b><?php esc_html_e( 'O VEREDITO, EM UMA FRASE', 'conexotech' ); ?></b><?php echo esc_html( $veredito ); ?></div>
+			<?php endif; ?>
+		</div>
+	</header>
+	<?php
+	wp_reset_postdata();
+endif;
+?>
+
+<?php
+/* ================= RANKING ================= */
+$ranking = new WP_Query( array(
+	'post_type'      => 'review',
+	'posts_per_page' => 5,
+	'post_status'    => 'publish',
+	'meta_key'       => '_conexo_nota',
+	'orderby'        => 'meta_value_num',
+	'order'          => 'DESC',
+	'meta_query'     => array( array( 'key' => '_conexo_nota', 'value' => '', 'compare' => '!=' ) ),
+) );
+if ( $ranking->have_posts() ) :
+	?>
+	<section class="block tint" id="ranking" style="padding-bottom:60px">
+		<div class="wrap">
+			<div class="sec-top">
+				<div>
+					<span class="kicker"><?php esc_html_e( 'Ranking atualizado', 'conexotech' ); ?></span>
+					<h2><?php esc_html_e( 'Os melhores da categoria', 'conexotech' ); ?></h2>
+					<p class="sub"><?php esc_html_e( 'Ordenados pela nota final dos nossos testes — mesmos critérios para todos.', 'conexotech' ); ?></p>
+				</div>
+				<a class="link-more" href="<?php echo esc_url( get_post_type_archive_link( 'review' ) ); ?>"><?php esc_html_e( 'Ver ranking completo', 'conexotech' ); ?></a>
+			</div>
+			<div class="rank-row">
+				<?php
+				$pos = 1;
+				while ( $ranking->have_posts() ) :
+					$ranking->the_post();
+					?>
+					<a class="rank-item" href="<?php the_permalink(); ?>">
+						<span class="pos"><?php echo esc_html( sprintf( '%02d', $pos ) ); ?></span>
+						<?php echo conexo_thumb( 'conexo-mini', 'CT' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						<h3><?php the_title(); ?></h3>
+						<span class="sc"><b><?php echo esc_html( conexo_nota() ); ?></b><?php esc_html_e( 'nota', 'conexotech' ); ?></span>
+					</a>
+					<?php
+					$pos++;
+				endwhile;
+				?>
+			</div>
+			<p class="rank-note"><?php esc_html_e( 'METODOLOGIA DO RANKING: mesmos testes, mesmos critérios, sem exceção.', 'conexotech' ); ?></p>
+		</div>
+	</section>
+	<?php
+	wp_reset_postdata();
+endif;
+if ( ! $ranking->have_posts() ) :
+	?>
+	<section class="block tint" id="ranking" style="padding-bottom:60px">
+		<div class="wrap">
+			<div class="sec-top">
+				<div>
+					<span class="kicker"><?php esc_html_e( 'Ranking atualizado', 'conexotech' ); ?></span>
+					<h2><?php esc_html_e( 'Os melhores da categoria', 'conexotech' ); ?></h2>
+					<p class="sub"><?php esc_html_e( 'Ranking em construção — assim que os reviews ganharem nota, o top aparece aqui sozinho.', 'conexotech' ); ?></p>
+				</div>
+				<a class="link-more" href="<?php echo esc_url( get_post_type_archive_link( 'review' ) ); ?>"><?php esc_html_e( 'Ver reviews', 'conexotech' ); ?></a>
+			</div>
+		</div>
+	</section>
+	<?php
+endif;
+?>
+
+<?php
+/* ================= REVIEWS ================= */
+$terms = get_terms( array( 'taxonomy' => 'tipo_produto', 'hide_empty' => false ) );
+$lista = new WP_Query( array( 'post_type' => 'review', 'posts_per_page' => 8, 'post_status' => 'publish' ) );
+if ( $lista->have_posts() ) :
+	?>
+	<section class="block" id="reviews">
+		<div class="wrap">
+			<div class="sec-top">
+				<div>
+					<span class="kicker"><?php esc_html_e( 'Análises individuais', 'conexotech' ); ?></span>
+					<h2><?php esc_html_e( 'Últimos reviews', 'conexotech' ); ?></h2>
+					<p class="sub"><?php esc_html_e( 'Nenhum produto recebe nota antes de 14 dias como aparelho principal do avaliador. É lento de propósito.', 'conexotech' ); ?></p>
+				</div>
+				<a class="link-more" href="<?php echo esc_url( get_post_type_archive_link( 'review' ) ); ?>"><?php esc_html_e( 'Arquivo de reviews', 'conexotech' ); ?></a>
+			</div>
+			<?php if ( $terms && ! is_wp_error( $terms ) ) : ?>
+			<div class="tabs" role="tablist" aria-label="<?php esc_attr_e( 'Filtrar reviews por categoria', 'conexotech' ); ?>">
+				<button class="tab active" data-filter="all"><?php esc_html_e( 'Tudo', 'conexotech' ); ?></button>
+				<?php foreach ( $terms as $t ) : ?>
+					<button class="tab" data-filter="<?php echo esc_attr( $t->slug ); ?>"><?php echo esc_html( $t->name ); ?></button>
+				<?php endforeach; ?>
+			</div>
+			<?php endif; ?>
+			<div id="review-list">
+				<?php
+				while ( $lista->have_posts() ) :
+					$lista->the_post();
+					$gold = ( (float) str_replace( ',', '.', (string) conexo_nota() ) ) >= 9;
+					?>
+					<article class="review-row" data-cat="<?php echo esc_attr( conexo_term_slug() ); ?>">
+						<?php echo conexo_thumb( 'conexo-thumb', 'FOTO' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+						<div>
+							<?php if ( conexo_term_nome() ) : ?><span class="kicker"><?php echo esc_html( conexo_term_nome() ); ?></span><?php endif; ?>
+							<h3><a href="<?php the_permalink(); ?>"><?php the_title(); ?></a></h3>
+							<p><?php echo wp_kses_post( get_the_excerpt() ); ?></p>
+							<div class="review-meta">
+								<span><?php the_author(); ?></span><span>•</span>
+								<span><?php echo esc_html( get_the_date() ); ?></span>
+							</div>
+						</div>
+						<?php if ( conexo_nota() ) : ?>
+						<div class="scorebox<?php echo $gold ? ' gold' : ''; ?>"><b><?php echo esc_html( conexo_nota() ); ?></b><span><?php esc_html_e( 'NOTA FINAL', 'conexotech' ); ?></span></div>
+						<?php endif; ?>
+					</article>
+					<?php
+				endwhile;
+				?>
+			</div>
+		</div>
+	</section>
+	<?php
+	wp_reset_postdata();
+endif;
+?>
+
+<?php
+/* ================= COMPARATIVOS ================= */
+$comps = new WP_Query( array( 'post_type' => 'comparativo', 'posts_per_page' => 3, 'post_status' => 'publish' ) );
+if ( $comps->have_posts() ) :
+	?>
+	<section class="block tint" id="comparativos">
+		<div class="wrap">
+			<div class="sec-top">
+				<div>
+					<span class="kicker"><?php esc_html_e( 'Frente a frente', 'conexotech' ); ?></span>
+					<h2><?php esc_html_e( 'Comparativos', 'conexotech' ); ?></h2>
+					<p class="sub"><?php esc_html_e( 'Os mesmos testes, as mesmas condições. Cada critério tem um vencedor marcado — e o placar final não esconde nada.', 'conexotech' ); ?></p>
+				</div>
+				<a class="link-more" href="<?php echo esc_url( get_post_type_archive_link( 'comparativo' ) ); ?>"><?php esc_html_e( 'Todos os comparativos', 'conexotech' ); ?></a>
+			</div>
+			<?php if ( $comps->post_count > 1 ) : ?>
+			<div class="tabs" role="tablist" aria-label="<?php esc_attr_e( 'Escolher comparativo', 'conexotech' ); ?>">
+				<?php
+				$ci = 0;
+				while ( $comps->have_posts() ) :
+					$comps->the_post();
+					?>
+					<button class="tab<?php echo 0 === $ci ? ' active' : ''; ?>" data-comp="comp-<?php the_ID(); ?>"><?php the_title(); ?></button>
+					<?php
+					$ci++;
+				endwhile;
+				?>
+			</div>
+			<?php endif; ?>
+			<?php
+			$comps->rewind_posts();
+			$ci = 0;
+			while ( $comps->have_posts() ) :
+				$comps->the_post();
+				$id    = get_the_ID();
+				$prods = array( get_post_meta( $id, '_conexo_prod_1', true ), get_post_meta( $id, '_conexo_prod_2', true ), get_post_meta( $id, '_conexo_prod_3', true ) );
+				$notas = array( get_post_meta( $id, '_conexo_nota_1', true ), get_post_meta( $id, '_conexo_nota_2', true ), get_post_meta( $id, '_conexo_nota_3', true ) );
+				$crits = array();
+				for ( $r = 1; $r <= 6; $r++ ) {
+					$label = get_post_meta( $id, '_conexo_crit_' . $r . '_label', true );
+					if ( $label === '' ) { continue; }
+					$crits[] = array(
+						'label' => $label,
+						'vals'  => array( get_post_meta( $id, '_conexo_crit_' . $r . '_v1', true ), get_post_meta( $id, '_conexo_crit_' . $r . '_v2', true ), get_post_meta( $id, '_conexo_crit_' . $r . '_v3', true ) ),
+						'win'   => (int) get_post_meta( $id, '_conexo_crit_' . $r . '_win', true ),
+					);
+				}
+				$tally = array( 0, 0, 0 );
+				foreach ( $crits as $c ) { if ( $c['win'] >= 0 ) { $tally[ $c['win'] ]++; } }
+				$total = 0;
+				foreach ( $crits as $c ) { if ( $c['win'] >= 0 ) { $total++; } }
+				$best = 0;
+				foreach ( $tally as $i => $t ) { if ( $t > $tally[ $best ] ) { $best = $i; } }
+				?>
+				<div class="comp-pane<?php echo 0 === $ci ? ' active' : ''; ?>" id="comp-<?php the_ID(); ?>">
+					<div class="table-wrap">
+						<table class="comp" aria-label="<?php echo esc_attr( get_the_title() ); ?>">
+							<thead><tr>
+								<th scope="col"><?php esc_html_e( 'Critério', 'conexotech' ); ?></th>
+								<?php foreach ( $prods as $pn ) : ?><th scope="col"><span class="phead"><span><b><?php echo esc_html( $pn ); ?></b></span></span></th><?php endforeach; ?>
+							</tr></thead>
+							<tbody>
+								<?php foreach ( $crits as $c ) : ?>
+								<tr>
+									<th scope="row"><?php echo esc_html( $c['label'] ); ?></th>
+									<?php foreach ( $c['vals'] as $i => $v ) :
+										$w = ( $i === $c['win'] );
+										?>
+										<td class="<?php echo $w ? 'cell-win' : ''; ?>"><?php echo esc_html( $v ); ?><?php if ( $w ) : ?><span class="wintag"><?php esc_html_e( 'VENCE', 'conexotech' ); ?></span><?php endif; ?></td>
+									<?php endforeach; ?>
+								</tr>
+								<?php endforeach; ?>
+								<tr>
+									<th scope="row"><?php esc_html_e( 'Nota final', 'conexotech' ); ?></th>
+									<?php foreach ( $notas as $i => $n ) :
+										$w = ( $i === $best );
+										$pct = $n !== '' ? ( (float) str_replace( ',', '.', $n ) ) * 10 : 0;
+										?>
+										<td class="<?php echo $w ? 'cell-win' : ''; ?>">
+											<span class="nota"><?php echo esc_html( $n ); ?></span><?php if ( $w ) : ?><span class="wintag"><?php esc_html_e( 'VENCE', 'conexotech' ); ?></span><?php endif; ?>
+											<div class="bar"><i data-w="<?php echo esc_attr( $pct ); ?>"></i></div>
+										</td>
+									<?php endforeach; ?>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<div class="comp-verdict">
+						<div class="placar"><b><?php echo esc_html( $tally[ $best ] . '/' . $total ); ?></b><span><?php echo esc_html( mb_strtoupper( (string) $prods[ $best ] ) ); ?></span></div>
+						<p><?php echo esc_html( get_post_meta( $id, '_conexo_comp_veredito', true ) ); ?></p>
+					</div>
+					<?php
+					$buys    = array( get_post_meta( $id, '_conexo_buy_1', true ), get_post_meta( $id, '_conexo_buy_2', true ), get_post_meta( $id, '_conexo_buy_3', true ) );
+					$has_buy = array_filter( $buys );
+					if ( $has_buy ) :
+						?>
+						<div class="comp-buy">
+							<?php
+							foreach ( $buys as $bi => $bu ) {
+								if ( $bu ) {
+									echo conexo_aff( $bu, sprintf( __( 'Ver preço: %s', 'conexotech' ), $prods[ $bi ] ), 'btn btn-line btn-sm' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+								}
+							}
+							?>
+						</div>
+					<?php endif; ?>
+					<div class="comp-cta">
+						<a href="<?php the_permalink(); ?>" class="btn btn-ink"><?php esc_html_e( 'Ver comparativo completo', 'conexotech' ); ?></a>
+						<a href="<?php echo esc_url( home_url( '/#laboratorio' ) ); ?>" class="btn btn-line"><?php esc_html_e( 'Nossa metodologia', 'conexotech' ); ?></a>
+					</div>
+				</div>
+				<?php
+				$ci++;
+			endwhile;
+			wp_reset_postdata();
+			?>
+		</div>
+	</section>
+	<?php
+endif;
+if ( ! $comps->have_posts() ) :
+	?>
+	<section class="block tint" id="comparativos">
+		<div class="wrap">
+			<div class="sec-top">
+				<div>
+					<span class="kicker"><?php esc_html_e( 'Frente a frente', 'conexotech' ); ?></span>
+					<h2><?php esc_html_e( 'Comparativos', 'conexotech' ); ?></h2>
+					<p class="sub"><?php esc_html_e( 'O primeiro frente a frente está no forno — volte em breve para ver quem vence em cada critério.', 'conexotech' ); ?></p>
+				</div>
+				<a class="link-more" href="<?php echo esc_url( get_post_type_archive_link( 'comparativo' ) ); ?>"><?php esc_html_e( 'Ver arquivo', 'conexotech' ); ?></a>
+			</div>
+		</div>
+	</section>
+	<?php
+endif;
+?>
+
+<?php
+/* ================= NOTÍCIAS ================= */
+$news = new WP_Query( array( 'posts_per_page' => 4, 'post_status' => 'publish', 'ignore_sticky_posts' => true ) );
+if ( $news->have_posts() ) :
+	?>
+	<section class="block" id="noticias">
+		<div class="wrap">
+			<div class="sec-top">
+				<div>
+					<span class="kicker"><?php esc_html_e( 'Cobertura diária', 'conexotech' ); ?></span>
+					<h2><?php esc_html_e( 'Notícias tech', 'conexotech' ); ?></h2>
+					<p class="sub"><?php esc_html_e( 'O essencial do dia, sem caça-clique. Redação própria, publicada todos os dias.', 'conexotech' ); ?></p>
+				</div>
+				<a class="link-more" href="<?php echo esc_url( home_url( '/blog/' ) ); ?>"><?php esc_html_e( 'Todas as notícias', 'conexotech' ); ?></a>
+			</div>
+			<div class="news-grid">
+				<?php
+				$ni = 0;
+				while ( $news->have_posts() ) :
+					$news->the_post();
+					if ( 0 === $ni ) :
+						?>
+						<a class="feat-news" href="<?php the_permalink(); ?>">
+							<?php echo conexo_thumb( 'conexo-wide', 'FOTO' ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
+							<div style="margin-top:4px"><?php if ( conexo_term_nome( null, 'category' ) ) : ?><span class="kicker"><?php echo esc_html( conexo_term_nome( null, 'category' ) ); ?></span><?php endif; ?></div>
+							<h3><?php the_title(); ?></h3>
+							<p><?php echo wp_kses_post( get_the_excerpt() ); ?></p>
+							<div class="review-meta"><span class="ntime"><?php echo esc_html( mb_strtoupper( human_time_diff( get_the_time( 'U' ), current_time( 'timestamp' ) ) . __( ' atrás', 'conexotech' ) ) ); ?></span><span>•</span><span><?php echo esc_html__( 'Por ', 'conexotech' ) . esc_html( get_the_author() ); ?></span></div>
+						</a>
+						<ul class="news-list">
+						<?php
+					else :
+						?>
+						<li><a href="<?php the_permalink(); ?>">
+							<span class="ntime"><?php echo esc_html( mb_strtoupper( human_time_diff( get_the_time( 'U' ), current_time( 'timestamp' ) ) . __( ' atrás', 'conexotech' ) ) ); ?><?php if ( conexo_term_nome( null, 'category' ) ) : echo ' — ' . esc_html( mb_strtoupper( conexo_term_nome( null, 'category' ) ) ); endif; ?></span>
+							<h4><?php the_title(); ?></h4>
+							<p><?php echo wp_kses_post( get_the_excerpt() ); ?></p>
+						</a></li>
+						<?php
+					endif;
+					$ni++;
+				endwhile;
+				?>
+				</ul>
+			</div>
+		</div>
+	</section>
+	<?php
+	wp_reset_postdata();
+endif;
+?>
+
+<!-- ================= LABORATÓRIO ================= -->
+<section class="block labsec" id="laboratorio">
+	<div class="wrap">
+		<span class="kicker"><?php esc_html_e( 'Por que confiar na gente', 'conexotech' ); ?></span>
+			<h2><?php esc_html_e( 'Pesquisa séria,', 'conexotech' ); ?><br><?php esc_html_e( 'não palpite.', 'conexotech' ); ?></h2>
+			<p class="intro"><?php esc_html_e( 'Cada análise parte da ficha oficial do fabricante, cruzada com reviews verificados, avaliações de compradores e preços datados. Sem exceção, sem atalho.', 'conexotech' ); ?></p>
+		<div class="lab-grid">
+			<div class="lab-photo">
+				<span class="ph" data-ph="LAB" style="aspect-ratio:4/4.6;display:block"></span>
+					<div class="rig"><b><?php esc_html_e( 'MESA DE PESQUISA — FONTES CONFERIDAS', 'conexotech' ); ?></b><?php esc_html_e( 'FABRICANTE ● CONFIRMADO', 'conexotech' ); ?><br><?php esc_html_e( 'REVIEWS VERIFICADOS ● OK', 'conexotech' ); ?><br><?php esc_html_e( 'PREÇOS DATADOS ● OK', 'conexotech' ); ?></div>
+			</div>
+			<div>
+				<ol class="steps">
+						<li><span class="n">01</span><div><h3><?php esc_html_e( 'Fontes primárias', 'conexotech' ); ?></h3><p><?php esc_html_e( 'Partimos sempre da ficha oficial do fabricante — specs, manual e preço sugerido. Nada entra no texto sem origem declarada.', 'conexotech' ); ?></p></div></li>
+						<li><span class="n">02</span><div><h3><?php esc_html_e( 'Verificação cruzada', 'conexotech' ); ?></h3><p><?php esc_html_e( 'Confrontamos a ficha com reviews independentes e avaliações reais de compradores. Divergência é sinalizada, nunca escondida.', 'conexotech' ); ?></p></div></li>
+						<li><span class="n">03</span><div><h3><?php esc_html_e( 'Preços com data', 'conexotech' ); ?></h3><p><?php esc_html_e( 'Todo preço publicado carrega a data da captura e é reconferido duas vezes por semana. Preço velho é corrigido, não escondido.', 'conexotech' ); ?></p></div></li>
+					<li><span class="n">04</span><div><h3><?php esc_html_e( 'Nota sem patrocínio', 'conexotech' ); ?></h3><p><?php esc_html_e( 'Fabricante não lê antes, não opina, não paga. Nossa receita vem de leitores e publicidade sinalizada.', 'conexotech' ); ?></p></div></li>
+				</ol>
+					<blockquote class="pull"><?php esc_html_e( '"Se um produto for ruim, a nota será ruim — mesmo que o fabricante anuncie conosco. Independência primeiro, sempre."', 'conexotech' ); ?><footer><b><?php esc_html_e( 'Redação ConexoTech', 'conexotech' ); ?></b></footer></blockquote>
+			</div>
+		</div>
+	</div>
+</section>
+
+<!-- ================= NEWSLETTER ================= -->
+<section class="block" id="newsletter">
+	<div class="wrap">
+		<div class="nl">
+			<span class="kicker"><?php esc_html_e( 'Newsletter • toda sexta, 7h', 'conexotech' ); ?></span>
+			<h2><?php esc_html_e( 'O resumo da semana, sem enrolação', 'conexotech' ); ?></h2>
+			<p><?php esc_html_e( 'Os reviews publicados, o comparativo mais lido e as 5 notícias que importam — em 4 minutos de leitura. Grátis, cancele quando quiser.', 'conexotech' ); ?></p>
+			<form class="nl-form" id="nl-form" method="post" action="#">
+				<input type="email" id="nl-email" name="nl-email" placeholder="<?php esc_attr_e( 'seu melhor e-mail', 'conexotech' ); ?>" required aria-label="<?php esc_attr_e( 'Seu e-mail', 'conexotech' ); ?>">
+				<button type="submit" class="btn btn-ink"><?php esc_html_e( 'Assinar', 'conexotech' ); ?></button>
+			</form>
+			<p class="nl-ok" id="nl-ok"><?php esc_html_e( 'Inscrição recebida! (conecte um plugin de newsletter para ativar o envio)', 'conexotech' ); ?></p>
+			<small><?php esc_html_e( 'Nunca compartilhamos seu e-mail', 'conexotech' ); ?></small>
+		</div>
+	</div>
+</section>
+
+</main>
+
+<?php
+get_footer();
