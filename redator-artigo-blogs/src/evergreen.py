@@ -9,6 +9,9 @@ from pathlib import Path
 
 try:
     from dotenv import load_dotenv
+    _central = Path.home() / ".conexotech.env"
+    if _central.exists():
+        load_dotenv(_central, override=False)  # cofre único (nuvem) — fonte primária
     _pkg = Path(__file__).parent.parent
     load_dotenv(_pkg / ".env", override=False)  # redator-artigo-blogs/.env primeiro
     load_dotenv(_pkg.parent / ".env", override=False)  # raiz do projeto como fallback
