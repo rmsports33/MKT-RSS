@@ -183,7 +183,10 @@ def publicar_indice() -> dict:
 def main():
     try:
         from dotenv import load_dotenv
-        load_dotenv(Path(__file__).parent / ".env")
+        central = Path.home() / ".conexotech.env"
+        if central.exists():
+            load_dotenv(central, override=False)
+        load_dotenv(Path(__file__).parent / ".env", override=False)
     except Exception:
         pass
     ap = argparse.ArgumentParser(description="Pipeline RSS → rascunho WP")

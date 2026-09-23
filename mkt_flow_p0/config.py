@@ -7,7 +7,11 @@ import sys
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Carrega .env da raiz do projeto e de MKTFLOW (compatibilidade)
+# Cofre único fora dos repos (nuvem/multi) — fonte primária
+CENTRAL = Path.home() / ".conexotech.env"
+if CENTRAL.exists():
+    load_dotenv(CENTRAL, override=False)
+# Carrega .env da raiz do projeto e de MKTFLOW (compatibilidade, fallback)
 ROOT = Path(__file__).parent.parent
 for p in [ROOT / ".env", ROOT / "MKTFLOW" / ".env", Path.cwd() / ".env"]:
     if p.exists():

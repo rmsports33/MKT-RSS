@@ -44,7 +44,10 @@ def main():
     # importa este módulo (ex.: suíte de testes) — refactor 12/09/2026.
     try:
         from dotenv import load_dotenv
-        load_dotenv(Path(__file__).parent / ".env")
+        central = Path.home() / ".conexotech.env"
+        if central.exists():
+            load_dotenv(central, override=False)
+        load_dotenv(Path(__file__).parent / ".env", override=False)
         load_dotenv(Path(__file__).parent / "MKTFLOW" / ".env", override=False)
     except Exception:
         pass
