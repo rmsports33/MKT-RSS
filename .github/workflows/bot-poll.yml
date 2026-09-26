@@ -1,0 +1,45 @@
+name: Bot Telegram (polling 5/5min)
+
+# Roda o admin/bot.py em rajadas curtas, sem servidor e sem cartao.
+# Repo publico = minutos ilimitados. Concurrency unica impede 2 instancias (409).
+# Segredos (repo Settings -> Secrets and variables -> Actions):
+#   TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_IDS, WP_URL, WP_USER, WP_APP_PASSWORD,
+#   GROQ_API_KEY, GOOGLE_SHEETS_JSON
+# O cron do GitHub pode atrasar alguns minutos; uso normal (/link, /drafts) ok.
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: bot-telegram
+  cancel-in-progress: true
+
+jobs:
+  poll:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Instala deps do bot
+        run: pip install "python-telegram-bot==20.*" "google-api-python-client>=2.0.0" "google-auth>=2.0.0" requests python-dotenv
+
+      - name: Roda o bot (~3,5 min)
+        run: timeout 210 python admin/bot.py || true
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALLOWED_IDS: ${{ secrets.TELEGRAM_ALLOWED_IDS }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GOOGLE_SHEETS_JSON: ${{ secrets.GOOGLE_SHEETS_JSON }}

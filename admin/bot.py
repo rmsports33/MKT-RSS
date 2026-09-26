@@ -65,6 +65,8 @@ def _is_allowed(update) -> bool:
 HELP = (
     "Comandos:\n"
     "/drafts [N] — lista rascunhos (default 5)\n"
+    "/link <url> — registra link de afiliado (guiado por botoes)\n"
+    "/cancelar — aborta o /link atual\n"
     "/health — checa WP e Groq (+ Turso se configurado)\n"
     "/help — esta ajuda\n\n"
     "Dica: defina TELEGRAM_ALLOWED_IDS=123456,789012 no .env para travar."
@@ -236,6 +238,17 @@ try:
         app.add_handler(CommandHandler("drafts", cmd_drafts))
         app.add_handler(CommandHandler("health", cmd_health))
         app.add_handler(CallbackQueryHandler(on_callback))
+        try:
+            sys.path.insert(0, str(Path(__file__).parent))
+            import linkflow
+            h = linkflow.link_conv_handler()
+            if h is not None:
+                app.add_handler(h)
+                logger.info("handler /link registrado")
+            else:
+                logger.warning("/link indisponivel (sem python-telegram-bot no import do linkflow)")
+        except Exception as e:
+            logger.warning(f"/link nao registrado: {e}")
         app.add_error_handler(on_error)
         print(f"Bot rodando — envie /drafts no Telegram (allowlist: {ALLOWED_IDS or 'aberta'})")
         # polling com drop_pending e timeout explícito (host always-on: ver docs/ADMIN_MULTI.md)

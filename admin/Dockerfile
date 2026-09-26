@@ -3,7 +3,7 @@ FROM python:3.11-slim
 WORKDIR /app
 COPY requirements/rss.txt requirements/rss.txt
 COPY requirements/base.txt requirements/base.txt
-RUN pip install --no-cache-dir -r requirements/rss.txt && pip install --no-cache-dir "python-telegram-bot==20.*"
+RUN pip install --no-cache-dir -r requirements/rss.txt && pip install --no-cache-dir "python-telegram-bot==20.*" "google-api-python-client>=2.0.0" "google-auth>=2.0.0"
 COPY mkt_flow_p0 mkt_flow_p0
 COPY admin admin
 COPY pipeline_rss.py .
