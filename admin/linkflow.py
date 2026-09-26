@@ -387,6 +387,25 @@ if _TEM_PTB:
             pass
         return ConversationHandler.END
 
+    async def on_expirado(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Botao tocado fora da janela de conversa (o bot dorme a cada 5 min
+        e o estado e em memoria). Nunca falha em silencio."""
+        q = update.callback_query
+        try:
+            await q.answer()
+        except Exception:
+            pass
+        if not _permitido(update):
+            await _negado(update)
+            return ConversationHandler.END
+        try:
+            await q.edit_message_text(
+                "⏳ Essa sessão expirou (o bot cochila a cada 5 min).\n"
+                "Mande /link de novo que vai rapidinho.")
+        except Exception:
+            pass
+        return ConversationHandler.END
+
     def link_conv_handler():
         return ConversationHandler(
             entry_points=[CommandHandler("link", cmd_link)],
@@ -398,7 +417,8 @@ if _TEM_PTB:
                           CallbackQueryHandler(on_voltar, pattern=r"^lk:voltar_prods$")],
                 ST_TROCA: [CallbackQueryHandler(on_troca, pattern=r"^lk:(trocar|manter)$")],
             },
-            fallbacks=[CommandHandler("cancelar", cmd_cancelar)],
+            fallbacks=[CommandHandler("cancelar", cmd_cancelar),
+                         CallbackQueryHandler(on_expirado, pattern=r"^lk:")],
             per_chat=True,
         )
 else:

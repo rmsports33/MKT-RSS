@@ -22,19 +22,21 @@ concurrency:
 jobs:
   poll:
     runs-on: ubuntu-latest
-    timeout-minutes: 4
+    timeout-minutes: 6
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+          cache: "pip"
+          cache-dependency-path: "admin/bot-requirements.txt"
 
       - name: Instala deps do bot
-        run: pip install "python-telegram-bot==20.*" "google-api-python-client>=2.0.0" "google-auth>=2.0.0" requests python-dotenv
+        run: pip install -r admin/bot-requirements.txt
 
-      - name: Roda o bot (~3,5 min)
-        run: timeout 210 python admin/bot.py || true
+      - name: Roda o bot (~4,5 min, com overlap p/ zero intervalo)
+        run: timeout 280 python admin/bot.py || true
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_ALLOWED_IDS: ${{ secrets.TELEGRAM_ALLOWED_IDS }}
