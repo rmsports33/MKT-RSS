@@ -76,9 +76,20 @@ def _wp_list_drafts(limit: int = 5) -> list:
     """Lista rascunhos via WP REST (sem dependência extra)."""
     import requests, base64
     if not (WP_URL and WP_USER and WP_APP_PASSWORD):
-        return []
+        return [{"id": 0, "title": "erro: faltam WP_URL/WP_USER/WP_APP_PASSWORD no secret",
+                 "link": ""}]
     auth = base64.b64encode(f"{WP_USER}:{WP_APP_PASSWORD}".encode()).decode()
     url = f"{WP_URL.rstrip('/')}/wp-json/wp/v2/posts"
+    # /auth: prova se as credenciais servem (401 = usuario/senha errados no secret)
+    try:
+        who = requests.get(f"{WP_URL.rstrip('/')}/wp-json/wp/v2/users/me", timeout=15,
+                           headers={"Authorization": f"Basic {auth}"})
+        if who.status_code != 200:
+            return [{"id": 0, "title": (f"erro de login no WP (HTTP {who.status_code}): "
+                                        f"revise os secrets WP_USER e WP_APP_PASSWORD"),
+                     "link": ""}]
+    except Exception as e:
+        return [{"id": 0, "title": f"erro: WP nao respondeu ({str(e)[:60]})", "link": ""}]
     try:
         for params in ({"status": "draft", "per_page": limit, "context": "edit"},
                        {"status": "draft", "per_page": limit}):
@@ -91,7 +102,7 @@ def _wp_list_drafts(limit: int = 5) -> list:
     except Exception as e:
         logger.warning(f"WP list drafts falhou: {e}")
         return [{"id": 0, "title": f"erro: {str(e)[:80]}", "link": ""}]
-    return [{"id": 0, "title": "erro: WP retornou erro ao listar drafts (ver log)", "link": ""}]
+    return [{"id": 0, "title": "erro: WP recusou a listagem (ver log no Actions)", "link": ""}]
 
 def _wp_publish(post_id: int) -> dict:
     import requests, base64
