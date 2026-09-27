@@ -47,14 +47,19 @@ jobs:
       #   qualquer outro codigo = bot morreu (409, import, etc) = NAO reacende
       - name: Roda o bot (~4,5 min)
         run: |
+          # `set +e` e `exit 0`: o GitHub roda o passo com `bash -e`, que aborta
+          # no primeiro codigo != 0 — e o `timeout` devolve 124 de proposito
+          # (bug de 26/09: passo nasava em failure e a cadeia nunca reacendia).
+          set +e
           timeout 280 python admin/bot.py
           ec=$?
           echo "bot saiu com codigo $ec" >> "$GITHUB_STEP_SUMMARY"
           if [ "$ec" = "124" ]; then
             echo "rodada-ok" > .rodada-ok
           else
-            echo "rodada NAO concluida (codigo $ec) - nao reacende" >> "$GITHUB_STEP_SUMMARY"
+            echo "rodada NAO concluida (codigo $ec)" >> "$GITHUB_STEP_SUMMARY"
           fi
+          exit 0
         # ATENCAO: sem este env o bot sai em segundos com
         # "TELEGRAM_BOT_TOKEN ausente" (foi o bug de 26/09 que gerou a tempestade).
         env:
