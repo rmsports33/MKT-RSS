@@ -42,8 +42,15 @@ jobs:
       - name: Roda o bot (~4,5 min)
         run: timeout 280 python admin/bot.py || true
 
+      - name: Marca a rodada como concluida
+        run: echo "rodada-ok" > .rodada-ok
+
+      # REGRA CRITICA: so reacende se a rodada REALMENTE chegou ate o fim.
+      # Rodada cancelada (concorrencia) tem `success()` = false e nao gera
+      # dispatches — senao cada cancelamento criava outro e virava tempestade
+      # de execucoes (medido: 50 rodadas em 13 min em 26/09).
       - name: Reacende o bot para a proxima rodada
-        if: always()
+        if: success() && hashFiles('.rodada-ok') != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: gh workflow run bot-poll.yml --ref master || echo "falhou o auto-dispatch (a rede de seguranca cobre)"
