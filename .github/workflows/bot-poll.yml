@@ -1,23 +1,27 @@
-name: Bot Telegram (polling 5/5min)
+name: Bot Telegram (polling auto-acendido)
 
-# Roda o admin/bot.py em rajadas curtas, sem servidor e sem cartao.
-# Repo publico = minutos ilimitados. Concurrency unica impede 2 instancias (409).
-# Segredos (repo Settings -> Secrets and variables -> Actions):
+# O bot roda ~4,5 min e, ao terminar, DISPARA a proxima rodada (self-dispatch).
+# Isso elimina o buraco entre rodadas e nao depende do cron, que em repo publico
+# pode atrasar horas. O cron de 15 min fica so como rede de seguranca.
+# Repo publico = minutos ilimitados, sem cartao.
+#
+# Segredos (Settings -> Secrets and variables -> Actions):
 #   TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_IDS, WP_URL, WP_USER, WP_APP_PASSWORD,
 #   GROQ_API_KEY, GOOGLE_SHEETS_JSON
-# O cron do GitHub pode atrasar alguns minutos; uso normal (/link, /drafts) ok.
+# (GITHUB_TOKEN e automatico e so serve para o auto-dispatch.)
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
-  workflow_dispatch:
+    - cron: "*/15 * * * *"   # rede de seguranca (a cada 15 min)
+  workflow_dispatch:         # permite disparo manual
 
 permissions:
   contents: read
+  actions: write             # permite o bot disparar a proxima rodada
 
 concurrency:
   group: bot-telegram
-  cancel-in-progress: true
+  cancel-in-progress: true  # nunca dois pollers com o mesmo token (409)
 
 jobs:
   poll:
@@ -35,13 +39,11 @@ jobs:
       - name: Instala deps do bot
         run: pip install -r admin/bot-requirements.txt
 
-      - name: Roda o bot (~4,5 min, com overlap p/ zero intervalo)
+      - name: Roda o bot (~4,5 min)
         run: timeout 280 python admin/bot.py || true
+
+      - name: Reacende o bot para a proxima rodada
+        if: always()
         env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_ALLOWED_IDS: ${{ secrets.TELEGRAM_ALLOWED_IDS }}
-          WP_URL: ${{ secrets.WP_URL }}
-          WP_USER: ${{ secrets.WP_USER }}
-          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GOOGLE_SHEETS_JSON: ${{ secrets.GOOGLE_SHEETS_JSON }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh workflow run bot-poll.yml --ref master || echo "falhou o auto-dispatch (a rede de seguranca cobre)"

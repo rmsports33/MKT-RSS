@@ -251,8 +251,13 @@ try:
             logger.warning(f"/link nao registrado: {e}")
         app.add_error_handler(on_error)
         print(f"Bot rodando — envie /drafts no Telegram (allowlist: {ALLOWED_IDS or 'aberta'})")
-        # polling com drop_pending e timeout explícito (host always-on: ver docs/ADMIN_MULTI.md)
-        app.run_polling(drop_pending_updates=True, allowed_updates=["message","callback_query"])
+        #(drop_pending_updates=False: o bot roda em rodadas curtas; descartar o que
+        # chegou na pausa fazia o dono "perder" comandos. Assim a mensagem espera no
+        # Telegram e e respondida no proximo round. Redundancia de rede evitada pelo
+        # offset: o Telegram so repete o que ainda nao foi confirmado.)
+        drop_pending = (os.getenv("BOT_DROP_PENDING", "0") or "0").strip() in ("1", "true", "True")
+        app.run_polling(drop_pending_updates=drop_pending,
+                        allowed_updates=["message", "callback_query"])
 
     if __name__ == "__main__":
         main()
