@@ -55,6 +55,16 @@ jobs:
           else
             echo "rodada NAO concluida (codigo $ec) - nao reacende" >> "$GITHUB_STEP_SUMMARY"
           fi
+        # ATENCAO: sem este env o bot sai em segundos com
+        # "TELEGRAM_BOT_TOKEN ausente" (foi o bug de 26/09 que gerou a tempestade).
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALLOWED_IDS: ${{ secrets.TELEGRAM_ALLOWED_IDS }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GOOGLE_SHEETS_JSON: ${{ secrets.GOOGLE_SHEETS_JSON }}
 
       - name: Reacende o bot para a proxima rodada
         if: success() && hashFiles('.rodada-ok') != ''
