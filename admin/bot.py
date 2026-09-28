@@ -65,7 +65,8 @@ def _is_allowed(update) -> bool:
 HELP = (
     "Comandos:\n"
     "/drafts [N] — lista rascunhos (default 5)\n"
-    "/link <url> — registra link de afiliado (guiado por botoes)\n"
+    "/link <url> — registra link (descobre o produto sozinho)\n"
+    "/link <url> | Nome — quando ele nao descobrir\n"
     "/cancelar — aborta o /link atual\n"
     "/health — checa WP e Groq (+ Turso se configurado)\n"
     "/help — esta ajuda\n\n"
@@ -254,7 +255,15 @@ try:
         app.add_handler(CallbackQueryHandler(on_callback, pattern=r"^pub:"))
         try:
             sys.path.insert(0, str(Path(__file__).parent))
-            import linkflow
+            import linkauto  # v2 primeiro: o /link dele vence o do linkflow
+            for h in linkauto.linkauto_handlers():
+                app.add_handler(h)
+            logger.info("/link v2: %d handler(s)" % len(linkauto.linkauto_handlers()))
+        except Exception as e:
+            logger.warning(f"/link v2 nao registrado: {e}")
+        try:
+            sys.path.insert(0, str(Path(__file__).parent))
+            import linkflow  # v1: botoes antigos lk:g/p/l/x (guias) continuam aqui
             hs = linkflow.link_handlers()
             for h in hs:
                 app.add_handler(h)
