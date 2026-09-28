@@ -27,10 +27,12 @@ class _Markup:
 
 
 tg = types.ModuleType("telegram")
+tg._FAKE = True  # marca para outros testes saberem que este PTB e um stub
 tg.InlineKeyboardButton = _Botao
 tg.InlineKeyboardMarkup = _Markup
 tg.Update = object
 ext = types.ModuleType("telegram.ext")
+ext._FAKE = True
 
 
 class _Handler:
@@ -38,15 +40,39 @@ class _Handler:
         self.args, self.kwargs = a, k
 
 
+class _CommandHandler(_Handler):
+    """Igual ao PTB: guarda `commands` como atributo (frozenset)."""
+
+    def __init__(self, commands, callback, **kw):
+        super().__init__(callback, **kw)
+        if isinstance(commands, (list, tuple, set, frozenset)):
+            self.commands = frozenset(commands)
+        else:
+            self.commands = frozenset({commands})
+        self.callback = callback
+
+
+class _CallbackQueryHandler(_Handler):
+    """Igual ao PTB: guarda `pattern` (string ou regex compilada)."""
+
+    def __init__(self, callback, pattern=None, **kw):
+        super().__init__(callback, **kw)
+        self.pattern = pattern
+        self.callback = callback
+
+
 ext.Application = object
-ext.CommandHandler = _Handler
-ext.CallbackQueryHandler = _Handler
+ext.CommandHandler = _CommandHandler
+ext.CallbackQueryHandler = _CallbackQueryHandler
 ext.ConversationHandler = _Handler
 ext.MessageHandler = _Handler
 ext.filters = object
 ext.ContextTypes = types.SimpleNamespace(DEFAULT_TYPE=object)
 sys.modules["telegram"] = tg
 sys.modules["telegram.ext"] = ext
+# reimporta o linkflow ligado AO STUB (se outro teste ja importou com o PTB real)
+for _m in ("linkflow", "admin", "admin.bot"):
+    sys.modules.pop(_m, None)
 
 import linkflow as L  # noqa: E402
 
