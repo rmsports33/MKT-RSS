@@ -280,6 +280,7 @@ if _TEM_PTB:
             await update.message.reply_text(USO)
             return
         ok, detalhe = checa_url_viva(url)
+        logger.info("/link recebido de uid=%s: %s (%s)", getattr(getattr(update, "effective_user", None), "id", "?"), url[:80], detalhe[:40])
         await update.message.reply_text(
             "🔗 %s\n%s\n\nQual guia?" % (url, detalhe), reply_markup=_kb_guias(),
             disable_web_page_preview=True)
@@ -295,6 +296,7 @@ if _TEM_PTB:
             await _negado(update)
             return
         partes = (q.data or "").split(":")
+        logger.info("botao recebido: %s (de %d partes)", q.data, len(partes))
         if len(partes) < 3 or partes[0] != "lk":
             return
         msg = getattr(q, "message", None)
