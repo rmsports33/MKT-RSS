@@ -1,8 +1,9 @@
 """
-Testes unit — /link (linkflow). Sem rede, sem polling, sem escrita real.
+Testes unit — /link (linkflow) SEM MEMORIA. Sem rede, sem polling, sem escrita.
 pytest tests/unit/test_linkflow.py -v
 """
 import sys
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "admin"))
@@ -48,6 +49,28 @@ def test_guias_lojas_colunas():
     assert [L.COL[l] for l in L.LOJAS] == ["B", "C", "D", "E", "F"]
 
 
+def test_url_da_mensagem_recupera_link():
+    txt = ("🔗 https://link.amazon/B05GmEKKZ\nHTTP 200 ✅\n\nQual guia?")
+    assert L.url_da_mensagem(txt) == "https://link.amazon/B05GmEKKZ"
+    assert L.url_da_mensagem("🔗 https://a.com/x\nProduto: Keychron V6 Max") == "https://a.com/x"
+
+
+def test_url_da_mensagem_negativos():
+    assert L.url_da_mensagem("Qual guia?") is None
+    assert L.url_da_mensagem("") is None
+    assert L.url_da_mensagem(None) is None
+    assert L.url_da_mensagem("🔗 sem http:// aqui") is None
+
+
+def test_expiracao_por_idade():
+    agora = datetime(2026, 9, 27, 12, 0, tzinfo=timezone.utc)
+    recente = agora - timedelta(hours=2)
+    velho = agora - timedelta(hours=30)
+    assert L._expirou(recente, agora=agora) is False
+    assert L._expirou(velho, agora=agora) is True
+    assert L._expirou(None) is False
+
+
 class _Vals:
     def __init__(self, fake):
         self.f = fake
@@ -67,12 +90,9 @@ class _Vals:
             rng = self._ult[1]
             if rng.endswith("!A:A"):
                 return {"values": [["Produto"]] + [[p] for p in self.f["prods"]]}
-            # 'ABA'!C5
-            cel = rng.split("!")[1]
-            return {"values": [[self.f["cells"].get(cel, "")]]}
+            return {"values": [[self.f["cells"].get(rng.split("!")[1], "")]]}
         rng, body = self._ult[1], self._ult[2]
-        cel = rng.split("!")[1]
-        self.f["cells"][cel] = body["values"][0][0]
+        self.f["cells"][rng.split("!")[1]] = body["values"][0][0]
         return {}
 
 
@@ -114,13 +134,9 @@ def test_grava_sobrescreve_quando_pedido():
 
 def test_produto_fora_da_aba_e_loja_invalida():
     svc = _Sheets(_fake())
-    try:
-        L.le_celula("Produto Fantasma", "Amazon", svc)
-        raise AssertionError("devia falhar")
-    except ValueError:
-        pass
-    try:
-        L.le_celula("Keychron V6 Max", "Loja X", svc)
-        raise AssertionError("devia falhar")
-    except ValueError:
-        pass
+    for args in (("Produto Fantasma", "Amazon"), ("Keychron V6 Max", "Loja X")):
+        try:
+            L.le_celula(args[0], args[1], svc)
+            raise AssertionError("devia falhar: %s" % (args,))
+        except ValueError:
+            pass

@@ -252,12 +252,10 @@ try:
         try:
             sys.path.insert(0, str(Path(__file__).parent))
             import linkflow
-            h = linkflow.link_conv_handler()
-            if h is not None:
+            hs = linkflow.link_handlers()
+            for h in hs:
                 app.add_handler(h)
-                logger.info("handler /link registrado")
-            else:
-                logger.warning("/link indisponivel (sem python-telegram-bot no import do linkflow)")
+            logger.info("/link: %d handler(s) registrado(s)" % len(hs))
         except Exception as e:
             logger.warning(f"/link nao registrado: {e}")
         app.add_error_handler(on_error)

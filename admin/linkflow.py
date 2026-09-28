@@ -22,6 +22,7 @@ Destino:
 import json
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 from urllib.parse import urlparse
@@ -180,17 +181,42 @@ def grava_link(produto, loja, url, svc=None):
 
 
 # ---------------------------------------------------------------- Telegram (opcional)
+# SEM MEMORIA: cada rodada do bot e um processo novo, entao nada de estado em
+# memoria. O estado viaja no callback_data e o link no texto da mensagem.
 try:
     from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
-    from telegram.ext import (Application, CommandHandler, CallbackQueryHandler,
-                              ConversationHandler, ContextTypes, MessageHandler, filters)
+    from telegram.ext import (Application, CallbackQueryHandler, CommandHandler,
+                              ContextTypes, MessageHandler, filters)
     _TEM_PTB = True
 except ImportError:
     _TEM_PTB = False
 
-if _TEM_PTB:
-    ST_GUIA, ST_PROD, ST_LOJA, ST_TROCA = range(4)
+# callback_data (curto, sem acento):
+#   lk:g:<guia>                         -> escolheu o guia
+#   lk:p:<guia>:<idx>                   -> escolheu o produto
+#   lk:l:<guia>:<idx>:<loja_idx>        -> escolheu a loja (grava ou pergunta troca)
+#   lk:x:<guia>:<idx>:<loja_idx>:<0|1>  -> 0=manter antigo, 1=trocar
+MAX_IDADE_H = 24
 
+
+def url_da_mensagem(texto):
+    """Recupera o link do texto da mensagem (prefixo 🔗). Puro e testavel."""
+    m = re.search(r"🔗\s*(https?://\S+)", texto or "")
+    return m.group(1) if m else None
+
+
+def _expirou(data_msg, max_horas=MAX_IDADE_H, agora=None):
+    """True se a mensagem/botao e velho demais (o dono ta madrugada afora)."""
+    if data_msg is None:
+        return False
+    from datetime import datetime, timedelta, timezone
+    ref = agora or datetime.now(timezone.utc)
+    if data_msg.tzinfo is None:
+        data_msg = data_msg.replace(tzinfo=timezone.utc)
+    return (ref - data_msg) > timedelta(hours=max_horas)
+
+
+if _TEM_PTB:
     def _permitido(update) -> bool:
         raw = (os.getenv("TELEGRAM_ALLOWED_IDS", "") or "").strip()
         if not raw:
@@ -214,44 +240,52 @@ if _TEM_PTB:
             pass
 
     def _kb_guias():
-        fileiras = [[InlineKeyboardButton("⌚ Smartwatch", callback_data="lk:g:smartwatch")],
-                    [InlineKeyboardButton("📺 TV 4K", callback_data="lk:g:tv4k")],
-                    [InlineKeyboardButton("💻 Notebook", callback_data="lk:g:notebook")],
-                    [InlineKeyboardButton("🔊 Caixa de som", callback_data="lk:g:caixa_som")],
-                    [InlineKeyboardButton("⌨️ Teclado", callback_data="lk:g:teclado")]]
-        return InlineKeyboardMarkup(fileiras)
+        return InlineKeyboardMarkup([
+            [InlineKeyboardButton("⌚ Smartwatch", callback_data="lk:g:smartwatch")],
+            [InlineKeyboardButton("📺 TV 4K", callback_data="lk:g:tv4k")],
+            [InlineKeyboardButton("💻 Notebook", callback_data="lk:g:notebook")],
+            [InlineKeyboardButton("🔊 Caixa de som", callback_data="lk:g:caixa_som")],
+            [InlineKeyboardButton("⌨️ Teclado", callback_data="lk:g:teclado")],
+        ])
 
     def _kb_produtos(guia):
         _rot, prods = GUIAS[guia]
-        fileiras = [[InlineKeyboardButton(p, callback_data="lk:p:%d" % i)] for i, p in enumerate(prods)]
-        fileiras.append([InlineKeyboardButton("⬅️ Voltar", callback_data="lk:voltar_guias")])
-        return InlineKeyboardMarkup(fileiras)
+        linhas = [[InlineKeyboardButton(p, callback_data="lk:p:%s:%d" % (guia, i))]
+                  for i, p in enumerate(prods)]
+        linhas.append([InlineKeyboardButton("⬅️ Trocar o guia",
+                                            callback_data="lk:g:__volta__")])
+        return InlineKeyboardMarkup(linhas)
 
-    def _kb_lojas():
-        fileiras = [[InlineKeyboardButton("🏪 " + l, callback_data="lk:l:" + l)] for l in LOJAS]
-        fileiras.append([InlineKeyboardButton("⬅️ Voltar", callback_data="lk:voltar_prods")])
-        return InlineKeyboardMarkup(fileiras)
+    def _kb_lojas(guia, idx):
+        return InlineKeyboardMarkup(
+            [[InlineKeyboardButton("%d. %s" % (i + 1, l),
+                                    callback_data="lk:l:%s:%d:%d" % (guia, idx, i))]
+             for i, l in enumerate(LOJAS)]
+            + [[InlineKeyboardButton("⬅️ Trocar o produto",
+                                     callback_data="lk:p:%s:%d:__volta__" % (guia, idx))]])
 
-    def _limpa(d):
-        for k in ("lk_url", "lk_guia", "lk_prod", "lk_loja"):
-            d.pop(k, None)
+    def _kb_troca(guia, idx, loja_idx):
+        base = "lk:x:%s:%d:%d:" % (guia, idx, loja_idx)
+        return InlineKeyboardMarkup([[
+            InlineKeyboardButton("🔁 Trocar", callback_data=base + "1"),
+            InlineKeyboardButton("✔️ Manter o antigo", callback_data=base + "0"),
+        ]])
 
     async def cmd_link(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not _permitido(update):
             await _negado(update)
-            return ConversationHandler.END
+            return
         url = norm_url(" ".join(context.args or []))
         if not url:
             await update.message.reply_text(USO)
-            return ConversationHandler.END
-        context.user_data["lk_url"] = url
+            return
         ok, detalhe = checa_url_viva(url)
         await update.message.reply_text(
             "🔗 %s\n%s\n\nQual guia?" % (url, detalhe), reply_markup=_kb_guias(),
             disable_web_page_preview=True)
-        return ST_GUIA
 
-    async def on_guia(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def on_lk(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Unico handler de botoes do /link. Stateless."""
         q = update.callback_query
         try:
             await q.answer()
@@ -259,168 +293,123 @@ if _TEM_PTB:
             pass
         if not _permitido(update):
             await _negado(update)
-            return ConversationHandler.END
-        guia = (q.data or "").split(":")[-1]
+            return
+        partes = (q.data or "").split(":")
+        if len(partes) < 3 or partes[0] != "lk":
+            return
+        msg = getattr(q, "message", None)
+        url = url_da_mensagem(getattr(msg, "text", "") or "")
+        if not url:
+            await q.edit_message_text(
+                "⚠️ Não encontrei o link nesta mensagem. Mande /link <url> de novo.")
+            return
+        if _expirou(getattr(msg, "date", None)):
+            await q.edit_message_text(
+                "⏳ Esse botão é de mais de %dh. Mande /link <url> de novo." % MAX_IDADE_H,
+                reply_markup=None)
+            return
+
+        acao = partes[1]
+
+        if acao == "g":
+            guia = partes[2]
+            if guia == "__volta__":
+                await q.edit_message_text("🔗 %s\n\nQual guia?" % url, reply_markup=_kb_guias())
+                return
+            if guia not in GUIAS:
+                await q.edit_message_text("Guia inválido. Mande /link <url> de novo.")
+                return
+            await q.edit_message_text(
+                "🔗 %s\nGuia: %s\n\nQual produto?" % (url, GUIAS[guia][0]),
+                reply_markup=_kb_produtos(guia))
+            return
+
+        guia = partes[2]
+
+        if acao == "p":
+            if len(partes) >= 4 and partes[3] == "__volta__":
+                await q.edit_message_text("🔗 %s\n\nQual guia?" % url, reply_markup=_kb_guias())
+                return
+            try:
+                idx = int(partes[3])
+                prod = GUIAS[guia][1][idx]
+            except Exception:
+                await q.edit_message_text("Produto inválido. Mande /link <url> de novo.")
+                return
+            await q.edit_message_text(
+                "🔗 %s\nProduto: %s\n\nQual loja?" % (url, prod),
+                reply_markup=_kb_lojas(guia, idx))
+            return
+
         if guia not in GUIAS:
-            await q.edit_message_text("Guia inválido. /link para recomeçar.")
-            return ConversationHandler.END
-        context.user_data["lk_guia"] = guia
-        await q.edit_message_text("Guia: %s\n\nQual produto?" % GUIAS[guia][0],
-                                  reply_markup=_kb_produtos(guia))
-        return ST_PROD
-
-    async def on_voltar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        q = update.callback_query
+            await q.edit_message_text("Guia inválido. Mande /link <url> de novo.")
+            return
         try:
-            await q.answer()
-        except Exception:
-            pass
-        if not _permitido(update):
-            await _negado(update)
-            return ConversationHandler.END
-        if (q.data or "").endswith("guias"):
-            await q.edit_message_text("Qual guia?", reply_markup=_kb_guias())
-            return ST_GUIA
-        guia = context.user_data.get("lk_guia")
-        if guia not in GUIAS:
-            await q.edit_message_text("Qual guia?", reply_markup=_kb_guias())
-            return ST_GUIA
-        await q.edit_message_text("Guia: %s\n\nQual produto?" % GUIAS[guia][0],
-                                  reply_markup=_kb_produtos(guia))
-        return ST_PROD
-
-    async def on_prod(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        q = update.callback_query
-        try:
-            await q.answer()
-        except Exception:
-            pass
-        if not _permitido(update):
-            await _negado(update)
-            return ConversationHandler.END
-        guia = context.user_data.get("lk_guia")
-        try:
-            idx = int((q.data or "").split(":")[-1])
+            idx = int(partes[3])
             prod = GUIAS[guia][1][idx]
         except Exception:
-            await q.edit_message_text("Produto inválido. /link para recomeçar.")
-            return ConversationHandler.END
-        context.user_data["lk_prod"] = prod
-        await q.edit_message_text("Produto: %s\n\nQual loja?" % prod, reply_markup=_kb_lojas())
-        return ST_LOJA
+            await q.edit_message_text("Produto inválido. Mande /link <url> de novo.")
+            return
 
-    async def on_loja(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        q = update.callback_query
-        try:
-            await q.answer()
-        except Exception:
-            pass
-        if not _permitido(update):
-            await _negado(update)
-            return ConversationHandler.END
-        loja = (q.data or "").split(":", 2)[-1]
-        if loja not in LOJAS:
-            await q.edit_message_text("Loja inválida. /link para recomeçar.")
-            return ConversationHandler.END
-        context.user_data["lk_loja"] = loja
-        prod = context.user_data.get("lk_prod")
-        url = context.user_data.get("lk_url")
-        try:
-            atual = le_celula(prod, loja)
-        except Exception as e:
-            logger.warning("le_celula falhou: %s", e)
-            await q.edit_message_text("❌ Erro ao ler a planilha: %s" % str(e)[:100])
-            return ConversationHandler.END
-        if not atual:
+        if acao == "l":
+            try:
+                loja = LOJAS[int(partes[4])]
+            except Exception:
+                await q.edit_message_text("Loja inválido. Mande /link <url> de novo.")
+                return
+            try:
+                atual = le_celula(prod, loja)
+            except Exception as e:
+                await q.edit_message_text("❌ Erro ao ler a planilha: %s" % str(e)[:120])
+                return
+            if not atual:
+                try:
+                    ok, lido = grava_link(prod, loja, url)
+                except Exception as e:
+                    await q.edit_message_text("❌ Erro ao gravar: %s" % str(e)[:120])
+                    return
+                await q.edit_message_text(
+                    ("✅ Gravado!\n%s | %s\n%s" % (prod, loja, lido)) if ok
+                    else "⚠️ Gravado, mas a releitura divergiu — confira na planilha.")
+                return
+            await q.edit_message_text(
+                "⚠️ Já existe link para %s | %s:\n%s\n\nTrocar pelo novo?"
+                % (prod, loja, atual), reply_markup=_kb_troca(guia, idx, int(partes[4])))
+            return
+
+        if acao == "x":
+            try:
+                loja = LOJAS[int(partes[4])]
+            except Exception:
+                await q.edit_message_text("Loja inválida. Mande /link <url> de novo.")
+                return
+            if partes[5] == "0":
+                await q.edit_message_text("✔️ Mantido o link antigo. Nada mudou.")
+                return
             try:
                 ok, lido = grava_link(prod, loja, url)
             except Exception as e:
-                logger.warning("grava_link falhou: %s", e)
-                await q.edit_message_text("❌ Erro ao gravar: %s" % str(e)[:100])
-                return ConversationHandler.END
-            _limpa(context.user_data)
+                await q.edit_message_text("❌ Erro ao gravar: %s" % str(e)[:120])
+                return
             await q.edit_message_text(
-                "✅ Gravado: %s | %s\n%s" % (prod, loja, lido) if ok
-                else "⚠️ Gravado mas a releitura divergiu — confira na planilha.",
-                disable_web_page_preview=True)
-            return ConversationHandler.END
-        kb = InlineKeyboardMarkup([[InlineKeyboardButton("🔁 Trocar", callback_data="lk:trocar"),
-                                    InlineKeyboardButton("✔️ Manter", callback_data="lk:manter")]])
-        await q.edit_message_text(
-            "⚠️ Já existe link para %s | %s:\n%s\n\nTrocar pelo novo?\n%s"
-            % (prod, loja, atual, url), reply_markup=kb, disable_web_page_preview=True)
-        return ST_TROCA
+                ("🔁 Trocado!\n%s | %s\n%s" % (prod, loja, lido)) if ok
+                else "⚠️ Troca sem confirmação de releitura.")
+            return
 
-    async def on_troca(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        q = update.callback_query
-        try:
-            await q.answer()
-        except Exception:
-            pass
-        if not _permitido(update):
-            await _negado(update)
-            return ConversationHandler.END
-        acao = (q.data or "").split(":")[-1]
-        prod = context.user_data.get("lk_prod")
-        loja = context.user_data.get("lk_loja")
-        url = context.user_data.get("lk_url")
-        if acao == "manter":
-            _limpa(context.user_data)
-            await q.edit_message_text("✔️ Mantido o link antigo. Nada alterado.")
-            return ConversationHandler.END
-        try:
-            ok, lido = grava_link(prod, loja, url)
-        except Exception as e:
-            await q.edit_message_text("❌ Erro ao gravar: %s" % str(e)[:100])
-            return ConversationHandler.END
-        _limpa(context.user_data)
-        await q.edit_message_text("✅ Trocado: %s | %s\n%s" % (prod, loja, lido)
-                                  if ok else "⚠️ Troca sem confirmação de releitura.",
-                                  disable_web_page_preview=True)
-        return ConversationHandler.END
-
-    async def cmd_cancelar(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        _limpa(context.user_data)
-        try:
-            await update.message.reply_text("Cancelado. /link para recomeçar.")
-        except Exception:
-            pass
-        return ConversationHandler.END
-
-    async def on_expirado(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Botao tocado fora da janela de conversa (o bot dorme a cada 5 min
-        e o estado e em memoria). Nunca falha em silencio."""
-        q = update.callback_query
-        try:
-            await q.answer()
-        except Exception:
-            pass
-        if not _permitido(update):
-            await _negado(update)
-            return ConversationHandler.END
-        try:
-            await q.edit_message_text(
-                "⏳ Essa sessão expirou (o bot cochila a cada 5 min).\n"
-                "Mande /link de novo que vai rapidinho.")
-        except Exception:
-            pass
-        return ConversationHandler.END
+    def link_handlers():
+        """Handlers para o bot.py registrar (CommandHandler + CallbackQueryHandler)."""
+        if not _TEM_PTB:
+            return []
+        return [CommandHandler("link", cmd_link),
+                CallbackQueryHandler(on_lk, pattern=r"^lk:")]
 
     def link_conv_handler():
-        return ConversationHandler(
-            entry_points=[CommandHandler("link", cmd_link)],
-            states={
-                ST_GUIA: [CallbackQueryHandler(on_guia, pattern=r"^lk:g:")],
-                ST_PROD: [CallbackQueryHandler(on_prod, pattern=r"^lk:p:"),
-                          CallbackQueryHandler(on_voltar, pattern=r"^lk:voltar_guias$")],
-                ST_LOJA: [CallbackQueryHandler(on_loja, pattern=r"^lk:l:"),
-                          CallbackQueryHandler(on_voltar, pattern=r"^lk:voltar_prods$")],
-                ST_TROCA: [CallbackQueryHandler(on_troca, pattern=r"^lk:(trocar|manter)$")],
-            },
-            fallbacks=[CommandHandler("cancelar", cmd_cancelar),
-                         CallbackQueryHandler(on_expirado, pattern=r"^lk:")],
-            per_chat=True,
-        )
+        """Mantido por compatibilidade: devolve o primeiro handler."""
+        hs = link_handlers()
+        return hs[0] if hs else None
 else:
+    def link_handlers():
+        return []
+
     def link_conv_handler():
         return None
