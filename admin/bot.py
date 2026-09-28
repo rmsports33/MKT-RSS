@@ -51,7 +51,7 @@ if _raw_allowed:
                 pass
 
 def _is_allowed(update) -> bool:
-    """True se ALLOWED_IDS vazio (open, com aviso) ou user/chat in whitelist."""
+    """True se ALLOWED_IDS vazio (aberto, com aviso) ou user/chat na lista."""
     if not ALLOWED_IDS:
         logger.warning("TELEGRAM_ALLOWED_IDS vazio — bot aberto a qualquer chat (defina IDs em .env para travar)")
         return True
@@ -86,7 +86,7 @@ def _wp_list_drafts(limit: int = 5) -> list:
                            headers={"Authorization": f"Basic {auth}"})
         if who.status_code != 200:
             return [{"id": 0, "title": (f"erro de login no WP (HTTP {who.status_code}): "
-                                        f"revise os secrets WP_USER e WP_APP_PASSWORD"),
+                                        f"revise os segredos WP_USER e WP_APP_PASSWORD"),
                      "link": ""}]
     except Exception as e:
         return [{"id": 0, "title": f"erro: WP nao respondeu ({str(e)[:60]})", "link": ""}]
@@ -126,7 +126,7 @@ try:
         if not _is_allowed(update):
             try:
                 uid = getattr(getattr(update, "effective_user", None), "id", "?")
-                logger.warning(f"Acesso negado Telegram id={uid}")
+                logger.warning(f"Acesso negado no Telegram, id={uid}")
                 if getattr(update, "message", None):
                     await update.message.reply_text("⛔ Não autorizado. Seu ID não está em TELEGRAM_ALLOWED_IDS.")
                 elif getattr(update, "callback_query", None):
@@ -181,7 +181,7 @@ try:
             pass
         drafts = _wp_list_drafts(limit=limit)
         if not drafts or (len(drafts)==1 and drafts[0].get("id")==0 and "erro" in drafts[0].get("title","")):
-            await update.message.reply_text(f"Nenhum rascunho ou WP erro: {drafts[0].get('title','') if drafts else 'WP não configurado'}")
+            await update.message.reply_text(f"Nenhum rascunho ou erro no WP: {drafts[0].get('title','') if drafts else 'WP não configurado'}")
             return
         if not drafts:
             await update.message.reply_text("Nenhum rascunho.")
@@ -197,7 +197,7 @@ try:
                                           [[InlineKeyboardButton("✅ Publicar", callback_data=f"pub:{pid}")]])
                 await update.message.reply_text(f"#{pid} — {d['title']}", reply_markup=kb)
             except Exception as e:
-                logger.warning(f"draft send falhou: {e}")
+                logger.warning(f"envio do rascunho falhou: {e}")
 
     async def on_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not await _guard(update):
@@ -218,13 +218,13 @@ try:
             # log audit
             try:
                 uid = getattr(getattr(update, "effective_user", None), "id", "?")
-                logger.info(f"Telegram publish pid={pid} por {uid} -> {res}")
+                logger.info(f"Publicação no Telegram pid={pid} por {uid} -> {res}")
             except Exception:
                 pass
             await q.edit_message_text(f"{'✅ Publicado' if res.get('ok') else '❌ Falhou'}: {res.get('link') or res.get('erro', '')}")
 
     async def on_error(update: object, context: ContextTypes.DEFAULT_TYPE) -> None:
-        """Diagnostico claro de conflito 409 (duas instancias com o mesmo token)."""
+        """Diagnóstico claro de conflito 409 (duas instâncias com o mesmo token)."""
         err = getattr(context, "error", None)
         msg = str(err)
         if ("onflict" in type(err).__name__

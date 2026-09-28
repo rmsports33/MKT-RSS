@@ -157,7 +157,7 @@ def le_celula(produto, loja, svc=None):
     if produto not in mapa:
         raise ValueError("produto fora da aba: %s" % produto)
     if loja not in COL:
-        raise ValueError("loja invalida: %s" % loja)
+        raise ValueError("loja inválida: %s" % loja)
     rng = "'%s'!%s%d" % (ABA, COL[loja], mapa[produto])
     vals = svc.spreadsheets().values().get(spreadsheetId=SID, range=rng).execute().get("values", [])
     return (vals[0][0] if vals and vals[0] else "").strip()
@@ -171,7 +171,7 @@ def grava_link(produto, loja, url, svc=None):
     if produto not in mapa:
         raise ValueError("produto fora da aba: %s" % produto)
     if loja not in COL:
-        raise ValueError("loja invalida: %s" % loja)
+        raise ValueError("loja inválida: %s" % loja)
     rng = "'%s'!%s%d" % (ABA, COL[loja], mapa[produto])
     svc.spreadsheets().values().update(
         spreadsheetId=SID, range=rng, valueInputOption="RAW",
@@ -286,7 +286,7 @@ if _TEM_PTB:
             disable_web_page_preview=True)
 
     async def on_lk(update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Unico handler de botoes do /link. Stateless."""
+        """Handler único de botões do /link. Sem estado."""
         q = update.callback_query
         try:
             await q.answer()
@@ -296,7 +296,7 @@ if _TEM_PTB:
             await _negado(update)
             return
         partes = (q.data or "").split(":")
-        logger.info("botao recebido: %s (de %d partes)", q.data, len(partes))
+        logger.info("botão recebido: %s (de %d partes)", q.data, len(partes))
         if len(partes) < 3 or partes[0] != "lk":
             return
         msg = getattr(q, "message", None)
