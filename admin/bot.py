@@ -248,7 +248,10 @@ try:
         app.add_handler(CommandHandler("help", cmd_start))
         app.add_handler(CommandHandler("drafts", cmd_drafts))
         app.add_handler(CommandHandler("health", cmd_health))
-        app.add_handler(CallbackQueryHandler(on_callback))
+        # `pub:` apenas: handler SEM pattern captura QUALQUER callback_query e,
+        # como o PTB entrega o update ao PRIMEIRO handler que casa (mesmo grupo),
+        # ele engolia os botoes do /link (bug de 27/09: botoes "nao respondiam").
+        app.add_handler(CallbackQueryHandler(on_callback, pattern=r"^pub:"))
         try:
             sys.path.insert(0, str(Path(__file__).parent))
             import linkflow
