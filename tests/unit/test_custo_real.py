@@ -19,8 +19,13 @@ def test_custo_gravado(tmp_path, monkeypatch):
          patch("mkt_flow_p0.extractor.extrair_conteudo", return_value=ext), \
          patch("mkt_flow_p0.content_filter.filtrar_conteudo", return_value={"veredito": "APROVADO", "categorias": [], "trechos": [], "total_sinais": 0}), \
          patch("mkt_flow_p0.rewriter.reescrever_materia", return_value=rw), \
+         patch("mkt_flow_p0.wp_publisher.garantir_categoria", return_value=1), \
+         patch("mkt_flow_p0.wp_publisher.garantir_tag", return_value=2), \
+         patch("mkt_flow_p0.wp_publisher.publicar_no_wordpress", return_value={"post_id": 123, "status": "draft", "link": "https://example.com/?p=123"}), \
          patch.dict("os.environ", {}, clear=False):
-        monkeypatch.delenv("WP_URL", raising=False)
+        monkeypatch.setenv("WP_URL", "https://example.com")
+        monkeypatch.setenv("WP_USER", "tester")
+        monkeypatch.setenv("WP_APP_PASSWORD", "test-only")
         r = P.processar_item({"titulo": "T", "resumo": "t", "link": "https://x", "fonte": "blog"})
         assert r["custo_usd"] == 0.0015 and r["tokens"] == 1234
     import sqlite3
