@@ -44,6 +44,14 @@ def init_db():
     con.close()
 
 
+def classificar_resultado_wp(resultado: dict) -> str:
+    """Only a confirmed WordPress draft counts as successful delivery."""
+    if (isinstance(resultado, dict) and not resultado.get("erro")
+            and resultado.get("post_id") and resultado.get("status") == "draft"):
+        return "publicado_rascunho"
+    return "falha"
+
+
 def processar_item(item: dict, dry_run: bool = False) -> dict:
     """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
     from mkt_flow_p0.content_filter import filtrar_item_rss, filtrar_conteudo, filtrar_por_tema
@@ -129,6 +137,12 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
                        "focus": (rw["tags"] or [""])[0]},
         )
 
+    acao_wp = classificar_resultado_wp(wp_result)
+    if acao_wp != "publicado_rascunho":
+        return {"acao": "falha", "motivo": (wp_result or {}).get("erro") or
+                (wp_result or {}).get("aviso") or "WP não confirmou rascunho",
+                "url": url_fonte, "wp": wp_result}
+
     run_id = str(uuid.uuid4())[:8]
     init_db()
     con = sqlite3.connect(DB_PATH)
@@ -201,14 +215,17 @@ def main():
         print(json.dumps({"erro": f"fonte desconhecida: {args.fonte}. Opções: {sorted(FEEDS_PADRAO)}"}))
         sys.exit(2)
     total = {"publicado_rascunho": 0, "bloqueado": 0, "falha": 0, "dry_run_ok": 0}
+    from mkt_flow_p0.rss_ingestor import marcar_visto
     for fonte, url in alvos.items():
         # dry-run nunca marca como visto (não gasta a pauta do dia)
-        nov = buscar_novidades(url, fonte=fonte, limit=args.limit, marcar=not args.dry_run)
+        nov = buscar_novidades(url, fonte=fonte, limit=args.limit, marcar=False)
         if "erro" in nov:
             print(json.dumps({"fonte": fonte, "erro": nov["erro"]}, ensure_ascii=False))
             continue
         for item in nov.get("novos", []):
             r = processar_item(item, dry_run=args.dry_run)
+            if r["acao"] == "publicado_rascunho" and not args.dry_run:
+                marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
             print(json.dumps({"fonte": fonte, **r}, ensure_ascii=False))
     if not args.dry_run and total.get("publicado_rascunho"):
