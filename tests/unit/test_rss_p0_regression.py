@@ -8,8 +8,8 @@ def test_failed_item_is_not_marked_seen_before_processing(monkeypatch):
     from mkt_flow_p0 import rss_ingestor
     monkeypatch.setattr(rss_ingestor, "FEEDS_PADRAO", {"teste": "https://example.com/feed"})
     monkeypatch.setattr("sys.argv", ["pipeline_rss.py", "--limit", "1"])
-    with patch.object(rss_ingestor, "buscar_novidades", return_value={"novos": [item]}) as buscar, \\
-         patch.object(pipeline_rss, "processar_item", return_value={"acao": "falha", "motivo": "WP offline"}), \\
+    with patch.object(rss_ingestor, "buscar_novidades", return_value={"novos": [item]}) as buscar, \
+         patch.object(pipeline_rss, "processar_item", return_value={"acao": "falha", "motivo": "WP offline"}), \
          patch.object(rss_ingestor, "marcar_visto") as marcar:
         pipeline_rss.main()
         marcar.assert_not_called()
@@ -21,9 +21,9 @@ def test_success_marks_seen_after_processing(monkeypatch):
     from mkt_flow_p0 import rss_ingestor
     monkeypatch.setattr(rss_ingestor, "FEEDS_PADRAO", {"teste": "https://example.com/feed"})
     monkeypatch.setattr("sys.argv", ["pipeline_rss.py", "--limit", "1"])
-    with patch.object(rss_ingestor, "buscar_novidades", return_value={"novos": [item]}), \\
-         patch.object(pipeline_rss, "processar_item", return_value={"acao": "publicado_rascunho"}), \\
-         patch.object(pipeline_rss, "publicar_indice", return_value={}), \\
+    with patch.object(rss_ingestor, "buscar_novidades", return_value={"novos": [item]}), \
+         patch.object(pipeline_rss, "processar_item", return_value={"acao": "publicado_rascunho"}), \
+         patch.object(pipeline_rss, "publicar_indice", return_value={}), \
          patch.object(rss_ingestor, "marcar_visto") as marcar:
         pipeline_rss.main()
         marcar.assert_called_once_with("teste", item["link"], item["titulo"])
