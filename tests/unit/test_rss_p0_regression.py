@@ -3,18 +3,30 @@ from unittest.mock import patch
 import pipeline_rss
 
 
-def test_failed_item_is_not_marked_seen_before_processing():
+def test_failed_item_is_not_marked_seen_before_processing(monkeypatch):
     item = {"titulo": "Noticia tech", "link": "https://example.com/a", "fonte": "teste"}
-    with patch("mkt_flow_p0.rss_ingestor.buscar_novidades", return_value={"novos": [item]}) as buscar, \
-         patch.object(pipeline_rss, "processar_item", return_value={"acao": "falha", "motivo": "WP offline"}), \
-         patch("mkt_flow_p0.rss_ingestor.marcar_visto") as marcar:
-        # Regression contract: the caller must request unmarked items.
-        # A separate successful-item path should mark only after confirmation.
-        result = buscar("https://example.com/feed", fonte="teste", limit=1, marcar=False)
-        for entry in result["novos"]:
-            pipeline_rss.processar_item(entry)
+    from mkt_flow_p0 import rss_ingestor
+    monkeypatch.setattr(rss_ingestor, "FEEDS_PADRAO", {"teste": "https://example.com/feed"})
+    monkeypatch.setattr("sys.argv", ["pipeline_rss.py", "--limit", "1"])
+    with patch.object(rss_ingestor, "buscar_novidades", return_value={"novos": [item]}) as buscar, \\
+         patch.object(pipeline_rss, "processar_item", return_value={"acao": "falha", "motivo": "WP offline"}), \\
+         patch.object(rss_ingestor, "marcar_visto") as marcar:
+        pipeline_rss.main()
         marcar.assert_not_called()
         assert buscar.call_args.kwargs["marcar"] is False
+
+
+def test_success_marks_seen_after_processing(monkeypatch):
+    item = {"titulo": "Noticia tech", "link": "https://example.com/a", "fonte": "teste"}
+    from mkt_flow_p0 import rss_ingestor
+    monkeypatch.setattr(rss_ingestor, "FEEDS_PADRAO", {"teste": "https://example.com/feed"})
+    monkeypatch.setattr("sys.argv", ["pipeline_rss.py", "--limit", "1"])
+    with patch.object(rss_ingestor, "buscar_novidades", return_value={"novos": [item]}), \\
+         patch.object(pipeline_rss, "processar_item", return_value={"acao": "publicado_rascunho"}), \\
+         patch.object(pipeline_rss, "publicar_indice", return_value={}), \\
+         patch.object(rss_ingestor, "marcar_visto") as marcar:
+        pipeline_rss.main()
+        marcar.assert_called_once_with("teste", item["link"], item["titulo"])
 
 
 def test_wp_error_must_not_count_as_success():
