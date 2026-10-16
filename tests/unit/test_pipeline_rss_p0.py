@@ -57,8 +57,13 @@ def test_publicado_rascunho_mockado(tmp_path, monkeypatch):
                return_value={"veredito": "APROVADO", "categorias": [], "trechos": [], "total_sinais": 0}), \
          patch("mkt_flow_p0.seo.enriquecer_com_keywords", return_value=["kw1", "kw2"]), \
          patch("mkt_flow_p0.rewriter.reescrever_materia", return_value=rw), \
+         patch("mkt_flow_p0.wp_publisher.garantir_categoria", return_value=1), \
+         patch("mkt_flow_p0.wp_publisher.garantir_tag", return_value=2), \
+         patch("mkt_flow_p0.wp_publisher.publicar_no_wordpress", return_value={"post_id": 123, "status": "draft", "link": "https://example.com/?p=123"}), \
          patch.dict("os.environ", {}, clear=False):
-        monkeypatch.delenv("WP_URL", raising=False)
+        monkeypatch.setenv("WP_URL", "https://example.com")
+        monkeypatch.setenv("WP_USER", "tester")
+        monkeypatch.setenv("WP_APP_PASSWORD", "test-only")
         r = P.processar_item(ITEM)
         assert r["acao"] == "publicado_rascunho" and r["run_id"]
 
@@ -82,8 +87,13 @@ def test_keywords_chegam_ao_rewriter(tmp_path, monkeypatch):
                return_value={"veredito": "APROVADO", "categorias": [], "trechos": [], "total_sinais": 0}), \
          patch("mkt_flow_p0.seo.enriquecer_com_keywords", return_value=["galaxy x preço"]), \
          patch("mkt_flow_p0.rewriter.reescrever_materia", side_effect=fake_rewrite), \
+         patch("mkt_flow_p0.wp_publisher.garantir_categoria", return_value=1), \
+         patch("mkt_flow_p0.wp_publisher.garantir_tag", return_value=2), \
+         patch("mkt_flow_p0.wp_publisher.publicar_no_wordpress", return_value={"post_id": 123, "status": "draft", "link": "https://example.com/?p=123"}), \
          patch.dict("os.environ", {}, clear=False):
-        monkeypatch.delenv("WP_URL", raising=False)
+        monkeypatch.setenv("WP_URL", "https://example.com")
+        monkeypatch.setenv("WP_USER", "tester")
+        monkeypatch.setenv("WP_APP_PASSWORD", "test-only")
         r = P.processar_item(ITEM)
         assert r["acao"] == "publicado_rascunho"
         assert chamadas.get("keywords") == ["galaxy x preço"]
@@ -107,8 +117,13 @@ def test_keywords_falha_nao_trava(tmp_path, monkeypatch):
                return_value={"veredito": "APROVADO", "categorias": [], "trechos": [], "total_sinais": 0}), \
          patch("mkt_flow_p0.seo.enriquecer_com_keywords", side_effect=RuntimeError("sem rede")), \
          patch("mkt_flow_p0.rewriter.reescrever_materia", side_effect=fake_rewrite), \
+         patch("mkt_flow_p0.wp_publisher.garantir_categoria", return_value=1), \
+         patch("mkt_flow_p0.wp_publisher.garantir_tag", return_value=2), \
+         patch("mkt_flow_p0.wp_publisher.publicar_no_wordpress", return_value={"post_id": 123, "status": "draft", "link": "https://example.com/?p=123"}), \
          patch.dict("os.environ", {}, clear=False):
-        monkeypatch.delenv("WP_URL", raising=False)
+        monkeypatch.setenv("WP_URL", "https://example.com")
+        monkeypatch.setenv("WP_USER", "tester")
+        monkeypatch.setenv("WP_APP_PASSWORD", "test-only")
         r = P.processar_item(ITEM)
         assert r["acao"] == "publicado_rascunho"
         assert chamadas.get("keywords") == []
