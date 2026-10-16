@@ -79,7 +79,7 @@ def extrair_conteudo(url: str, timeout: int = 20, min_palavras: int = MIN_PALAVR
         logger.warning(f"extractor extract falhou: {e}")
 
     # Fallback recall para páginas curtas (produto com 2 frases, etc.)
-    if contar_palavras(texto) < 100:
+    if contar_palavras(texto) < min_palavras:
         try:
             fb = trafilatura.extract(
                 downloaded,
