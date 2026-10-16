@@ -160,38 +160,8 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
 
 
 def publicar_indice() -> dict:
-    """Sitemap editorial: página WP 'mapa-do-site' + arquivos sitemap.xml/llms.txt.
-
-    Chamado no fim do run (sem WP configurado, só gera arquivos locais).
-    """
-    from mkt_flow_p0.seo import gerar_sitemap, gerar_llms_txt
-    from mkt_flow_p0.wp_publisher import publicar_pagina
-
-    init_db()
-    con = sqlite3.connect(DB_PATH)
-    con.row_factory = sqlite3.Row
-    try:
-        cur = con.execute("SELECT titulo_seo, wp_link FROM rss_runs WHERE wp_link IS NOT NULL "
-                          "ORDER BY created_at DESC LIMIT 100")
-        links = [(r["titulo_seo"] or "Post", r["wp_link"]) for r in cur.fetchall()]
-    except Exception:
-        links = []
-    finally:
-        con.close()
-    if not links:
-        return {"aviso": "sem links publicados ainda — índice na próxima"}
-    base = os.getenv("WP_URL", "https://conexotech.com.br").rstrip("/")
-    Path("./sitemap.xml").write_text(gerar_sitemap([u for _, u in links], base), encoding="utf-8")
-    Path("./llms.txt").write_text(
-        gerar_llms_txt(base, [u for _, u in links], "Notícias tech reescritas do ConexoTech."), encoding="utf-8")
-    itens = "\n".join(f"<li><a href='{u}'>{t}</a></li>" for t, u in links)
-    html = f"<h2>Últimas notícias publicadas</h2>\n<ul>\n{itens}\n</ul>"
-    if not (os.getenv("WP_URL", "") and os.getenv("WP_USER", "") and os.getenv("WP_APP_PASSWORD", "")):
-        return {"arquivos": ["sitemap.xml", "llms.txt"], "aviso": "WP ausente — suba llms.txt na raiz via hospedagem"}
-    r = publicar_pagina("Mapa do Site — Automático", html, "mapa-do-site",
-                        os.getenv("WP_URL", ""), os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", ""))
-    r["arquivos"] = ["sitemap.xml", "llms.txt"]
-    return r
+    """Public sitemap is disabled for the draft-only RSS pipeline."""
+    return {"aviso": "indice publico desativado: RSS produz apenas rascunhos"}
 
 
 def main():
@@ -228,11 +198,6 @@ def main():
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
             print(json.dumps({"fonte": fonte, **r}, ensure_ascii=False))
-    if not args.dry_run and total.get("publicado_rascunho"):
-        try:
-            print(json.dumps({"indice": publicar_indice()}, ensure_ascii=False))
-        except Exception as e:
-            print(json.dumps({"indice_erro": str(e)[:150]}, ensure_ascii=False))
     print(json.dumps({"resumo": total}, ensure_ascii=False))
 
 
