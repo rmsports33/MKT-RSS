@@ -153,8 +153,16 @@ def test_valor_aprova_mediacao_propria():
         titulo="Testamos o Galaxy por 14 dias",
         texto="Testamos por 14 dias de uso. Medimos a bateria de 5.000 mAh: 7h12 de vídeo 4K.",
         links=[],
+        evidencia_medicao={
+            "metodo": "Teste de bateria em loop de vídeo 4K, brilho 200 nits",
+            "medicoes": [
+                {"metrica": "autonomia_video_4k", "valor": 7.2, "unidade": "h"},
+                {"metrica": "autonomia_uso_misto", "valor": 11.4, "unidade": "h"},
+            ],
+        },
     )
     assert r["veredito"] == "APROVADO" and "medicao_propria" in r["criterios"]
+    assert r["avisos"] == []
 
 
 def test_valor_nao_confunde_ficha_tecnica_com_medicao():
@@ -228,7 +236,10 @@ def test_valor_rotula_video_separado_de_medicao():
         titulo="Review do Galaxy S26",
         texto="Análise do aparelho.",
         links=[],
-        tem_video=True,
+        evidencia_video={
+            "url": "https://www.youtube.com/watch?v=abc123",
+            "transcricao": " ".join(["palavra"] * 80),
+        },
     )
     assert r["veredito"] == "APROVADO"
     assert "video_transcrito" in r["criterios"]
@@ -348,6 +359,145 @@ def test_valor_aceita_url_maiuscula_de_marketplace():
     )
     assert r["veredito"] == "APROVADO"
     assert "preco_br_data" in r["criterios"]
+
+
+# --- M04.16C: três pontos da revisão técnica do PR #5 ---
+# 1) extensão .pdf não confere origem; 2) preço e data precisam estar
+# vinculados; 3) declaração de primeira mão sem prova não aprova.
+
+
+def test_valor_bloqueia_pdf_de_dominio_desconhecido():
+    r = filtrar_valor_acrescentado(
+        titulo="Estudo qualquer",
+        texto="Sem nada próprio.",
+        links=["https://blog-qualquer.example/paper.pdf"],
+    )
+    assert r["veredito"] == "BLOQUEADO"
+    assert "fonte_primaria" not in r["criterios"]
+
+
+def test_valor_aceita_pdf_em_dominio_oficial():
+    r = filtrar_valor_acrescentado(
+        titulo="Portaria",
+        texto="Sem nada próprio.",
+        links=["https://www.inmetro.gov.br/legislacao/portaria.pdf"],
+    )
+    assert r["veredito"] == "APROVADO"
+    assert "fonte_primaria" in r["criterios"]
+
+
+def test_valor_bloqueia_preco_e_data_distantes():
+    """Data em outro parágrafo não é data de captura deste preço."""
+    texto = ("O Galaxy custa R$ 9.999,00. " + ("Texto de contexto irrelevante. " * 10)
+             + "A matéria foi publicada em 17/09/2026.")
+    r = filtrar_valor_acrescentado(
+        titulo="Galaxy S26 Ultra",
+        texto=texto,
+        links=["https://www.amazon.com.br/dp/B0XXX"],
+    )
+    assert r["veredito"] == "BLOQUEADO"
+    assert "preco_br_data" not in r["criterios"]
+
+
+def test_valor_aceita_data_antes_do_preco_na_mesma_janela():
+    r = filtrar_valor_acrescentado(
+        titulo="Galaxy S26 Ultra",
+        texto="Capturado em 17/09/2026: R$ 9.999,00 na Amazon.",
+        links=["https://www.amazon.com.br/dp/B0XXX"],
+    )
+    assert r["veredito"] == "APROVADO"
+    assert "preco_br_data" in r["criterios"]
+
+
+def test_valor_bloqueia_video_declarado_sem_evidencia():
+    r = filtrar_valor_acrescentado(
+        titulo="Review do Galaxy S26",
+        texto="Análise do aparelho.",
+        links=[],
+        tem_video=True,
+    )
+    assert r["veredito"] == "BLOQUEADO"
+    assert "video_transcrito" not in r["criterios"]
+    assert any("video_transcrito" in a for a in r["avisos"])
+
+
+def test_valor_bloqueia_medicao_declarada_sem_evidencia():
+    r = filtrar_valor_acrescentado(
+        titulo="Review do Galaxy S26",
+        texto="Análise do aparelho.",
+        links=[],
+        tem_mediacao=True,
+    )
+    assert r["veredito"] == "BLOQUEADO"
+    assert "medicao_propria" not in r["criterios"]
+    assert any("medicao_propria" in a for a in r["avisos"])
+
+
+def test_valor_bloqueia_testamos_sem_evidencia_estruturada():
+    """A palavra 'testamos' é sinal, nunca prova."""
+    r = filtrar_valor_acrescentado(
+        titulo="Testamos o Galaxy S26 por 30 dias",
+        texto="Testamos por 30 dias de uso e medimos tudo. O aparelho é bom.",
+        links=[],
+    )
+    assert r["veredito"] == "BLOQUEADO"
+    assert "medicao_propria" not in r["criterios"]
+    assert any("não vale como prova" in a for a in r["avisos"])
+
+
+def test_valor_bloqueia_video_com_url_invalida():
+    for url in ["", "javascript:alert(1)", "youtube.com/watch?v=abc"]:
+        r = filtrar_valor_acrescentado(
+            titulo="Review",
+            texto="Análise.",
+            links=[],
+            evidencia_video={"url": url, "transcricao": " ".join(["p"] * 80)},
+        )
+        assert r["veredito"] == "BLOQUEADO", f"aceitou url: {url!r}"
+
+
+def test_valor_bloqueia_video_com_transcricao_curta():
+    r = filtrar_valor_acrescentado(
+        titulo="Review",
+        texto="Análise.",
+        links=[],
+        evidencia_video={"url": "https://youtu.be/abc", "transcricao": "muito bom"},
+    )
+    assert r["veredito"] == "BLOQUEADO"
+    assert "video_transcrito" not in r["criterios"]
+
+
+def test_valor_bloqueia_medicao_sem_metodo_ou_incompleta():
+    casos = [
+        {"medicoes": [{"metrica": "bateria", "valor": 7, "unidade": "h"},
+                      {"metrica": "tela", "valor": 120, "unidade": "Hz"}]},
+        {"metodo": "Teste de bateria em loop de vídeo 4K, brilho 200 nits",
+         "medicoes": [{"metrica": "bateria", "valor": 7, "unidade": "h"}]},
+        {"metodo": "Teste de bateria em loop de vídeo 4K, brilho 200 nits",
+         "medicoes": [{"metrica": "", "valor": 7, "unidade": "h"},
+                      {"metrica": "tela", "valor": 120, "unidade": "Hz"}]},
+        {"metodo": "curto", "medicoes": [{"metrica": "a", "valor": 1, "unidade": "h"},
+                                         {"metrica": "b", "valor": 2, "unidade": "h"}]},
+    ]
+    for evidencia in casos:
+        r = filtrar_valor_acrescentado(
+            titulo="Review", texto="Análise.", links=[],
+            evidencia_medicao=evidencia,
+        )
+        assert r["veredito"] == "BLOQUEADO", f"aceitou evidência: {evidencia}"
+
+
+def test_valor_avisa_mesmo_quando_outro_criterio_aprova():
+    """Declaração não comprovada não pode passar silenciosamente."""
+    r = filtrar_valor_acrescentado(
+        titulo="Anthropic anuncia modelo",
+        texto="Anunciado hoje.",
+        links=["https://www.anthropic.com/news/x"],
+        tem_video=True,
+    )
+    assert r["veredito"] == "APROVADO"
+    assert r["criterios"] == ["fonte_primaria"]
+    assert any("video_transcrito" in a for a in r["avisos"])
 
 
 def test_gate_publicacao_compliance_tem_precedencia():

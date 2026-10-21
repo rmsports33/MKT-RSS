@@ -282,24 +282,31 @@ def _e_fonte_primaria(url: str) -> bool:
     if (_DOMINIO_TERCEIRO.search(dominio) or _NAO_PRIMARIO.search(dominio)
             or _e_fonte_comercial(url)):
         return False
-    # Documento oficial publicado como PDF (checa só o caminho, não a query).
-    try:
-        caminho = urlsplit(url).path.lower()
-    except (TypeError, ValueError):
-        caminho = ""
-    if caminho.endswith(".pdf"):
-        return True
+    # M04.16C: extensão .pdf NÃO confere origem. Qualquer domínio pode publicar
+    # um PDF; antes, `https://blog-qualquer.example/paper.pdf` virava fonte
+    # primária. O formato só é aceito se o domínio já for confiável.
     return (_dominio_em(dominio, _SUFIXOS_OFICIAIS)
             or _dominio_em(dominio, _DOMINIOS_CIENTIFICOS)
             or _dominio_em(dominio, _FONTES_PRIMARIAS))
 
 # Preço brasileiro e data são evidências separadas. O critério só passa quando
-# ambos existem, a data é válida e há URL de uma fonte comercial conhecida.
+# ambos existem, a data é válida, está vinculada ao preço e há URL de uma fonte
+# comercial conhecida.
 _PRECO_BR = re.compile(
     r"R\$\s?(?:\d{1,3}(?:\.\d{3})+|\d+)(?:,\d{2})?\b",
     re.IGNORECASE,
 )
 _DATA_CAPTURA = re.compile(r"\b\d{1,2}/\d{1,2}/20\d{2}\b")
+
+# Janela máxima (caracteres) entre o preço e a data de captura. Fora disso, a
+# data não é considerada "deste preço".
+_JANELA_PRECO_DATA = 120
+
+# Mínimos para evidência de primeira mão. Sem isso, `tem_video=True`,
+# `tem_mediacao=True` e a simples palavra "testamos" aprovavam sozinhos.
+_MIN_PALAVRAS_TRANSCRICAO = 60
+_MIN_CHARS_METODO = 20
+_MIN_MEDICOES = 2
 
 # Medição PRÓPRIA = apenas linguagem de primeira mão. Bug de 28/09: a 1ª versão
 # aceitava qualquer spec com unidade (6,2 pol / 120 Hz / 4.000 mAh) e a palavra
@@ -343,13 +350,81 @@ def _e_fonte_comercial(url: str) -> bool:
 
 
 def _tem_data_valida(texto: str) -> bool:
+    return bool(_datas_validas(texto))
+
+
+def _datas_validas(texto: str) -> list:
+    datas = []
     for match in _DATA_CAPTURA.finditer(texto):
         try:
             datetime.strptime(match.group(0), "%d/%m/%Y")
         except ValueError:
             continue
-        return True
-    return False
+        datas.append(match)
+    return datas
+
+
+def _distancia(a, b) -> int:
+    """Distância em caracteres entre dois matches (0 se se sobrepõem)."""
+    if b.start() >= a.end():
+        return b.start() - a.end()
+    if a.start() >= b.end():
+        return a.start() - b.end()
+    return 0
+
+
+def _pares_preco_data(texto: str) -> list:
+    """Pares (preço, data) em que a data está perto do preço.
+
+    M04.16C: antes bastava preço em um parágrafo e data em outro, sem vínculo.
+    Agora a data precisa estar a no máximo _JANELA_PRECO_DATA caracteres do
+    preço, para que "capturado em" pertença àquele valor.
+    """
+    datas = _datas_validas(texto)
+    if not datas:
+        return []
+    pares = []
+    for preco in _PRECO_BR.finditer(texto):
+        for data in datas:
+            if _distancia(preco, data) <= _JANELA_PRECO_DATA:
+                pares.append((preco.group(0), data.group(0)))
+    return pares
+
+
+def _validar_evidencia_video(evidencia) -> tuple[bool, str]:
+    """Vídeo só conta com URL válida E transcrição com corpo."""
+    if not isinstance(evidencia, dict):
+        return False, "evidencia_video ausente"
+    if not _dominio(evidencia.get("url")):
+        return False, "evidencia_video.url ausente ou inválida"
+    palavras = re.findall(r"\w+", str(evidencia.get("transcricao") or ""))
+    if len(palavras) < _MIN_PALAVRAS_TRANSCRICAO:
+        return False, (f"transcrição com {len(palavras)} palavras "
+                       f"(mínimo {_MIN_PALAVRAS_TRANSCRICAO})")
+    return True, ""
+
+
+def _validar_evidencia_medicao(evidencia) -> tuple[bool, str]:
+    """Medição só conta com método descrito e >=2 medições com valor e unidade."""
+    if not isinstance(evidencia, dict):
+        return False, "evidencia_medicao ausente"
+    metodo = str(evidencia.get("metodo") or "").strip()
+    if len(metodo) < _MIN_CHARS_METODO:
+        return False, f"método ausente ou com menos de {_MIN_CHARS_METODO} caracteres"
+    medicoes = evidencia.get("medicoes")
+    if not isinstance(medicoes, list):
+        return False, "lista de medições ausente"
+    completas = [
+        m for m in medicoes
+        if isinstance(m, dict)
+        and str(m.get("metrica") or "").strip()
+        and str(m.get("valor") or "").strip()
+        and str(m.get("unidade") or "").strip()
+    ]
+    if len(completas) < _MIN_MEDICOES:
+        return False, (f"{len(completas)} medição(ões) completa(s) "
+                       f"(mínimo {_MIN_MEDICOES} com métrica, valor e unidade)")
+    return True, ""
 
 
 def filtrar_valor_acrescentado(
@@ -360,49 +435,74 @@ def filtrar_valor_acrescentado(
     tem_mediacao: bool = False,
     tem_cruzamento: bool = False,
     fontes_cruzadas: list = None,
+    evidencia_video: dict = None,
+    evidencia_medicao: dict = None,
 ) -> dict:
     """
     Gate de VALOR (regra 14): só vira ARTIGO se tiver >=1 destes 4:
-      1. preço brasileiro capturado em marketplace COM DATA
+      1. preço brasileiro COM data de captura vinculada (mesma janela) em
+         marketplace conhecido
       2. link de fonte primária oficial (nunca matéria de terceiro sobre ela)
-      3. medição própria ou vídeo transcrito
-      4. cruzamento de >=2 fontes com critério de pontuação explícito
+      3. medição própria comprovada (método + >=2 medições) ou vídeo com
+         transcrição verificável
+      4. cruzamento declarado com >=2 domínios independentes
+
+    M04.16C: declarações sem prova não aprovam. `tem_video` e `tem_mediacao`
+    são apenas intenção; a aprovação exige `evidencia_video`/`evidencia_medicao`
+    estruturadas. A palavra "testamos" no texto é sinal, nunca prova. Toda
+    declaração não comprovada volta em `avisos`.
 
     Vereditos: APROVADO (tem >=1 critério) | BLOQUEADO (nenhum — não há artigo;
     o item sai como link no digest, que é o produto correto para esse conteúdo).
     """
     alvo = f"{titulo or ''} {texto or ''}"
     links = [l for l in (links or []) if l]
-    criterios = []
+    criterios: list[str] = []
+    avisos: list[str] = []
 
-    # 1) preço BR + data de calendário válida + fonte comercial verificável.
-    if (_PRECO_BR.search(alvo) and _tem_data_valida(alvo)
-            and any(_e_fonte_comercial(link) for link in links)):
+    # 1) preço BR vinculado a data válida + fonte comercial verificável.
+    if _pares_preco_data(alvo) and any(_e_fonte_comercial(l) for l in links):
         criterios.append("preco_br_data")
 
     # 2) fonte primária oficial entre os links
     if any(_e_fonte_primaria(l) for l in links):
         criterios.append("fonte_primaria")
 
-    # 3) medição própria (1ª mão) OU vídeo transcrito — são sinais distintos e
-    #    merecem rótulos distintos, senão o relatório mente sobre o que salvou.
-    if tem_video:
+    # 3) primeira mão comprovada — vídeo e medição são sinais distintos.
+    video_ok, video_motivo = _validar_evidencia_video(evidencia_video)
+    if video_ok:
         criterios.append("video_transcrito")
-    if tem_mediacao or _MEDICAO_PROPRIA.search(alvo):
+    elif tem_video or evidencia_video is not None:
+        avisos.append(f"video_transcrito não comprovado: {video_motivo}")
+
+    medicao_ok, medicao_motivo = _validar_evidencia_medicao(evidencia_medicao)
+    if medicao_ok:
         criterios.append("medicao_propria")
+    elif tem_mediacao or evidencia_medicao is not None:
+        avisos.append(f"medicao_propria não comprovada: {medicao_motivo}")
+    if _MEDICAO_PROPRIA.search(alvo) and not medicao_ok:
+        avisos.append(
+            "texto afirma teste/medição em primeira mão, mas não há "
+            "evidencia_medicao estruturada; a afirmação não vale como prova"
+        )
 
     # 4) cruzamento declarado e comprovado por >=2 domínios independentes.
     fontes = [*links, *(fontes_cruzadas or [])]
     dominios = {_dominio(fonte) for fonte in fontes if _dominio(fonte)}
     if tem_cruzamento and len(dominios) >= 2:
         criterios.append("cruzamento_2fontes")
+    elif tem_cruzamento:
+        avisos.append(
+            f"cruzamento_2fontes não comprovado: {len(dominios)} domínio(s) "
+            "independente(s) de 2 exigidos"
+        )
 
     if criterios:
         return {"veredito": "APROVADO", "criterios": sorted(set(criterios)),
                 "total_criterios": len(set(criterios)),
                 "motivo": "valor_acrescentado",
                 "ficha_tecnica": bool(_FICHA_TECNICA.search(alvo)),
-                "aviso": ""}
+                "aviso": "", "avisos": avisos}
 
     return {
         "veredito": "BLOQUEADO", "criterios": [], "total_criterios": 0,
@@ -411,20 +511,25 @@ def filtrar_valor_acrescentado(
         "aviso": ("Nenhum dos 4 critérios da regra 14. Reescrever a fonte e publicar "
                   "= 'replicated content' (SQRG 4.6.6: 'Lowest, even if the page assigns "
                   "credit'). O item deve sair como link no digest, não como artigo."),
+        "avisos": avisos,
     }
 
 
 def gate_publicacao(titulo: str = "", texto: str = "", links: list = None,
                     tem_video: bool = False, tem_mediacao: bool = False,
-                    tem_cruzamento: bool = False, fontes_cruzadas: list = None) -> dict:
+                    tem_cruzamento: bool = False, fontes_cruzadas: list = None,
+                    evidencia_video: dict = None,
+                    evidencia_medicao: dict = None) -> dict:
     """Atalho: roda compliance + valor. BLOQUEADO se qualquer um dos dois barrar."""
     comp = filtrar_conteudo(titulo, texto)
     val = filtrar_valor_acrescentado(titulo, texto, links, tem_video,
-                                     tem_mediacao, tem_cruzamento, fontes_cruzadas)
+                                     tem_mediacao, tem_cruzamento, fontes_cruzadas,
+                                     evidencia_video, evidencia_medicao)
     if comp["veredito"] == "BLOQUEADO":
         return comp
     if val["veredito"] == "BLOQUEADO":
         return val
     out = dict(comp)
     out["criterios_valor"] = val["criterios"]
+    out["avisos_valor"] = val.get("avisos", [])
     return out
