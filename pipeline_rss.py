@@ -120,11 +120,13 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
             ext.get("texto") or "",
             [url_fonte] if url_fonte else [],
         )
-        if gate_valor.get("veredito") == "BLOQUEADO":
-            logger.info(f"gate_publicacao bloqueou {url_fonte}: {gate_valor.get('motivo')}")
+        # Fail-closed: apenas APROVADO prossegue. Qualquer outro veredito
+        # (REVISAR, BLOQUEADO, ou ausência de chave) interrompe o fluxo.
+        if gate_valor.get("veredito") != "APROVADO":
+            logger.info(f"gate_publicacao bloqueou {url_fonte}: {gate_valor.get('motivo') or gate_valor.get('veredito')}")
             return {
                 "acao": "bloqueado",
-                "motivo": gate_valor.get("motivo") or "sem_valor_acrescentado",
+                "motivo": gate_valor.get("motivo") or gate_valor.get("veredito") or "sem_valor_acrescentado",
                 "criterios": gate_valor.get("criterios", []),
                 "aviso": gate_valor.get("aviso", ""),
                 "url": url_fonte,
