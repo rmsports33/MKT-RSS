@@ -273,3 +273,50 @@ def test_avisos_por_produto_nao_sumem():
     )
     assert r["veredito"] == "BLOQUEADO"
     assert any(a.startswith("[A]") for a in r["avisos"])
+
+
+# --- Compatibilidade com o contrato legado M04.16C -------------------------
+# O M04.17A é aditivo. Esta trava roda SEMPRE (no CI): se alguém mudar o
+# contrato legado, o CI reprova. A comparação completa contra a implementação
+# antiga está em tools/2026-10-21_compatibilidade_m0416c.py (precisa do
+# arquivo da versão anterior, que não existe no master).
+
+CHAVES_LEGADAS_M0416C = {
+    "veredito", "criterios", "total_criterios", "motivo",
+    "ficha_tecnica", "aviso", "avisos",
+}
+
+
+def test_contrato_legado_preserva_todas_as_chaves():
+    r = filtrar_valor_acrescentado(
+        titulo="Galaxy", texto="R$ 5.999,00 em 17/09/2026", links=[AMAZON],
+    )
+    assert CHAVES_LEGADAS_M0416C.issubset(set(r.keys()))
+    # A única chave nova é a que declara o modo por produto.
+    assert set(r.keys()) - CHAVES_LEGADAS_M0416C == {"evidencia_por_produto"}
+
+
+def test_contrato_legado_aceita_chamada_posicional_antiga():
+    """A assinatura M04.16C (posicional) continua válida."""
+    r = filtrar_valor_acrescentado(
+        "Galaxy", "R$ 5.999,00 em 17/09/2026", [AMAZON], False, False, False,
+        None, None, None,
+    )
+    assert r["veredito"] == "APROVADO"
+    assert r["criterios"] == ["preco_br_data"]
+
+
+def test_gate_publicacao_legado_preserva_chaves():
+    # `gate_publicacao` devolve a FUSAO do compliance com o valor, entao o
+    # conjunto legado de chaves e' outro (nao o de filtrar_valor_acrescentado).
+    legado_gate = {"veredito", "categorias", "trechos", "total_sinais",
+                   "criterios_valor", "avisos_valor"}
+    r = gate_publicacao(
+        titulo="Galaxy", texto="R$ 5.999,00 em 17/09/2026", links=[AMAZON],
+    )
+    assert legado_gate.issubset(set(r.keys()))
+    novas = set(r.keys()) - legado_gate
+    assert novas == {"evidencia_por_produto", "criterios_por_produto", "produtos_sem_valor"}
+    assert r["criterios_valor"] == ["preco_br_data"]
+    assert r["avisos_valor"] == []
+    assert r["evidencia_por_produto"] == "nao_aplicada"
