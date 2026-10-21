@@ -2,7 +2,8 @@
 """
 pipeline_rss.py — Orquestrador RSS → WP draft (P0, independência de plugin)
 Fluxo: feed → gate pauta (content_filter) → full-text (extractor) →
-       reescrita (rewriter) → capa (image_handler) → rascunho WP → rss_runs.
+       gate valor opt-in (M04.16D) → reescrita (rewriter) → capa
+       (image_handler) → rascunho WP → rss_runs.
 
 Uso: python pipeline_rss.py [--limit 2] [--fonte tecnoblog] [--dry-run]
 Env (.env) carregado dentro do main() — nunca no import.
@@ -52,6 +53,36 @@ def classificar_resultado_wp(resultado: dict) -> str:
     return "falha"
 
 
+# M04.16D — gate de valor no pipeline. Ativação explícita e desligada por
+# padrão: sem GATE_PUBLICACAO_ENABLED o fluxo é idêntico ao anterior.
+_GATE_PUBLICACAO_ENV = "GATE_PUBLICACAO_ENABLED"
+_VALORES_LIGADOS = frozenset({"1", "true", "yes", "on"})
+
+
+def gate_publicacao_ativo() -> bool:
+    """True só com ativação explícita; qualquer outro valor mantém o gate off."""
+    return os.getenv(_GATE_PUBLICACAO_ENV, "").strip().lower() in _VALORES_LIGADOS
+
+
+def avaliar_gate_publicacao(titulo: str, texto: str, links: list) -> dict:
+    """Roda gate_publicacao sobre o conteúdo extraído, fail-closed.
+
+    Erro na validação vira BLOQUEADO: o pipeline nunca segue para a IA sem a
+    prova de que o gate avaliou o conteúdo com sucesso.
+    """
+    from mkt_flow_p0.content_filter import gate_publicacao
+    try:
+        return gate_publicacao(titulo=titulo, texto=texto, links=links)
+    except Exception as e:
+        logger.warning(f"gate_publicacao falhou (fail-closed): {e}")
+        return {
+            "veredito": "BLOQUEADO",
+            "criterios": [],
+            "motivo": "erro_validacao_gate",
+            "aviso": f"gate_publicacao não pôde avaliar o conteúdo: {e}",
+        }
+
+
 def processar_item(item: dict, dry_run: bool = False) -> dict:
     """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
     from mkt_flow_p0.content_filter import filtrar_item_rss, filtrar_conteudo, filtrar_por_tema
@@ -80,6 +111,24 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     gate2 = filtrar_conteudo(ext.get("titulo", ""), (ext.get("texto") or "")[:4000])
     if gate2["veredito"] == "BLOQUEADO":
         return {"acao": "bloqueado", "motivo": gate2["categorias"], "url": url_fonte}
+
+    # M04.16D: gate de valor opt-in, após a extração e antes da IA. Recebe o
+    # título/texto extraídos e a URL da fonte como única evidência conhecida.
+    if gate_publicacao_ativo():
+        gate_valor = avaliar_gate_publicacao(
+            ext.get("titulo") or item.get("titulo", ""),
+            ext.get("texto") or "",
+            [url_fonte] if url_fonte else [],
+        )
+        if gate_valor.get("veredito") == "BLOQUEADO":
+            logger.info(f"gate_publicacao bloqueou {url_fonte}: {gate_valor.get('motivo')}")
+            return {
+                "acao": "bloqueado",
+                "motivo": gate_valor.get("motivo") or "sem_valor_acrescentado",
+                "criterios": gate_valor.get("criterios", []),
+                "aviso": gate_valor.get("aviso", ""),
+                "url": url_fonte,
+            }
 
     if dry_run:
         return {"acao": "dry_run_ok", "palavras": ext["palavras"], "titulo": ext.get("titulo", "")}
