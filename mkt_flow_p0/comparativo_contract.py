@@ -247,7 +247,12 @@ def validar_contrato(contrato: dict) -> dict:
 
     nomes = []
     for indice, produto in enumerate(produtos):
-        nome = str((produto or {}).get("nome") or "").strip()
+        if not isinstance(produto, dict):
+            # Entrada malformada vira ERRO, nunca exceção: exceção num gate
+            # fail-closed vira passage indevida (ou queda) em quem chama.
+            erros.append(f"produto #{indice + 1} invalido: esperado dicionario")
+            continue
+        nome = str(produto.get("nome") or "").strip()
         if not nome:
             erros.append(f"produto #{indice + 1} sem nome")
             continue
@@ -361,7 +366,9 @@ def avaliar_contrato(contrato: dict, exigir_comparativo: bool = True) -> dict:
     if exigir_comparativo:
         por_produto = gate.get("criterios_por_produto") or {}
         for produto in produtos:
-            nome = str((produto or {}).get("nome") or "").strip()
+            if not isinstance(produto, dict):
+                continue
+            nome = str(produto.get("nome") or "").strip()
             criterios = set(por_produto.get(nome) or [])
             if not criterios:
                 continue
@@ -420,9 +427,12 @@ def contrato_para_mcp(contrato: dict, exigir_evidencia: bool = True) -> dict:
     return {
         "title": (contrato or {}).get("titulo", ""),
         "content": (contrato or {}).get("conteudo_html", ""),
-        "products": [str(p.get("nome") or "") for p in produtos][:MAX_PRODUTOS_MCP],
-        "notas": [p.get("nota") for p in produtos][:MAX_PRODUTOS_MCP],
-        "buys": [str(p.get("compra") or "") for p in produtos][:MAX_PRODUTOS_MCP],
+        "products": [str(p.get("nome") or "") for p in produtos
+                     if isinstance(p, dict)][:MAX_PRODUTOS_MCP],
+        "notas": [p.get("nota") for p in produtos
+                  if isinstance(p, dict)][:MAX_PRODUTOS_MCP],
+        "buys": [str(p.get("compra") or "") for p in produtos
+                 if isinstance(p, dict)][:MAX_PRODUTOS_MCP],
         "crits": crits[:MAX_CRITERIOS_MCP],
         "veredito": (contrato or {}).get("veredito", ""),
         "cat_slug": (contrato or {}).get("cat_slug", ""),

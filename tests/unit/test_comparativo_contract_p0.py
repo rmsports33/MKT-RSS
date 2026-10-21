@@ -327,3 +327,39 @@ def test_sete_criterios_sao_bloqueados_antes_do_mcp():
     validacao = validar_contrato(contrato)
     assert validacao["ok"] is False
     assert any("trunca em 6" in e for e in validacao["erros"])
+
+
+# --- Entrada malformada: ERRO, nunca exceção -------------------------------
+# Mesmo princípio do M04.17A: exceção num gate fail-closed vira passage
+# indevida (ou queda) em quem chama. Achado na REVISÃO PRÉ-MERGE do PR #8.
+
+def test_produto_que_nao_e_dicionario_reprova_sem_explodir():
+    contrato = {"titulo": "A vs B", "produtos": ["Galaxy S26", {"nome": "Pixel 11"}],
+                "conteudo_html": "<p>x</p>"}
+    validacao = validar_contrato(contrato)
+    assert validacao["ok"] is False
+    assert any("invalido" in e for e in validacao["erros"])
+
+
+def test_avaliar_contrato_com_produto_malformado_nao_explode():
+    contrato = {"titulo": "A vs B", "produtos": ["Galaxy S26"], "conteudo_html": "<p>x</p>"}
+    avaliacao = avaliar_contrato(contrato)
+    assert avaliacao["ok"] is False
+    assert avaliacao["erros"]
+
+
+def test_contrato_para_mcp_com_produto_malformado_recusa():
+    contrato = {"titulo": "A vs B", "produtos": ["Galaxy S26"], "conteudo_html": "<p>x</p>"}
+    try:
+        contrato_para_mcp(contrato, exigir_evidencia=False)
+    except ContratoInvalido as erro:
+        assert erro.erros
+    else:
+        raise AssertionError("contrato malformado foi aceito")
+
+
+def test_criterio_que_nao_e_dicionario_reprova_sem_explodir():
+    contrato = _contrato_completo(criterios=["Bateria"])
+    validacao = validar_contrato(contrato)
+    assert validacao["ok"] is False
+    assert any("invalido" in e for e in validacao["erros"])
