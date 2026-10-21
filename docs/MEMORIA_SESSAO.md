@@ -255,3 +255,42 @@ Python 3.14 + pytest (38 arquivos, **241 testes, suíte verde**), node (`--check
   repositorio), o `wp_publisher` (ainda manda documento inteiro e cria
   `post_type=post` — M04.17C), a evidencia na origem (o `price_history` do
   redator nao traz a origem do preco), e onde ligar o gate (M04.17D).
+
+## 21/10/2026 (M04.17C) — escrita de comparativo no WordPress via MCP (PR #9 aberto)
+
+- Auditoria do `wp_publisher`: o caminho efetivo e' `POST
+  {wp_url}/wp-json/wp/v2/posts` (tipo fixo `post`), payload
+  title/content/status, gate `publish` so com `status_validacao == PASS` (senao
+  forca draft). Chamadores: `pipeline_rss.py:130` (sempre draft) e
+  `pipeline_p0.py:170`. **Nao existe cliente MCP no MKT-RSS** (verificado por
+  varredura: nenhuma ocorrencia de `mcp`/`conexo/v1` no repositorio).
+- Descoberta que definiu a solucao: o CPT `comparativo` e' registrado com
+  `show_in_rest => true` mas **SEM `meta`**, entao `_conexo_prod_*`,
+  `_conexo_nota_*`, `_conexo_buy_*` e `_conexo_crit_*` NAO sao gravaveis pelo
+  REST — e o `single-comparativo.php` depende delas para montar a tabela. Um
+  comparativo criado por `POST /wp/v2/comparativo` nasceria SEM a tabela.
+  Quem escreve esses campos e' o servidor MCP, no PHP.
+- Entregue: `executar_ferramenta_mcp(...)` e `publicar_comparativo(...)` em
+  `mkt_flow_p0/wp_publisher.py`, com o **caminho legado byte-identico** (diff
+  100% acrescimo: 119 linhas, ZERO remocao). `publicar_comparativo` valida o
+  contrato (estrutural + gate por produto do M04.17A), recusa documento
+  completo no `content` (fail-closed na fronteira de escrita), chama o MCP
+  `create_comparativo` e confere `post_id` + `status == draft` (status
+  diferente e' erro explicito, com o post_id junto). **Sem dependencia nova**:
+  `requests` ja era do projeto; sem servico pago.
+- Testes: 20 novos, tudo mockado, nenhum post criado. Contrato (endpoint,
+  ferramenta, 8 parametros, tabela alinhada, `content` so o corpo, auth),
+  REGRESSAO do legado (assinatura via `inspect.signature`, `/wp/v2/posts`,
+  publish sem PASS bloqueado, UNKNOWN forcando draft, `/wp/v2/pages`) e
+  FALHAS (contrato sem evidencia e documento completo com ZERO requisicao;
+  MCP recusa, sem post_id, status publicado; 500; timeout; nao-JSON; excecao).
+- Suite completa: **480 passed** (460 do M04.17B + 20). Entregue em branch
+  `feat/m0417c-escrita-comparativo`, **PR #9 ABERTO**, **sem merge**
+  (guardrail "proibir auto-merge" do Issue #9).
+- Sem deploy, sem ativacao do gate (`GATE_PUBLICACAO_ENABLED` segue false),
+  sem publicacao, sem escrita no WordPress.
+- Continuam abertos: **o pipeline ainda nao chama `publicar_comparativo`**
+  (nada no pipeline_rss/pipeline_p0 a invoca ainda — ligar isso e' M04.17D, junto
+  com a posicao do gate); a evidencia na origem (o `price_history` do redator
+  nao traz a origem do preco); e verificar se o caminho de NOTICIAS tambem
+  produz documento inteiro (o review 9183 saiu com HTML quebrado).

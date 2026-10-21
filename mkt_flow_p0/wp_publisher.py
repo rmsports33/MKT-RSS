@@ -217,3 +217,122 @@ def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_
         return {"erro": f"WP timeout após {timeout}s"}
     except Exception as e:
         return {"erro": f"Falha WP: {str(e)[:150]}"}
+
+
+# --- M04.17C: escrita de COMPARATIVO via MCP -------------------------------
+# O caminho de NOTÍCIAS (publicar_no_wordpress) continua exatamente como
+# estava: POST /wp-json/wp/v2/posts, type post, gate status_validacao==PASS.
+# Nada abaixo altera esse caminho.
+#
+# Por que o comparativo NÃO pode ir pelo REST: o CPT `comparativo` é
+# registrado com show_in_rest=true, mas SEM `meta` — ou seja, os campos
+# _conexo_prod_*, _conexo_nota_*, _conexo_buy_* e _conexo_crit_* NÃO são
+# graváveis pelo REST. Um comparativo criado por POST /wp/v2/comparativo
+# nasceria sem a tabela que o single-comparativo.php renderiza. Quem escreve
+# esses campos é o servidor MCP (create_comparativo), no PHP.
+#
+# Por que MCP e não uma chamada direta ao REST: o MCP valida os parâmetros
+# (limites de 3 produtos e 6 critérios, sanitização, escopo de post_type) e
+# grava os metas no mesmo passo. É o contrato já testado em produção (post
+# 9649 criado como draft pelo create_review, com verificação anônima 401 e
+# permalink 404).
+#
+# Sem dependência nova: requests já é dependência do projeto.
+
+MCP_ENDPOINT = "/wp-json/conexo/v1/mcp/execute"
+
+
+def executar_ferramenta_mcp(wp_url: str, wp_user: str, wp_app_password: str,
+                             tool: str, params: dict = None,
+                             timeout: int = 10) -> dict:
+    """Executa uma ferramenta do MCP do ConexoTech.
+
+    Retorna {"ok": True, "result": {...}} ou {"erro": "..."}. Nunca levanta:
+    quem chama é um pipeline, e exceção aqui vira queda no meio do fluxo.
+    """
+    wp_url = (wp_url or "").rstrip("/")
+    if not wp_url or not wp_user or not wp_app_password:
+        return {"erro": "WP_URL/WP_USER/WP_APP_PASSWORD ausentes no .env"}
+    if not tool:
+        return {"erro": "tool obrigatorio"}
+    headers = {
+        "Authorization": _auth_header(wp_user, wp_app_password),
+        "Content-Type": "application/json",
+        "User-Agent": "MKT-Flow-P0/3.6",
+    }
+    try:
+        resp = requests.post(
+            f"{wp_url}{MCP_ENDPOINT}",
+            headers=headers,
+            json={"tool": tool, "params": params or {}},
+            timeout=timeout,
+        )
+    except requests.Timeout:
+        return {"erro": f"MCP timeout após {timeout}s"}
+    except Exception as e:
+        return {"erro": f"Falha MCP: {str(e)[:200]}"}
+
+    if resp.status_code not in (200, 201):
+        return {"erro": f"MCP {resp.status_code}: {resp.text[:300]}"}
+    try:
+        data = resp.json()
+    except Exception:
+        return {"erro": f"MCP resposta nao-JSON: {resp.text[:200]}"}
+    if not isinstance(data, dict):
+        return {"erro": "MCP resposta inesperada (nao e' objeto)"}
+    if not data.get("ok"):
+        return {"erro": data.get("erro") or "MCP recusou a chamada",
+                "resposta": data}
+    return {"ok": True, "result": data.get("result") or {}}
+
+
+def publicar_comparativo(contrato: dict, wp_url: str, wp_user: str,
+                         wp_app_password: str, timeout: int = 10) -> dict:
+    """Cria um COMPARATIVO como rascunho, via MCP create_comparativo.
+
+    O contrato passa por `contrato_para_mcp`, que valida a estrutura E roda o
+    gate de valor por produto (M04.17A). Contrato sem evidência por produto
+    NAO chega ao WordPress: nem uma requisição é feita.
+
+    Retorna {"post_id":..., "status":"draft", "link":...} ou {"erro":...}.
+    Nunca levanta: contrato inválido vira {"erro"} com a lista de erros.
+    """
+    from mkt_flow_p0.comparativo_contract import ContratoInvalido, contrato_para_mcp
+
+    try:
+        params = contrato_para_mcp(contrato)
+    except ContratoInvalido as erro:
+        return {"erro": "contrato invalido: " + "; ".join(erro.erros),
+                "erros_contrato": erro.erros,
+                "avisos_contrato": erro.avisos}
+
+    # Fail-closed na fronteira de escrita: documento inteiro no corpo é o
+    # defeito que a auditoria encontrou em producao (review 9183). Melhor
+    # recusar do que mandar o post inteiro.
+    conteudo = str(params.get("content") or "")
+    baixo = conteudo.lower()
+    if "<!doctype" in baixo or "<html" in baixo or "<head" in baixo:
+        return {"erro": "content com documento HTML completo: "
+                        "o post receberia o documento inteiro, nao o corpo"}
+
+    resposta = executar_ferramenta_mcp(wp_url, wp_user, wp_app_password,
+                                        "create_comparativo", params, timeout)
+    if resposta.get("erro"):
+        return resposta
+
+    resultado = resposta.get("result") or {}
+    post_id = resultado.get("post_id")
+    status = resultado.get("status")
+    if not post_id:
+        return {"erro": "MCP nao devolveu post_id", "resposta": resultado}
+    if status != "draft":
+        # O MCP fixa draft; se vier outra coisa, e' erro NAO silencioso —
+        # e o post_id vai junto para o post poder ser inspecionado.
+        return {"erro": f"MCP devolveu status={status!r} (esperado draft)",
+                "post_id": post_id, "status": status}
+    return {
+        "post_id": post_id,
+        "status": status,
+        "link": resultado.get("edit_link"),
+        "fonte": "mcp:create_comparativo",
+    }
