@@ -201,3 +201,57 @@ Python 3.14 + pytest (38 arquivos, **241 testes, suíte verde**), node (`--check
   WordPress, nenhum worktree de outra sessao alterado.
 - Proxima etapa: **M04.17B — adaptador `gerar_comparativo` ->
   `create_comparativo`**, em branch isolada, sem merge nem deploy automatico.
+
+## 21/10/2026 (M04.17B) — adaptador `gerar_comparativo` -> `create_comparativo`
+
+- O problema: o redator devolve PAGINA HTML COMPLETA (`<!DOCTYPE>`, `<html>`,
+  `<head>` com JSON-LD, `<body>`) e o `wp_publisher` mandava isso no
+  `content`, criando `post_type=post`. O MCP `create_comparativo` espera
+  campos estruturados. Pior: a EVIDENCIA se perdia no caminho — preco, data
+  de captura e fonte ficavam espalhados no HTML, e o gate por produto nao
+  conseguia provar nada.
+- Entregue: `mkt_flow_p0/comparativo_contract.py` — o CONTRATO estruturado
+  que carrega a evidencia de CADA produto (preco, data_captura, fonte_preco,
+  fonte, ficha, evidencia_video, evidencia_medicao, nota, compra) e quatro
+  funcoes: `construir_contrato`, `validar_contrato` (estrutural, fail-closed),
+  `avaliar_contrato` (estrutural + gate POR PRODUTO do M04.17A) e
+  `contrato_para_mcp` (parametros exatos de `create_comparativo`, levanta
+  `ContratoInvalido` se o contrato nao passar).
+- Decisoes do adaptador: (1) o `content` e' so o CORPO — `extrair_corpo_html`
+  tira doctype/html/head/script, e documento completo remanescente e' ERRO;
+  (2) a data ISO do redator vira DD/MM/AAAA e e' validada de verdade
+  (`2026-02-31` nao vira evidencia); (3) preco SEM link de marketplace nao e'
+  evidencia — o contrato avisa, e o gate nao aprova; (4) mais de 3 produtos
+  (ou 6 criterios) e' ERRO, porque o `array_slice` do MCP trunca em SILENCIO
+  e perderia a evidencia; (5) `products`, `notas` e `buys` sao construidos
+  da MESMA lista, na mesma ordem — e o que impede dessincronia entre produto,
+  nota e link de compra.
+- **A REGRA DO COMPARATIVO (a mais importante):** o gate generico aprova um
+  produto que so tem `fonte_primaria`, e em comparativo isso e' fraco — a
+  ficha do fabricante ja existe, e repetir e' o "replicated content" da
+  SQRG 4.6.6. Por isso `avaliar_contrato` exige POR PRODUTO ao menos um de
+  `preco_br_data`, `video_transcrito`, `medicao_propria` ou
+  `cruzamento_2fontes`. A regra fica no adaptador (que sabe que o fluxo e'
+  comparativo) e NAO altera o gate generico aprovado no M04.16C/M04.17A.
+- Verificacao: suite completa **456 passed** (426 do M04.17A + 30 novos em
+  `tests/unit/test_comparativo_contract_p0.py`), sem alterar teste anterior.
+  `tools/2026-10-21_conferir_contrato_mcp.py` conferiu o contrato contra o
+  CATALOGO PUBLICO DO MCP REAL (nao contra a copia local do PHP): o servidor
+  declara `title, content, products, notas, crits, veredito, buys, cat_slug` e
+  o adaptador gera exatamente essas 8 chaves, nos limites (3 produtos, 6
+  criterios). Exit 0.
+- Erros meus do turno: (1) eu esperava que o GATE reprovasse o produto sem
+  preco — ele APPROVA (via `fonte_primaria`), e foi essa leitura que
+  mostrou a falta da regra do comparativo; o teste agora fixa as DUAS
+  camadas (gate aprova, regra do comparativo reprova). (2) o script de
+  conferencia falhou com "ferramenta nao encontrada" porque o catalogo do MCP
+  publica o nome na chave `tool`, nao `name`.
+- Entregue em branch `feat/m0417b-adaptador-comparativo`, **PR #8 ABERTO**,
+  **sem merge** (guardrail "proibir auto-merge" do Issue #9). Sem deploy, sem
+  ativacao do gate (`GATE_PUBLICACAO_ENABLED` segue false), sem publicacao,
+  sem escrita no WordPress.
+- Continuam abertos: a CHAMADA MCP em si (o MKT-RSS nao tem cliente MCP —
+  verificado por varredura: nenhuma ocorrencia de `mcp`/`conexo/v1` no
+  repositorio), o `wp_publisher` (ainda manda documento inteiro e cria
+  `post_type=post` — M04.17C), a evidencia na origem (o `price_history` do
+  redator nao traz a origem do preco), e onde ligar o gate (M04.17D).
