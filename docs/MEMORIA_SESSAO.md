@@ -129,3 +129,41 @@ Python 3.14 + pytest (38 arquivos, **241 testes, suíte verde**), node (`--check
 - Pendências que continuam abertas: evidência **por produto** (Issue #9), o
   adaptador `gerar_comparativo` → `create_comparativo`, e o fechamento do
   `wp_publisher`.
+
+## 21/10/2026 (M04.17A) — validacao de evidencia POR PRODUTO (Issue #9, 2o requisito)
+
+- Defeito corrigido: o gate recebia o TEXTO INTEIRO e varria o conjunto, entao
+  um unico preco com data no texto approveva um comparativo de varios
+  produtos. Medido: "Galaxy S26 vs Pixel 11" com o preco SO do S26 passava com
+  `preco_br_data`.
+- Regra implementada: **evidencia de um produto nunca aprova outro**. Cada
+  produto e' avaliado isoladamente (preco, data, links, medicao, video proprios)
+  e TODOS precisam ter valor acrescentado. No modo por produto o texto geral
+  NAO participa do veredito — sem isso a contaminacao voltaria pela porta do
+  texto.
+- Contrato ADITIVO (o aprovado no M04.16C nao muda): novos parametros
+  `produtos=None` e `exigir_produtos=False`; saidas novas
+  `evidencia_por_produto`, `criterios_por_produto`, `produtos_sem_valor`. O
+  modo texto continua e DECLARA que a validacao por produto nao foi aplicada
+  (lacuna visivel, nao silenciosa). `exigir_produtos=True` bloqueia quando a
+  lista nao vem (modo do fluxo comparativo).
+- Verificacao: suite completa **423 passed** (403 do M04.16E + 20 novos em
+  `tests/unit/test_content_filter_produto_p0.py`), sem alterar nenhum teste
+  anterior. O auditor adversarial passou a EXIGIR a validacao por produto:
+  reprova a implementacao do M04.16C (exit 1, 5 divergencias) e passa 28/28
+  com o M04.17A.
+- Erro meu, correcao e trava: o primeiro `_avaliar_por_produto` quebrava com
+  `AttributeError` quando a lista recebia algo que nao fosse dicionario (o
+  nome do produto era lido antes do validador). Correcao: extracao do nome
+  tolera qualquer tipo. Trava: entrada malformada vira BLOQUEIO, nunca
+  excecao — excecao num gate fail-closed vira passagem indevida.
+- Entregue em branch `feat/m0417a-evidencia-por-produto`, commit `79ff60b`,
+  **PR #7 ABERTO** (CI verde, run `39674868934`). Merge NAO executado: o
+  Issue #9 mantem o guardrail "proibir auto-merge", entao a integracao fica
+  para autorizacao especifica.
+- Continuam abertos: onde ligar o gate (M04.17D — hoje bloqueia 7/7 feeds no
+  caminho RSS, medido), adaptador `gerar_comparativo` -> `create_comparativo`
+  (M04.17B), contrato do `wp_publisher` (M04.17C) e a coleta com snapshot
+  persistido (evidencia por produto na origem).
+- Sem deploy, sem ativacao do gate (`GATE_PUBLICACAO_ENABLED` segue false),
+  sem publicacao, sem escrita no WordPress.
