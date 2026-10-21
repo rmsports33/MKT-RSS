@@ -153,6 +153,13 @@ def _preco_do_historico(price_history, nome):
     (link do marketplace) é OPCIONAL no histórico: sem ela, o preço e a data
     existem mas não provam de onde vieram — e o gate não aceita como
     evidência. A ausência vira aviso, nunca aprovação silenciosa.
+
+    M04.17D: o preço é guardado **no formato que o gate lê**. A regex do gate
+    (`_PRECO_BR`) exige o símbolo "R$" — "5.999,00" sem o símbolo NÃO casa, e
+    o critério `preco_br_data` ficava INALCANÇÁVEL pela cadeia real (achado no
+    dry-run do M04.17D, com preço float de verdade). O gate NÃO foi
+    afrouxado: quem mudou de lado foi o produtor, que agora entrega o preço
+    como o gate espera.
     """
     pontos = (price_history or {}).get(nome) or []
     melhor = None
@@ -168,7 +175,7 @@ def _preco_do_historico(price_history, nome):
             if _eh_url(ponto.get(chave)):
                 fonte = str(ponto.get(chave)).strip()
                 break
-        melhor = (preco, data, fonte)
+        melhor = ("R$ " + preco, data, fonte)
     return melhor or ("", "", "")
 
 
@@ -286,6 +293,12 @@ def validar_contrato(contrato: dict) -> dict:
                 "o post receberia o documento inteiro")
 
     criterios = contrato.get("criterios") or []
+    if not criterios:
+        # M04.17D: um comparativo sem NENHUM criterio de comparação é um post
+        # sem tabela — o `create_comparativo` gravaria `_conexo_crit_*` vazios
+        # e o single-comparativo.php renderizaria uma página sem comparação.
+        erros.append("comparativo sem nenhum criterio de comparacao: "
+                     "a tabela de comparacao ficaria vazia")
     if len(criterios) > MAX_CRITERIOS_MCP:
         erros.append(
             f"{len(criterios)} criterios: o MCP trunca em {MAX_CRITERIOS_MCP}")
