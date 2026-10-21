@@ -104,3 +104,28 @@ Python 3.14 + pytest (38 arquivos, **241 testes, suíte verde**), node (`--check
 4. **Bancada**: sempre arquivo estático; `Ctrl+F5` + purge LiteSpeed após upload; `node --check` no `<script>` extraído.
 5. **Nunca PASS por inferência** (UNKNOWN ≠ PASS); Shopee (`s.shopee.com.br`) = UNKNOWN com mensagem própria.
 6. `.env` (com TURSO_*) muda comportamento dos testes — fixtures herméticas existem só nos 3 arquivos; ao criar teste que chama `main()`, replicar o fixture.
+
+## 21/10/2026 (M04.16E) — gate do MKT-RSS integrado, testado e medido
+
+- PR #5 merged no `MKT-RSS`: `dbc8cf0` (gate de valor fail-closed). PR #6
+  merged: `5a9e06a` (gate integrado no `pipeline_rss`, opt-in). Branches de
+  origem preservadas para reversão (`0202970` e `389e56e`).
+- Suíte completa no master mesclado: **403 passed**. CI verde nos runs
+  `39650465426` e `39672743171`.
+- Auditor adversarial novo no MKT-RSS (`tools/2026-10-21_auditar_gate_valor.py`):
+  passa 23/23 no estado corrigido e REPROVA a versão fail-open (exit 1, 8
+  divergências). Medição nova (`tools/2026-10-21_medir_gate_no_rss.py`): com o
+  gate ligado no caminho RSS, **7/7 feeds** de `FEEDS_PADRAO` são bloqueados
+  (o preço exige marketplace e a fonte primária exige fabricante, e nenhum vem
+  de feed). Motivo material para manter `GATE_PUBLICACAO_ENABLED=false`.
+- Correção no PR #6: `.env.example` com bloco de comentário duplicado — limpo.
+- Erro meu, correção e trava: o auditor afirmava que dois cenários tinham que
+  dar BLOQUEADO; a expectativa estava errada (o gate é "≥1 dos 4 critérios" e
+  o que não pode é o critério indevido ser concedido). Corrigido para
+  asserções explícitas sobre o contrato, e reexecutado nos dois lados para
+  garantir que continua reprovando a versão antiga.
+- Nenhum deploy, nenhuma publicação, nenhuma escrita no WordPress.
+  `GATE_PUBLICACAO_ENABLED` continua `false` (varredura do repositório inteiro).
+- Pendências que continuam abertas: evidência **por produto** (Issue #9), o
+  adaptador `gerar_comparativo` → `create_comparativo`, e o fechamento do
+  `wp_publisher`.
