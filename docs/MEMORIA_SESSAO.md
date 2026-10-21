@@ -167,3 +167,37 @@ Python 3.14 + pytest (38 arquivos, **241 testes, suíte verde**), node (`--check
   persistido (evidencia por produto na origem).
 - Sem deploy, sem ativacao do gate (`GATE_PUBLICACAO_ENABLED` segue false),
   sem publicacao, sem escrita no WordPress.
+
+## 21/10/2026 (M04.17A integrado) — PR #7 merged no master do MKT-RSS
+
+- **Merge supervisionado (ordem explicita do dono): PR #7 -> `5a79fc6`** em
+  `rmsports33/MKT-RSS` (squash). Branch de origem preservada para
+  rastreabilidade e reversão: `feat/m0417a-evidencia-por-produto` (`8530d41`).
+- Criterios verificados antes do merge: PR `MERGEABLE/CLEAN`; CI verde no run
+  `39679344510`; sem conflito (`git merge-tree` exit 0); **nenhuma credencial
+  no diff** (varredura por senha/token/chave/JWT); 6 arquivos esperados e
+  nenhum inesperado; suite completa **426 passed**; auditor adversarial
+  **28/28** (e REPROVA a implementacao M04.16C, exit 1).
+- **Compatibilidade do contrato legado M04.16C: PROVADA, nao presumida.**
+  `tools/2026-10-21_compatibilidade_m0416c.py` carrega a versao antiga e a nova
+  e compara: 23 casos legados com veredito e criterios IDENTICOS, 7 chaves
+  legadas preservadas, 1 chave aditiva (`evidencia_por_produto`). Reexecutado
+  depois do merge contra o commit pre-merge `8f7ad61`: COMPATIVEL, exit 0.
+  Alem disso, 3 testes no CI que nao dependem da versao antiga (preservacao
+  de chaves, chamada posicional antiga ainda valida, chaves legado do
+  `gate_publicacao`).
+- Erro meu, correcao e trava (segundo do turno): meu teste de compatibilidade
+  do `gate_publicacao` usou o conjunto de chaves do `filtrar_valor_
+  acrescentado`. Correcao: `gate_publicacao` devolve a FUSAO do compliance com
+  o valor, entao o conjunto legado dele e' outro. Trava: compatibilidade se
+  prova comparando implementacoes, nao conferindo de memoria.
+- Estado do Issue #9 apos esta integracao: o 2o criterio objetivo (evidencia
+  por produto) esta IMPLEMENTADO, PROVADO e INTEGRADO. A issue continua
+  ABERTA porque a evidencia por produto ainda nao vem da ORIGEM (o modulo
+  valida o que o chamador declara; o coletor ainda nao garante preco e data
+  de cada produto — snapshot persistido segue pendencia do M04.16).
+- Restricoes mantidas: sem deploy, sem ativacao do gate
+  (`GATE_PUBLICACAO_ENABLED` segue `false`), sem publicacao, sem escrita no
+  WordPress, nenhum worktree de outra sessao alterado.
+- Proxima etapa: **M04.17B — adaptador `gerar_comparativo` ->
+  `create_comparativo`**, em branch isolada, sem merge nem deploy automatico.
