@@ -165,15 +165,51 @@ CASOS_POSITIVOS = [
      ["aprovado", "com:cruzamento_2fontes"]),
 ]
 
-# Lacuna estrutural CONHECIDA (Issue #9, segundo requisito): a funcao nao
-# recebe produto, entao comparativo de 2 produtos com preco de UM so passa.
-# Fica documentado aqui de proposito — nao e' falha deste PR, e' a pendencia
-# seguinte. O auditor NAO reprova por causa dela.
-LACUNA_PER_PRODUTO = dict(
-    titulo="Galaxy S26 vs Pixel 11",
-    texto="O S26 sai por R$ 5.999,00 em 17/09/2026. O Pixel 11 ainda sem preco.",
-    links=["https://www.amazon.com.br/dp/B0XXX"],
-)
+# --- M04.17A: evidencia POR PRODUTO ---
+# A lacuna estrutural do Issue #9 (2o requisito) era: comparativo de 2
+# produtos com preco de UM so passava. Ate M04.16C isso ficava documentado
+# aqui como "LACUNA CONHECIDA" e o auditor NAO reprovava por causa dela.
+# A partir de M04.17A a lacuna vira CHECK: o auditor reprova se a evidencia
+# de um produto aprovar outro.
+CASOS_POR_PRODUTO = [
+    ("comparativo: preco de um so nao aprova o outro",
+     dict(titulo="Galaxy S26 vs Pixel 11",
+          texto="O S26 sai por R$ 5.999,00 em 17/09/2026. O Pixel 11 sem preco.",
+          produtos=[
+              {"nome": "Galaxy S26", "preco": "R$ 5.999,00", "data_captura": "17/09/2026",
+               "fonte_preco": "https://www.amazon.com.br/dp/B0XXX"},
+              {"nome": "Pixel 11"},
+          ]),
+     ["bloqueado"]),
+    ("comparativo: preco dos dois aprova",
+     dict(titulo="Galaxy S26 vs Pixel 11",
+          texto="Precos capturados em 17/09/2026.",
+          produtos=[
+              {"nome": "Galaxy S26", "preco": "R$ 5.999,00", "data_captura": "17/09/2026",
+               "fonte_preco": "https://www.amazon.com.br/dp/B0XXX"},
+              {"nome": "Pixel 11", "preco": "R$ 4.299,00", "data_captura": "17/09/2026",
+               "fonte_preco": "https://www.mercadolivre.com.br/pixel-11/p/MLB123"},
+          ]),
+     ["aprovado"]),
+    ("preco no texto geral nao salva produto sem evidencia",
+     dict(titulo="Comparativo",
+          texto="Sai por R$ 5.999,00 em 17/09/2026.",
+          links=["https://www.amazon.com.br/dp/B0XXX"],
+          produtos=[{"nome": "Produto A"}, {"nome": "Produto B"}]),
+     ["bloqueado"]),
+    ("video de um produto nao aprova o outro",
+     dict(titulo="Comparativo", texto="Analisamos os dois.",
+          produtos=[
+              {"nome": "Produto A",
+               "evidencia_video": {"url": "https://www.youtube.com/watch?v=abc123",
+                                    "transcricao": " ".join(["palavra"] * 80)}},
+              {"nome": "Produto B"},
+          ]),
+     ["bloqueado"]),
+    ("exigir produtos sem lista bloqueia",
+     dict(titulo="Comparativo", texto="x", exigir_produtos=True),
+     ["bloqueado"]),
+]
 
 
 def rodar(módulo, casos, titulo_bloco):
@@ -235,13 +271,7 @@ def main():
     try:
         falhas = rodar(modulo, CASOS_ADVERSARIAIS, "ADVERSARIAIS (tem que BLOQUEAR)")
         falhas += rodar(modulo, CASOS_POSITIVOS, "POSITIVOS (tem que APROVAR)")
-
-        print("\nLACUNA CONHECIDA (Issue #9 — evidencia por produto)")
-        r = modulo.filtrar_valor_acrescentado(**LACUNA_PER_PRODUTO)
-        print(f"  comparativo de 2 produtos com preco de 1 so: {r.get('veredito')} "
-              f"criterios={r.get('criterios')}")
-        print("  esperado: ainda passa (gate nao recebe produto) — pendencia ABERTA, "
-              "nao e' falha deste PR")
+        falhas += rodar(modulo, CASOS_POR_PRODUTO, "POR PRODUTO (M04.17A)")
 
         print()
         if falhas:

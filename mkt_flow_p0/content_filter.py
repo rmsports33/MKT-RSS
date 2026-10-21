@@ -427,6 +427,171 @@ def _validar_evidencia_medicao(evidencia) -> tuple[bool, str]:
     return True, ""
 
 
+# --- M04.17A: evidência POR PRODUTO ---------------------------------------
+# A lacuna que o Issue #9 pedia: `filtrar_valor_acrescentado` recebia o texto
+# inteiro, e um ÚNICO preço com data no texto approveva um comparativo de
+# vários produtos. Exemplo do defeito: comparativo "Galaxy S26 vs Pixel 11"
+# com o preço do S26 e sem o do Pixel passava com `preco_br_data`.
+#
+# A regra que este bloco implementa: **evidência de um produto nunca aprova
+# outro**. Cada produto é avaliado ISOLADAMENTE, com o próprio preço, a
+# própria data, os próprios links, a própria medição e o próprio vídeo. Nada
+# é herdado do texto geral nem de outro produto da lista.
+#
+# No modo por produto, o texto geral NÃO participa do veredito: se o texto
+# trouxer um preço que não está em nenhum produto, esse preço não aprova
+# ninguém. Sem isso, a contaminação voltaria pela porta do texto.
+_CAMPOS_PRODUTO = (
+    "nome", "preco", "data_captura", "fonte_preco", "links",
+    "fontes_cruzadas", "tem_cruzamento", "evidencia_video",
+    "evidencia_medicao", "texto",
+)
+
+
+def _links_do_produto(produto: dict) -> list:
+    """URLs que pertencem a ESTE produto: fonte_preco + links + cruzadas."""
+    links = []
+    fonte = produto.get("fonte_preco")
+    if fonte:
+        links.append(fonte)
+    for lista in (produto.get("links") or [], produto.get("fontes_cruzadas") or []):
+        for item in lista:
+            if item:
+                links.append(item)
+    return links
+
+
+def _criterios_do_produto(produto: dict) -> tuple[list, list]:
+    """Critérios de UM produto, usando SÓ a evidência desse produto.
+
+    Devolve (criterios, avisos). Lista vazia de critérios = este produto não
+    tem valor acrescentado próprio, e o item inteiro tem de ser bloqueado.
+    """
+    if not isinstance(produto, dict):
+        return [], ["produto inválido: esperado dicionário"]
+
+    criterios: list[str] = []
+    avisos: list[str] = []
+    links = _links_do_produto(produto)
+
+    # 1) preço brasileiro + data de captura válida, com marketplace conhecido
+    preco = str(produto.get("preco") or "").strip()
+    data = str(produto.get("data_captura") or "").strip()
+    tem_comercial = any(_e_fonte_comercial(link) for link in links)
+    if preco and data:
+        # Preço e data declarados no MESMO produto: o vínculo é explícito.
+        if not _datas_validas(data):
+            avisos.append(f"data de captura inválida: {data!r} (não conta como evidência)")
+        elif not _PRECO_BR.search(preco):
+            avisos.append(f"preço sem formato recognized: {preco!r}")
+        elif not tem_comercial:
+            avisos.append("preço sem link de marketplace conhecido (não é fonte comercial)")
+        else:
+            criterios.append("preco_br_data")
+    else:
+        # Fallback: o próprio texto do produto traz "R$ X ... em DD/MM/AAAA".
+        corpus = " ".join(x for x in [preco, data, str(produto.get("texto") or "")] if x)
+        if _pares_preco_data(corpus) and tem_comercial:
+            criterios.append("preco_br_data")
+        elif preco or data:
+            avisos.append("preço e data de captura precisam ser declarados juntos")
+
+    # 2) fonte primária oficial entre os links DESTE produto
+    if any(_e_fonte_primaria(link) for link in links):
+        criterios.append("fonte_primaria")
+
+    # 3) e 4) primeira mão comprovada, evidência estruturada deste produto
+    video_ok, video_motivo = _validar_evidencia_video(produto.get("evidencia_video"))
+    if video_ok:
+        criterios.append("video_transcrito")
+    else:
+        avisos.append(f"video_transcrito não comprovado: {video_motivo}")
+
+    medicao_ok, medicao_motivo = _validar_evidencia_medicao(produto.get("evidencia_medicao"))
+    if medicao_ok:
+        criterios.append("medicao_propria")
+    else:
+        avisos.append(f"medicao_propria não comprovada: {medicao_motivo}")
+
+    # 5) cruzamento declarado, com >=2 domínios independentes DESTE produto
+    dominios = {_dominio(link) for link in links if _dominio(link)}
+    if produto.get("tem_cruzamento"):
+        if len(dominios) >= 2:
+            criterios.append("cruzamento_2fontes")
+        else:
+            avisos.append(
+                f"cruzamento_2fontes não comprovado: {len(dominios)} domínio(s) "
+                "independente(s) de 2 exigidos"
+            )
+
+    return sorted(set(criterios)), avisos
+
+
+def _avaliar_por_produto(produtos: list, exigir_produtos: bool = False) -> dict:
+    """Veredito por produto: TODOS os produtos precisam ter valor próprio.
+
+    Um produto sem nenhum critério reprova o item inteiro — é o oposto de
+    "um preço no texto salva o comparativo inteiro".
+    """
+    if not produtos:
+        return {
+            "veredito": "BLOQUEADO", "criterios": [], "total_criterios": 0,
+            "motivo": "produtos_ausentes",
+            "ficha_tecnica": False,
+            "aviso": ("Validação por produto exigida, mas nenhuma lista de produtos "
+                      "foi informada. Sem produtos não há como garantir que a "
+                      "evidência de um não aprove outro."),
+            "avisos": [],
+            "evidencia_por_produto": "exigida_nao_aplicada",
+            "criterios_por_produto": {},
+            "produtos_sem_valor": [],
+        }
+
+    avaliacoes = []
+    sem_valor = []
+    avisos = []
+    criterios_gerais = set()
+    for indice, produto in enumerate(produtos):
+        nome_bruto = produto.get("nome") if isinstance(produto, dict) else None
+        nome = str(nome_bruto or "").strip() or f"produto #{indice + 1}"
+        criterios, avisos_produto = _criterios_do_produto(produto)
+        avaliacoes.append({"produto": nome, "criterios": criterios})
+        criterios_gerais.update(criterios)
+        if not criterios:
+            sem_valor.append(nome)
+        for aviso in avisos_produto:
+            avisos.append(f"[{nome}] {aviso}")
+
+    if sem_valor:
+        return {
+            "veredito": "BLOQUEADO",
+            "criterios": sorted(criterios_gerais),
+            "total_criterios": len(criterios_gerais),
+            "motivo": "produto_sem_valor",
+            "ficha_tecnica": False,
+            "aviso": ("Produto(s) sem valor acrescentado próprio: "
+                      + ", ".join(sem_valor)
+                      + ". A evidência de um produto não aprova outro."),
+            "avisos": avisos,
+            "evidencia_por_produto": "aplicada",
+            "criterios_por_produto": {a["produto"]: a["criterios"] for a in avaliacoes},
+            "produtos_sem_valor": sem_valor,
+        }
+
+    return {
+        "veredito": "APROVADO",
+        "criterios": sorted(criterios_gerais),
+        "total_criterios": len(criterios_gerais),
+        "motivo": "valor_acrescentado_por_produto",
+        "ficha_tecnica": False,
+        "aviso": "",
+        "avisos": avisos,
+        "evidencia_por_produto": "aplicada",
+        "criterios_por_produto": {a["produto"]: a["criterios"] for a in avaliacoes},
+        "produtos_sem_valor": [],
+    }
+
+
 def filtrar_valor_acrescentado(
     titulo: str = "",
     texto: str = "",
@@ -437,6 +602,8 @@ def filtrar_valor_acrescentado(
     fontes_cruzadas: list = None,
     evidencia_video: dict = None,
     evidencia_medicao: dict = None,
+    produtos: list = None,
+    exigir_produtos: bool = False,
 ) -> dict:
     """
     Gate de VALOR (regra 14): só vira ARTIGO se tiver >=1 destes 4:
@@ -452,9 +619,17 @@ def filtrar_valor_acrescentado(
     estruturadas. A palavra "testamos" no texto é sinal, nunca prova. Toda
     declaração não comprovada volta em `avisos`.
 
+    M04.17A: `produtos` liga a validação POR PRODUTO. Com ela, o veredito vem
+    só da evidência de cada produto — o texto geral não participa, e evidência
+    de um produto nunca aprova outro. `exigir_produtos=True` bloqueia quando a
+    lista não vem (para fluxos comparativos, onde a lista é obrigatória).
+
     Vereditos: APROVADO (tem >=1 critério) | BLOQUEADO (nenhum — não há artigo;
     o item sai como link no digest, que é o produto correto para esse conteúdo).
     """
+    if produtos or exigir_produtos:
+        return _avaliar_por_produto(produtos or [], exigir_produtos)
+
     alvo = f"{titulo or ''} {texto or ''}"
     links = [l for l in (links or []) if l]
     criterios: list[str] = []
@@ -502,7 +677,8 @@ def filtrar_valor_acrescentado(
                 "total_criterios": len(set(criterios)),
                 "motivo": "valor_acrescentado",
                 "ficha_tecnica": bool(_FICHA_TECNICA.search(alvo)),
-                "aviso": "", "avisos": avisos}
+                "aviso": "", "avisos": avisos,
+                "evidencia_por_produto": "nao_aplicada"}
 
     return {
         "veredito": "BLOQUEADO", "criterios": [], "total_criterios": 0,
@@ -512,6 +688,7 @@ def filtrar_valor_acrescentado(
                   "= 'replicated content' (SQRG 4.6.6: 'Lowest, even if the page assigns "
                   "credit'). O item deve sair como link no digest, não como artigo."),
         "avisos": avisos,
+        "evidencia_por_produto": "nao_aplicada",
     }
 
 
@@ -519,12 +696,16 @@ def gate_publicacao(titulo: str = "", texto: str = "", links: list = None,
                     tem_video: bool = False, tem_mediacao: bool = False,
                     tem_cruzamento: bool = False, fontes_cruzadas: list = None,
                     evidencia_video: dict = None,
-                    evidencia_medicao: dict = None) -> dict:
+                    evidencia_medicao: dict = None,
+                    produtos: list = None,
+                    exigir_produtos: bool = False) -> dict:
     """Atalho: roda compliance + valor. BLOQUEADO se qualquer um dos dois barrar."""
     comp = filtrar_conteudo(titulo, texto)
     val = filtrar_valor_acrescentado(titulo, texto, links, tem_video,
                                      tem_mediacao, tem_cruzamento, fontes_cruzadas,
-                                     evidencia_video, evidencia_medicao)
+                                     evidencia_video, evidencia_medicao,
+                                     produtos=produtos,
+                                     exigir_produtos=exigir_produtos)
     if comp["veredito"] == "BLOQUEADO":
         return comp
     if val["veredito"] == "BLOQUEADO":
@@ -532,4 +713,7 @@ def gate_publicacao(titulo: str = "", texto: str = "", links: list = None,
     out = dict(comp)
     out["criterios_valor"] = val["criterios"]
     out["avisos_valor"] = val.get("avisos", [])
+    out["evidencia_por_produto"] = val.get("evidencia_por_produto", "nao_aplicada")
+    out["criterios_por_produto"] = val.get("criterios_por_produto", {})
+    out["produtos_sem_valor"] = val.get("produtos_sem_valor", [])
     return out
