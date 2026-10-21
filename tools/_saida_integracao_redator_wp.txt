@@ -1,0 +1,39 @@
+Fronteira redator -> WordPress
+==============================================================================
+  chave de saida               auditoria, html, provedor, suspeitas_hallucination, titulo
+  tamanho do html              1700 bytes
+  comeca com <!DOCTYPE>        SIM
+  contem <html>                SIM
+  contem <head>                SIM
+  contem <body>                SIM
+  contem <script>              SIM
+  contem <style>               nao
+  contem <meta>                SIM
+  contem <link>                nao
+  campos _conexo_ no html      0
+
+Veredito de forma:
+  DOCUMENTO COMPLETO — nao e' fragmento de post.
+  wp_publisher manda isto em `content`; o tema renderiza dentro de
+  `.entry-content`, gerando html/head/body aninhados.
+
+Contrato do MCP create_comparativo vs saida do redator:
+  title   -> existe no artigo, mas nao vem na saida (vem do chamador)
+  content -> entregue como `html` (documento completo)
+  products -> AUSENTE na saida do redator
+  notas   -> AUSENTE na saida do redator
+  crits   -> AUSENTE na saida do redator
+  veredito -> AUSENTE na saida do redator
+  buys    -> AUSENTE na saida do redator
+  cat_slug -> AUSENTE na saida do redator
+
+Payload do wp_publisher (enviado hoje):
+  title, content, status, categories, tags, featured_media, slug
+  -> nao envia meta _conexo_*; cria post_type `post` (nao review/comparativo)
+
+Sobrevivencia ao wp_kses_post (analise estatica):
+  WP remove <script>, <style>, <link>, <meta>, <html>, <head>, <body>
+  para quem NAO tem unfiltered_html; para admin, o <script> passa.
+  Logo o mesmo HTML se comporta diferente conforme o usuario do token.
+
+JSON: _saida_integracao_redator_wp.json

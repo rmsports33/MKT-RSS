@@ -1,0 +1,53 @@
+
+C:\Users\LIVE2PC\Desktop\NEXOBOT-WORKTREES\nexobot-s3-mktrss\mkt_flow_p0\content_filter.py
+  GATE AUSENTE: modulo nao expoe filtrar_valor_acrescentado
+  Verdade pratica: sem gate, todo item segue para artigo.
+
+C:\Users\LIVE2PC\Desktop\MY PROJECTS FLOW\mkt_flow_p0\content_filter.py
+  caso                                   esperado     observado    situacao
+  ----------------------------------------------------------------------------------
+  preco-sem-data                         BLOQUEADO    APROVADO     DIVERGE
+     -> preco sem data de captura nao e' evidencia (regra 13)
+  data-sem-preco                         BLOQUEADO    APROVADO     DIVERGE
+     -> data solta nao e' preco
+  cruzamento-1-fonte                     BLOQUEADO    APROVADO     DIVERGE
+     -> flag declarada sem 2 dominios independentes
+  preco-data-fonte-nao-comercial         BLOQUEADO    APROVADO     DIVERGE
+     -> preco tem que vir de marketplace onde o dono e' afiliado
+  data-calendario-invalida               BLOQUEADO    APROVADO     DIVERGE
+     -> 31/02 nao existe: data inventada
+  marketplace-como-fonte-primaria        BLOQUEADO    APROVADO     DIVERGE
+     -> marketplace nao e' fonte primaria oficial
+  preco-data-marketplace                 APROVADO     APROVADO     ok
+  fonte-primaria-oficial                 APROVADO     APROVADO     ok
+  medicao-propria                        APROVADO     APROVADO     ok
+  video-transcrito                       APROVADO     APROVADO     ok
+  cruzamento-2-fontes                    APROVADO     APROVADO     ok
+  texto-neutro                           BLOQUEADO    BLOQUEADO    ok
+  comparativo-preco-de-1-de-2-produtos   BLOQUEADO    APROVADO     LACUNA
+     -> Issue #9 pede evidencia POR PRODUTO; a assinatura atual nao recebe produto, entao o gate aprova o comparativo inteiro
+
+C:\Users\LIVE2PC\Desktop\MY PROJECTS FLOW-worktrees\m0416-fail-closed\mkt_flow_p0\content_filter.py
+  caso                                   esperado     observado    situacao
+  ----------------------------------------------------------------------------------
+  preco-sem-data                         BLOQUEADO    BLOQUEADO    ok
+  data-sem-preco                         BLOQUEADO    BLOQUEADO    ok
+  cruzamento-1-fonte                     BLOQUEADO    BLOQUEADO    ok
+  preco-data-fonte-nao-comercial         BLOQUEADO    BLOQUEADO    ok
+  data-calendario-invalida               BLOQUEADO    BLOQUEADO    ok
+  marketplace-como-fonte-primaria        BLOQUEADO    BLOQUEADO    ok
+  preco-data-marketplace                 APROVADO     APROVADO     ok
+  fonte-primaria-oficial                 APROVADO     APROVADO     ok
+  medicao-propria                        APROVADO     APROVADO     ok
+  video-transcrito                       APROVADO     APROVADO     ok
+  cruzamento-2-fontes                    APROVADO     APROVADO     ok
+  texto-neutro                           BLOQUEADO    BLOQUEADO    ok
+  comparativo-preco-de-1-de-2-produtos   BLOQUEADO    APROVADO     LACUNA
+     -> Issue #9 pede evidencia POR PRODUTO; a assinatura atual nao recebe produto, entao o gate aprova o comparativo inteiro
+
+======================================================================================
+RESUMO
+  AUSENTE    C:\Users\LIVE2PC\Desktop\NEXOBOT-WORKTREES\nexobot-s3-mktrss\mkt_flow_p0\content_filter.py
+  FAIL       C:\Users\LIVE2PC\Desktop\MY PROJECTS FLOW\mkt_flow_p0\content_filter.py
+             divergencias: preco-sem-data, data-sem-preco, cruzamento-1-fonte, preco-data-fonte-nao-comercial, data-calendario-invalida, marketplace-como-fonte-primaria
+  OK         C:\Users\LIVE2PC\Desktop\MY PROJECTS FLOW-worktrees\m0416-fail-closed\mkt_flow_p0\content_filter.py

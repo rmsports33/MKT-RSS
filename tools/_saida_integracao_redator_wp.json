@@ -1,0 +1,24 @@
+{
+  "medidas": {
+    "bytes": 1700,
+    "doctype": true,
+    "tag_html": true,
+    "tag_head": true,
+    "tag_body": true,
+    "tag_script": true,
+    "tag_style": false,
+    "tag_meta": true,
+    "tag_link": false,
+    "campos_conexo": 0
+  },
+  "documento": true,
+  "mcp_faltando": [
+    "products",
+    "notas",
+    "crits",
+    "veredito",
+    "buys",
+    "cat_slug"
+  ],
+  "redator": "C:\\Users\\LIVE2PC\\Desktop\\NEXOBOT-WORKTREES\\nexobot-s3-redator"
+}
