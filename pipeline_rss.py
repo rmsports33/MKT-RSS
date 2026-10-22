@@ -151,6 +151,27 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     if "erro" in rw:
         return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
 
+    try:
+        from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
+        validacao = validar_saida(
+            ext["texto"],
+            rw["titulo_seo"] + "\n" + rw["texto_markdown"],
+        )
+    except Exception as exc:
+        logger.warning("Gate editorial indisponivel: %s", exc)
+        return {
+            "acao": "bloqueado",
+            "motivo": "erro_validacao_editorial",
+            "url": url_fonte,
+        }
+    if not isinstance(validacao, dict) or validacao.get("veredito") != "SEM_ALERTAS":
+        return {
+            "acao": "bloqueado",
+            "motivo": "revisao_factual_necessaria",
+            "detalhes": validacao,
+            "url": url_fonte,
+        }
+
     texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
     html = markdown_para_html(texto_final)
 

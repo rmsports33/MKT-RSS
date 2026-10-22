@@ -47,6 +47,7 @@ def _inline(texto: str) -> str:
 def markdown_para_html(markdown: str) -> str:
     """Converte subconjunto Markdown (H2/H3, listas ol/ul, hr, parágrafos)."""
     blocos, lista = [], None  # lista: None | "ol" | "ul"
+    continuar_paragrafo = False
     def _fecha():
         nonlocal lista
         if lista:
@@ -57,6 +58,7 @@ def markdown_para_html(markdown: str) -> str:
         linha = raw.strip()
         if not linha:
             _fecha()
+            continuar_paragrafo = False
             continue
         if set(linha) == {"-"} or linha == "---":
             _fecha()
@@ -85,6 +87,10 @@ def markdown_para_html(markdown: str) -> str:
             blocos.append(f"<li>{_inline(m.group(1))}</li>")
             continue
         _fecha()
-        blocos.append(f"<p>{_inline(linha)}</p>")
+        if continuar_paragrafo and blocos and blocos[-1].startswith("<p>") and blocos[-1].endswith("</p>"):
+            blocos[-1] = blocos[-1][:-4] + " " + _inline(linha) + "</p>"
+        else:
+            blocos.append(f"<p>{_inline(linha)}</p>")
+        continuar_paragrafo = True
     _fecha()
     return "\n".join(blocos)
