@@ -122,10 +122,10 @@ def test_contrato_carrega_preco_e_data_de_cada_produto():
     contrato = _contrato_completo()
     galaxy = contrato["produtos"][0]
     pixel = contrato["produtos"][1]
-    assert galaxy["preco"] == "5.999,00"
+    assert galaxy["preco"] == "R$ 5.999,00"
     assert galaxy["data_captura"] == "17/09/2026"
     assert galaxy["fonte_preco"] == AMAZON
-    assert pixel["preco"] == "4.299,00"
+    assert pixel["preco"] == "R$ 4.299,00"
     assert pixel["data_captura"] == "17/09/2026"
     assert pixel["fonte_preco"] == ML
 
@@ -142,7 +142,7 @@ def test_preco_sem_fonte_de_marketplace_fica_sem_evidencia():
     historico = {"Galaxy S26": [{"data": "2026-09-17", "preco": 5999.00}],
                  "Pixel 11": [{"data": "2026-09-17", "preco": 4299.00, "fonte": ML}]}
     contrato = _contrato_completo(price_history=historico)
-    assert contrato["produtos"][0]["preco"] == "5.999,00"
+    assert contrato["produtos"][0]["preco"] == "R$ 5.999,00"
     assert contrato["produtos"][0]["fonte_preco"] == ""
     # o preço existe, mas SEM link de marketplace o gate nao aprova por preco
     avaliacao = avaliar_contrato(contrato)
@@ -157,7 +157,7 @@ def test_ultimo_ponto_valido_vence():
         {"data": "2026-09-18", "preco": None, "fonte": AMAZON},
     ], "Pixel 11": [{"data": "2026-09-17", "preco": 4299.00, "fonte": ML}]}
     contrato = _contrato_completo(price_history=historico)
-    assert contrato["produtos"][0]["preco"] == "5.999,00"
+    assert contrato["produtos"][0]["preco"] == "R$ 5.999,00"
     assert contrato["produtos"][0]["data_captura"] == "17/09/2026"
 
 

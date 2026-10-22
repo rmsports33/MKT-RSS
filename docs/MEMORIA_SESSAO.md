@@ -294,3 +294,72 @@ Python 3.14 + pytest (38 arquivos, **241 testes, suíte verde**), node (`--check
   com a posicao do gate); a evidencia na origem (o `price_history` do redator
   nao traz a origem do preco); e verificar se o caminho de NOTICIAS tambem
   produz documento inteiro (o review 9183 saiu com HTML quebrado).
+
+## 21/10/2026 (M04.17D) — ligacao operacional do pipeline: redator -> WordPress (PR #10 aberto)
+
+- Ponto de integracao: o caminho de NOTICIAS (`pipeline_rss.py` ->
+  `publicar_no_wordpress` -> `POST /wp/v2/posts`) e o de COMPARATIVO sao
+  pipelines diferentes, e o comparativo NAO existia no MKT-RSS: o
+  `gerar_comparativo` mora no redator e devolve pagina HTML completa, e o
+  MKT-RSS so sabia publicar `post`. A ligacao e, portanto, um FLUXO NOVO E
+  SEPARADO (`mkt_flow_p0/comparativo_flow.py`), com a validacao de valor na
+  posicao certa: DEPOIS da coleta e do enriquecimento de evidencias, nunca
+  sobre feed RSS bruto (a medicao do M04.16E provou que ali o gate bloqueia
+  7/7 feeds).
+- Cadeia: `auditar_precos` -> `construir_contrato` -> `validar_contrato` ->
+  `avaliar_contrato` (gate por produto) -> `publicar_comparativo` (MCP,
+  rascunho).
+- Duas travas independentes: **dry-run por padrao** (`dry_run=True` e' o
+  padrao; sem `dry_run=False` nenhuma requisicao e' feita) e **opt-in por
+  configuracao** (`COMPARATIVO_PUBLICACAO_ENABLED` em {1,true,yes,on};
+  ausente ou com outro valor -> "desativado", sem requisicao). O gate NAO foi
+  flexibilizado: produto sem evidencia propria e' bloqueado ANTES de
+  qualquer requisicao ao WordPress.
+- **Investigacao da origem dos precos:** hoje NADA captura preco junto com a
+  origem. O redator nao tem produtor de `price_history` (so consumidor) e os
+  coletores dele BLOQUEIAM marketplaces; no MKT-RSS, `marketplaces.json`
+  existe mas NAO e' usado por nenhum `.py` (e' configuracao do fluxo de
+  afiliacao, nao coletor). O `price_history` e' entrada externa/manual. O
+  adaptador exige as tres provas por produto (marketplace + data de coleta +
+  vinculo inequivoco) e nao inventa o que falta: preco sem marketplace vira
+  aviso e o comparativo e' bloqueado; preco de produto inexistente e' ERRO
+  (evidencia solta nao pertence a ninguem); ponto com nome de produto
+  divergente e' ERRO.
+- **Defeito encontrado no dry-run com dado real:** o criterio `preco_br_data`
+  — o principal da regra 13 — era INALCANCAVEL pela cadeia real. O contrato
+  guardava o preco como "5.999,00" (o `normalizar_preco` tira o simbolo) e a
+  regex do gate EXIGE "R$": "5.999,00" nao casa. Nenhum teste anterior pegou
+  porque o comparativo do M04.17B ja passava pelo criterio de cruzamento.
+  Correcao: o produtor passou a guardar o preco no formato que o gate le
+  ("R$ 5.999,00"). **O gate NAO foi afrouxado** (mudar a regex dele aceitaria
+  numero solto no texto, que e' falso positivo). Prova:
+  `tools/2026-10-21_provar_preco_br_data.py` (antes: False; depois: True).
+  Contraprova: preco sem marketplace CONTINUA sem o criterio.
+- Segunda lacuna fechada: um contrato sem nenhum criterio criaria post sem
+  tabela; `validar_contrato` agora exige pelo menos um criterio.
+- Caminho de NOTICIAS verificado separadamente: o defeito de HTML completo
+  (review 9183) era EXCLUSIVO da pagina do redator. O caminho de noticias usa
+  `markdown_para_html`, que produz FRAGMENTO (sem doctype/html/head/body) —
+  o contrato legado nao precisa mudar, e uma trava nova impede que mude sem
+  querer.
+- Verificacao: suite completa **504 passed** (480 do M04.17C + 24 novos).
+  Os 3 testes do M04.17B que falharam foram atualizados no FORMATO do preco
+  ("5.999,00" -> "R$ 5.999,00"); nenhuma assercao de comportamento mudou.
+  Auditor adversarial: exit 0.
+- **Dry-run real** (CLI, `tools/exemplo_comparativo_m0417d.json`):
+  `dry_run_ok`, `escreveu: false`, os dois produtos com 3 criterios
+  (`preco_br_data`, `fonte_primaria`, `cruzamento_2fontes`) e os vinculos de
+  preco explicitos por produto. **Dry-run negativo**
+  (`tools/exemplo_comparativo_sem_marketplace_m0417d.json`): `bloqueado` com
+  `sem_valor_por_produto` e o diagnostico exato. Nenhuma requisicao em
+  nenhum dos dois.
+- Branch `feat/m0417d-pipeline-comparativo`, **PR #10 ABERTO**, **sem merge**
+  (M04.17D nao autorizado para merge). Sem deploy, sem ativacao do gate
+  (`GATE_PUBLICACAO_ENABLED` segue false), sem publicacao, sem escrita no
+  WordPress.
+- Continuam abertos: **a origem do preco ainda nao existe** (sem ela, o
+  criterio de preco so vale com `price_history` fornecido a mao);
+  `gerar_comparativo` ainda nao chama este fluxo (falta o lado do redator
+  entregar `modelos`/`price_history` estruturados); onde ligar o gate no
+  fluxo de noticias (o feed deve virar digest, nao artigo); e a validacao
+  de ponta a ponta contra o WordPress, que exige autorizacao especifica.

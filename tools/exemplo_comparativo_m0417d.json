@@ -1,0 +1,38 @@
+{
+  "_comentario": "Exemplo de entrada do fluxo de comparativo (M04.17D). Uso: python -m mkt_flow_p0.comparativo_flow --entrada tools/exemplo_comparativo_m0417d.json  (dry-run por padrao, nao escreve nada).",
+  "modelos": [
+    {
+      "nome": "Galaxy S26",
+      "specs": {"tela": "6,3 pol", "bateria": "5000 mAh", "so": "12 GB"},
+      "fonte": "https://news.samsung.com/br/galaxy-s26"
+    },
+    {
+      "nome": "Pixel 11",
+      "specs": {"tela": "6,4 pol", "bateria": "4600 mAh", "so": "12 GB"},
+      "fonte": "https://store.google.com/pt/product/pixel_11"
+    }
+  ],
+  "price_history": {
+    "Galaxy S26": [
+      {"data": "2026-09-17", "preco": 5999.00, "fonte": "https://www.amazon.com.br/dp/B0EXEMPLO1"}
+    ],
+    "Pixel 11": [
+      {"data": "2026-09-17", "preco": 4299.00, "fonte": "https://www.mercadolivre.com.br/pixel-11/p/MLBEXEMPLO"}
+    ]
+  },
+  "conteudo_html": "<h2>Galaxy S26 vs Pixel 11</h2><p>Dois aparelhos de topo, comparados por tela, bateria e preco.</p><h2>Bateria</h2><p>O Galaxy tem 5000 mAh contra 4600 mAh do Pixel.</p><h2>Preco</h2><p>R$ 5.999,00 contra R$ 4.299,00, capturados em 17/09/2026.</p>",
+  "titulo": "Galaxy S26 vs Pixel 11 — Comparativo completo (celular)",
+  "categoria": "celular",
+  "cat_slug": "celular",
+  "veredito": "O Galaxy S26 vence em bateria e em tela; o Pixel 11 vence em preco. Para quem paga menos, o Pixel 11.",
+  "notas": {"Galaxy S26": 9.0, "Pixel 11": 8.5},
+  "compras": {
+    "Galaxy S26": "https://www.amazon.com.br/dp/B0EXEMPLO1",
+    "Pixel 11": "https://www.mercadolivre.com.br/pixel-11/p/MLBEXEMPLO"
+  },
+  "criterios": [
+    {"label": "Bateria", "vals": ["5000 mAh", "4600 mAh"], "win": 0},
+    {"label": "Tela", "vals": ["6,3 pol", "6,4 pol"], "win": 1},
+    {"label": "Preco", "vals": ["R$ 5.999,00", "R$ 4.299,00"], "win": 1}
+  ]
+}
