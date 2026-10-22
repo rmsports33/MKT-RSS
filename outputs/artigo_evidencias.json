@@ -1,4 +1,9 @@
 {
+  "status_execucao": "demonstracao_fixture_simulada",
+  "bloqueio_ambiente": {
+    "groq_api_key": false,
+    "motivo": "GROQ_API_KEY e API ao vivo de preços do marketplace ausentes no ambiente sandbox. Execução mantida em modo demonstração/fixture com rotulagem explícita de dados simulados."
+  },
   "fonte_origem": "mkt-flow-escrita/pautas/ficha-s24-vs-iphone15.md",
   "fontes_verificaveis": [
     "https://www.samsung.com/br/smartphones/galaxy-s24/",
@@ -54,6 +59,10 @@
     "veredito": "SEM_ALERTAS",
     "motivos": [],
     "numeros_novos": []
+  },
+  "fragmento_wordpress": {
+    "tamanho_caracteres": 3931,
+    "sem_doctype_ou_html": true
   },
   "reproducibilidade": "Executar 'PYENV_VERSION=3.12.13 python tools/gerar_artigo_editorial.py'"
 }

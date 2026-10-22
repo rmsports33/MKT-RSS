@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """
-gerar_artigo_editorial.py — Executa o pipeline editorial real do ConexoOS
-para gerar o artigo de exemplo e suas evidências de reprodução.
+gerar_artigo_editorial.py — Demonstrador/Fixture do pipeline editorial ConexoOS.
+
+Rotula explicitamente dados simulados e registra bloqueio de credenciais (LLM/APIs ao vivo)
+quando executado em ambiente sem GROQ_API_KEY / API de marketplace.
 """
 import json
+import os
 import sys
 from pathlib import Path
 
@@ -13,10 +16,13 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "redator-artigo-blogs"))
 
 from src.generator.render import gerar_comparativo
+from mkt_flow_p0.comparativo_contract import extrair_corpo_html
 from mkt_flow_p0.comparativo_flow import processar_comparativo
 from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
 
 def main():
+    has_groq = bool((os.getenv("GROQ_API_KEY") or "").strip())
+
     pauta_path = ROOT / "mkt-flow-escrita/pautas/ficha-s24-vs-iphone15.md"
     pauta_texto = pauta_path.read_text(encoding="utf-8")
 
@@ -45,27 +51,32 @@ def main():
         }
     ]
 
+    # Preços com rótulo de simulação
     price_history = {
         "Samsung Galaxy S24 5G": [
             {
                 "data": "2026-09-19",
                 "preco": 4499.00,
-                "fonte": "https://www.amazon.com.br/dp/B0CS3X3Y2P"
+                "fonte": "https://www.amazon.com.br/dp/B0CS3X3Y2P",
+                "nota": "simulado_fixture"
             }
         ],
         "Apple iPhone 15": [
             {
                 "data": "2026-09-19",
                 "preco": 4999.00,
-                "fonte": "https://www.mercadolivre.com.br/apple-iphone-15/p/MLB234567"
+                "fonte": "https://www.mercadolivre.com.br/apple-iphone-15/p/MLB234567",
+                "nota": "simulado_fixture"
             }
         ]
     }
 
-    # O gerador renderiza a resposta da LLM em Markdown, sanitiza marcadores e atribuições [fonte: ...],
-    # e constrói a página HTML completa com head, schema JSON-LD, tabela e AdSense.
+    # Provedor LLM ou mock de simulação
     def chamar_llm_markdown(system_prompt, payload):
         return (
+            "<div class=\"aviso-editorial-simulacao\"><p><strong>[AVISO EDITORIAL - FIXTURE/SIMULAÇÃO]</strong> "
+            "Este artigo é uma demonstração da estrutura do pipeline ConexoOS. Os preços e dados "
+            "são simulações de teste e requerem captura ao vivo e chave LLM para produção.</p></div>\n\n"
             "## Samsung Galaxy S24 5G vs Apple iPhone 15: Comparativo ConexoTech\n\n"
             "Analisamos em detalhes dois dos principais smartphones topo de linha compactos do mercado: "
             "o Samsung Galaxy S24 5G e o Apple iPhone 15. Com base nos dados oficiais da Samsung Brasil "
@@ -89,7 +100,7 @@ def main():
             "## Veredito ConexoTech\n\n"
             "O iPhone 15 leva ligeira vantagem pela consistência geral de câmera e integração do ecossistema iOS. "
             "O Galaxy S24 vence em fluidez de tela (120Hz), zoom óptico real de 3x e recursos da linha Galaxy. "
-            "Os preços de R$ 4.499,00 (Galaxy S24) e R$ 4.999,00 (iPhone 15) foram capturados em 19/09/2026. "
+            "Os preços de R$ 4.499,00 (Galaxy S24) e R$ 4.999,00 (iPhone 15) foram simulações de pauta. "
             "A compra mais racional dependerá das ofertas do momento.\n\n"
             "[fonte: https://www.samsung.com/br/smartphones/galaxy-s24/]\n"
             "[fonte: https://support.apple.com/pt-br/111831]\n"
@@ -100,7 +111,7 @@ def main():
         modelos=modelos,
         categoria="celular",
         price_history=price_history,
-        chamar_llm=chamar_llm_markdown
+        chamar_llm=chamar_llm_markdown if not has_groq else None
     )
 
     if "erro" in res_redator:
@@ -108,6 +119,7 @@ def main():
         sys.exit(1)
 
     html_gerado = res_redator["html"]
+    corpo_fragmento_wp = extrair_corpo_html(html_gerado)
 
     # 2. Executa o pipeline de comparativo / gate de valor por produto
     notas = {"Samsung Galaxy S24 5G": 8.8, "Apple iPhone 15": 9.0}
@@ -120,7 +132,7 @@ def main():
         {"label": "Câmera", "vals": ["50MP + 12MP + 10MP tele 3x", "48MP + 12MP"], "win": 0},
         {"label": "Desempenho", "vals": ["Exynos 2400", "A16 Bionic"], "win": 1},
         {"label": "Bateria", "vals": ["4.000mAh 25W", "MagSafe, USB-C"], "win": 0},
-        {"label": "Preço", "vals": ["R$ 4.499,00", "R$ 4.999,00"], "win": 0}
+        {"label": "Preço (Simulado)", "vals": ["R$ 4.499,00", "R$ 4.999,00"], "win": 0}
     ]
 
     res_flow = processar_comparativo(
@@ -137,7 +149,7 @@ def main():
         dry_run=True
     )
 
-    # 3. Validação do Gate Editorial Pós-IA (validando o texto do artigo/seções reescritas)
+    # 3. Validação do Gate Editorial Pós-IA
     fonte_para_gate = pauta_texto + "\nCapturado em 19/09/2026: R$ 4.499,00 (Galaxy S24) e R$ 4.999,00 (iPhone 15)."
     texto_artigo = res_redator["titulo"] + "\n" + chamar_llm_markdown("", {})
     res_gate = validar_saida(fonte_para_gate, texto_artigo)
@@ -151,6 +163,11 @@ def main():
 
     evidencias_path = outputs_dir / "artigo_evidencias.json"
     evidencias = {
+        "status_execucao": "demonstracao_fixture_simulada",
+        "bloqueio_ambiente": {
+            "groq_api_key": has_groq,
+            "motivo": "GROQ_API_KEY e API ao vivo de preços do marketplace ausentes no ambiente sandbox. Execução mantida em modo demonstração/fixture com rotulagem explícita de dados simulados."
+        },
         "fonte_origem": "mkt-flow-escrita/pautas/ficha-s24-vs-iphone15.md",
         "fontes_verificaveis": [
             "https://www.samsung.com/br/smartphones/galaxy-s24/",
@@ -162,11 +179,15 @@ def main():
         "flow_criterios_por_produto": res_flow.get("criterios_por_produto"),
         "flow_vinculos_preco": res_flow.get("vinculos_preco"),
         "gate_editorial": res_gate,
+        "fragmento_wordpress": {
+            "tamanho_caracteres": len(corpo_fragmento_wp),
+            "sem_doctype_ou_html": not ("<!DOCTYPE" in corpo_fragmento_wp or "<html" in corpo_fragmento_wp)
+        },
         "reproducibilidade": "Executar 'PYENV_VERSION=3.12.13 python tools/gerar_artigo_editorial.py'"
     }
     evidencias_path.write_text(json.dumps(evidencias, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    print(f"Sucesso! Artigo gerado em {artigo_path}")
+    print(f"Sucesso! Artigo demonstração gerado em {artigo_path}")
     print(f"Evidências salvas em {evidencias_path}")
 
 if __name__ == "__main__":
