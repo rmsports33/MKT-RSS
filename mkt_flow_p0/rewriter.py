@@ -13,6 +13,7 @@ import logging
 import os
 import re
 from pathlib import Path
+from mkt_flow_p0.format import truncar_palavras
 
 logger = logging.getLogger("rewriter")
 
@@ -183,7 +184,7 @@ def reescrever_materia(
     except Exception as e:
         return {"erro": f"Resposta IA fora do JSON esperado: {str(e)[:120]}"}
 
-    titulo_seo = str(dados.get("titulo_seo") or titulo_original)[:META_TITULO_MAX]
+    titulo_seo = truncar_palavras(str(dados.get("titulo_seo") or titulo_original), META_TITULO_MAX)
     meta = str(dados.get("meta_description") or "")[:META_DESC_MAX]
     slug = gerar_slug(str(dados.get("slug") or titulo_seo))
     tags = [str(t).lower().strip()[:30] for t in (dados.get("tags") or []) if str(t).strip()][:5]
