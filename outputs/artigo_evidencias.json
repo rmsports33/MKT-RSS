@@ -1,0 +1,59 @@
+{
+  "fonte_origem": "mkt-flow-escrita/pautas/ficha-s24-vs-iphone15.md",
+  "fontes_verificaveis": [
+    "https://www.samsung.com/br/smartphones/galaxy-s24/",
+    "https://support.apple.com/pt-br/111831"
+  ],
+  "redator_titulo": "Samsung Galaxy S24 5G vs Apple iPhone 15 — Comparativo completo (celular)",
+  "redator_auditoria": {
+    "specs_usadas": [
+      "tela.polegadas",
+      "tela.painel",
+      "camera.traseira.mp",
+      "chipset.modelo",
+      "bateria.mah"
+    ],
+    "fontes": [
+      "https://support.apple.com/pt-br/111831",
+      "https://www.samsung.com/br/smartphones/galaxy-s24/"
+    ],
+    "unknown_fields": [],
+    "video_id": "",
+    "forcar": false
+  },
+  "flow_acao": "dry_run_ok",
+  "flow_criterios_por_produto": {
+    "Samsung Galaxy S24 5G": [
+      "cruzamento_2fontes",
+      "fonte_primaria",
+      "preco_br_data"
+    ],
+    "Apple iPhone 15": [
+      "cruzamento_2fontes",
+      "fonte_primaria",
+      "preco_br_data"
+    ]
+  },
+  "flow_vinculos_preco": [
+    {
+      "produto": "Samsung Galaxy S24 5G",
+      "preco": 4499.0,
+      "data": "2026-09-19",
+      "fonte": "https://www.amazon.com.br/dp/B0CS3X3Y2P",
+      "vinculo": "por_nome"
+    },
+    {
+      "produto": "Apple iPhone 15",
+      "preco": 4999.0,
+      "data": "2026-09-19",
+      "fonte": "https://www.mercadolivre.com.br/apple-iphone-15/p/MLB234567",
+      "vinculo": "por_nome"
+    }
+  ],
+  "gate_editorial": {
+    "veredito": "SEM_ALERTAS",
+    "motivos": [],
+    "numeros_novos": []
+  },
+  "reproducibilidade": "Executar 'PYENV_VERSION=3.12.13 python tools/gerar_artigo_editorial.py'"
+}
