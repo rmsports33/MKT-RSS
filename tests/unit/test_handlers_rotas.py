@@ -102,6 +102,7 @@ def test_patterns_nao_se_sobrepoem():
     assert re.match(PAT_LINK, "pub:9249") is None
 
 
+@pytest.mark.skipif(not getattr(L, "_TEM_PTB", False), reason="python-telegram-bot nao instalado")
 def test_linkflow_registra_o_padrao_lk():
     padroes = [_padrao(h) for h in L.link_handlers()]
     assert PAT_LINK in padroes, padroes
