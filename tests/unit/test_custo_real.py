@@ -27,8 +27,7 @@ def test_custo_gravado(tmp_path, monkeypatch):
         monkeypatch.setenv("WP_USER", "tester")
         monkeypatch.setenv("WP_APP_PASSWORD", "test-only")
         r = P.processar_item({"titulo": "T", "resumo": "t", "link": "https://x", "fonte": "blog"})
+        assert r["acao"] == "bloqueado" and r["escreveu"] is False
         assert r["custo_usd"] == 0.0015 and r["tokens"] == 1234
-    import sqlite3
-    con = sqlite3.connect(tmp_path / "c.db")
-    row = con.execute("SELECT custo_usd, tokens_total FROM rss_runs").fetchone()
-    assert row[0] == 0.0015 and row[1] == 1234
+    # C19: custo real permanece no resultado; nao registrar como publicacao.
+    assert not (tmp_path / "c.db").exists()
