@@ -165,6 +165,9 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     if credito_foto:
         html += f'\n<p class="credito-foto"><small>{credito_foto}</small></p>'
 
+    # C19: nunca considerar a ausencia de alertas como aprovacao factual.
+    # A integracao do contrato de evidencias permanece obrigatoria.
+    verificacao_factual = "NAO_VERIFICADO"
     wp_url = os.getenv("WP_URL", "")
     wp_result: dict = {"aviso": "WP_* não configurado — rascunho só local"}
     if wp_url and os.getenv("WP_USER", "") and os.getenv("WP_APP_PASSWORD", ""):
