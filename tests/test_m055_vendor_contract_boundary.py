@@ -32,7 +32,7 @@ def test_vendor_render_exists_but_is_not_canonical_contract():
 
 def test_rss_uses_local_evidence_adapter_not_vendor_editorial():
     imports = _imports(RSS)
-    assert "mkt_flow_p0.contrato_evidencias_noticia" in imports
+    assert "mkt_flow_p0.adaptador_contrato_editorial" in imports
     assert "mkt_flow_p0.lastro_offline_noticia" in imports
     assert not any(mod.startswith("src.editorial") for mod in imports)
 
