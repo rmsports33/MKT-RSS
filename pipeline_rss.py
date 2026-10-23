@@ -168,6 +168,16 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     wp_url = os.getenv("WP_URL", "")
     wp_result: dict = {"aviso": "WP_* não configurado — rascunho só local"}
     if wp_url and os.getenv("WP_USER", "") and os.getenv("WP_APP_PASSWORD", ""):
+        # M05/C19: nao converter a aprovacao do texto de entrada em PASS
+        # factual da saida da IA. Ate existir verificacao pos-IA com
+        # evidencias independentes, nao criar sequer rascunho remoto.
+        return {
+            "acao": "bloqueado",
+            "motivo": "gate_factual_pos_ia_nao_integrado",
+            "url": url_fonte,
+            "escreveu": False,
+            "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate validacao factual pos-IA.",
+        }
         from mkt_flow_p0.wp_publisher import publicar_no_wordpress, garantir_categoria, garantir_tag
         wp_user, wp_pwd = os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", "")
         cat_id = garantir_categoria(wp_url, wp_user, wp_pwd, os.getenv("CATEGORIA_PADRAO", "Notícias"))
