@@ -83,7 +83,7 @@ def avaliar_gate_publicacao(titulo: str, texto: str, links: list) -> dict:
         }
 
 
-def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None) -> dict:
+def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None) -> dict:
     """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
     from mkt_flow_p0.content_filter import filtrar_item_rss, filtrar_conteudo, filtrar_por_tema
     from mkt_flow_p0.extractor import extrair_conteudo
@@ -183,6 +183,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     except Exception as exc:
         logger.warning("Contrato editorial invalido: %s", exc)
         auditoria_evidencias = {"veredito": "BLOQUEADO", "motivos": ["erro_contrato_editorial"]}
+    from mkt_flow_p0.lastro_offline_noticia import auditar_lastro_offline
+    auditoria_lastro = auditar_lastro_offline(rw.get("contrato_editorial"), capturas_aprovadas)
     # Mesmo EVIDENCIAS_ESTRUTURADAS nao certifica as claims do HTML.
     verificacao_factual = "NAO_VERIFICADO"
     wp_url = os.getenv("WP_URL", "")
@@ -200,6 +202,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             "tokens": int((rw.get("uso_tokens") or {}).get("total", 0) or 0),
             "auditoria_pos_ia": auditoria_pos_ia,
             "auditoria_evidencias": auditoria_evidencias,
+            "auditoria_lastro": auditoria_lastro,
             "verificacao_factual": verificacao_factual,
             "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate validacao factual pos-IA.",
         }
