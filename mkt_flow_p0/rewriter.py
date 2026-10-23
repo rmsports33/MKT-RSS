@@ -192,8 +192,13 @@ def reescrever_materia(
     if palavras_out < 200:
         return {"erro": f"Reescrita curta demais ({palavras_out} palavras) — rode de novo."}
 
+    # C19: o rewriter nao possui evidencias aprovadas por claim.
+    # Nunca atribuir PASS a partir de um JSON gerado pela propria IA.
+    contrato_editorial = None
+
     return {
         "titulo_seo": titulo_seo,
+        "contrato_editorial": contrato_editorial,
         "meta_description": meta,
         "slug": slug,
         "tags": tags,
