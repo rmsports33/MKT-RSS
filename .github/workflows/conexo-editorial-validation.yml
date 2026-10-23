@@ -7,7 +7,7 @@ permissions:
 
 jobs:
   editorial-contract:
-    uses: rmsports33/conexo-os-runner/.github/workflows/editorial-validation.yml@feat/m059-validation-contract
+    uses: rmsports33/conexo-os-runner/.github/workflows/editorial-validation.yml@362f7f71e8f035c04e1b73fe0feff0e678a62690
     with:
       test_paths: >-
         tests/test_m058_cobertura_literal_regex.py
