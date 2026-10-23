@@ -65,7 +65,7 @@ def test_publicado_rascunho_mockado(tmp_path, monkeypatch):
         monkeypatch.setenv("WP_USER", "tester")
         monkeypatch.setenv("WP_APP_PASSWORD", "test-only")
         r = P.processar_item(ITEM)
-        assert r["acao"] == "publicado_rascunho" and r["run_id"]
+        assert r["acao"] == "bloqueado" and r["escreveu"] is False
 
 
 def test_keywords_chegam_ao_rewriter(tmp_path, monkeypatch):
@@ -95,7 +95,7 @@ def test_keywords_chegam_ao_rewriter(tmp_path, monkeypatch):
         monkeypatch.setenv("WP_USER", "tester")
         monkeypatch.setenv("WP_APP_PASSWORD", "test-only")
         r = P.processar_item(ITEM)
-        assert r["acao"] == "publicado_rascunho"
+        assert r["acao"] == "bloqueado" and r["escreveu"] is False
         assert chamadas.get("keywords") == ["galaxy x preço"]
 
 
@@ -125,5 +125,5 @@ def test_keywords_falha_nao_trava(tmp_path, monkeypatch):
         monkeypatch.setenv("WP_USER", "tester")
         monkeypatch.setenv("WP_APP_PASSWORD", "test-only")
         r = P.processar_item(ITEM)
-        assert r["acao"] == "publicado_rascunho"
+        assert r["acao"] == "bloqueado" and r["escreveu"] is False
         assert chamadas.get("keywords") == []
