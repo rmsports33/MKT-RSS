@@ -196,6 +196,8 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
             "motivo": "gate_factual_pos_ia_nao_integrado",
             "url": url_fonte,
             "escreveu": False,
+            "custo_usd": float(rw.get("custo_usd_estimado", 0) or 0),
+            "tokens": int((rw.get("uso_tokens") or {}).get("total", 0) or 0),
             "auditoria_pos_ia": auditoria_pos_ia,
             "auditoria_evidencias": auditoria_evidencias,
             "verificacao_factual": verificacao_factual,
