@@ -167,6 +167,14 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
 
     # C19: nunca considerar a ausencia de alertas como aprovacao factual.
     # A integracao do contrato de evidencias permanece obrigatoria.
+    from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
+    try:
+        auditoria_pos_ia = validar_saida(ext["texto"], rw["texto_markdown"])
+    except Exception as exc:
+        logger.warning("Gate editorial pos-IA falhou: %s", exc)
+        auditoria_pos_ia = {"veredito": "BLOQUEADO", "motivos": ["erro_gate_pos_ia"]}
+    # SEM_ALERTAS significa somente ausencia dos alertas implementados.
+    # Nao ha atestado independente de cada claim: manter envio WP bloqueado.
     verificacao_factual = "NAO_VERIFICADO"
     wp_url = os.getenv("WP_URL", "")
     wp_result: dict = {"aviso": "WP_* não configurado — rascunho só local"}
@@ -179,6 +187,8 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
             "motivo": "gate_factual_pos_ia_nao_integrado",
             "url": url_fonte,
             "escreveu": False,
+            "auditoria_pos_ia": auditoria_pos_ia,
+            "verificacao_factual": verificacao_factual,
             "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate validacao factual pos-IA.",
         }
         from mkt_flow_p0.wp_publisher import publicar_no_wordpress, garantir_categoria, garantir_tag
