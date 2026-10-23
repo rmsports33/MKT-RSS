@@ -37,13 +37,13 @@ def produzir_contrato_noticia(evidencias_aprovadas, texto_gerado):
     textos = {limpar(c["text"]) for c in contrato["claims"]}
     linhas = []
     for linha in texto_gerado.splitlines():
-        linha = re.sub(r"^\\s{0,3}#{1,6}\\s+", "", linha).strip()
+        linha = re.sub(r"^\s{0,3}#{1,6}\s+", "", linha).strip()
         if not linha:
             continue
         # Markdown com listas, links ou tabelas requer avaliacao especifica.
-        if re.search(r"(^[-*+]\\s|^\\d+[.)]\\s|[|\\[\\]<>])", linha):
+        if re.search(r"(^[-*+]\s|^\d+[.)]\s|[|\[\]<>])", linha):
             return None
-        linhas.extend(re.split(r"(?<=[.!?])\\s+", linha))
+        linhas.extend(re.split(r"(?<=[.!?])\s+", linha))
     if not linhas or any(limpar(frase) not in textos for frase in linhas):
         return None
     return contrato
