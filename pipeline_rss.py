@@ -206,46 +206,20 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             "verificacao_factual": verificacao_factual,
             "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate validacao factual pos-IA.",
         }
-        from mkt_flow_p0.wp_publisher import publicar_no_wordpress, garantir_categoria, garantir_tag
-        wp_user, wp_pwd = os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", "")
-        cat_id = garantir_categoria(wp_url, wp_user, wp_pwd, os.getenv("CATEGORIA_PADRAO", "Notícias"))
-        tag_ids = [t for t in (garantir_tag(wp_url, wp_user, wp_pwd, t) for t in rw["tags"]) if t]
-        try:
-            from mkt_flow_p0.links_internos import sugerir, inserir_box
-            _links = sugerir(html, ",".join(rw.get("tags", []) or []), wp_url)
-            html = inserir_box(html, _links)
-        except Exception as e:
-            logger.warning(f"links internos pulados: {e}")
-        wp_result = publicar_no_wordpress(
-            rw["titulo_seo"], html, "PASS", wp_url, wp_user, wp_pwd,
-            status_desejado="draft", imagem_url=imagem_url,
-            categoria_ids=[cat_id] if cat_id else None,
-            tag_ids=tag_ids or None,
-            slug=rw["slug"],
-            rank_math={"title": rw["titulo_seo"], "description": rw["meta_description"],
-                       "focus": (rw["tags"] or [""])[0]},
-        )
 
-    acao_wp = classificar_resultado_wp(wp_result)
-    if acao_wp != "publicado_rascunho":
-        return {"acao": "falha", "motivo": (wp_result or {}).get("erro") or
-                (wp_result or {}).get("aviso") or "WP não confirmou rascunho",
-                "url": url_fonte, "wp": wp_result}
-
-    run_id = str(uuid.uuid4())[:8]
-    init_db()
-    con = sqlite3.connect(DB_PATH)
-    con.execute("INSERT INTO rss_runs (id, fonte, url, titulo_seo, palavras, veredito, wp_post_id, wp_link, custo_usd, tokens_total, created_at)"
-                " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                (run_id, item.get("fonte", ""), item.get("link", ""), rw["titulo_seo"], rw["palavras"],
-                 gate2["veredito"], (wp_result or {}).get("post_id"), (wp_result or {}).get("link"),
-                 float(rw.get("custo_usd_estimado", 0) or 0), int((rw.get("uso_tokens") or {}).get("total", 0) or 0),
-                 datetime.now().isoformat()))
-    con.commit()
-    con.close()
-    return {"acao": "publicado_rascunho", "run_id": run_id, "titulo_seo": rw["titulo_seo"],
-            "palavras": rw["palavras"], "custo_usd": rw.get("custo_usd_estimado", 0),
-            "tokens": (rw.get("uso_tokens") or {}).get("total", 0), "wp": wp_result}
+    # M05.2B: envio remoto permanece desabilitado mesmo sem credenciais.
+    # Nao existe caminho alternativo com PASS literal ou escrita em WP.
+    return {
+        "acao": "bloqueado",
+        "motivo": "gate_factual_pos_ia_nao_integrado",
+        "url": url_fonte,
+        "escreveu": False,
+        "auditoria_pos_ia": auditoria_pos_ia,
+        "auditoria_evidencias": auditoria_evidencias,
+        "auditoria_lastro": auditoria_lastro,
+        "verificacao_factual": verificacao_factual,
+        "aviso": "HTML local gerado; WordPress desabilitado ate certificacao factual.",
+    }
 
 
 def publicar_indice() -> dict:
