@@ -175,6 +175,15 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
         auditoria_pos_ia = {"veredito": "BLOQUEADO", "motivos": ["erro_gate_pos_ia"]}
     # SEM_ALERTAS significa somente ausencia dos alertas implementados.
     # Nao ha atestado independente de cada claim: manter envio WP bloqueado.
+    # Se o produtor fornecer snapshot v1.0, avaliar sua rastreabilidade.
+    # A ausencia do snapshot e uma falha, nunca uma aprovacao implicita.
+    from mkt_flow_p0.contrato_evidencias_noticia import avaliar_evidencias
+    try:
+        auditoria_evidencias = avaliar_evidencias(rw.get("contrato_editorial"))
+    except Exception as exc:
+        logger.warning("Contrato editorial invalido: %s", exc)
+        auditoria_evidencias = {"veredito": "BLOQUEADO", "motivos": ["erro_contrato_editorial"]}
+    # Mesmo EVIDENCIAS_ESTRUTURADAS nao certifica as claims do HTML.
     verificacao_factual = "NAO_VERIFICADO"
     wp_url = os.getenv("WP_URL", "")
     wp_result: dict = {"aviso": "WP_* não configurado — rascunho só local"}
@@ -188,6 +197,7 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
             "url": url_fonte,
             "escreveu": False,
             "auditoria_pos_ia": auditoria_pos_ia,
+            "auditoria_evidencias": auditoria_evidencias,
             "verificacao_factual": verificacao_factual,
             "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate validacao factual pos-IA.",
         }
