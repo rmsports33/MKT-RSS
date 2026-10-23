@@ -3,12 +3,18 @@ from pathlib import Path
 
 
 def test_rss_nao_envia_pass_literal_antes_do_bloqueio_pos_ia():
+    import ast
     source = (Path(__file__).resolve().parents[1] / "pipeline_rss.py").read_text(encoding="utf-8")
-    guard = 'if wp_url and os.getenv("WP_USER", "") and os.getenv("WP_APP_PASSWORD", ""):'
-    marker = '"motivo": "gate_factual_pos_ia_nao_integrado"'
-    publish = "wp_result = publicar_no_wordpress("
-    assert source.index(guard) < source.index(marker) < source.index(publish)
-    assert '"escreveu": False' in source[source.index(guard):source.index(publish)]
+    tree = ast.parse(source)
+    chamadas_wp = [
+        node for node in ast.walk(tree)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Name)
+        and node.func.id == "publicar_no_wordpress"
+    ]
+    assert not chamadas_wp
+    assert '"motivo": "gate_factual_pos_ia_nao_integrado"' in source
+    assert '"escreveu": False' in source
 
 
 def test_rss_reusa_gate_pos_ia_sem_tratar_sem_alertas_como_pass():
