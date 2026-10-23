@@ -177,9 +177,9 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     # Nao ha atestado independente de cada claim: manter envio WP bloqueado.
     # Se o produtor fornecer snapshot v1.0, avaliar sua rastreabilidade.
     # A ausencia do snapshot e uma falha, nunca uma aprovacao implicita.
-    from mkt_flow_p0.contrato_evidencias_noticia import avaliar_evidencias
+    from mkt_flow_p0.adaptador_contrato_editorial import avaliar_snapshot_editorial
     try:
-        auditoria_evidencias = avaliar_evidencias(rw.get("contrato_editorial"))
+        auditoria_evidencias = avaliar_snapshot_editorial(rw.get("contrato_editorial"))
     except Exception as exc:
         logger.warning("Contrato editorial invalido: %s", exc)
         auditoria_evidencias = {"veredito": "BLOQUEADO", "motivos": ["erro_contrato_editorial"]}
