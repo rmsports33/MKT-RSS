@@ -83,7 +83,7 @@ def avaliar_gate_publicacao(titulo: str, texto: str, links: list) -> dict:
         }
 
 
-def processar_item(item: dict, dry_run: bool = False) -> dict:
+def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None) -> dict:
     """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
     from mkt_flow_p0.content_filter import filtrar_item_rss, filtrar_conteudo, filtrar_por_tema
     from mkt_flow_p0.extractor import extrair_conteudo
@@ -147,7 +147,7 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
 
     rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
                             fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
-                            keywords=kws)
+                            keywords=kws, evidencias_aprovadas=evidencias_aprovadas)
     if "erro" in rw:
         return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
 
