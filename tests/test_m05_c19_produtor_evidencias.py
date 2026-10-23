@@ -39,3 +39,22 @@ def test_original_evidence_is_not_mutated():
     data = snapshot()
     produzir_contrato_noticia(data, "A empresa apresentou o dispositivo.")
     assert data["claims"][0]["status"] == "PASS"
+
+
+def test_extra_sentence_not_in_claims_is_blocked():
+    article = "A empresa apresentou o dispositivo. A bateria dura 99 horas."
+    assert produzir_contrato_noticia(snapshot(), article) is None
+
+
+def test_paraphrase_without_exact_approved_claim_is_blocked():
+    assert produzir_contrato_noticia(snapshot(), "O dispositivo foi apresentado pela empresa.") is None
+
+
+def test_extra_heading_not_in_claims_is_blocked():
+    article = "# A bateria dura 99 horas.\nA empresa apresentou o dispositivo."
+    assert produzir_contrato_noticia(snapshot(), article) is None
+
+
+def test_markdown_list_without_structured_validation_is_blocked():
+    article = "A empresa apresentou o dispositivo.\n- Bateria: 99 horas"
+    assert produzir_contrato_noticia(snapshot(), article) is None
