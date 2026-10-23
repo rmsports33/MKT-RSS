@@ -136,6 +136,7 @@ def reescrever_materia(
     max_tokens: int = 2500,
     timeout: int = 60,
     keywords: list = None,
+    evidencias_aprovadas: dict = None,
 ) -> dict:
     """
     Reescreve 1 matéria. Gate de entrada: texto <100 palavras = {"erro"}
@@ -195,6 +196,9 @@ def reescrever_materia(
     # C19: o rewriter nao possui evidencias aprovadas por claim.
     # Nunca atribuir PASS a partir de um JSON gerado pela propria IA.
     contrato_editorial = None
+    if evidencias_aprovadas is not None:
+        from mkt_flow_p0.produtor_evidencias_noticia import produzir_contrato_noticia
+        contrato_editorial = produzir_contrato_noticia(evidencias_aprovadas, texto)
 
     return {
         "titulo_seo": titulo_seo,
