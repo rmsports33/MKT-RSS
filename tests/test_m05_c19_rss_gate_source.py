@@ -38,3 +38,11 @@ def test_sem_alertas_nao_e_prova_factual():
     resultado = validar_saida("A empresa anunciou uma tela OLED.", "A empresa anunciou uma tela OLED.")
     assert resultado["veredito"] == "SEM_ALERTAS"
     assert resultado["veredito"] != "PASS"
+
+
+def test_rss_avalia_contrato_sem_liberar_wordpress():
+    source = (Path(__file__).resolve().parents[1] / "pipeline_rss.py").read_text(encoding="utf-8")
+    assert 'avaliar_evidencias(rw.get("contrato_editorial"))' in source
+    assert '"auditoria_evidencias": auditoria_evidencias' in source
+    assert source.index('avaliar_evidencias(rw.get("contrato_editorial"))') < source.index('gate_factual_pos_ia_nao_integrado')
+    assert 'verificacao_factual = "NAO_VERIFICADO"' in source
