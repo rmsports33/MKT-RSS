@@ -187,38 +187,20 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     auditoria_lastro = auditar_lastro_offline(rw.get("contrato_editorial"), capturas_aprovadas)
     # Mesmo EVIDENCIAS_ESTRUTURADAS nao certifica as claims do HTML.
     verificacao_factual = "NAO_VERIFICADO"
-    wp_url = os.getenv("WP_URL", "")
-    wp_result: dict = {"aviso": "WP_* não configurado — rascunho só local"}
-    if wp_url and os.getenv("WP_USER", "") and os.getenv("WP_APP_PASSWORD", ""):
-        # M05/C19: nao converter a aprovacao do texto de entrada em PASS
-        # factual da saida da IA. Ate existir verificacao pos-IA com
-        # evidencias independentes, nao criar sequer rascunho remoto.
-        return {
-            "acao": "bloqueado",
-            "motivo": "gate_factual_pos_ia_nao_integrado",
-            "url": url_fonte,
-            "escreveu": False,
-            "custo_usd": float(rw.get("custo_usd_estimado", 0) or 0),
-            "tokens": int((rw.get("uso_tokens") or {}).get("total", 0) or 0),
-            "auditoria_pos_ia": auditoria_pos_ia,
-            "auditoria_evidencias": auditoria_evidencias,
-            "auditoria_lastro": auditoria_lastro,
-            "verificacao_factual": verificacao_factual,
-            "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate validacao factual pos-IA.",
-        }
-
-    # M05.2B: envio remoto permanece desabilitado mesmo sem credenciais.
-    # Nao existe caminho alternativo com PASS literal ou escrita em WP.
+    # M05.2C: uma unica saida fail-closed, independente de credenciais WP.
+    # Nenhum estado de evidencias atual autoriza publicacao ou draft remoto.
     return {
         "acao": "bloqueado",
         "motivo": "gate_factual_pos_ia_nao_integrado",
         "url": url_fonte,
         "escreveu": False,
+        "custo_usd": float(rw.get("custo_usd_estimado", 0) or 0),
+        "tokens": int((rw.get("uso_tokens") or {}).get("total", 0) or 0),
         "auditoria_pos_ia": auditoria_pos_ia,
         "auditoria_evidencias": auditoria_evidencias,
         "auditoria_lastro": auditoria_lastro,
         "verificacao_factual": verificacao_factual,
-        "aviso": "HTML local gerado; WordPress desabilitado ate certificacao factual.",
+        "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate certificacao factual.",
     }
 
 
