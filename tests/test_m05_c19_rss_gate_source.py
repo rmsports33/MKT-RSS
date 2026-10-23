@@ -48,7 +48,7 @@ def test_sem_alertas_nao_e_prova_factual():
 
 def test_rss_avalia_contrato_sem_liberar_wordpress():
     source = (Path(__file__).resolve().parents[1] / "pipeline_rss.py").read_text(encoding="utf-8")
-    assert 'avaliar_evidencias(rw.get("contrato_editorial"))' in source
+    assert 'avaliar_snapshot_editorial(rw.get("contrato_editorial"))' in source
     assert '"auditoria_evidencias": auditoria_evidencias' in source
-    assert source.index('avaliar_evidencias(rw.get("contrato_editorial"))') < source.index('gate_factual_pos_ia_nao_integrado')
+    assert source.index('avaliar_snapshot_editorial(rw.get("contrato_editorial"))') < source.index('gate_factual_pos_ia_nao_integrado')
     assert 'verificacao_factual = "NAO_VERIFICADO"' in source
