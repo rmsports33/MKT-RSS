@@ -117,11 +117,11 @@ def test_gate_desligado_mantem_publicacao_de_rascunho(monkeypatch, tmp_path):
     monkeypatch.delenv(ENV_FLAG, raising=False)
     with fluxo_mockado(monkeypatch, tmp_path, gate_resultado=_nao_deveria_rodar) as mocks:
         r = P.processar_item(ITEM)
-    assert r["acao"] == "publicado_rascunho"
-    assert r["run_id"]
+    assert r["acao"] == "bloqueado"
+    assert r["escreveu"] is False
     assert mocks.gate.call_count == 0
     assert mocks.rewrite.call_count == 1
-    assert mocks.publish.call_count == 1
+    assert mocks.publish.call_count == 0
 
 
 # --- Gate ligado: bloqueio antes da IA e do WP -----------------------------
@@ -155,10 +155,11 @@ def test_gate_ligado_aprovado_segue_ate_o_rascunho(monkeypatch, tmp_path):
     monkeypatch.setenv(ENV_FLAG, "yes")
     with fluxo_mockado(monkeypatch, tmp_path, gate_resultado=GATE_OK) as mocks:
         r = P.processar_item(ITEM)
-    assert r["acao"] == "publicado_rascunho"
+    assert r["acao"] == "bloqueado"
+    assert r["escreveu"] is False
     assert mocks.gate.call_count == 1
     assert mocks.rewrite.call_count == 1
-    assert mocks.publish.call_count == 1
+    assert mocks.publish.call_count == 0
 
 
 def test_gate_ligado_avalia_conteudo_extraido_antes_da_ia(monkeypatch, tmp_path):

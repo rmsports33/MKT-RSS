@@ -83,7 +83,7 @@ def avaliar_gate_publicacao(titulo: str, texto: str, links: list) -> dict:
         }
 
 
-def processar_item(item: dict, dry_run: bool = False) -> dict:
+def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None) -> dict:
     """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
     from mkt_flow_p0.content_filter import filtrar_item_rss, filtrar_conteudo, filtrar_por_tema
     from mkt_flow_p0.extractor import extrair_conteudo
@@ -147,7 +147,7 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
 
     rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
                             fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
-                            keywords=kws)
+                            keywords=kws, evidencias_aprovadas=evidencias_aprovadas)
     if "erro" in rw:
         return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
 
@@ -165,49 +165,43 @@ def processar_item(item: dict, dry_run: bool = False) -> dict:
     if credito_foto:
         html += f'\n<p class="credito-foto"><small>{credito_foto}</small></p>'
 
-    wp_url = os.getenv("WP_URL", "")
-    wp_result: dict = {"aviso": "WP_* não configurado — rascunho só local"}
-    if wp_url and os.getenv("WP_USER", "") and os.getenv("WP_APP_PASSWORD", ""):
-        from mkt_flow_p0.wp_publisher import publicar_no_wordpress, garantir_categoria, garantir_tag
-        wp_user, wp_pwd = os.getenv("WP_USER", ""), os.getenv("WP_APP_PASSWORD", "")
-        cat_id = garantir_categoria(wp_url, wp_user, wp_pwd, os.getenv("CATEGORIA_PADRAO", "Notícias"))
-        tag_ids = [t for t in (garantir_tag(wp_url, wp_user, wp_pwd, t) for t in rw["tags"]) if t]
-        try:
-            from mkt_flow_p0.links_internos import sugerir, inserir_box
-            _links = sugerir(html, ",".join(rw.get("tags", []) or []), wp_url)
-            html = inserir_box(html, _links)
-        except Exception as e:
-            logger.warning(f"links internos pulados: {e}")
-        wp_result = publicar_no_wordpress(
-            rw["titulo_seo"], html, "PASS", wp_url, wp_user, wp_pwd,
-            status_desejado="draft", imagem_url=imagem_url,
-            categoria_ids=[cat_id] if cat_id else None,
-            tag_ids=tag_ids or None,
-            slug=rw["slug"],
-            rank_math={"title": rw["titulo_seo"], "description": rw["meta_description"],
-                       "focus": (rw["tags"] or [""])[0]},
-        )
-
-    acao_wp = classificar_resultado_wp(wp_result)
-    if acao_wp != "publicado_rascunho":
-        return {"acao": "falha", "motivo": (wp_result or {}).get("erro") or
-                (wp_result or {}).get("aviso") or "WP não confirmou rascunho",
-                "url": url_fonte, "wp": wp_result}
-
-    run_id = str(uuid.uuid4())[:8]
-    init_db()
-    con = sqlite3.connect(DB_PATH)
-    con.execute("INSERT INTO rss_runs (id, fonte, url, titulo_seo, palavras, veredito, wp_post_id, wp_link, custo_usd, tokens_total, created_at)"
-                " VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                (run_id, item.get("fonte", ""), item.get("link", ""), rw["titulo_seo"], rw["palavras"],
-                 gate2["veredito"], (wp_result or {}).get("post_id"), (wp_result or {}).get("link"),
-                 float(rw.get("custo_usd_estimado", 0) or 0), int((rw.get("uso_tokens") or {}).get("total", 0) or 0),
-                 datetime.now().isoformat()))
-    con.commit()
-    con.close()
-    return {"acao": "publicado_rascunho", "run_id": run_id, "titulo_seo": rw["titulo_seo"],
-            "palavras": rw["palavras"], "custo_usd": rw.get("custo_usd_estimado", 0),
-            "tokens": (rw.get("uso_tokens") or {}).get("total", 0), "wp": wp_result}
+    # C19: nunca considerar a ausencia de alertas como aprovacao factual.
+    # A integracao do contrato de evidencias permanece obrigatoria.
+    from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
+    try:
+        auditoria_pos_ia = validar_saida(ext["texto"], rw["texto_markdown"])
+    except Exception as exc:
+        logger.warning("Gate editorial pos-IA falhou: %s", exc)
+        auditoria_pos_ia = {"veredito": "BLOQUEADO", "motivos": ["erro_gate_pos_ia"]}
+    # SEM_ALERTAS significa somente ausencia dos alertas implementados.
+    # Nao ha atestado independente de cada claim: manter envio WP bloqueado.
+    # Se o produtor fornecer snapshot v1.0, avaliar sua rastreabilidade.
+    # A ausencia do snapshot e uma falha, nunca uma aprovacao implicita.
+    from mkt_flow_p0.adaptador_contrato_editorial import avaliar_snapshot_editorial
+    try:
+        auditoria_evidencias = avaliar_snapshot_editorial(rw.get("contrato_editorial"))
+    except Exception as exc:
+        logger.warning("Contrato editorial invalido: %s", exc)
+        auditoria_evidencias = {"veredito": "BLOQUEADO", "motivos": ["erro_contrato_editorial"]}
+    from mkt_flow_p0.lastro_offline_noticia import auditar_lastro_offline
+    auditoria_lastro = auditar_lastro_offline(rw.get("contrato_editorial"), capturas_aprovadas)
+    # Mesmo EVIDENCIAS_ESTRUTURADAS nao certifica as claims do HTML.
+    verificacao_factual = "NAO_VERIFICADO"
+    # M05.2C: uma unica saida fail-closed, independente de credenciais WP.
+    # Nenhum estado de evidencias atual autoriza publicacao ou draft remoto.
+    return {
+        "acao": "bloqueado",
+        "motivo": "gate_factual_pos_ia_nao_integrado",
+        "url": url_fonte,
+        "escreveu": False,
+        "custo_usd": float(rw.get("custo_usd_estimado", 0) or 0),
+        "tokens": int((rw.get("uso_tokens") or {}).get("total", 0) or 0),
+        "auditoria_pos_ia": auditoria_pos_ia,
+        "auditoria_evidencias": auditoria_evidencias,
+        "auditoria_lastro": auditoria_lastro,
+        "verificacao_factual": verificacao_factual,
+        "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate certificacao factual.",
+    }
 
 
 def publicar_indice() -> dict:
