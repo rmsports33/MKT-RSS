@@ -49,7 +49,8 @@ def avaliar_retorno(pacote, resposta):
         if not isinstance(texto, str) or not texto.strip():
             raise ValueError("texto vazio")
         from mkt_flow_p0.auditoria_cobertura_pos_ia import auditar_cobertura_pos_ia
-        cobertura = auditar_cobertura_pos_ia(texto, contrato, capturas,\n                                             resposta.get("referencias_traducao"))
+        cobertura = auditar_cobertura_pos_ia(texto, contrato, capturas,
+                                             resposta.get("referencias_traducao"))
         corpus = "\n".join(str(v.get("texto", "")) for v in capturas.values())
         alertas = validar_saida(corpus, texto)
         return {"acao": "bloqueado", "escreveu": False,
