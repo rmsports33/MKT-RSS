@@ -1,6 +1,14 @@
 """Custo fail-closed ANTES da API, apenas no piloto cloud isolado."""
 from unittest.mock import patch
 
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _ledger_piloto(monkeypatch, tmp_path):
+    monkeypatch.setenv("CONEXO_CLOUD_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
+    monkeypatch.setenv("CONEXO_CLOUD_DAILY_BUDGET_USD", "1.0")
+
 from mkt_flow_p0 import rewriter
 
 BASE = {
@@ -102,3 +110,24 @@ def test_piloto_bloqueia_custo_nan(monkeypatch):
 def test_piloto_bloqueia_modelo_nao_permitido(monkeypatch):
     r = _gerar(monkeypatch, {"GROQ_MODEL": "modelo-desconhecido"})
     assert "Piloto cloud bloqueado" in r["erro"]
+
+
+def test_ledger_acumulado_bloqueia_terceira_reserva(monkeypatch, tmp_path):
+    from mkt_flow_p0.cloud_budget_ledger import reservar
+    monkeypatch.setenv("CONEXO_CLOUD_LEDGER_PATH", str(tmp_path / "daily.sqlite"))
+    monkeypatch.setenv("CONEXO_CLOUD_DAILY_BUDGET_USD", "0.002")
+    assert reservar(0.001) == ""
+    assert reservar(0.001) == ""
+    assert "esgotado" in reservar(0.001)
+
+
+def test_ledger_ausente_falha_fechada(monkeypatch):
+    from mkt_flow_p0.cloud_budget_ledger import reservar
+    monkeypatch.delenv("CONEXO_CLOUD_LEDGER_PATH")
+    assert "Falha fechada" in reservar(0.001)
+
+
+def test_ledger_nao_persistente_erro(monkeypatch, tmp_path):
+    from mkt_flow_p0.cloud_budget_ledger import reservar
+    monkeypatch.setenv("CONEXO_CLOUD_LEDGER_PATH", str(tmp_path / "missing" / "ledger.sqlite"))
+    assert "nao disponivel" in reservar(0.001)
