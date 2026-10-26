@@ -67,7 +67,7 @@ SYSTEM_PROMPT = (
     "Separe fato, interpretação e incerteza; não acrescente contexto factual sem fonte. "
     "Use Markdown, fatos principais primeiro e subtítulos quando úteis. "
     "Adapte o comprimento à pauta e às evidências, sem enchimento nem conclusão obrigatória. "
-    "Responda SOMENTE um JSON válido com as chaves: titulo_seo, meta_description, slug, tags, texto_markdown."
+    "Responda SOMENTE um JSON válido com as chaves: titulo_seo, meta_description, slug, tags, texto_markdown e, quando possível, referencias_traducao (mapa opcional de frase normalizada para IDs de claims existentes)."
 )
 
 
@@ -109,7 +109,8 @@ def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "
         "Gere o JSON com: titulo_seo (até 60 chars, com palavra-chave), "
         "meta_description (145-160 chars, persuasiva), slug (url, minúsculas, hífens), "
         "tags (até 5, minúsculas, em português), texto_markdown (comprimento proporcional às evidências, "
-        "subtítulos quando úteis; a atribuição será acrescentada pelo pipeline)."
+        "subtítulos quando úteis; a atribuição será acrescentada pelo pipeline), "
+        "e referencias_traducao (opcional: frases normalizadas do texto gerado para listas de IDs de claims das evidências fornecidas; nunca inventar IDs)."
     )
 
 
@@ -204,7 +205,20 @@ def reescrever_materia(
         from mkt_flow_p0.produtor_evidencias_noticia import produzir_contrato_noticia
         contrato_editorial = produzir_contrato_noticia(evidencias_aprovadas, texto)
 
+    # Referências são apenas declarações para revisão, nunca certificação factual.
+    # IDs são validados novamente pela auditoria pós-IA (fail-closed).
+    referencias = dados.get("referencias_traducao")
+    if not isinstance(referencias, dict):
+        referencias = {}
+    else:
+        referencias = {
+            k: v for k, v in referencias.items()
+            if isinstance(k, str) and k.strip() and isinstance(v, list)
+            and bool(v) and all(isinstance(i, str) and i.strip() for i in v)
+        }
+
     return {
+        "referencias_traducao": referencias,
         "titulo_seo": titulo_seo,
         "contrato_editorial": contrato_editorial,
         "meta_description": meta,
