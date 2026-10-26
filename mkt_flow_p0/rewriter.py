@@ -59,11 +59,14 @@ META_TITULO_MAX = 60
 META_DESC_MIN, META_DESC_MAX = 145, 160
 
 SYSTEM_PROMPT = (
-    "Você é um redator tech sênior do ConexoTech (PT-BR). "
-    "Reescreve a matéria com outras palavras, estrutura própria e tom jornalístico humano. "
+    "Você auxilia a redação do ConexoTech em PT-BR, com voz inteligente e acessível. "
+    "Reinaldo Mendes é o autor humano; Conexo Insight é a voz interna, não uma pessoa. "
+    "Explique o fato, sua relevância e o impacto para o leitor brasileiro com síntese própria. "
     "REGRAS DURAS: não invente fatos, números, specs ou datas; mantenha só o que está no texto original; "
     "não copie frases; não opine como se tivesse testado o produto; "
-    "texto final em Markdown com H2/H3, lead direto (4Ws), 500-800 palavras, conclusão curta. "
+    "Separe fato, interpretação e incerteza; não acrescente contexto factual sem fonte. "
+    "Use Markdown, fatos principais primeiro e subtítulos quando úteis. "
+    "Adapte o comprimento à pauta e às evidências, sem enchimento nem conclusão obrigatória. "
     "Responda SOMENTE um JSON válido com as chaves: titulo_seo, meta_description, slug, tags, texto_markdown."
 )
 
@@ -105,7 +108,8 @@ def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "
         f"{linha_kw}\n"
         "Gere o JSON com: titulo_seo (até 60 chars, com palavra-chave), "
         "meta_description (145-160 chars, persuasiva), slug (url, minúsculas, hífens), "
-        "tags (até 5, minúsculas, em português), texto_markdown (500-800 palavras, H2/H3, sem link da fonte no corpo)."
+        "tags (até 5, minúsculas, em português), texto_markdown (comprimento proporcional às evidências, "
+        "subtítulos quando úteis; a atribuição será acrescentada pelo pipeline)."
     )
 
 
@@ -136,6 +140,7 @@ def reescrever_materia(
     max_tokens: int = 2500,
     timeout: int = 60,
     keywords: list = None,
+    evidencias_aprovadas: dict = None,
 ) -> dict:
     """
     Reescreve 1 matéria. Gate de entrada: texto <100 palavras = {"erro"}
@@ -192,8 +197,16 @@ def reescrever_materia(
     if palavras_out < 200:
         return {"erro": f"Reescrita curta demais ({palavras_out} palavras) — rode de novo."}
 
+    # C19: o rewriter nao possui evidencias aprovadas por claim.
+    # Nunca atribuir PASS a partir de um JSON gerado pela propria IA.
+    contrato_editorial = None
+    if evidencias_aprovadas is not None:
+        from mkt_flow_p0.produtor_evidencias_noticia import produzir_contrato_noticia
+        contrato_editorial = produzir_contrato_noticia(evidencias_aprovadas, texto)
+
     return {
         "titulo_seo": titulo_seo,
+        "contrato_editorial": contrato_editorial,
         "meta_description": meta,
         "slug": slug,
         "tags": tags,
@@ -214,3 +227,4 @@ def adicionar_atribuicao(texto_markdown: str, fonte_nome: str, url_fonte: str) -
         return texto_markdown
     nome = fonte_nome or url_fonte
     return texto_markdown.rstrip() + f"\n\n---\n*Fonte original: [{nome}]({url_fonte})*"
+

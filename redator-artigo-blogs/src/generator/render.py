@@ -438,7 +438,7 @@ def montar_pagina(titulo: str, descricao: str, modelos: list, categoria: str,
   <meta name="description" content="{html.escape(descricao)}">
   <script type="application/ld+json">{{"@context": "https://schema.org", "@type": "Article",
 "headline": "{html.escape(nomes)}", "datePublished": "{data_iso}", "dateModified": "{data_iso}",
-"author": {{"@type": "Organization", "name": "Redação ConexoTech"}},
+"author": {{"@type": "Person", "name": "Reinaldo Mendes"}},
 "about": [{about}]}}</script>
 {video_ld}
 </head>
@@ -554,3 +554,4 @@ def gerar_comparativo(modelos: list, categoria: str = "celular", price_history: 
                           "unknown_fields": unknown_fields or [],
                           "video_id": (video or {}).get("youtube_id", ""),
                           "forcar": forcar}}
+

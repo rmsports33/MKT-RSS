@@ -1,0 +1,23 @@
+name: Conexo OS editorial validation (manual pilot)
+on:
+  workflow_dispatch:
+  pull_request:
+    branches: [fix/m05-c19-rss-failclosed, master]
+
+permissions:
+  contents: read
+
+jobs:
+  editorial-contract:
+    uses: rmsports33/conexo-os-runner/.github/workflows/editorial-validation.yml@362f7f71e8f035c04e1b73fe0feff0e678a62690
+    with:
+      test_paths: >-
+        tests/test_m058_cobertura_literal_regex.py
+        tests/test_m05_c19_produtor_evidencias.py
+        tests/test_m056_adaptador_contrato_editorial.py
+        tests/test_m055_vendor_contract_boundary.py
+        tests/test_m05_c19_rss_gate_source.py
+        tests/test_m052b_no_wp_publish.py
+        tests/test_m05_c19_evidence_adapter.py
+    permissions:
+      contents: read
