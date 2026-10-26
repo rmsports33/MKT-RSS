@@ -4,7 +4,7 @@ This is NOT an end-to-end live LLM test or factual certification.
 Requires internet connectivity and existing dependencies. Fails, rather than skips,
 when the primary source cannot be extracted.
 """
-from pathlib import Path
+import os
 from unittest.mock import patch
 import pytest
 
@@ -12,7 +12,7 @@ from mkt_flow_p0.extractor import extrair_conteudo
 
 SOURCE_URL = "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/"
 
-@pytest.mark.live_source
+@pytest.mark.skipif(os.getenv('CONEXO_LIVE_SOURCE_TEST') != '1', reason='Live HTTP opt-in: set CONEXO_LIVE_SOURCE_TEST=1')
 def test_real_primary_source_extraction_and_failclosed():
     # Real external source fetch performed by the repository's existing extractor.
     captured = extrair_conteudo(SOURCE_URL)
