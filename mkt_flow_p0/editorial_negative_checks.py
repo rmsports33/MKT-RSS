@@ -36,7 +36,7 @@ def check_preview(source: str, fields: dict, *, conflicting_sources: bool = Fals
         # not just an unrelated price and date somewhere in the document.
         prices = _PRICE.findall(text)
         dates = _DATE.findall(text)
-        sentences = re.split(r"(?<=[.!?])\\s+", source)
+        sentences = re.split(r"(?<=[.!?])\s+", source)
         matched_claim = all(
             any(price in sentence and date in sentence for sentence in sentences)
             for price in prices for date in dates
