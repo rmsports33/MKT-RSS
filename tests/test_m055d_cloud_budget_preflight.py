@@ -62,3 +62,43 @@ def test_sem_credencial_em_configuracao_valida(monkeypatch):
 def test_prompt_excede_teto_e_bloqueado(monkeypatch):
     r = _gerar(monkeypatch, {"CONEXO_CLOUD_MAX_INPUT_TOKENS": "1"})
     assert "Piloto cloud bloqueado" in r["erro"]
+
+
+def test_piloto_valido_respeita_limite_de_saida_sem_rede(monkeypatch):
+    """Contraprova positiva: somente cliente injetado, sem rede e sem WP."""
+    import json
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    for key, val in BASE.items():
+        monkeypatch.setenv(key, val)
+    resposta = json.dumps({
+        "titulo_seo": "Wi-Fi 7 e seus recursos",
+        "meta_description": "Explicação dos recursos do Wi-Fi 7.",
+        "slug": "wi-fi-7-recursos",
+        "tags": ["wifi"],
+        "texto_markdown": "Wi-Fi 7 tem recursos descritos pela fonte. " * 45,
+    })
+    completion = Mock(return_value=SimpleNamespace(
+        choices=[SimpleNamespace(message=SimpleNamespace(content=resposta))],
+        usage=SimpleNamespace(prompt_tokens=100, completion_tokens=200),
+    ))
+    client = SimpleNamespace(chat=SimpleNamespace(
+        completions=SimpleNamespace(create=completion)))
+    with patch.object(rewriter, "_get_client", return_value=(client, "")):
+        resultado = rewriter.reescrever_materia("Wi-Fi 7", "texto fonte " * 120)
+    assert "erro" not in resultado
+    assert resultado["modelo"] == BASE["CONEXO_CLOUD_ALLOWED_MODEL"]
+    assert resultado["uso_tokens"]["completion"] == 200
+    assert resultado["custo_usd_estimado"] <= float(BASE["CONEXO_CLOUD_BUDGET_USD"])
+    completion.assert_called_once()
+    assert completion.call_args.kwargs["max_tokens"] == 250
+
+
+def test_piloto_bloqueia_custo_nan(monkeypatch):
+    r = _gerar(monkeypatch, {"CONEXO_CLOUD_BUDGET_USD": "nan"})
+    assert "Piloto cloud bloqueado" in r["erro"]
+
+
+def test_piloto_bloqueia_modelo_nao_permitido(monkeypatch):
+    r = _gerar(monkeypatch, {"GROQ_MODEL": "modelo-desconhecido"})
+    assert "Piloto cloud bloqueado" in r["erro"]
