@@ -36,11 +36,10 @@ def check_preview(source: str, fields: dict, *, conflicting_sources: bool = Fals
         # not just an unrelated price and date somewhere in the document.
         prices = _PRICE.findall(text)
         dates = _DATE.findall(text)
+        sentences = re.split(r"(?<=[.!?])\\s+", source)
         matched_claim = all(
-            any(re.search(re.escape(price) + r"[^\\n]{0,100}" + re.escape(date), source)
-                or re.search(re.escape(date) + r"[^\\n]{0,100}" + re.escape(price), source)
-                for date in dates)
-            for price in prices
+            any(price in sentence and date in sentence for sentence in sentences)
+            for price in prices for date in dates
         ) if prices and dates else False
         if prices and not matched_claim:
             issues.append(f"preco_sem_evidencia_datada:{key}")
