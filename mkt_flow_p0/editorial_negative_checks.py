@@ -3,6 +3,7 @@
 Signals for blocking/manual review, not a semantic certification engine.
 """
 import re
+import json
 
 _NUMBER = re.compile(r"(?<!\w)\d+(?:[.,]\d+)*(?!\w)")
 _PRICE = re.compile(r"R\$\s*\d[\d.,]*", re.I)
@@ -26,14 +27,22 @@ def check_preview(source: str, fields: dict, *, conflicting_sources: bool = Fals
         if not isinstance(value, (str, list, dict)):
             issues.append(f"campo_invalido:{key}")
             continue
-        import json
         text = json.dumps(value, ensure_ascii=False) if not isinstance(value, str) else value
         if _OWN_TEST.search(text):
             issues.append(f"teste_proprio_nao_comprovado:{key}")
         # A presence of a date in the source does not substantiate any price. Require
         # price and dated observation together in source, and date in final field.
-        if _PRICE.search(text) and (not _DATE.search(text) or
-                                    not _PRICE.search(source) or not _DATE.search(source)):
+        # Require the complete price/date claim to occur together in the evidence,
+        # not just an unrelated price and date somewhere in the document.
+        prices = _PRICE.findall(text)
+        dates = _DATE.findall(text)
+        matched_claim = all(
+            any(re.search(re.escape(price) + r"[^\\n]{0,100}" + re.escape(date), source)
+                or re.search(re.escape(date) + r"[^\\n]{0,100}" + re.escape(price), source)
+                for date in dates)
+            for price in prices
+        ) if prices and dates else False
+        if prices and not matched_claim:
             issues.append(f"preco_sem_evidencia_datada:{key}")
         source_numbers = set(_NUMBER.findall(source))
         for number in set(_NUMBER.findall(text)):
@@ -42,3 +51,13 @@ def check_preview(source: str, fields: dict, *, conflicting_sources: bool = Fals
     return {"veredito": "BLOQUEADO" if issues else "REVISAO_OBRIGATORIA",
             "motivos": sorted(set(issues)), "certificacao_factual": False,
             "escreveu": False}
+
+
+def check_rendered(source: str, html: str, fields: dict) -> dict:
+    """Fail closed on missing rendered HTML and inspect its text as another field."""
+    if not isinstance(html, str) or not html.strip():
+        return {"veredito": "BLOQUEADO", "motivos": ["html_ausente"],
+                "certificacao_factual": False, "escreveu": False}
+    combined = dict(fields) if isinstance(fields, dict) else {}
+    combined["texto_markdown"] = str(combined.get("texto_markdown", "")) + "\\n" + html
+    return check_preview(source, combined)
