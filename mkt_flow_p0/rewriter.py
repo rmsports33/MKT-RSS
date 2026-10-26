@@ -224,8 +224,14 @@ def reescrever_materia(
     # Nunca atribuir PASS a partir de um JSON gerado pela propria IA.
     contrato_editorial = None
     if evidencias_aprovadas is not None:
-        from mkt_flow_p0.produtor_evidencias_noticia import produzir_contrato_noticia
-        contrato_editorial = produzir_contrato_noticia(evidencias_aprovadas, texto)
+        # Preserva apenas o snapshot externo validado; não fabrica um PASS.
+        # O gate posterior verifica o lastro da captura e a cobertura da tradução.
+        from mkt_flow_p0.adaptador_contrato_editorial import normalizar_snapshot_editorial
+        from mkt_flow_p0.contrato_evidencias_noticia import avaliar_evidencias
+        snapshot = normalizar_snapshot_editorial(evidencias_aprovadas)
+        if (snapshot is not None and
+                avaliar_evidencias(snapshot).get("veredito") == "EVIDENCIAS_ESTRUTURADAS"):
+            contrato_editorial = snapshot
 
     # Referências são apenas declarações para revisão, nunca certificação factual.
     # IDs são validados novamente pela auditoria pós-IA (fail-closed).
