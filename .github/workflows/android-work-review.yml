@@ -21,6 +21,13 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Download previously captured evidence (no new HTTP collection)
+        uses: actions/download-artifact@v4
+        with:
+          name: android-drop-evidence
+          run-id: 40359295669
+          github-token: ${{ github.token }}
+          path: original-evidence
       - name: Run real PR24 package import and semantic-review gate
         env:
           GITHUB_TOKEN: ${{ github.token }}
