@@ -22,7 +22,7 @@ def _frases(texto):
             if _normalizar(s)]
 
 
-def auditar_cobertura_pos_ia(texto_gerado, contrato, capturas):
+def auditar_cobertura_pos_ia(texto_gerado, contrato, capturas, referencias_traducao=None):
     """Só retorna COBERTURA_LITERAL quando há rastreio frase-a-frase.
 
     Resultados positivos são DIAGNÓSTICOS, nunca aprovação factual.
@@ -37,9 +37,25 @@ def auditar_cobertura_pos_ia(texto_gerado, contrato, capturas):
     aceitas = {_normalizar(c) for c in claims if isinstance(c, str) and c.strip()}
     frases = _frases(texto_gerado)
     faltantes = [s for s in frases if s not in aceitas]
+    # Referencias servem somente como fila de revisao semantica humana.
+    referencias_traducao = referencias_traducao or {}
+    ids = {c.get("id") for c in contrato["claims"]}
+    candidatas = []
+    nao_cobertas = []
+    for frase in faltantes:
+        refs = referencias_traducao.get(frase)
+        if isinstance(refs, list) and refs and all(isinstance(i, str) and i in ids for i in refs):
+            candidatas.append({"frase": frase, "claim_ids": refs})
+        else:
+            nao_cobertas.append(frase)
+    veredito = ("BLOQUEADO" if nao_cobertas else
+                "REVISAO_SEMANTICA_PENDENTE" if candidatas else "COBERTURA_LITERAL")
     return {
-        "veredito": "BLOQUEADO" if faltantes else "COBERTURA_LITERAL",
-        "motivos": ["frases_sem_claim_aprovada"] if faltantes else [],
+        "veredito": veredito,
+        "motivos": (["frases_sem_claim_aprovada"] if nao_cobertas else
+                    ["traducao_ou_parafrase_exige_revisao_humana"] if candidatas else []),
+        "candidatas_traducao": candidatas,
+        "sem_referencia": len(nao_cobertas),
         "frases": len(frases),
         "sem_correspondencia": len(faltantes),
         "certificacao_factual": False,
