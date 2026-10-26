@@ -74,3 +74,18 @@ def save_local(result: dict, path: Path) -> None:
         raise ValueError("somente JSON")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+def run_operational(source: str, *, approved_snapshot: bool = False,
+                    generate=None) -> dict:
+    """Only approved offline preview is usable as experimental operational entry.
+
+    Backward-compatible `evaluate` remains test-only and MUST NOT be exposed to
+    a network-enabled provider adapter. A callback is always denied here.
+    """
+    base = {"status": "BLOQUEADO", "verificacao_factual": "NAO_VERIFICADO",
+            "escreveu": False, "wordpress": "PROIBIDO"}
+    if generate is not None:
+        return {**base, "motivo": "callback_legado_desativado"}
+    from mkt_flow_p0.editorial_offline_adapter import run_offline
+    return run_offline(source, approved_snapshot=approved_snapshot)
