@@ -33,6 +33,18 @@ def preparar_pacote(contrato, capturas):
                              "Isto é uma prévia; não publique nem acesse WordPress.")}
 
 
+def preparar_pacote_completo(contrato, capturas):
+    """Caminho obrigatório para exportação operacional, rejeita excertos curtos."""
+    from mkt_flow_p0.captura_completa import verificar_captura_completa
+    if not isinstance(capturas, dict) or not capturas:
+        raise ValueError("Capturas completas ausentes")
+    ids = {f["id"] for f in contrato.get("sources", [])} if isinstance(contrato, dict) else set()
+    if not ids or set(capturas) != ids or not all(
+            verificar_captura_completa(item) for item in capturas.values()):
+        raise ValueError("Capturas incompletas, adulteradas ou fontes divergentes")
+    return preparar_pacote(contrato, capturas)
+
+
 def avaliar_retorno(pacote, resposta):
     """Analisa retorno colado/exportado do Work. Falha fechado em todos os casos."""
     try:
@@ -78,7 +90,7 @@ def main():
     if args.mode == "export":
         if not args.contract or not args.captures:
             parser.error("export requer --contract e --captures")
-        result = preparar_pacote(json.loads(args.contract.read_text(encoding="utf-8")),
+        result = preparar_pacote_completo(json.loads(args.contract.read_text(encoding="utf-8")),
                                  json.loads(args.captures.read_text(encoding="utf-8")))
     else:
         if not args.package or not args.response:
