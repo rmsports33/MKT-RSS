@@ -3,6 +3,8 @@ import hashlib
 import io
 import json
 import os
+import re
+import unicodedata
 from pathlib import Path
 from urllib.request import Request, urlopen
 from zipfile import ZipFile
@@ -34,12 +36,28 @@ def main():
          "evidence_ids": ["google-android-drop-sep2026"]}
         for cid, quote in CLAIMS]
     package = preparar_pacote_completo(contract, captures)
-    response = json.loads(Path("tests/fixtures/android_work_response_supervised.json").read_text(encoding="utf-8"))
+    editorial = json.loads(Path("docs/reviews/android_drop_semantic_review_20261026.json").read_text(encoding="utf-8"))
+    assert editorial["policy"]["publication_authorized"] is False
+    assert editorial["policy"]["semantic_review_by_user"] == "PENDENTE"
+    assert {r["id"] for r in editorial["reviews"]} == {cid for cid, _ in CLAIMS}
+    paragraphs = []
+    references = {}
+    for item in editorial["reviews"]:
+        revised = item["revised"].strip()
+        paragraphs.append(revised)
+        for sentence in re.split(r"(?<=[.!?])\\s+|\\n+", revised):
+            key = " ".join(unicodedata.normalize("NFKC", sentence).casefold().split())
+            if key:
+                references[key] = [item["id"]]
+    response = {"texto_markdown": "\\n".join(paragraphs), "referencias_traducao": references}
     report = avaliar_retorno(package, response)
     assert report["acao"] == "bloqueado" and report["escreveu"] is False
     assert report["verificacao_factual"] == "NAO_VERIFICADO"
     assert report["auditoria_cobertura"]["veredito"] == "REVISAO_SEMANTICA_PENDENTE", report
-    assert len(report["auditoria_cobertura"]["candidatas_traducao"]) == 5, report
+    assert len(report["auditoria_cobertura"]["candidatas_traducao"]) == len(references), report
+    assert report["auditoria_cobertura"]["sem_referencia"] == 0, report
+    assert report["auditoria_cobertura"]["certificacao_factual"] is False
+    assert report["auditoria_cobertura"]["autoriza_wordpress"] is False
     assert report["revisao_humana_pendente"] is True
     out = Path("evidence-review-output")
     out.mkdir(exist_ok=True)
