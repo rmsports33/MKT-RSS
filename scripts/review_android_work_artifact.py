@@ -45,11 +45,11 @@ def main():
     for item in editorial["reviews"]:
         revised = item["revised"].strip()
         paragraphs.append(revised)
-        for sentence in re.split(r"(?<=[.!?])\\s+|\\n+", revised):
+        for sentence in re.split(r"(?<=[.!?])\s+|\n+", revised):
             key = " ".join(unicodedata.normalize("NFKC", sentence).casefold().split())
             if key:
                 references[key] = [item["id"]]
-    response = {"texto_markdown": "\\n".join(paragraphs), "referencias_traducao": references}
+    response = {"texto_markdown": "\n".join(paragraphs), "referencias_traducao": references}
     report = avaliar_retorno(package, response)
     assert report["acao"] == "bloqueado" and report["escreveu"] is False
     assert report["verificacao_factual"] == "NAO_VERIFICADO"
