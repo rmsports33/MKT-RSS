@@ -2,6 +2,22 @@
 
 Objetivo: produzir **prévia editorial** pelo ChatGPT Work ou Codex usando apenas as evidências coletadas pelo MKT-RSS, sem API paga, sem autenticação automatizada na conta ChatGPT e **sem WordPress**.
 
+## Revisão de qualidade editorial (DNA oficial Conexo OS)
+
+A fonte normativa é [`rmsports33/conexo-os/docs/EDITORIAL_DNA_V1.md`](https://github.com/rmsports33/conexo-os/blob/main/docs/EDITORIAL_DNA_V1.md), indicada também pelos arquivos `AGENTS.md` do núcleo e do bot-redator. **Não criar uma segunda política editorial no MKT-RSS.**
+
+O pacote e o comando `review` conferem lastro, estrutura e rastreabilidade; **não certificam qualidade de matéria jornalística**. Antes de apresentar qualquer resultado como *artigo pronto para aprovação*:
+
+1. Identificar o gênero: notícia, guia, review ou comparativo; aplicar estrutura e comprimento proporcionais à pauta e à evidência.
+2. Avaliar separadamente **factualidade**, **forma**, **substância**, **elegância**, **SEO honesto**, **atribuição**, **direitos** e **disclosure**, conforme o DNA oficial.
+3. Para notícia, exigir contexto, relevância e utilidade verificável para o leitor, narrativa coesa e transições; cinco claims rastreadas não equivalem automaticamente a cinco parágrafos publicáveis.
+4. Se houver apenas claims e notas curtas, nomear **resumo de evidências** ou **rascunho editorial** — nunca *artigo pronto*. Sem contribuição verificável, optar por digest ou não produzir artigo.
+5. Distinguir o parecer editorial assistido do aceite humano: até aceite específico, estado `REVISAO_EDITORIAL_PENDENTE` e `REVISAO_SEMANTICA_PENDENTE`. Nenhum dos dois libera o WordPress, mesmo com CI verde.
+
+**Falha identificada no piloto Android (26/10/2026):** a prévia `docs/previews/android_drop_final_human_review_20261026.md` sintetizou cinco claims em parágrafos telegráficos e foi indevidamente tratada como prévia final. O responsável solicitou reescrita em formato de artigo. Preservar a captura original; reescrever a prévia sem acrescentar fatos não documentados, antes de pedir nova revisão editorial humana.
+
+Este procedimento é **uma checagem humana/documental**, não um gate de execução automática. Alterações nos prompts ou gates executáveis exigem tarefa separada, avaliação de impacto e testes proporcionais. Não altera `acao=bloqueado`, `escreveu=false`, nem autorizações de merge, deploy, custo ou publicação.
+
 ## Exportação (Python 3.12, stdlib + código existente)
 
 Após um revisor obter e aprovar o contrato EditorialContract 1.0 e capturas autênticas (não usar os fixtures de teste como fontes reais):
