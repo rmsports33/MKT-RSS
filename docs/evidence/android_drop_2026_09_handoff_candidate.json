@@ -1,0 +1,36 @@
+{
+  "payload": {
+    "schema": "conexo-work-handoff/1",
+    "contrato": {
+      "contract_version": "1.0",
+      "content_type": "noticia",
+      "status": "PASS",
+      "sources": [
+        {
+          "id": "google-android-2026-09",
+          "status": "PASS",
+          "url": "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/",
+          "retrieved_at": "2026-10-26"
+        }
+      ],
+      "claims": [
+        {
+          "id": "claim-rollout-keep",
+          "status": "PASS",
+          "text": "Rollout starts today in Google Messages.",
+          "evidence_ids": [
+            "google-android-2026-09"
+          ]
+        }
+      ]
+    },
+    "capturas": {
+      "google-android-2026-09": {
+        "url": "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/",
+        "texto": "Rollout starts today in Google Messages."
+      }
+    }
+  },
+  "sha256": "e30b40b2106492c235ee4db404a1d5c0af26dd03ed880e3459769181a8264cc0",
+  "instructions": "Redija em PT-BR somente com as evidências fornecidas, sem extrapolar disponibilidade. Devolva JSON com texto_markdown. Não publique nem use WordPress."
+}
