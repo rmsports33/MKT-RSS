@@ -62,7 +62,8 @@ def test_only_supplied_claim_ids_reach_output_and_prompt(monkeypatch):
     assert '"id": "c1"' in seen["prompt"]
     assert "Original claim." in seen["prompt"]
     assert '"id": "fake"' not in seen["prompt"]
-    assert result["contrato_editorial"] is None  # translated text is not literal certification
+    assert result["contrato_editorial"] == contract  # structural snapshot only; no semantic approval
+    assert result["contrato_editorial"] is not contract
 
 
 def test_invalid_contract_fails_before_provider(monkeypatch):
@@ -72,3 +73,30 @@ def test_invalid_contract_fails_before_provider(monkeypatch):
         "Teste", " ".join(["origem"] * 110),
         evidencias_aprovadas={"claims": [{"id": "fake", "status": "PASS"}]})
     assert "erro" in result
+
+
+def test_snapshot_preserved_but_translation_not_automatically_certified(monkeypatch):
+    from mkt_flow_p0.auditoria_cobertura_pos_ia import auditar_cobertura_pos_ia
+    contract = {
+        "contract_version": "1.0", "content_type": "noticia", "status": "PASS",
+        "sources": [{"id": "s1", "url": "https://example.org/source",
+                     "status": "PASS", "retrieved_at": "2026-10-26"}],
+        "claims": [{"id": "c1", "text": "The update was announced.",
+                    "status": "PASS", "evidence_ids": ["s1"]}],
+    }
+    translated = "A atualização foi anunciada."
+    output = {"texto_markdown": " ".join([translated] * 210),
+              "referencias_traducao": {translated.casefold(): ["c1"]}}
+    monkeypatch.setattr(rewriter, "_get_client", lambda: (fake_client(output), ""))
+    result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110),
+                                         evidencias_aprovadas=contract)
+    assert result["contrato_editorial"] == contract
+    assert result["contrato_editorial"] is not contract
+    capture = {"s1": {"url": "https://example.org/source",
+                       "texto": "The update was announced."}}
+    coverage = auditar_cobertura_pos_ia(
+        translated, result["contrato_editorial"], capture,
+        result["referencias_traducao"])
+    assert coverage["veredito"] == "REVISAO_SEMANTICA_PENDENTE"
+    assert coverage["certificacao_factual"] is False
+    assert coverage["autoriza_wordpress"] is False
