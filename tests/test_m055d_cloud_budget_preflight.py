@@ -6,9 +6,9 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _ledger_piloto(monkeypatch, tmp_path):
-    # Simular armazenamento persistente no escopo do teste, nao runner hospedado.
-    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
-    # Unit tests simulate a persistent local ledger; the separate Actions test\n    # explicitly restores GITHUB_ACTIONS=true and asserts fail-closed.\n    monkeypatch.setenv("GITHUB_ACTIONS", "false")\n    monkeypatch.setenv("CONEXO_CLOUD_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
+    # Simulacao local EXPLICITA; GitHub Actions real continua negado pelo ledger.
+    monkeypatch.setenv("GITHUB_ACTIONS", "false")
+    monkeypatch.setenv("CONEXO_CLOUD_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
     monkeypatch.setenv("CONEXO_CLOUD_DAILY_BUDGET_USD", "1.0")
 
 from mkt_flow_p0 import rewriter
@@ -125,7 +125,7 @@ def test_ledger_acumulado_bloqueia_terceira_reserva(monkeypatch, tmp_path):
 
 def test_ledger_ausente_falha_fechada(monkeypatch):
     from mkt_flow_p0.cloud_budget_ledger import reservar
-    monkeypatch.delenv("CONEXO_CLOUD_LEDGER_PATH")
+    monkeypatch.delenv("CONEXO_CLOUD_LEDGER_PATH", raising=False)
     assert "Falha fechada" in reservar(0.001)
 
 
