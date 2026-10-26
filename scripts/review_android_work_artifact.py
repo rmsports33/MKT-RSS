@@ -19,16 +19,7 @@ CLAIMS = [
 ]
 
 def main():
-    token = os.environ["GITHUB_TOKEN"]
-    req = Request("https://api.github.com/repos/rmsports33/MKT-RSS/actions/artifacts/"
-                  + str(ARTIFACT) + "/zip",
-                  headers={"Authorization": "Bearer " + token,
-                           "Accept": "application/vnd.github+json",
-                           "User-Agent": "conexo-pr24-review"})
-    with urlopen(req, timeout=30) as resp:
-        raw = resp.read(1_000_000)
-    with ZipFile(io.BytesIO(raw)) as arc:
-        original = json.loads(arc.read("android_drop_package.json"))
+    original = json.loads(Path("original-evidence/android_drop_package.json").read_text(encoding="utf-8"))
     payload = original["payload"]
     contract = payload["contrato"]
     captures = payload["capturas"]
