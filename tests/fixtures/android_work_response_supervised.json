@@ -1,0 +1,10 @@
+{
+  "texto_markdown": "O Google anunciou que o Gemini poderá ajudar a lembrar onde objetos foram guardados, com o Find Hub.\nO Motion Assist usa uma sobreposição visual que acompanha o movimento do veículo.\nO Guided vision foi anunciado para aparelhos com Android 9 ou posterior nos países em que o Gemini está disponível.\nO anúncio informa que a distribuição da integração ao Google Messages começou naquela data.\nO Google Messages oferece personalização de conversas com fundos e temas.",
+  "referencias_traducao": {
+    "o google anunciou que o gemini poderá ajudar a lembrar onde objetos foram guardados, com o find hub.": ["c1-findhub"],
+    "o motion assist usa uma sobreposição visual que acompanha o movimento do veículo.": ["c2-motion"],
+    "o guided vision foi anunciado para aparelhos com android 9 ou posterior nos países em que o gemini está disponível.": ["c3-guided"],
+    "o anúncio informa que a distribuição da integração ao google messages começou naquela data.": ["c4-keep"],
+    "o google messages oferece personalização de conversas com fundos e temas.": ["c5-theme"]
+  }
+}
