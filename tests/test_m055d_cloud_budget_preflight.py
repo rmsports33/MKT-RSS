@@ -131,3 +131,12 @@ def test_ledger_nao_persistente_erro(monkeypatch, tmp_path):
     from mkt_flow_p0.cloud_budget_ledger import reservar
     monkeypatch.setenv("CONEXO_CLOUD_LEDGER_PATH", str(tmp_path / "missing" / "ledger.sqlite"))
     assert "nao disponivel" in reservar(0.001)
+
+
+def test_github_actions_nao_usa_sqlite_efemero(monkeypatch, tmp_path):
+    from mkt_flow_p0.cloud_budget_ledger import reservar
+    monkeypatch.setenv("GITHUB_ACTIONS", "true")
+    monkeypatch.setenv("CONEXO_CLOUD_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
+    monkeypatch.setenv("CONEXO_CLOUD_DAILY_BUDGET_USD", "1.0")
+    assert "nao e compartilhado" in reservar(0.001)
+    assert not (tmp_path / "ledger.sqlite").exists()
