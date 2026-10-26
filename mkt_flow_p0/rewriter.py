@@ -193,6 +193,17 @@ def reescrever_materia(
     if erro_orcamento:
         return {"erro": erro_orcamento}
 
+    if os.getenv("CONEXO_CLOUD_PILOT") == "1":
+        from mkt_flow_p0.cloud_budget_ledger import reservar
+        cin = float(os.environ["GROQ_COST_PER_1K_INPUT"])
+        cout = float(os.environ["GROQ_COST_PER_1K_OUTPUT"])
+        entrada = int(os.environ["CONEXO_CLOUD_MAX_INPUT_TOKENS"])
+        saida = int(os.environ["CONEXO_CLOUD_MAX_OUTPUT_TOKENS"])
+        custo_reservado = (entrada * cin + saida * cout) / 1000
+        erro_ledger = reservar(custo_reservado)
+        if erro_ledger:
+            return {"erro": f"Piloto cloud bloqueado: {erro_ledger}"}
+
     client, erro = _get_client()
     if erro:
         return {"erro": erro}
