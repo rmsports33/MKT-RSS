@@ -94,11 +94,27 @@ def gerar_slug(titulo: str) -> str:
 
 
 def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "",
-                   keywords: list = None) -> str:
+                   keywords: list = None, evidencias_aprovadas: dict = None) -> str:
     fonte = f"\nFonte original: {fonte_nome}" if fonte_nome else ""
     kws = ", ".join([str(k) for k in (keywords or []) if str(k).strip()][:8])
     linha_kw = (f"\nPalavras-chave reais de busca (use no titulo_seo, texto e tags quando couber): {kws}."
                 if kws else "")
+    # Somente claims verificadas estruturalmente podem ser oferecidas à IA.
+    claims_disponiveis = []
+    if evidencias_aprovadas is not None:
+        from mkt_flow_p0.contrato_evidencias_noticia import avaliar_evidencias
+        if avaliar_evidencias(evidencias_aprovadas).get("veredito") != "EVIDENCIAS_ESTRUTURADAS":
+            raise ValueError("contrato de evidências inválido")
+        claims_disponiveis = [
+            {"id": c["id"], "text": c["text"]}
+            for c in evidencias_aprovadas["claims"]
+        ]
+    bloco_claims = ("\\nClaims de evidências fornecidas externamente (não são certificação factual): "
+                    + json.dumps(claims_disponiveis, ensure_ascii=False)
+                    + "\\nUse exclusivamente esses IDs em referencias_traducao, sem criar novos IDs. "
+                    + "Se não houver claim correspondente, omita a referência e mantenha revisão pendente."
+                    if claims_disponiveis else
+                    "\\nNenhuma claim aprovada foi fornecida. Devolva referencias_traducao vazio.")
     return (
         f"Título original: {titulo_original[:200]}\n{fonte}\n\n"
         f"Texto original (Markdown):\n{texto_original[:9000]}\n\n"
@@ -154,6 +170,12 @@ def reescrever_materia(
     if palavras_in < MIN_PALAVRAS_ENTRADA:
         return {"erro": f"Texto curto demais ({palavras_in} palavras, mínimo {MIN_PALAVRAS_ENTRADA}) — extraia o corpo completo antes."}
 
+    # Bloqueie contratos malformados antes de qualquer chamada ao provedor.
+    try:
+        prompt = montar_prompt(titulo_original, texto_original, fonte_nome, keywords,
+                              evidencias_aprovadas=evidencias_aprovadas)
+    except (ValueError, TypeError, KeyError, AttributeError):
+        return {"erro": "Contrato de evidências inválido"}
     client, erro = _get_client()
     if erro:
         return {"erro": erro}
@@ -164,7 +186,7 @@ def reescrever_materia(
             model=modelo,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": montar_prompt(titulo_original, texto_original, fonte_nome, keywords)},
+                {"role": "user", "content": prompt},
             ],
             temperature=temperature,
             max_tokens=max_tokens,
@@ -217,6 +239,10 @@ def reescrever_materia(
             and bool(v) and all(isinstance(i, str) and i.strip() for i in v)
         }
 
+    ids_permitidos = ({c["id"] for c in evidencias_aprovadas["claims"]}
+                      if evidencias_aprovadas is not None else set())
+    referencias = {k: v for k, v in referencias.items()
+                   if all(i in ids_permitidos for i in v)}
     return {
         "referencias_traducao": referencias,
         "titulo_seo": titulo_seo,
