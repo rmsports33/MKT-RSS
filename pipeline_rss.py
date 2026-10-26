@@ -185,6 +185,14 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         auditoria_evidencias = {"veredito": "BLOQUEADO", "motivos": ["erro_contrato_editorial"]}
     from mkt_flow_p0.lastro_offline_noticia import auditar_lastro_offline
     auditoria_lastro = auditar_lastro_offline(rw.get("contrato_editorial"), capturas_aprovadas)
+    from mkt_flow_p0.auditoria_cobertura_pos_ia import auditar_cobertura_pos_ia
+    try:
+        auditoria_cobertura = auditar_cobertura_pos_ia(
+            rw["texto_markdown"], rw.get("contrato_editorial"), capturas_aprovadas,
+            referencias_traducao=rw.get("referencias_traducao"))
+    except Exception as exc:
+        logger.warning("Auditoria de cobertura pos-IA falhou: %s", exc)
+        auditoria_cobertura = {"veredito": "BLOQUEADO", "motivos": ["erro_auditoria_cobertura"]}
     # Mesmo EVIDENCIAS_ESTRUTURADAS nao certifica as claims do HTML.
     verificacao_factual = "NAO_VERIFICADO"
     # M05.2C: uma unica saida fail-closed, independente de credenciais WP.
@@ -199,6 +207,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         "auditoria_pos_ia": auditoria_pos_ia,
         "auditoria_evidencias": auditoria_evidencias,
         "auditoria_lastro": auditoria_lastro,
+        "auditoria_cobertura": auditoria_cobertura,
         "verificacao_factual": verificacao_factual,
         "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate certificacao factual.",
     }

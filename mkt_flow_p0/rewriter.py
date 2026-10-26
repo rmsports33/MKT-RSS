@@ -67,7 +67,7 @@ SYSTEM_PROMPT = (
     "Separe fato, interpretação e incerteza; não acrescente contexto factual sem fonte. "
     "Use Markdown, fatos principais primeiro e subtítulos quando úteis. "
     "Adapte o comprimento à pauta e às evidências, sem enchimento nem conclusão obrigatória. "
-    "Responda SOMENTE um JSON válido com as chaves: titulo_seo, meta_description, slug, tags, texto_markdown."
+    "Responda SOMENTE um JSON válido com as chaves: titulo_seo, meta_description, slug, tags, texto_markdown e, quando possível, referencias_traducao (mapa opcional de frase normalizada para IDs de claims existentes)."
 )
 
 
@@ -94,22 +94,39 @@ def gerar_slug(titulo: str) -> str:
 
 
 def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "",
-                   keywords: list = None) -> str:
+                   keywords: list = None, evidencias_aprovadas: dict = None) -> str:
     fonte = f"\nFonte original: {fonte_nome}" if fonte_nome else ""
     kws = ", ".join([str(k) for k in (keywords or []) if str(k).strip()][:8])
     linha_kw = (f"\nPalavras-chave reais de busca (use no titulo_seo, texto e tags quando couber): {kws}."
                 if kws else "")
+    # Somente claims verificadas estruturalmente podem ser oferecidas à IA.
+    claims_disponiveis = []
+    if evidencias_aprovadas is not None:
+        from mkt_flow_p0.contrato_evidencias_noticia import avaliar_evidencias
+        if avaliar_evidencias(evidencias_aprovadas).get("veredito") != "EVIDENCIAS_ESTRUTURADAS":
+            raise ValueError("contrato de evidências inválido")
+        claims_disponiveis = [
+            {"id": c["id"], "text": c["text"]}
+            for c in evidencias_aprovadas["claims"]
+        ]
+    bloco_claims = ("\\nClaims de evidências fornecidas externamente (não são certificação factual): "
+                    + json.dumps(claims_disponiveis, ensure_ascii=False)
+                    + "\\nUse exclusivamente esses IDs em referencias_traducao, sem criar novos IDs. "
+                    + "Se não houver claim correspondente, omita a referência e mantenha revisão pendente."
+                    if claims_disponiveis else
+                    "\\nNenhuma claim aprovada foi fornecida. Devolva referencias_traducao vazio.")
     return (
         f"Título original: {titulo_original[:200]}\n{fonte}\n\n"
         f"Texto original (Markdown):\n{texto_original[:9000]}\n\n"
         "Escreva TUDO em português brasileiro (se o original estiver em outro idioma, "
         "traduza integralmente; mantenha nomes próprios, modelos e specs em inglês quando for nome oficial). "
         "Números, specs, preços e datas: copie exatos, nunca converta nem arredonde."
-        f"{linha_kw}\n"
+        f"{linha_kw}{bloco_claims}\n"
         "Gere o JSON com: titulo_seo (até 60 chars, com palavra-chave), "
         "meta_description (145-160 chars, persuasiva), slug (url, minúsculas, hífens), "
         "tags (até 5, minúsculas, em português), texto_markdown (comprimento proporcional às evidências, "
-        "subtítulos quando úteis; a atribuição será acrescentada pelo pipeline)."
+        "subtítulos quando úteis; a atribuição será acrescentada pelo pipeline), "
+        "e referencias_traducao (opcional: frases normalizadas do texto gerado para listas de IDs de claims das evidências fornecidas; nunca inventar IDs)."
     )
 
 
@@ -153,6 +170,12 @@ def reescrever_materia(
     if palavras_in < MIN_PALAVRAS_ENTRADA:
         return {"erro": f"Texto curto demais ({palavras_in} palavras, mínimo {MIN_PALAVRAS_ENTRADA}) — extraia o corpo completo antes."}
 
+    # Bloqueie contratos malformados antes de qualquer chamada ao provedor.
+    try:
+        prompt = montar_prompt(titulo_original, texto_original, fonte_nome, keywords,
+                              evidencias_aprovadas=evidencias_aprovadas)
+    except (ValueError, TypeError, KeyError, AttributeError):
+        return {"erro": "Contrato de evidências inválido"}
     client, erro = _get_client()
     if erro:
         return {"erro": erro}
@@ -163,7 +186,7 @@ def reescrever_materia(
             model=modelo,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": montar_prompt(titulo_original, texto_original, fonte_nome, keywords)},
+                {"role": "user", "content": prompt},
             ],
             temperature=temperature,
             max_tokens=max_tokens,
@@ -201,10 +224,33 @@ def reescrever_materia(
     # Nunca atribuir PASS a partir de um JSON gerado pela propria IA.
     contrato_editorial = None
     if evidencias_aprovadas is not None:
-        from mkt_flow_p0.produtor_evidencias_noticia import produzir_contrato_noticia
-        contrato_editorial = produzir_contrato_noticia(evidencias_aprovadas, texto)
+        # Preserva apenas o snapshot externo validado; não fabrica um PASS.
+        # O gate posterior verifica o lastro da captura e a cobertura da tradução.
+        from mkt_flow_p0.adaptador_contrato_editorial import normalizar_snapshot_editorial
+        from mkt_flow_p0.contrato_evidencias_noticia import avaliar_evidencias
+        snapshot = normalizar_snapshot_editorial(evidencias_aprovadas)
+        if (snapshot is not None and
+                avaliar_evidencias(snapshot).get("veredito") == "EVIDENCIAS_ESTRUTURADAS"):
+            contrato_editorial = snapshot
 
+    # Referências são apenas declarações para revisão, nunca certificação factual.
+    # IDs são validados novamente pela auditoria pós-IA (fail-closed).
+    referencias = dados.get("referencias_traducao")
+    if not isinstance(referencias, dict):
+        referencias = {}
+    else:
+        referencias = {
+            k: v for k, v in referencias.items()
+            if isinstance(k, str) and k.strip() and isinstance(v, list)
+            and bool(v) and all(isinstance(i, str) and i.strip() for i in v)
+        }
+
+    ids_permitidos = ({c["id"] for c in evidencias_aprovadas["claims"]}
+                      if evidencias_aprovadas is not None else set())
+    referencias = {k: v for k, v in referencias.items()
+                   if all(i in ids_permitidos for i in v)}
     return {
+        "referencias_traducao": referencias,
         "titulo_seo": titulo_seo,
         "contrato_editorial": contrato_editorial,
         "meta_description": meta,

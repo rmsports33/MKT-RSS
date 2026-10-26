@@ -136,7 +136,8 @@ def test_grafico_preco_nulo_nao_gera_secao():
 def test_titulo_usa_marca():
     pag = montar_pagina("Fone A vs Fone B — Comparativo", "desc", _modelos(), "audio", "<p>corpo</p>")
     assert "| ConexoTech" in pag and "| Redator" not in pag
-    assert "Redação ConexoTech" in pag
+    assert "Reinaldo Mendes" in pag
+    assert "Redação ConexoTech" not in pag
 
 
 def test_gerar_comparativo_injetado():

@@ -1,0 +1,44 @@
+name: Android Work source-based review
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'scripts/review_android_work_artifact.py'
+      - 'tests/fixtures/android_work_response_supervised.json'
+      - '.github/workflows/android-work-review.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download previously captured evidence (no new HTTP collection)
+        uses: actions/download-artifact@v4
+        with:
+          name: android-drop-evidence
+          run-id: 40359295669
+          github-token: ${{ github.token }}
+          path: original-evidence
+      - name: Run real PR24 package import and semantic-review gate
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WP_URL: ''
+          WP_USER: ''
+          WP_APP_PASSWORD: ''
+        run: python -m scripts.review_android_work_artifact
+      - name: Save full source-based review report
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-work-review
+          path: evidence-review-output/
+          retention-days: 7
+          if-no-files-found: error
