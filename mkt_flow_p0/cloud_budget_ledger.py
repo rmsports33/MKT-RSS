@@ -9,7 +9,11 @@ from pathlib import Path
 def reservar(custo: float) -> str:
     """Reserva o teto antes da API. Nunca libera automaticamente após erro."""
     try:
-        # GitHub-hosted runners have ephemeral filesystems.\n        # A local SQLite file cannot enforce a cap across runs.\n        if os.getenv("GITHUB_ACTIONS", "").lower() == "true":\n            return "Ledger SQLite local nao e compartilhado entre GitHub Actions; chamadas reais bloqueadas"\n        limite = float(os.environ["CONEXO_CLOUD_DAILY_BUDGET_USD"])
+        # GitHub-hosted runners have ephemeral filesystems.
+        # A local SQLite file cannot enforce a cap across runs.
+        if os.getenv("GITHUB_ACTIONS", "").lower() == "true":
+            return "Ledger SQLite local nao e compartilhado entre GitHub Actions; chamadas reais bloqueadas"
+        limite = float(os.environ["CONEXO_CLOUD_DAILY_BUDGET_USD"])
         path = Path(os.environ["CONEXO_CLOUD_LEDGER_PATH"]).expanduser()
         if not (math.isfinite(limite) and limite > 0 and
                 math.isfinite(custo) and 0 <= custo <= limite):
