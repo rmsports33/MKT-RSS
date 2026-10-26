@@ -131,6 +131,41 @@ def _estimar_custo(prompt_tok: int, completion_tok: int) -> float:
     return round(prompt_tok / 1000 * cin + completion_tok / 1000 * cout, 6)
 
 
+
+
+def _validar_orcamento_piloto(max_tokens: int, prompt: str) -> str:
+    """Bloqueia chamadas do piloto cloud sem teto explicito e precificacao valida.
+
+    O gate vale apenas quando CONEXO_CLOUD_PILOT=1, para preservar integrações
+    legadas até uma migração supervisionada separada.
+    """
+    if os.getenv("CONEXO_CLOUD_PILOT") != "1":
+        return ""
+    try:
+        limite = float(os.environ["CONEXO_CLOUD_BUDGET_USD"])
+        max_saida = int(os.environ["CONEXO_CLOUD_MAX_OUTPUT_TOKENS"])
+        max_entrada = int(os.environ["CONEXO_CLOUD_MAX_INPUT_TOKENS"])
+        modelo_permitido = os.environ["CONEXO_CLOUD_ALLOWED_MODEL"].strip()
+        custo_entrada = float(os.environ["GROQ_COST_PER_1K_INPUT"])
+        custo_saida = float(os.environ["GROQ_COST_PER_1K_OUTPUT"])
+        if not all(__import__("math").isfinite(x) and x >= 0 for x in
+                   (limite, custo_entrada, custo_saida)):
+            raise ValueError("valor financeiro invalido")
+        if not (0 < max_saida <= max_tokens and max_tokens > 0):
+            raise ValueError("limite de saida insuficiente")
+        if not (0 < max_entrada <= 20000 and modelo_permitido == _modelo()):
+            raise ValueError("limite de entrada/modelo invalido")
+        # Limite conservador: caracteres nao podem superar o teto informado
+        # (nao e um tokenizador; evita estimar tokens a menor).
+        if len(SYSTEM_PROMPT) + len(prompt) > max_entrada:
+            raise ValueError("prompt excede teto conservador de entrada")
+        custo_maximo = (max_entrada * custo_entrada + max_saida * custo_saida) / 1000
+        if custo_maximo > limite:
+            raise ValueError("custo maximo excede orcamento")
+    except (KeyError, ValueError, OverflowError) as exc:
+        return f"Piloto cloud bloqueado antes da IA: {exc}"
+    return ""
+
 def reescrever_materia(
     titulo_original: str,
     texto_original: str,
@@ -153,6 +188,11 @@ def reescrever_materia(
     if palavras_in < MIN_PALAVRAS_ENTRADA:
         return {"erro": f"Texto curto demais ({palavras_in} palavras, mínimo {MIN_PALAVRAS_ENTRADA}) — extraia o corpo completo antes."}
 
+    prompt_usuario = montar_prompt(titulo_original, texto_original, fonte_nome, keywords)
+    erro_orcamento = _validar_orcamento_piloto(max_tokens, prompt_usuario)
+    if erro_orcamento:
+        return {"erro": erro_orcamento}
+
     client, erro = _get_client()
     if erro:
         return {"erro": erro}
@@ -163,10 +203,11 @@ def reescrever_materia(
             model=modelo,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": montar_prompt(titulo_original, texto_original, fonte_nome, keywords)},
+                {"role": "user", "content": prompt_usuario},
             ],
             temperature=temperature,
-            max_tokens=max_tokens,
+            max_tokens=(int(os.environ["CONEXO_CLOUD_MAX_OUTPUT_TOKENS"])
+                        if os.getenv("CONEXO_CLOUD_PILOT") == "1" else max_tokens),
             timeout=timeout,
             response_format={"type": "json_object"},
         )
