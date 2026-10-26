@@ -1,0 +1,45 @@
+{
+  "schema": "conexo-editorial-semantic-review/1",
+  "source_artifact_id": 12670107789,
+  "source_capture_sha256": "129b2ec292812751745958b8f1f3ddd4c1f512b31aa5a24fcf402791da011f68",
+  "review_kind": "analise_editorial_assistida_sem_aprovacao_humana_final",
+  "reviews": [
+    {
+      "id": "c1-findhub",
+      "classification": "RESSALVA_NECESSARIA",
+      "reason": "Fonte usa 'Soon', menciona Android 16+ e países compatíveis; anúncio não equivale a disponibilidade geral.",
+      "revised": "Segundo o Google, o Gemini poderá guardar no Find Hub a localização de objetos informada pelo usuário. O recurso foi anunciado para Android 16 ou superior em países compatíveis."
+    },
+    {
+      "id": "c2-motion",
+      "classification": "RESSALVA_NECESSARIA",
+      "reason": "Fonte especifica passageiro, Android 17 e objetivo de reduzir enjoo, sem comprovação de eficácia.",
+      "revised": "O Motion Assist adiciona elementos visuais que acompanham o movimento do veículo. O Google apresenta o recurso como auxílio contra enjoo para passageiros, em aparelhos com Android 17."
+    },
+    {
+      "id": "c3-guided",
+      "classification": "TRADUCAO_FIEL_COM_QUALIFICADOR",
+      "reason": "A frase preserva Android 9+ e disponibilidade regional, mas é lançamento futuro.",
+      "revised": "O Guided vision foi anunciado para chegar a aparelhos com Android 9 ou posterior, nos países em que o Gemini estiver disponível."
+    },
+    {
+      "id": "c4-keep",
+      "classification": "RESSALVA_NECESSARIA",
+      "reason": "A expressão 'naquela data' depende de data externa ao trecho da claim, e a frase omite o Google Keep. A captura completa confirma contexto de notas do Keep e início de rollout, não universalidade.",
+      "revised": "O Google informou que a distribuição da integração do Google Keep ao Google Messages começou na data do anúncio, sem assegurar disponibilidade imediata a todos."
+    },
+    {
+      "id": "c5-theme",
+      "classification": "TRADUCAO_FIEL",
+      "reason": "Fonte menciona fundos e cores personalizados no Chat theme do Messages.",
+      "revised": "O Chat theme do Google Messages permite personalizar conversas com fundos e cores diferentes."
+    }
+  ],
+  "policy": {
+    "semantic_review_by_user": "PENDENTE",
+    "factual_certification": "NAO_VERIFICADO",
+    "wordpress_write": false,
+    "publication_authorized": false
+  },
+  "conclusion": "Parecer editorial assistido, não validação independente de um humano responsável. Requer confirmação final do editor e reexecução do gate com texto revisado."
+}
