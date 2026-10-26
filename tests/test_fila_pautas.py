@@ -1,0 +1,73 @@
+"""Regressões da fila RSS P0: execução offline, sem rede ou credenciais."""
+import tempfile
+import unittest
+from pathlib import Path
+from unittest.mock import patch
+
+from mkt_flow_p0 import fila_pautas as fila
+
+
+class TestFilaPautas(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.db = Path(self.tmp.name) / "pautas.db"
+        self.a = {"fonte": "teste", "link": "https://example.org/android?utm_source=rss",
+                  "titulo": "Google anuncia novas funções para Android em setembro",
+                  "published": "2026-09-01"}
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_idempotencia_url_canonica(self):
+        first = fila.registrar(self.a, self.db)
+        second = fila.registrar({**self.a, "link": "https://example.org/android"}, self.db)
+        self.assertTrue(first["novo"])
+        self.assertFalse(second["novo"])
+        self.assertEqual(first["id"], second["id"])
+        self.assertEqual(len(fila.listar(db_path=self.db)), 1)
+
+    def test_titulo_semelhante_em_outra_fonte(self):
+        first = fila.registrar(self.a, self.db)
+        second = fila.registrar({**self.a, "fonte": "outro",
+                                 "link": "https://another.example/report"}, self.db)
+        self.assertFalse(second["novo"])
+        self.assertEqual(second["motivo"], "titulo_semelhante")
+        self.assertEqual(first["id"], second["id"])
+
+    def test_estados_e_retentativa(self):
+        uid = fila.registrar(self.a, self.db)["id"]
+        with self.assertRaises(ValueError):
+            fila.mudar_estado(uid, "CONCLUIDA", db_path=self.db)
+        fila.mudar_estado(uid, "SELECIONADA", db_path=self.db)
+        fila.mudar_estado(uid, "EM_PRODUCAO", db_path=self.db)
+        fila.mudar_estado(uid, "SELECIONADA", motivo="falha recuperável", db_path=self.db)
+        self.assertEqual(fila.listar("SELECIONADA", db_path=self.db)[0]["id"], uid)
+
+    def test_bloqueado_nao_pode_publicar(self):
+        uid = fila.registrar(self.a, self.db)["id"]
+        fila.mudar_estado(uid, "BLOQUEADA", db_path=self.db)
+        with self.assertRaises(ValueError):
+            fila.mudar_estado(uid, "CONCLUIDA", db_path=self.db)
+
+    def test_ranking_deterministico(self):
+        a = fila.registrar(self.a, self.db)
+        b = fila.registrar({"fonte": "teste", "link": "https://example.org/other",
+                            "titulo": "Assunto genérico diferente"}, self.db)
+        self.assertGreater(a["pontuacao"], b["pontuacao"])
+
+    def test_falha_turso_nao_cria_sqlite_local(self):
+        with patch.object(fila.cloud_db, "turso_enabled", return_value=True), \
+             patch.object(fila.cloud_db, "turso_execute", return_value={"erro": "offline"}):
+            with self.assertRaises(RuntimeError):
+                fila.registrar(self.a)
+        self.assertFalse(self.db.exists())
+
+    def test_input_invalido(self):
+        with self.assertRaises(ValueError):
+            fila.registrar({**self.a, "link": "file:///etc/passwd"}, self.db)
+        with self.assertRaises(ValueError):
+            fila.registrar({**self.a, "titulo": ""}, self.db)
+
+
+if __name__ == "__main__":
+    unittest.main()
