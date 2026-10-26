@@ -6,6 +6,8 @@ import pytest
 
 @pytest.fixture(autouse=True)
 def _ledger_piloto(monkeypatch, tmp_path):
+    # Simular armazenamento persistente no escopo do teste, nao runner hospedado.
+    monkeypatch.delenv("GITHUB_ACTIONS", raising=False)
     monkeypatch.setenv("CONEXO_CLOUD_LEDGER_PATH", str(tmp_path / "ledger.sqlite"))
     monkeypatch.setenv("CONEXO_CLOUD_DAILY_BUDGET_USD", "1.0")
 
