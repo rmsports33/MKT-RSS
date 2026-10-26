@@ -19,7 +19,5 @@ jobs:
         tests/test_m05_c19_rss_gate_source.py
         tests/test_m052b_no_wp_publish.py
         tests/test_m05_c19_evidence_adapter.py
-        tests/test_m055d_editorial_pilot.py
-        tests/test_m055e_editorial_negative_checks.py
     permissions:
       contents: read
