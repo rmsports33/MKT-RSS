@@ -1,5 +1,5 @@
 """
-mkt_flow_p0.rewriter — Reescrita própria via Groq (P0)
+mkt_flow_p0.rewriter — Reescrita via OpenAI API (execução opt-in)
 Substitui reescrita fechada dos plugins (AINP/AutoBlog/GeraNews).
 Roda DEPOIS do extractor e ANTES do wp_publisher.
 
@@ -39,51 +39,38 @@ def _ensure_env():
 
 
 def _modelo() -> str:
-    return os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    # Model name is explicit to avoid silently choosing an unavailable/paid model.
+    return os.getenv("OPENAI_MODEL", "").strip()
 
 
 def _custos() -> tuple:
+    # Do not invent rates; optional explicit account-configured USD prices.
     try:
-        cin = float(os.getenv("GROQ_COST_PER_1K_INPUT", "0.00015"))
+        cin = float(os.getenv("OPENAI_COST_PER_1K_INPUT", "0"))
+        cout = float(os.getenv("OPENAI_COST_PER_1K_OUTPUT", "0"))
+        return cin, cout
     except ValueError:
-        cin = 0.00015
-    try:
-        cout = float(os.getenv("GROQ_COST_PER_1K_OUTPUT", "0.00075"))
-    except ValueError:
-        cout = 0.00075
-    return cin, cout
-
-
-MIN_PALAVRAS_ENTRADA = 100
-META_TITULO_MAX = 60
-META_DESC_MIN, META_DESC_MAX = 145, 160
-
-SYSTEM_PROMPT = (
-    "Você auxilia a redação do ConexoTech em PT-BR, com voz inteligente e acessível. "
-    "Reinaldo Mendes é o autor humano; Conexo Insight é a voz interna, não uma pessoa. "
-    "Explique o fato, sua relevância e o impacto para o leitor brasileiro com síntese própria. "
-    "REGRAS DURAS: não invente fatos, números, specs ou datas; mantenha só o que está no texto original; "
-    "não copie frases; não opine como se tivesse testado o produto; "
-    "Separe fato, interpretação e incerteza; não acrescente contexto factual sem fonte. "
-    "Use Markdown, fatos principais primeiro e subtítulos quando úteis. "
-    "Adapte o comprimento à pauta e às evidências, sem enchimento nem conclusão obrigatória. "
-    "Responda SOMENTE um JSON válido com as chaves: titulo_seo, meta_description, slug, tags, texto_markdown."
-)
+        return 0.0, 0.0
 
 
 def _get_client():
+    # Both explicit opt-in and a separate OpenAI API key are mandatory.
+    if os.getenv("CONEXO_OPENAI_API_ENABLED", "").strip().lower() != "true":
+        return None, "OpenAI API desativada: CONEXO_OPENAI_API_ENABLED != true"
     _ensure_env()
-    try:
-        from groq import Groq
-    except ImportError:
-        return None, "groq não instalado — rode: pip install groq"
-    api_key = (os.getenv("GROQ_API_KEY") or "").strip()
+    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
     if not api_key:
-        return None, "GROQ_API_KEY ausente no .env — obtenha em https://console.groq.com"
+        return None, "OPENAI_API_KEY ausente; assinatura ChatGPT não inclui API"
+    if not _modelo():
+        return None, "OPENAI_MODEL ausente; escolha explicitamente um modelo disponível"
     try:
-        return Groq(api_key=api_key), ""
+        from openai import OpenAI
+    except ImportError:
+        return None, "Biblioteca openai não instalada"
+    try:
+        return OpenAI(api_key=api_key), ""
     except Exception as e:
-        return None, f"Falha ao inicializar Groq: {str(e)[:120]}"
+        return None, f"Falha ao inicializar cliente OpenAI: {str(e)[:120]}"
 
 
 def gerar_slug(titulo: str) -> str:
@@ -173,11 +160,11 @@ def reescrever_materia(
     except Exception as e:
         msg = str(e)
         if "401" in msg or "invalid_api_key" in msg.lower():
-            return {"erro": "GROQ_API_KEY inválida — gere outra em console.groq.com"}
+            return {"erro": "OPENAI_API_KEY inválida"}
         if "429" in msg or "rate" in msg.lower():
-            return {"erro": "Limite Groq atingido (429) — aguarde 1-2 min e tente de novo (tier grátis)."}
-        logger.warning(f"rewriter groq falhou: {msg[:200]}")
-        return {"erro": f"Falha Groq: {msg[:150]}"}
+            return {"erro": "Limite ou quota da API OpenAI atingido (429)"}
+        logger.warning("rewriter OpenAI falhou: %s", msg[:200])
+        return {"erro": f"Falha OpenAI: {msg[:150]}"}
 
     try:
         raw = resp.choices[0].message.content or ""
