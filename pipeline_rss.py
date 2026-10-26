@@ -188,7 +188,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     from mkt_flow_p0.auditoria_cobertura_pos_ia import auditar_cobertura_pos_ia
     try:
         auditoria_cobertura = auditar_cobertura_pos_ia(
-            rw["texto_markdown"], rw.get("contrato_editorial"), capturas_aprovadas)
+            rw["texto_markdown"], rw.get("contrato_editorial"), capturas_aprovadas,
+            referencias_traducao=rw.get("referencias_traducao"))
     except Exception as exc:
         logger.warning("Auditoria de cobertura pos-IA falhou: %s", exc)
         auditoria_cobertura = {"veredito": "BLOQUEADO", "motivos": ["erro_auditoria_cobertura"]}
