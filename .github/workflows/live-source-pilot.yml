@@ -7,6 +7,11 @@ on:
       - 'tests/test_live_primary_source_failclosed.py'
       - 'redator-artigo-blogs/tests/test_render.py'
       - '.github/workflows/live-source-pilot.yml'
+  pull_request:
+    branches: [master]
+    paths:
+      - 'tests/test_live_primary_source_failclosed.py'
+      - '.github/workflows/live-source-pilot.yml'
   workflow_dispatch:
 permissions:
   contents: read
