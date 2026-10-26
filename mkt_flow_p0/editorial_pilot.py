@@ -6,8 +6,8 @@ autorização explícita, nunca importa clientes externos ou credenciais.
 from __future__ import annotations
 import hashlib
 import json
-import re
-from dataclasses import asdict, dataclass
+import math
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -38,14 +38,18 @@ def evaluate(source: str, policy: Policy, generate: Callable[[str], dict] | None
         return {**base, "motivo": "fonte_ausente_ou_excessiva"}
     if not policy.approved or not policy.model or generate is None:
         return {**base, "motivo": "autorizacao_ou_executor_ausente"}
-    if (policy.max_output_tokens < 1 or policy.max_output_tokens > MAX_TOKENS or
-        policy.max_cost_usd <= 0 or policy.input_usd_per_1k <= 0 or
-        policy.output_usd_per_1k <= 0):
+    money = (policy.max_cost_usd, policy.input_usd_per_1k, policy.output_usd_per_1k)
+    if (not isinstance(policy.max_output_tokens, int) or isinstance(policy.max_output_tokens, bool) or
+        policy.max_output_tokens < 1 or policy.max_output_tokens > MAX_TOKENS or
+        any(not isinstance(v, (int, float)) or isinstance(v, bool) or
+            not math.isfinite(v) or v <= 0 for v in money)):
         return {**base, "motivo": "limites_invalidos"}
     estimated = _estimate_upper_bound(source, policy)
-    if estimated > policy.max_cost_usd:
+    if not math.isfinite(estimated) or estimated > policy.max_cost_usd:
         return {**base, "motivo": "orcamento_insuficiente",
                 "teto_calculado_usd": round(estimated, 8)}
+    # A callback is NOT a security sandbox: never pass untrusted/provider
+    # callbacks here until process-level network and credential isolation exists.
     try:
         raw = generate(source)
     except Exception:
