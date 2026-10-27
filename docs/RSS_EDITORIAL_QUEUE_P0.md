@@ -37,3 +37,13 @@ Prova real **concluída** no run [40503549660](https://github.com/rmsports33/MKT
 **Risco residual:** operações `SELECT` seguido de `INSERT` são separadas: o índice de URL previne duplicata por ID, mas a comparação aproximada de títulos não é transacional entre trabalhadores concorrentes. Não habilitar coleta paralela/agendada até validar serialização ou mecanismo atômico adequado. SQLite no runner efêmero não persiste entre runs; Turso é candidato para persistência real, condicionado à verificação supervisionada de disponibilidade e custos.
 
 **Próxima validação específica:** com base remota de testes explicitamente autorizada, executar duas execuções independentes usando o mesmo Turso, sem WordPress e confirmar IDs/duplicatas. Se não existir ambiente apropriado, manter a fila opt-in e bloquear agendamentos. Sem novos provedores, servidores, merge, deploy ou publicação.
+
+## Decisão específica de persistência e concorrência (27/10/2026)
+
+**Teste acrescentado:** `test_turso_simulado_preserva_entre_chamadas_independentes` exercita o adaptador `turso_execute` contra um backend SQLite isolado, preservando registros entre invocações da API. É uma prova offline de compatibilidade de interface — **não** é validação do serviço Turso real, de persistência entre jobs ou de latência/conectividade.
+
+**Verificação de ambiente:** o código requer `TURSO_DATABASE_URL` e `TURSO_AUTH_TOKEN`, mas uma base Turso **isolada e autorizada** não foi identificada nesta sessão. Não reutilizar banco de produção, não exibir segredos, não configurar serviços ou gastos silenciosamente. Resultado remoto: `BLOQUEADO_POR_AMBIENTE_NAO_CONFIRMADO`.
+
+**Concorrência avaliada:** o identificador SHA-256 da URL canônica tem restrição `PRIMARY KEY`, então `INSERT OR IGNORE` evita duas linhas da mesma URL, embora o sinal `novo` dependa de contagem de linhas. Para URLs diferentes com títulos similares, a leitura dos 200 títulos e a escrita ocorrem fora de uma transação serializável: dois workers podem passar juntos pelo filtro aproximado e inserir duas pautas. O mesmo vale para `mudar_estado` em backend remoto: a atualização condicional protege contra alteração do estado que mudou, mas necessita observar a contagem de linhas afetadas.
+
+**Critério para liberar execução contínua:** demonstrar uma base de testes distinta, rodar duas tarefas independentes apontando ao mesmo banco e realizar teste de dois coletores concorrentes; se a deduplicação aproximada falhar, implementar transação/serialização na camada de persistência, com testes. Até isso ocorrer, **não agendar, não operar em paralelo e não integrar ao master automaticamente**.
