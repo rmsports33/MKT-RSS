@@ -51,14 +51,13 @@ if _raw_allowed:
                 pass
 
 def _is_allowed(update) -> bool:
-    """True se ALLOWED_IDS vazio (aberto, com aviso) ou user/chat na lista."""
+    """Permite somente o ID individual do usuário explicitamente autorizado."""
     if not ALLOWED_IDS:
-        logger.warning("TELEGRAM_ALLOWED_IDS vazio — bot aberto a qualquer chat (defina IDs em .env para travar)")
-        return True
+        logger.warning("TELEGRAM_ALLOWED_IDS vazio — acesso negado por padrão")
+        return False
     try:
         uid = getattr(getattr(update, "effective_user", None), "id", None)
-        cid = getattr(getattr(update, "effective_chat", None), "id", None)
-        return (uid in ALLOWED_IDS) or (cid in ALLOWED_IDS)
+        return uid is not None and uid in ALLOWED_IDS
     except Exception:
         return False
 
@@ -243,7 +242,7 @@ try:
             print("TELEGRAM_BOT_TOKEN ausente — defina no .env ou Secrets (e TELEGRAM_ALLOWED_IDS para travar)")
             return
         if not ALLOWED_IDS:
-            print("AVISO: TELEGRAM_ALLOWED_IDS vazio — bot aceitará qualquer chat. Defina IDs para prod.")
+            print("ACESSO BLOQUEADO: TELEGRAM_ALLOWED_IDS vazio. Defina IDs individuais para permitir acesso.")
         app = Application.builder().token(TOKEN).build()
         app.add_handler(CommandHandler("start", cmd_start))
         app.add_handler(CommandHandler("help", cmd_start))
@@ -271,7 +270,7 @@ try:
         except Exception as e:
             logger.warning(f"/link nao registrado: {e}")
         app.add_error_handler(on_error)
-        print(f"Bot rodando — envie /drafts no Telegram (allowlist: {ALLOWED_IDS or 'aberta'})")
+        print(f"Bot rodando — envie /drafts no Telegram (allowlist: {ALLOWED_IDS or 'bloqueada'})")
         #(drop_pending_updates=False: o bot roda em rodadas curtas; descartar o que
         # chegou na pausa fazia o dono "perder" comandos. Assim a mensagem espera no
         # Telegram e e respondida no proximo round. Redundancia de rede evitada pelo
