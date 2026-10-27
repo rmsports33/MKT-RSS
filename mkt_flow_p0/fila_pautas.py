@@ -2,6 +2,8 @@
 import hashlib
 import re
 import sqlite3
+import uuid
+import time
 import unicodedata
 from datetime import datetime, timezone
 from difflib import SequenceMatcher
@@ -71,6 +73,32 @@ def _exec(sql, args=(), db_path=None):
         return cur.fetchall() if cur.description else [], cur.rowcount
 
 
+MUTEX_SCHEMA = """CREATE TABLE IF NOT EXISTS rss_queue_mutex (
+ name TEXT PRIMARY KEY, owner TEXT NOT NULL, expires_at INTEGER NOT NULL)"""
+
+
+def _reserve_writer(db_path=None):
+    """Single-writer lease across SQLite/Turso; fail closed on contention."""
+    _exec(MUTEX_SCHEMA, db_path=db_path)
+    owner = uuid.uuid4().hex
+    now = int(time.time())
+    _, affected = _exec(
+        """INSERT INTO rss_queue_mutex(name, owner, expires_at)
+           VALUES ('registration', ?, ?)
+           ON CONFLICT(name) DO UPDATE SET owner=excluded.owner,
+               expires_at=excluded.expires_at
+           WHERE rss_queue_mutex.expires_at < ?""",
+        (owner, now + 300, now), db_path)
+    if affected != 1:
+        raise RuntimeError("Fila RSS ocupada por outro coletor; tente novamente")
+    return owner
+
+
+def _release_writer(owner, db_path=None):
+    _exec("DELETE FROM rss_queue_mutex WHERE name='registration' AND owner=?",
+          (owner,), db_path)
+
+
 def init_queue(db_path=None):
     _exec(SCHEMA, db_path=db_path)
     _exec("CREATE INDEX IF NOT EXISTS idx_rss_pautas_estado ON rss_pautas(estado, pontuacao)",
@@ -87,6 +115,14 @@ def registrar(item, db_path=None):
     if not norm:
         raise ValueError("Título RSS vazio")
     init_queue(db_path)
+    owner = _reserve_writer(db_path)
+    try:
+        return _registrar_serializado(item, url, title, norm, db_path)
+    finally:
+        _release_writer(owner, db_path)
+
+
+def _registrar_serializado(item, url, title, norm, db_path):
     uid = hashlib.sha256(url.encode()).hexdigest()[:32]
     previous, _ = _exec("SELECT id FROM rss_pautas WHERE id=?", (uid,), db_path)
     if previous:
