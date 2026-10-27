@@ -6,11 +6,12 @@ Implementação **opt-in** independente do pipeline legado e do WordPress.
 
 ```bash
 python rss_queue_collect.py --fonte 9to5google --limit 5
+python pipeline_rss.py --queue-only --fonte 9to5google --limit 5
 python rss_queue_collect.py --listar --limit 20
 python -m pytest tests/test_fila_pautas.py -q
 ```
 
-Sem `--fonte`, consulta as sete fontes já cadastradas. A coleta exige rede apenas para os feeds. O módulo `mkt_flow_p0.fila_pautas` não faz chamadas de rede e não invoca IA ou WordPress. Não existe agendamento novo. O pipeline `pipeline_rss.py` original permanece inalterado.
+Sem `--fonte`, consulta as sete fontes já cadastradas. A coleta exige rede apenas para os feeds. O módulo `mkt_flow_p0.fila_pautas` não faz chamadas de rede e não invoca IA ou WordPress. Não existe agendamento novo. O pipeline `pipeline_rss.py` inclui somente a opção explícita `--queue-only`, que despacha para a coleta de pautas e retorna sem gerar texto ou contactar WordPress; sem essa opção, o fluxo legado segue inalterado. `--queue-only --dry-run` é rejeitado.
 
 ## Persistência e rastreabilidade
 
@@ -22,7 +23,7 @@ A pontuação inicial é heurística, transparente e determinística; não cont�
 
 ## Limites da entrega
 
-- A execução do coletor legado não é alterada; a migração gradual exigirá uma segunda tarefa e aceite.
+- O comportamento do coletor legado sem `--queue-only` não é alterado; ativação operacional/agendamento exige etapa separada.
 - Sem retries transacionais avançados nem agrupamento semântico multilíngue nesta fase.
 - Concorrência entre coletores remotos demanda validação de idempotência específica antes de agendamentos.
 - Nenhum agendador, API paga, mudança nos gates de WordPress, deploy ou publicação.
