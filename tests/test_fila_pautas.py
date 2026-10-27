@@ -1,5 +1,6 @@
 """Regressões da fila RSS P0: execução offline, sem rede ou credenciais."""
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -97,6 +98,46 @@ class TestFilaPautas(unittest.TestCase):
         right = fila._url("https://example.org/b")
         self.assertNotEqual(fila.hashlib.sha256(left.encode()).hexdigest()[:32],
                             fila.hashlib.sha256(right.encode()).hexdigest()[:32])
+
+    def test_concorrencia_titulos_similares_sem_duplicacao(self):
+        """Dois workers disputam o lease; apenas um grava a pauta."""
+        entrou = threading.Event()
+        liberar = threading.Event()
+        original = fila._registrar_serializado
+        outcomes = []
+
+        def pause(*args):
+            entrou.set()
+            self.assertTrue(liberar.wait(timeout=5))
+            return original(*args)
+
+        def worker():
+            try:
+                outcomes.append(fila.registrar(self.a, self.db))
+            except Exception as exc:
+                outcomes.append(exc)
+
+        with patch.object(fila, "_registrar_serializado", side_effect=pause):
+            t = threading.Thread(target=worker)
+            t.start()
+            try:
+                self.assertTrue(entrou.wait(timeout=5))
+                with self.assertRaisesRegex(RuntimeError, "ocupada"):
+                    fila.registrar({**self.a, "link": "https://other.example/new"}, self.db)
+            finally:
+                liberar.set()
+                t.join(timeout=5)
+        self.assertFalse(t.is_alive())
+        self.assertTrue(outcomes[0]["novo"])
+        duplicate = fila.registrar({**self.a, "link": "https://other.example/new"}, self.db)
+        self.assertFalse(duplicate["novo"])
+        self.assertEqual(len(fila.listar(db_path=self.db)), 1)
+
+    def test_lease_liberado_apos_falha(self):
+        with patch.object(fila, "_registrar_serializado", side_effect=ValueError("falha")):
+            with self.assertRaises(ValueError):
+                fila.registrar(self.a, self.db)
+        self.assertTrue(fila.registrar(self.a, self.db)["novo"])
 
 if __name__ == "__main__":
     unittest.main()
