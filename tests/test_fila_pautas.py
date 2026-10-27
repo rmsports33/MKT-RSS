@@ -69,5 +69,34 @@ class TestFilaPautas(unittest.TestCase):
             fila.registrar({**self.a, "titulo": ""}, self.db)
 
 
+    def test_turso_simulado_preserva_entre_chamadas_independentes(self):
+        """Confere o adaptador remoto com backend fake; NAO testa Turso real."""
+        import sqlite3
+        banco = self.db
+
+        def fake_turso(sql, args=()):
+            with sqlite3.connect(banco) as con:
+                cur = con.execute(sql, args)
+                if cur.description:
+                    return {"rows": [list(row) for row in cur.fetchall()], "affected": 0}
+                return {"rows": [], "affected": cur.rowcount}
+
+        with patch.object(fila.cloud_db, "turso_enabled", return_value=True), \
+             patch.object(fila.cloud_db, "turso_execute", side_effect=fake_turso):
+            first = fila.registrar(self.a)
+            self.assertTrue(first["novo"])
+            # Segunda chamada com nova instância lógica, mesmo backend persistido.
+            second = fila.registrar({**self.a, "link": "https://example.org/android"})
+            self.assertFalse(second["novo"])
+            self.assertEqual(first["id"], second["id"])
+            self.assertEqual(len(fila.listar()), 1)
+
+    def test_urls_distintas_geram_ids_distintos_sem_escrita(self):
+        """A identidade por URL e a similaridade são conceitos separados."""
+        left = fila._url("https://example.org/a?utm_medium=rss")
+        right = fila._url("https://example.org/b")
+        self.assertNotEqual(fila.hashlib.sha256(left.encode()).hexdigest()[:32],
+                            fila.hashlib.sha256(right.encode()).hexdigest()[:32])
+
 if __name__ == "__main__":
     unittest.main()
