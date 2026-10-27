@@ -35,39 +35,3 @@ jobs:
         run: |
           python -m pytest tests -q
           python -m pytest redator-artigo-blogs/tests -q
-
-  rss_queue_live_probe:
-    if: ${{ github.event_name == 'pull_request' && github.head_ref == 'feat/rss-editorial-queue-p0-20261026' }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-      - name: Install minimal feed dependencies
-        run: python -m pip install feedparser requests
-      - name: Two reads, same ephemeral SQLite database, no WordPress
-        env:
-          TURSO_DATABASE_URL: ""
-          TURSO_AUTH_TOKEN: ""
-        run: |
-          python - <<'PY'
-          import json
-          from rss_queue_collect import coletar
-          from mkt_flow_p0.fila_pautas import listar
-          one = coletar("9to5google", 3)
-          before = listar(limite=10)
-          two = coletar("9to5google", 3)
-          after = listar(limite=10)
-          print("FIRST", json.dumps(one, ensure_ascii=False))
-          print("SECOND", json.dumps(two, ensure_ascii=False))
-          print("PERSISTED_IDS", json.dumps([p["id"] for p in after]))
-          assert not one["falhas"] and not two["falhas"], "feed or persistence failed"
-          assert one["novas"] > 0, "no new article found"
-          assert two["duplicadas"] > 0, "no duplicate detected"
-          assert {x["id"] for x in before}.issubset({x["id"] for x in after}), "records lost"
-          print("QUEUE_LIVE_PROBE_PASS")
-          PY
