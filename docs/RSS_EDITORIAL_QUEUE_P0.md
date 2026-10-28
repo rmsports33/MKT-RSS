@@ -55,3 +55,18 @@ O registro de pauta agora reserva um **lease de escrita único** na tabela `rss_
 Essa estratégia garante **exclusão durante a janela do lease**, não processamento paralelo: sob contenção o segundo coletor deve tentar novamente de forma supervisionada. Se um processamento dentro da seção crítica ultrapassar 300 segundos, a exclusão poderá expirar; antes de habilitar vários workers ou operação permanente, validar esse limite e testar o protocolo no serviço Turso real. Como a fila usa chamadas HTTP separadas, a sequência não é uma transação única; a reserva de exclusividade é uma coordenação lógica no mesmo banco.
 
 Testes offline cobrem disputa entre threads de dois coletores, deduplicação de título similar após liberação, recuperação do lease após erro e adaptador Turso simulado. **Não** constituem teste de duas máquinas/runners independentes usando banco Turso real. Sem infraestrutura de produção ou agendamento nesta entrega.
+
+## Checkpoint final de prontidão — 28/10/2026
+
+**Escopo entregue:** fila de pautas opt-in, deduplicação independente de WordPress, ranking heurístico, estados editoriais, armazenamento SQLite/Turso e comando `pipeline_rss.py --queue-only`. A execução sem essa flag permanece no fluxo legado; o modo opt-in não autoriza WordPress.
+
+**CI do HEAD técnico final `8933c8f6f9baa74a7dc7ae63ef4446ffd60d09c2`:** [execução 40687955253](https://github.com/rmsports33/MKT-RSS/actions/runs/40687955253) SUCCESS, 566 testes núcleo + 52 redator = **618 testes aprovados**; validação editorial [40687955888](https://github.com/rmsports33/MKT-RSS/actions/runs/40687955888) SUCCESS. Uma alteração documental posterior requer checagem própria do CI; esses números não devem ser atribuídos automaticamente a commits posteriores.
+
+**Evidências reais isoladas:**
+- [Coleta RSS 40503549660](https://github.com/rmsports33/MKT-RSS/actions/runs/40503549660): três novas na primeira passagem, três duplicatas na segunda, SQLite temporário no mesmo runner.
+- [Persistência Turso 40687421115](https://github.com/rmsports33/MKT-RSS/actions/runs/40687421115): runner seed `new=true`, runner verify `duplicate=true, persisted=true`, mesmo ID em banco **mkt-rss-homolog**.
+- [Concorrência Turso 40687825993](https://github.com/rmsports33/MKT-RSS/actions/runs/40687825993): dois runners sincronizados; um registrou `novo=true`, outro `bloqueado_por_concorrencia=true`; conferência retornou **um único ID**. Prova circunscrita ao cenário e carga testados.
+
+**Condições obrigatórias antes de operar:** não iniciar agendador, nem paralelismo contínuo; o lease de escrita expira em 300 segundos, sem renovação, e não há certificação sob cargas longas. Não converter `CONCLUIDA` em autorização de publicação. Não usar o banco `mkt-rss` de produção para homologação, nem revelar segredos. Scripts `scripts/rss_queue_turso_homolog_probe.py` e `scripts/rss_queue_turso_concurrency_probe.py` ficam preservados como instrumentos manuais de laboratório; os jobs temporários foram retirados de `.github/workflows/ci.yml`.
+
+**Decisão:** PR tecnicamente validado nos cenários descritos e candidato a integração **somente de código** após revisão/aceite separados. Merge, deploy, ativação da coleta, paralelismo e publicação são decisões distintas e não estão autorizadas por este documento.
