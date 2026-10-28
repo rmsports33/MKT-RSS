@@ -70,3 +70,21 @@ Testes offline cobrem disputa entre threads de dois coletores, deduplicação de
 **Condições obrigatórias antes de operar:** não iniciar agendador, nem paralelismo contínuo; o lease de escrita expira em 300 segundos, sem renovação, e não há certificação sob cargas longas. Não converter `CONCLUIDA` em autorização de publicação. Não usar o banco `mkt-rss` de produção para homologação, nem revelar segredos. Scripts `scripts/rss_queue_turso_homolog_probe.py` e `scripts/rss_queue_turso_concurrency_probe.py` ficam preservados como instrumentos manuais de laboratório; os jobs temporários foram retirados de `.github/workflows/ci.yml`.
 
 **Decisão:** PR tecnicamente validado nos cenários descritos e candidato a integração **somente de código** após revisão/aceite separados. Merge, deploy, ativação da coleta, paralelismo e publicação são decisões distintas e não estão autorizadas por este documento.
+
+
+## Checkpoint operacional P0 — 28/10/2026 (pós-merge)
+
+**Integração:** PR #28 integrado por squash ao `master`, commit `3890eeaa0d3a12b24bfc5b8d934eba5ce48304fe`. CI de `push` pós-merge `CI (pytest) #255` aprovado, conforme captura do GitHub Actions fornecida pelo operador. O workflow manual de homologação foi configurado no `master` em `.github/workflows/rss-homolog-manual.yml`; ambiente `rss-homolog` com branch `master` autorizada e secrets protegidos.
+
+**Coleta real controlada (fonte 9to5google; limite 3; `--queue-only`; banco isolado `mkt-rss-homolog`):**
+
+| Etapa | GitHub Actions | Resultado do log |
+| --- | --- | --- |
+| Primeira execução | [40701814910](https://github.com/rmsports33/MKT-RSS/actions/runs/40701814910) | `{"novas":3,"duplicadas":0,"falhas":[]}` |
+| Segunda execução independente | [40702439180](https://github.com/rmsports33/MKT-RSS/actions/runs/40702439180) | `{"novas":0,"duplicadas":3,"falhas":[]}` |
+
+**Conclusão P0:** coleta de feed real, gravação no Turso e deduplicação entre execuções independentes comprovadas no conjunto de três itens testado. Homologação operacional manual **APROVADA**; não é prova de execução automática, escala, capacidade editorial, nem produção. Avisos de depreciação Node.js nas Actions não afetaram o resultado; monitorar atualização de checkout/setup-python.
+
+**Restrições preservadas:** sem agendamento, sem deploy, sem redação automática, sem IA e sem WordPress; usar banco `mkt-rss-homolog` apenas para testes, nunca os secrets de produção. Ação manual não deve ser repetida automaticamente. Lease de concorrência de 300s continua sem renovação.
+
+**Próxima fase proposta:** triagem humana de pautas já registradas: listar estado `DESCOBERTA`, exibir metadados e pontuação **heurística**, permitir decisão explícita `SELECIONADA` ou `REJEITADA` com justificativa e auditoria. Não presumir que três pautas homologadas são aprovadas para redação. Contrato e critérios em `docs/RSS_EDITORIAL_TRIAGE_P1_PLAN.md`.
