@@ -1,5 +1,4 @@
 """Offline P1 audit invariants, isolated SQLite only."""
-import hashlib
 import pytest
 from mkt_flow_p0 import fila_pautas
 from mkt_flow_p0.triagem_decisoes import decidir, historico
