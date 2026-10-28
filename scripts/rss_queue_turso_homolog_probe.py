@@ -11,8 +11,10 @@ def guard():
     url = (os.getenv("TURSO_DATABASE_URL") or "").strip()
     token = (os.getenv("TURSO_AUTH_TOKEN") or "").strip()
     host = urlsplit(url.replace("libsql://", "https://", 1)).hostname or ""
-    if not token or host != "mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io":
-        raise RuntimeError("Bloqueado: credenciais e hostname de mkt-rss-homolog obrigatórios")
+    if not token:
+        raise RuntimeError("Bloqueado: TURSO_AUTH_TOKEN vazio ou indisponível")
+    if host != "mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io":
+        raise RuntimeError("Bloqueado: TURSO_DATABASE_URL não corresponde ao hostname exato de homologação")
     if not cloud_db.turso_enabled():
         raise RuntimeError("Bloqueado: conexão remota Turso ausente")
 
