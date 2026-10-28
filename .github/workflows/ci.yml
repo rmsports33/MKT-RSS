@@ -54,7 +54,7 @@ jobs:
         run: python -m pip install requests
       - name: Seed synthetic record in isolated Turso database
         env:
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: python -m scripts.rss_queue_turso_homolog_probe seed --case "pr28-${{ github.run_id }}"
 
@@ -77,6 +77,6 @@ jobs:
         run: python -m pip install requests
       - name: Verify duplicate across independent runners
         env:
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: python -m scripts.rss_queue_turso_homolog_probe verify --case "pr28-${{ github.run_id }}"
