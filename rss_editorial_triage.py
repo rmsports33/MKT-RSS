@@ -57,8 +57,7 @@ def main():
             consultar_guard()
             from mkt_flow_p0.triagem_decisoes import decidir, historico
             if args.acao:
-                result = decidir(args.pauta_id, args.acao, args.justificativa,
-                                 args.operador, confirmado=args.confirm)
+                raise RuntimeError("Decisao bloqueada: identidade e autorizacao autenticadas ainda nao integradas")
             else:
                 result = {"historico": historico(args.historico_id)}
         else:
