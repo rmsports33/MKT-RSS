@@ -3,7 +3,6 @@ import argparse
 import json
 import os
 import sys
-import uuid
 from urllib.parse import urlsplit
 
 from mkt_flow_p0 import cloud_db, fila_pautas
@@ -12,7 +11,7 @@ def guard():
     url = (os.getenv("TURSO_DATABASE_URL") or "").strip()
     token = (os.getenv("TURSO_AUTH_TOKEN") or "").strip()
     host = urlsplit(url.replace("libsql://", "https://", 1)).hostname or ""
-    if not token or not host.startswith("mkt-rss-homolog-") or not host.endswith(".turso.io"):
+    if not token or host != "mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io":
         raise RuntimeError("Bloqueado: credenciais e hostname de mkt-rss-homolog obrigatórios")
     if not cloud_db.turso_enabled():
         raise RuntimeError("Bloqueado: conexão remota Turso ausente")
