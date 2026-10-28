@@ -31,10 +31,20 @@ BEGIN
 END"""
 
 
+AUDIT_IMMUTABLE_UPDATE = """CREATE TRIGGER IF NOT EXISTS rss_triage_audit_no_update
+BEFORE UPDATE ON rss_triage_audit
+BEGIN SELECT RAISE(ABORT, 'audit immutable'); END"""
+AUDIT_IMMUTABLE_DELETE = """CREATE TRIGGER IF NOT EXISTS rss_triage_audit_no_delete
+BEFORE DELETE ON rss_triage_audit
+BEGIN SELECT RAISE(ABORT, 'audit immutable'); END"""
+
+
 def preparar(db_path=None):
     fila.init_queue(db_path)
     fila._exec(AUDIT_SCHEMA, db_path=db_path)
     fila._exec(TRIGGER, db_path=db_path)
+    fila._exec(AUDIT_IMMUTABLE_UPDATE, db_path=db_path)
+    fila._exec(AUDIT_IMMUTABLE_DELETE, db_path=db_path)
 
 
 def decidir(pauta_id, acao, justificativa, operador, *, confirmado=False, db_path=None):
