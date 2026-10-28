@@ -231,7 +231,23 @@ def main():
     ap.add_argument("--limit", type=int, default=2)
     ap.add_argument("--fonte", default="")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--queue-only", action="store_true", help="Coletar apenas pautas na fila, sem IA ou WordPress")
     args = ap.parse_args()
+    if args.queue_only:
+        if args.dry_run:
+            ap.error("--queue-only e --dry-run são mutuamente exclusivos")
+        if not 1 <= args.limit <= 50:
+            ap.error("--limit deve estar entre 1 e 50 no modo fila")
+        from rss_queue_collect import coletar
+        try:
+            resultado = coletar(fonte=args.fonte, limite=args.limit)
+        except (ValueError, RuntimeError, OSError) as exc:
+            print(json.dumps({"erro": str(exc)}, ensure_ascii=False))
+            sys.exit(1)
+        print(json.dumps(resultado, ensure_ascii=False))
+        if resultado.get("falhas"):
+            sys.exit(1)
+        return
 
     from mkt_flow_p0.rss_ingestor import FEEDS_PADRAO, buscar_novidades
     alvos = {k: v for k, v in FEEDS_PADRAO.items() if not args.fonte or k == args.fonte}
