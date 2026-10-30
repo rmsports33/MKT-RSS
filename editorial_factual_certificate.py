@@ -15,8 +15,10 @@ def draft_digest(post):
         return None
     if type(post.get("id")) is not int or post["id"] <= 0:
         return None
+    if post.get("status") != "draft":
+        return None
     fields = {}
-    for key in ("id", "title", "content", "slug", "categories", "featured_media"):
+    for key in ("id", "status", "title", "content", "slug", "categories", "featured_media"):
         value = post.get(key)
         if key in ("title", "content") and isinstance(value, dict):
             value = value.get("raw") or value.get("rendered")
@@ -38,7 +40,11 @@ def verify_factual_certificate(post, certificate, key, *, now=None):
         return False
     if certificate.get("decision") != "APROVADO":
         return False
+    if certificate.get("version") != 1 or certificate.get("review_type") != "independent_human":
+        return False
     if not isinstance(certificate.get("reviewer_id"), str) or not certificate["reviewer_id"].strip():
+        return False
+    if not isinstance(certificate.get("review_record_url"), str) or not certificate["review_record_url"].startswith("https://"):
         return False
     if not isinstance(certificate.get("evidence_refs"), list) or not certificate["evidence_refs"]:
         return False
