@@ -24,7 +24,11 @@ def authorize_publish(post: dict, factual_review: dict, *,
             problems.append("verified_evidence_missing")
         if factual_review.get("aprovacao_atual") is not True:
             problems.append("current_approval_missing")
-    return {"autorizado": not problems, "bloqueios": problems}
+    # A booleans-only factual_review is not independently certified.
+    # Until a trusted, audited evidence contract is integrated, fail closed
+    # even when every self-reported field is True.
+    problems.append("trusted_factual_review_missing")
+    return {"autorizado": False, "bloqueios": problems}
 
 
 def require_publish_authorization(post: dict, factual_review: dict, **kwargs) -> None:
