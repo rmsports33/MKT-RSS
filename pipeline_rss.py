@@ -223,6 +223,12 @@ def autorizar_transicao_publicacao(post_persistido: dict, revisao_factual: dict)
     return authorize_publish(post_persistido, revisao_factual)
 
 
+def inspecionar_rascunho_wordpress(fetch_post, post_id: int, revisao_factual: dict) -> dict:
+    """Read-only persisted draft check; never writes or publishes."""
+    from editorial_wordpress_adapter import inspect_wordpress_draft
+    return inspect_wordpress_draft(fetch_post, post_id, revisao_factual)
+
+
 def planejar_transicao_publicacao(post_persistido: dict, revisao_factual: dict) -> dict:
     """Return an offline plan only; never publish directly from RSS."""
     from editorial_publish_transition import plan_publish_transition
