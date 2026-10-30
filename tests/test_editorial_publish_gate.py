@@ -9,9 +9,12 @@ REVIEW = {"veredito": "APROVADO", "revisao_substantiva": True,
           "evidencias_verificadas": True, "aprovacao_atual": True}
 
 
-def test_all_gates_pass():
-    assert authorize_publish(POST, REVIEW) == {"autorizado": True, "bloqueios": []}
-    require_publish_authorization(POST, REVIEW)
+def test_self_asserted_review_cannot_approve():
+    result = authorize_publish(POST, REVIEW)
+    assert result["autorizado"] is False
+    assert "trusted_factual_review_missing" in result["bloqueios"]
+    with pytest.raises(PermissionError):
+        require_publish_authorization(POST, REVIEW)
 
 
 @pytest.mark.parametrize("key,value", [
