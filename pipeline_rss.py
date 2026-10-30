@@ -83,8 +83,30 @@ def avaliar_gate_publicacao(titulo: str, texto: str, links: list) -> dict:
         }
 
 
-def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None) -> dict:
+def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", publication_reference=None, operation_nonce=None):
+    """Conclusão supervisionada da pauta RSS; jamais certifica texto automaticamente."""
+    from mkt_flow_p0.editorial_transport import publish_package
+    payload = package.get("payload", {}) if isinstance(package, dict) else {}
+    discovery = payload.get("discovery")
+    if (not isinstance(discovery, dict) or not isinstance(discovery.get("pauta_id"), str)
+            or len(discovery["pauta_id"]) != 32
+            or any(c not in "0123456789abcdef" for c in discovery["pauta_id"])
+            or not any(isinstance(s, dict) and s.get("url") == discovery.get("source_url")
+                       for s in payload.get("sources", []))):
+        return {"acao": "bloqueado", "erro": "origem da pauta RSS não corresponde às fontes apuradas"}
+    return publish_package(package, core_root=core_root, actor_id=actor_id, intent=intent, operation_nonce=operation_nonce,
+        publication_reference=publication_reference, wp_url=os.getenv("WP_URL", ""),
+        wp_user=os.getenv("WP_USER", ""), wp_password=os.getenv("WP_APP_PASSWORD", ""))
+
+
+def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None,
+                   pacote_editorial=None, core_root=None, actor_id=None) -> dict:
     """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
+    if pacote_editorial is not None:
+        discovery = pacote_editorial.get("payload", {}).get("discovery", {})
+        if dry_run or discovery.get("source_url") != item.get("link"):
+            return {"acao": "bloqueado", "erro": "dry-run não escreve; pauta deve corresponder ao pacote"}
+        return processar_pacote_editorial(pacote_editorial, core_root=core_root, actor_id=actor_id)
     from mkt_flow_p0.content_filter import filtrar_item_rss, filtrar_conteudo, filtrar_por_tema
     from mkt_flow_p0.extractor import extrair_conteudo
     from mkt_flow_p0.rewriter import reescrever_materia, adicionar_atribuicao
@@ -213,14 +235,14 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     }
 
 
-def autorizar_transicao_publicacao(post_persistido: dict, revisao_factual: dict) -> dict:
+def autorizar_transicao_publicacao(post_persistido: dict, revisao_factual: dict = None, *, pacote_editorial=None, core_root=None) -> dict:
     """Guard shared by any future WordPress publisher; no remote write.
 
     The caller must supply a freshly read WordPress post and independently
     certified editorial evidence. Never infer approval from RSS queue status.
     """
     from editorial_publish_gate import authorize_publish
-    return authorize_publish(post_persistido, revisao_factual)
+    return authorize_publish(post_persistido, revisao_factual, package=pacote_editorial, core_root=core_root)
 
 
 def publicar_indice() -> dict:
@@ -242,7 +264,24 @@ def main():
     ap.add_argument("--fonte", default="")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--queue-only", action="store_true", help="Coletar apenas pautas na fila, sem IA ou WordPress")
+    ap.add_argument("--editorial-package", type=Path, help="Pacote canônico já apurado/revisado; sem geração automática")
+    ap.add_argument("--core-root", type=Path)
+    ap.add_argument("--actor-id", type=int)
+    ap.add_argument("--intent", choices=("stage", "draft", "publish", "schedule"), default="stage")
+    ap.add_argument("--publication-reference", help="Referência real da ordem específica de publicar/agendar")
+    ap.add_argument("--operation-nonce", help="Retoma somente consulta da operação anterior; nunca repete escrita")
     args = ap.parse_args()
+    if args.editorial_package:
+        if args.dry_run or args.queue_only or not args.core_root or not args.actor_id:
+            ap.error("pacote exige core-root/actor-id e não combina com dry-run/queue-only")
+        try:
+            package = json.loads(args.editorial_package.read_text(encoding="utf-8"))
+            result = processar_pacote_editorial(package, core_root=args.core_root, actor_id=args.actor_id,
+                intent=args.intent, publication_reference=args.publication_reference, operation_nonce=args.operation_nonce)
+        except (ValueError, OSError, TypeError) as exc:
+            result = {"erro": "pacote inválido", "reason": str(exc)}
+        print(json.dumps(result, ensure_ascii=False))
+        return 1 if result.get("erro") else 0
     if args.queue_only:
         if args.dry_run:
             ap.error("--queue-only e --dry-run são mutuamente exclusivos")
@@ -282,4 +321,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
+

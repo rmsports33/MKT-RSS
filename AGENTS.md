@@ -10,3 +10,16 @@
 - SEM_ALERTAS não comprova factualidade. Preservar o bloqueio de escrita quando o gate factual não estiver integrado.
 - Trabalhar em branch isolada, validar proporcionalmente e preservar mudanças preexistentes. Merge, deploy, publicação e custos dependem do escopo autorizado.
 - Drive V3 continua oficial; memória não concede autorização. Não ativar publicação ou agendamentos ao aplicar estas diretrizes.
+
+
+
+## Escrita editorial controlada — 30/10/2026
+
+As referências antigas acima são proveniência, não a revisão atual. Consumir o
+núcleo da PR conexo-os #42 conforme mkt_flow_p0/editorial_core.lock.json; conferir
+os hashes antes de importar. Não copiar o motor nem reativar PASS booleano.
+Artigo normal usa editorial_transport e a entrada assinada; chamadas MCP diretas
+são somente leitura no cliente. stage é prévia técnica, não entrega. Publish e
+schedule exigem aceite da versão e ordem específica. Sem fallback, merge,
+publicação, chave exposta ou deploy automático por inferência destes arquivos.
+A proteção remota só existe após instalar/homologar o MU-plugin correspondente.

@@ -9,9 +9,10 @@ REVIEW = {"veredito": "APROVADO", "revisao_substantiva": True,
           "evidencias_verificadas": True, "aprovacao_atual": True}
 
 
-def test_all_gates_pass():
-    assert authorize_publish(POST, REVIEW) == {"autorizado": True, "bloqueios": []}
-    require_publish_authorization(POST, REVIEW)
+def test_four_flags_do_not_replace_canonical_package():
+    assert not authorize_publish(POST, REVIEW)["autorizado"]
+    with pytest.raises(PermissionError):
+        require_publish_authorization(POST, REVIEW)
 
 
 @pytest.mark.parametrize("key,value", [
@@ -28,7 +29,7 @@ def test_factual_gate_fails_closed(key, value):
 
 
 def test_missing_factual_review():
-    assert "factual_review_missing" in authorize_publish(POST, None)["bloqueios"]
+    assert "canonical_editorial_package_missing" in authorize_publish(POST, None)["bloqueios"]
 
 
 def test_media_missing_even_with_approved_facts():
@@ -38,3 +39,4 @@ def test_media_missing_even_with_approved_facts():
 
 def test_published_post_is_not_valid_transition_source():
     assert not authorize_publish({**POST, "status": "publish"}, REVIEW)["autorizado"]
+
