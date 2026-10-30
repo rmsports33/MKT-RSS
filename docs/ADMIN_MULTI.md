@@ -1,3 +1,7 @@
+> RETIRADO — 30/10/2026. O responsavel determinou remover o Telegram.
+> Conteudo abaixo e historico: nao executar instalacao, deploy ou polling.
+> Operacao atual: ChatGPT Work e WordPress. Estado em docs/TELEGRAM_RETIREMENT_2026-10-30.md.
+
 # Admin multi-plataforma — sem PC (hardened)
 
 Você já tem o pipeline na nuvem; faltava aprovar sem notebook.
