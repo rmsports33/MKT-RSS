@@ -83,6 +83,7 @@ def publicar_no_wordpress(
     timeout: int = 10,
     slug: str = "",
     rank_math: dict = None,
+    revisao_factual: dict = None,
 ) -> dict:
     """
     Publica no WP. status_desejado: draft | publish
@@ -95,16 +96,18 @@ def publicar_no_wordpress(
     if not wp_url or not wp_user or not wp_app_password:
         return {"erro": "WP_URL/WP_USER/WP_APP_PASSWORD ausentes no .env"}
 
-    # Gate de compliance
+    # Nunca publicar diretamente em um POST de criação. Mesmo PASS não é
+    # certificação factual e a prontidão depende da resposta persistida.
     status_desejado = (status_desejado or "draft").lower()
-    if status_desejado == "publish" and status_validacao != "PASS":
-        return {
-            "erro": f"Publicação bloqueada: status_validacao={status_validacao} — só PASS permite publish. Use draft.",
-            "status_validacao": status_validacao,
-        }
-
-    # Se UNKNOWN/FAIL mas pediram publish, força draft
-    status_final = "publish" if (status_desejado == "publish" and status_validacao == "PASS") else "draft"
+    if status_desejado not in ("draft", "publish"):
+        return {"erro": "status_desejado invalido"}
+    if status_desejado == "publish":
+        # O fluxo em duas etapas (draft -> GET -> gate -> publish) não está
+        # homologado; proibir publicação até existir adaptador transacional.
+        # Nenhuma requisição deve ocorrer nesta condição.
+        return {"erro": "Publicação bloqueada: transição segura draft->GET->gate->publish não homologada",
+                "status_validacao": status_validacao}
+    status_final = "draft"
 
     headers = {
         "Authorization": _auth_header(wp_user, wp_app_password),
