@@ -10,16 +10,9 @@ Por que existe: o gate de valor (M04.17D) exige `price_history` com:
 Hoje o redator NÃO produz price_history — os coletores dele BLOQUEIAM
 marketplaces, e no MKT-RSS o marketplaces.json não é usado por nenhum .py.
 
-Este módulo implementa a coleta via APIs OFICIAIS gratuitas:
-  - Amazon Product Advertising API (PA-API 5.0) — requer ACCESS_KEY/SECRET_KEY/ASSOCIATE_TAG
-  - Mercado Livre API — requer APP_ID/CLIENT_SECRET (fluxo Client Credentials)
-  - Shopee Affiliate API — requer PARTNER_ID/PARTNER_KEY
-
-Requisitos:
-- Credenciais em variáveis de ambiente (.env / GitHub Secrets)
-- Respeito a rate limits e ToS de cada marketplace
-- Fallback claro: sem credencial = não coleta daquele marketplace
-- Evidência persistida com rastreabilidade (sem expor segredos)
+Mercado Livre: cliente mínimo com access token OAuth autorizado.
+Amazon e Shopee: indisponíveis; sem coleta ou fallback para scraping.
+Persistência exige opt-in por chamada. Sem credenciais não há HTTP.
 """
 import os
 import json
@@ -51,6 +44,7 @@ class _Credenciais:
         self.mercadolivre = {
             "app_id": os.getenv("MERCADOLIVRE_APP_ID", "").strip(),
             "client_secret": os.getenv("MERCADOLIVRE_CLIENT_SECRET", "").strip(),
+            "access_token": os.getenv("MERCADOLIVRE_ACCESS_TOKEN", "").strip(),
         }
         self.shopee = {
             "partner_id": os.getenv("SHOPEE_PARTNER_ID", "").strip(),
@@ -61,16 +55,14 @@ class _Credenciais:
         return all(self.amazon.values())
     
     def tem_mercadolivre(self) -> bool:
-        return all(self.mercadolivre.values())
+        return bool(self.mercadolivre["access_token"])
     
     def tem_shopee(self) -> bool:
         return all(self.shopee.values())
     
     def marketplaces_disponiveis(self) -> list[str]:
         disp = []
-        if self.tem_amazon(): disp.append("amazon")
         if self.tem_mercadolivre(): disp.append("mercadolivre")
-        if self.tem_shopee(): disp.append("shopee")
         return disp
 
 
@@ -84,24 +76,18 @@ def _tem_credencial(marketplace: str) -> bool:
 # --- Normalizadores ---------------------------------------------------------
 
 def normalizar_preco(valor) -> str:
-    """1500.5 -> 'R$ 1.500,00'; '1.600,00' -> 'R$ 1.600,00'; inválido -> ''."""
+    """1500.5 -> 'R$ 1.500,50'; '1.600,00' -> 'R$ 1.600,00'; inválido -> ''."""
     if valor is None or isinstance(valor, bool):
         return ""
-    if isinstance(valor, (int, float)):
-        try:
-            return "R$ " + f"{float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        except (TypeError, ValueError):
-            return ""
-    texto = str(valor).strip()
-    if not texto:
-        return ""
-    texto = re.sub(r"^R\$", "", texto, flags=re.IGNORECASE).strip()
-    if re.match(r"^\d{1,3}(\.\d{3})*,\d{2}$", texto):
-        return "R$ " + texto
-    numero = texto.replace(".", "").replace(",", ".")
+    texto = str(valor).strip().removeprefix("R$").strip()
+    if "," in texto:
+        texto = texto.replace(".", "").replace(",", ".")
     try:
-        return "R$ " + f"{float(numero):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    except (TypeError, ValueError):
+        valor_decimal = Decimal(texto)
+        if not valor_decimal.is_finite() or not 0 < valor_decimal <= Decimal("1000000000"):
+            return ""
+        return "R$ " + f"{valor_decimal:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+    except (ArithmeticError, ValueError):
         return ""
 
 
@@ -174,7 +160,7 @@ def _salvar_evidencia(
         """, (
             produto, marketplace, preco_br, data_captura,
             url_oferta, urlparse(url_oferta).netloc if _eh_url(url_oferta) else "",
-            json.dumps(payload_bruto, ensure_ascii=False),
+            json.dumps({k: payload_bruto[k] for k in ("marketplace", "item_id", "data_captura") if k in payload_bruto}, ensure_ascii=False),
             hash_ev,
             datetime.now().isoformat(timespec="seconds"),
         ))
@@ -202,10 +188,9 @@ def _coletar_mercadolivre(item_id: str) -> Optional[dict]:
     """Coleta preço via Mercado Livre API (Items). Requer credenciais."""
     if not _CREDS.tem_mercadolivre():
         return None
-    # TODO: implementar OAuth2 Client Credentials + GET /items/{id}
-    # Fora do escopo MVP sem credenciais.
-    logger.debug("Mercado Livre API não implementada (sem credenciais)")
-    return None
+    from mkt_flow_p0.price_api_clients import MercadoLivreClient
+    return MercadoLivreClient(_CREDS.mercadolivre["access_token"]).get_item(item_id)
+
 
 
 def _coletar_shopee(item_id: str, shop_id: str) -> Optional[dict]:
@@ -225,6 +210,7 @@ def coletar_preco_produto(
     ml_item_id: Optional[str] = None,
     shopee_item_id: Optional[str] = None,
     shopee_shop_id: Optional[str] = None,
+    *, persistir: bool = False, client=None,
 ) -> dict:
     """Coleta preço do produto nos marketplaces configurados.
     
@@ -253,12 +239,17 @@ def coletar_preco_produto(
         erros.append("amazon: ASIN fornecido mas credenciais não configuradas")
     
     # Mercado Livre
-    if ml_item_id and _CREDS.tem_mercadolivre():
-        r = _coletar_mercadolivre(ml_item_id)
+    if ml_item_id and (client is not None or _CREDS.tem_mercadolivre()):
+        from mkt_flow_p0.price_api_clients import PriceAPIError
+        try:
+            r = client.get_item(ml_item_id) if client is not None else _coletar_mercadolivre(ml_item_id)
+        except PriceAPIError as erro:
+            erros.append("mercadolivre: " + str(erro))
+            r = None
         if r:
             resultados.append({"marketplace": "mercadolivre", **r})
         elif r is None:
-            erros.append("mercadolivre: credenciais configuradas mas coleta não implementada")
+            erros.append("mercadolivre: coleta indisponivel")
         else:
             erros.append("mercadolivre: falha na coleta")
     elif ml_item_id:
@@ -288,16 +279,17 @@ def coletar_preco_produto(
     if not preco_br or not data_captura or not _eh_url(url_oferta):
         return {"ok": False, "erro": "dados insuficientes do marketplace"}
     
-    # Salva evidência local
+    # Persistência opcional: não grava no dry-run padrão.
     payload_bruto = {k: v for k, v in r.items() if k not in ("preco", "data", "url", "link")}
-    _salvar_evidencia(
-        produto=r.get("nome") or "produto",
-        marketplace=r.get("marketplace", "desconhecido"),
-        preco_br=preco_br,
-        data_captura=data_captura,
-        url_oferta=url_oferta,
-        payload_bruto=payload_bruto,
-    )
+    if persistir:
+        _salvar_evidencia(
+            produto=nome_produto,
+            marketplace=r.get("marketplace", "desconhecido"),
+            preco_br=preco_br,
+            data_captura=data_captura,
+            url_oferta=url_oferta,
+            payload_bruto=payload_bruto,
+        )
     
     return {
         "ok": True,
@@ -319,14 +311,22 @@ def auditar_precos_para_comparativo(modelos: list, price_history: dict) -> dict:
     return auditar_precos(modelos, price_history)
 
 
-def gerar_price_history_para_modelos(modelos: list, marketplace: str = "amazon") -> dict:
+def gerar_price_history_para_modelos(modelos: list, marketplace: str = "mercadolivre", *, persistir=False, client=None) -> dict:
     """Helper para gerar price_history a partir de modelos com ASIN/ML_ID.
     
     Útil para testes e para o redator chamar antes de gerar o comparativo.
     
     Retorna price_history no formato esperado pelo contrato:
-    {nome_produto: [{"data": "DD/MM/AAAA", "preco": "R$ X.XXX,XX", "fonte": "url"}]}
+    {nome_produto: [{"data": "DD/MM/AAAA", "preco": "X.XXX,XX", "fonte": "url"}]}
     """
+    if marketplace not in {"amazon", "mercadolivre", "shopee"}:
+        raise ValueError("marketplace desconhecido")
+    if marketplace == "mercadolivre" and client is None and _CREDS.tem_mercadolivre():
+        from mkt_flow_p0.price_api_clients import MercadoLivreClient
+        client = MercadoLivreClient(_CREDS.mercadolivre["access_token"])
+    nomes = [str(m.get("nome") or "").strip().casefold() for m in modelos if isinstance(m, dict)]
+    if len(nomes) != len(set(nomes)):
+        raise ValueError("nomes de produtos duplicados")
     ph = {}
     for modelo in modelos:
         if not isinstance(modelo, dict):
@@ -340,9 +340,12 @@ def gerar_price_history_para_modelos(modelos: list, marketplace: str = "amazon")
         shopee_item = modelo.get("shopee_item_id") or modelo.get("shopee_item")
         shopee_shop = modelo.get("shopee_shop_id") or modelo.get("shopee_shop")
         
-        r = coletar_preco_produto(nome, asin=asin, ml_item_id=ml_id, 
-                                  shopee_item_id=modelo.get("shopee_item_id"),
-                                  shopee_shop_id=modelo.get("shopee_shop_id"))
+        r = coletar_preco_produto(nome,
+                                  asin=asin if marketplace == "amazon" else None,
+                                  ml_item_id=ml_id if marketplace == "mercadolivre" else None,
+                                  shopee_item_id=shopee_item if marketplace == "shopee" else None,
+                                  shopee_shop_id=shopee_shop if marketplace == "shopee" else None,
+                                  persistir=persistir, client=client)
         if r.get("ok"):
             ph[nome] = [{
                 "data": r["data_captura"],

@@ -1,0 +1,61 @@
+{
+  "tipo": "fixture_sintetica_sem_cotacao_real",
+  "http_real": 0,
+  "sqlite_escritas": 0,
+  "respostas_simuladas": 2,
+  "resultado": {
+    "acao": "dry_run_ok",
+    "titulo": "Galaxy S26 vs Pixel 11 — Comparativo completo (celular)",
+    "produtos": [
+      "Galaxy S26",
+      "Pixel 11"
+    ],
+    "notas": [
+      9.0,
+      8.5
+    ],
+    "buys": [
+      "https://produto.mercadolivre.com.br/MLB123",
+      "https://produto.mercadolivre.com.br/MLB456"
+    ],
+    "criterios": [
+      "Preço (fixture)"
+    ],
+    "criterios_por_produto": {
+      "Galaxy S26": [
+        "cruzamento_2fontes",
+        "fonte_primaria",
+        "preco_br_data"
+      ],
+      "Pixel 11": [
+        "cruzamento_2fontes",
+        "fonte_primaria",
+        "preco_br_data"
+      ]
+    },
+    "vinculos_preco": [
+      {
+        "produto": "Galaxy S26",
+        "preco": "1.500,50",
+        "data": "30/10/2026",
+        "fonte": "https://produto.mercadolivre.com.br/MLB123",
+        "vinculo": "por_nome"
+      },
+      {
+        "produto": "Pixel 11",
+        "preco": "1.500,50",
+        "data": "30/10/2026",
+        "fonte": "https://produto.mercadolivre.com.br/MLB456",
+        "vinculo": "por_nome"
+      }
+    ],
+    "avisos": [
+      "[Galaxy S26] video_transcrito não comprovado: evidencia_video ausente",
+      "[Galaxy S26] medicao_propria não comprovada: evidencia_medicao ausente",
+      "[Pixel 11] video_transcrito não comprovado: evidencia_video ausente",
+      "[Pixel 11] medicao_propria não comprovada: evidencia_medicao ausente"
+    ],
+    "escreveu": false,
+    "publicacao_ativa": false
+  }
+}
