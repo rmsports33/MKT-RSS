@@ -12,7 +12,9 @@ OP = "operation-id-unique-0001"
 def cert(post=POST):
     data = {"draft_sha256": draft_digest(post), "reviewer_id": "human-reviewer",
             "evidence_refs": ["https://example.org/source"], "decision": "APROVADO",
-            "issued_at": 100, "expires_at": 200}
+            "issued_at": 100, "expires_at": 200, "version": 1,
+            "review_type": "independent_human",
+            "review_record_url": "https://example.org/review-record"}
     encoded = json.dumps(data, sort_keys=True, ensure_ascii=False,
                          separators=(",", ":"), allow_nan=False).encode()
     return {**data, "signature": hmac.new(KEY, encoded, hashlib.sha256).hexdigest()}
