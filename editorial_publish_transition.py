@@ -12,7 +12,9 @@ def plan_publish_transition(post: dict, factual_review: dict, *,
     result = authorize_publish(post, factual_review,
                                expected_category_id=expected_category_id)
     if not result["autorizado"]:
-        return {"allowed": False, "errors": result["bloqueios"], "request": None}
+        return {"allowed": False,
+                "errors": list(result["bloqueios"]) + ["trusted_approval_and_atomic_transition_missing"],
+                "request": None}
     # Editorial flags alone are self-asserted: no trusted approval identity,
     # provenance, or concurrency guard has been verified. Never emit a
     # ready-to-send publication request from this offline planner.
