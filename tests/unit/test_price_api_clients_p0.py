@@ -146,6 +146,30 @@ def test_app_id_secret_alone_not_credentials():
     assert not pc.coletar_preco_produto('A', ml_item_id='MLB123')['ok']
 
 
+def test_collector_rejects_invalid_identity_source_and_date():
+    """Qualquer transporte, inclusive mock, deve preservar identidade e prova."""
+    original = dict(preco='1500.5', data_captura='30/10/2026',
+                    url='https://produto.mercadolivre.com.br/MLB123',
+                    item_id='MLB123', marketplace='mercadolivre')
+    invalidos = [
+        {'item_id': 'MLB999'},
+        {'item_id': None},
+        {'marketplace': 'amazon'},
+        {'url': 'https://produto.mercadolivre.com.br.evil.test/MLB123'},
+        {'url': 'http://produto.mercadolivre.com.br/MLB123'},
+        {'url': 'https://usuario@produto.mercadolivre.com.br/MLB123'},
+        {'data_captura': None},
+        {'data_captura': '31/02/2026'},
+    ]
+    for alteracao in invalidos:
+        client_fake = Mock()
+        client_fake.get_item.return_value = dict(original, **alteracao)
+        result = pc.coletar_preco_produto('A', ml_item_id='MLB123',
+                                          client=client_fake)
+        assert result['ok'] is False, alteracao
+        assert not pc._DB_PATH.exists(), alteracao
+
+
 def test_collector_chain_and_no_persistence():
     c, _, _ = client(response())
     ph = pc.gerar_price_history_para_modelos([{'nome':'A','ml_id':'MLB123'}], client=c)
@@ -170,7 +194,9 @@ def test_explicit_persistence_identity_and_redaction():
     assert TOKEN.encode() not in pc._DB_PATH.read_bytes()
 
 
-def test_end_to_end_offline_two_products():
+def test_end_to_end_offline_two_products(monkeypatch):
+    wp = Mock(side_effect=AssertionError('WordPress proibido em dry-run'))
+    monkeypatch.setattr('mkt_flow_p0.wp_publisher.publicar_comparativo', wp)
     data = json.loads((Path(__file__).resolve().parents[2] / 'tools/exemplo_comparativo_m0417d.json').read_text())
     models = data['modelos']
     models[0]['ml_id']='MLB123'; models[1]['ml_id']='MLB456'
@@ -184,6 +210,7 @@ def test_end_to_end_offline_two_products():
     result = processar_comparativo(**data)
     assert result['acao'] == 'dry_run_ok'
     assert result['escreveu'] is False
+    wp.assert_not_called()
     assert s.get.call_count == 2
     assert not pc._DB_PATH.exists()
     # Evidência inválida em ambos os produtos bloqueia antes do WordPress.
