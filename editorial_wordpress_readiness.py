@@ -18,11 +18,14 @@ def validate_wordpress_readiness(post: dict, *, expected_category_id: int = 10,
     errors = []
     if not isinstance(post, dict):
         return Readiness(False, ("post_missing",))
+    if type(expected_category_id) is not int or expected_category_id <= 0:
+        errors.append("invalid_category_configuration")
     if post.get("status") not in ("draft", "pending", "future"):
         errors.append("unexpected_status")
     categories = post.get("categories")
-    if not isinstance(categories, list):
+    if not isinstance(categories, list) or any(type(c) is not int or c <= 0 for c in categories):
         categories = []
+        errors.append("invalid_categories")
     if expected_category_id not in categories:
         errors.append("news_category_missing")
     if 1 in categories:
@@ -31,13 +34,17 @@ def validate_wordpress_readiness(post: dict, *, expected_category_id: int = 10,
         errors.append("slug_missing")
     if type(post.get("featured_media")) is not int or post["featured_media"] <= 0:
         errors.append("featured_image_missing")
-    if not str(post.get("title") or "").strip():
+    if not isinstance(post.get("title"), str) or not post["title"].strip():
         errors.append("title_missing")
-    if not str(post.get("content") or "").strip():
+    if not isinstance(post.get("content"), str) or not post["content"].strip():
         errors.append("content_missing")
-    link = post.get("link") or ""
-    parsed = urlparse(link if isinstance(link, str) else "")
-    if parsed.scheme != "https" or parsed.hostname != expected_site:
+    link = post.get("link")
+    try:
+        parsed = urlparse(link) if isinstance(link, str) else None
+        valid_link = parsed and parsed.scheme == "https" and parsed.hostname == expected_site and not parsed.username and not parsed.password and parsed.port in (None, 443)
+    except ValueError:
+        valid_link = False
+    if not valid_link:
         errors.append("invalid_post_link")
     if type(post.get("id")) is not int or post["id"] <= 0:
         errors.append("post_id_missing")
@@ -48,3 +55,4 @@ def require_wordpress_readiness(post: dict, **kwargs) -> None:
     result = validate_wordpress_readiness(post, **kwargs)
     if not result.ready:
         raise ValueError("wordpress_not_ready: " + ", ".join(result.errors))
+
