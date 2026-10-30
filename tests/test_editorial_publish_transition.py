@@ -7,10 +7,11 @@ REVIEW = {"veredito": "APROVADO", "revisao_substantiva": True,
           "evidencias_verificadas": True, "aprovacao_atual": True}
 
 
-def test_plan_allowed_with_full_review():
+def test_self_asserted_review_cannot_authorize_publication():
     result = plan_publish_transition(POST, REVIEW)
-    assert result["allowed"]
-    assert result["request"]["body"] == {"status": "publish"}
+    assert not result["allowed"]
+    assert result["request"] is None
+    assert "trusted_approval_and_atomic_transition_missing" in result["errors"]
 
 
 def test_plan_denied_without_verified_evidence():
