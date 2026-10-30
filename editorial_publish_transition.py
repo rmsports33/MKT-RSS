@@ -13,9 +13,12 @@ def plan_publish_transition(post: dict, factual_review: dict, *,
                                expected_category_id=expected_category_id)
     if not result["autorizado"]:
         return {"allowed": False, "errors": result["bloqueios"], "request": None}
-    return {"allowed": True, "errors": [],
-            "request": {"method": "POST", "post_id": post["id"],
-                        "body": {"status": "publish"}}}
+    # Editorial flags alone are self-asserted: no trusted approval identity,
+    # provenance, or concurrency guard has been verified. Never emit a
+    # ready-to-send publication request from this offline planner.
+    return {"allowed": False,
+            "errors": ["trusted_approval_and_atomic_transition_missing"],
+            "request": None}
 
 
 def verify_publish_readback(expected_id: int, response: dict) -> bool:
