@@ -34,3 +34,16 @@ def test_blocks_incomplete(change, error):
 
 def test_missing_post_fails_closed():
     assert not validate_wordpress_readiness(None).ready
+
+
+@pytest.mark.parametrize("change,error", [
+    ({"categories": 10}, "news_category_missing"),
+    ({"categories": {"10": True}}, "news_category_missing"),
+    ({"link": 123}, "invalid_post_link"),
+    ({"featured_media": True}, "featured_image_missing"),
+    ({"id": True}, "post_id_missing"),
+])
+def test_malformed_data_fails_closed_without_exception(change, error):
+    result = validate_wordpress_readiness({**BASE, **change})
+    assert not result.ready
+    assert error in result.errors
