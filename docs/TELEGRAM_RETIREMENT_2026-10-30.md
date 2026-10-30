@@ -36,3 +36,15 @@ plugin ativo para nao interromper links e rastreamento de afiliados.
 Falta verificar e retirar apenas o webhook/configuracao Telegram e eventual
 processo hospedado, pelo acesso seguro ao provedor. A remocao em branches nao
 deve ser reportada como desligamento efetivo em producao.
+
+## Conferencia administrativa posterior — 30/10/2026
+
+Login renovado e identidade Reinaldo Mendes confirmada no painel WordPress.
+O menu Assistente Telegram ainda existe na instalacao. Sua opcao
+"Responder mensagens" (`cxaf_tg_ativo`) foi observada desmarcada. Nenhuma
+configuracao foi salva ou alterada: o estado desejado ja estava desativado.
+Somente metadados de controles foram lidos, sem valores de token, segredo ou chat.
+
+Isso comprova a opcao visual desativada, nao exclusao dos arquivos do servidor,
+cancelamento do webhook no Telegram, ausencia de poller em outro host nem
+revogacao do token. A remocao efetiva do componente instalado permanece separada.
