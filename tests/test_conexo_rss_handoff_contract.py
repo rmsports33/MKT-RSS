@@ -9,7 +9,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from mkt_flow_p0.fila_pautas import registrar
+from mkt_flow_p0.fila_pautas import registrar, init_queue
 from mkt_flow_p0.conexo_discovery_export import main
 
 
@@ -42,6 +42,7 @@ class RSSHandoffContractTests(unittest.TestCase):
     def test_empty_queue_exports_no_approval(self):
         with tempfile.TemporaryDirectory() as folder:
             db = Path(folder) / "rss.sqlite"
+            init_queue(db)
             output = io.StringIO()
             with contextlib.redirect_stdout(output):
                 code = main(["--db", str(db)])
@@ -49,6 +50,17 @@ class RSSHandoffContractTests(unittest.TestCase):
             payload = json.loads(output.getvalue())
             self.assertEqual(payload["candidates"], [])
             self.assertIs(payload["publication_allowed"], False)
+
+    def test_missing_database_fails_without_creating_it(self):
+        with tempfile.TemporaryDirectory() as folder:
+            db = Path(folder) / "missing.sqlite"
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                status = main(["--db", str(db)])
+            self.assertEqual(status, 1)
+            self.assertEqual(out.getvalue(), "")
+            self.assertFalse(db.exists())
+            self.assertIn("BLOCKED", err.getvalue())
 
 
 if __name__ == "__main__":
