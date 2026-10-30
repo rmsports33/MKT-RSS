@@ -18,6 +18,9 @@ def signed(post=POST, **changes):
     cert["signature"] = hmac.new(KEY, message, hashlib.sha256).hexdigest()
     return cert
 
+def test_php_python_golden_digest():
+    assert draft_digest(POST) == "1341bb92c336ebacfca6f3bd0284b3ff6744eab27519b072ef1b2ef9fa26becc"
+
 def test_valid_signature_and_binding():
     assert verify_factual_certificate(POST, signed(), KEY, now=150)
 
