@@ -79,3 +79,11 @@ A certificação agora exige `version=1`, `review_type=independent_human`, `revi
 O backend PHP/WordPress que execute bloqueio transacional, compare-and-swap sobre o estado persistido e idempotência **não foi localizado nem implementado** nesta branch. Não conectar a interface Python a um POST REST simples. Nenhuma via de publicação é liberada.
 
 Foram executados **16 testes isolados** de certificação e fronteira atômica no executor local, sem rede, com blob Git dos dois módulos correspondente à branch. Esses testes não constituem homologação no WordPress ou da suíte integral do checkout.
+
+## Reconciliação de revisão confiável (2026-10-30)
+
+O módulo `editorial_trusted_review.verify_independent_review` exige, além da assinatura, consulta a um registro de revisão de origem confiável via função injetada, igualdade do digest, identidade, referências, status FINAL, independência e ausência de revogação. Nenhuma consulta externa é feita automaticamente. Não confiar em dados entregues pelo próprio agente ou pelo payload do artigo como implementação do `lookup_review`.
+
+O provedor concreto de registro confiável precisa autenticar o usuário, gravar a aprovação por meio de permissões administrativas verificadas, preservar log/auditoria e negar aprovações do próprio autor conforme a política editorial. Esses requisitos **ainda não estão configurados em produção**.
+
+A camada transacional no WordPress continua ausente: exige código servidor real e teste concorrente; nenhum código Python com callback consegue fornecer transação no banco WordPress. O bloqueio de publicação permanece obrigatório.
