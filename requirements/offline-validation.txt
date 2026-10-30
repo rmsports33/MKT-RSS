@@ -1,0 +1,8 @@
+# Dependências SOMENTE para validar PR #12 em ambiente isolado.
+# Instale em venv com rede disponível ANTES de rodar o runner offline.
+# Não importar estas dependências para o deploy nem ativar o bot Telegram.
+pytest>=8,<10
+requests>=2.31,<3
+feedparser==6.0.14
+trafilatura==2.2.0
+python-telegram-bot==20.8
