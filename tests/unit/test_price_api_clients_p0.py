@@ -263,7 +263,7 @@ def test_cli_with_mocked_ml_is_independent_of_late_imports(monkeypatch, capsys):
     mocked_get = Mock(return_value=response())
     monkeypatch.setattr(requests.sessions.Session, 'get', mocked_get)
     with pytest.raises(SystemExit) as done:
-        runpy.run_module('mkt_flow_p0.price_collector', run_name='__main__')
+        runpy.run_path(str(Path(pc.__file__)), run_name='__main__')
     assert done.value.code == 0
     assert mocked_get.call_count == 1
     output = capsys.readouterr().out
