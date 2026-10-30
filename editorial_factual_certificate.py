@@ -17,11 +17,24 @@ def draft_digest(post):
         return None
     if post.get("status") != "draft":
         return None
+    categories = post.get("categories")
+    if (not isinstance(categories, list) or
+            any(type(i) is not int or i <= 0 for i in categories) or
+            10 not in categories or 1 in categories):
+        return None
+    if type(post.get("featured_media")) is not int or post["featured_media"] <= 0:
+        return None
+    if not isinstance(post.get("slug"), str) or not post["slug"]:
+        return None
     fields = {}
     for key in ("id", "status", "title", "content", "slug", "categories", "featured_media"):
         value = post.get(key)
         if key in ("title", "content") and isinstance(value, dict):
             value = value.get("raw") or value.get("rendered")
+        if key == "categories":
+            value = sorted(categories)
+        if key in ("title", "content") and (not isinstance(value, str) or not value):
+            return None
         fields[key] = value
     try:
         encoded = json.dumps(fields, sort_keys=True, ensure_ascii=False,
