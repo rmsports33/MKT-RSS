@@ -87,3 +87,7 @@ O módulo `editorial_trusted_review.verify_independent_review` exige, além da a
 O provedor concreto de registro confiável precisa autenticar o usuário, gravar a aprovação por meio de permissões administrativas verificadas, preservar log/auditoria e negar aprovações do próprio autor conforme a política editorial. Esses requisitos **ainda não estão configurados em produção**.
 
 A camada transacional no WordPress continua ausente: exige código servidor real e teste concorrente; nenhum código Python com callback consegue fornecer transação no banco WordPress. O bloqueio de publicação permanece obrigatório.
+
+## Digest PHP/Python interoperável — 2026-10-30
+
+O contrato de hash foi reconciliado com o laboratório WordPress do PR #53: SHA-256 sobre JSON UTF-8 canônico de `categories, content, featured_media, id, slug, status, title`, categorias ordenadas numericamente e chaves alfabeticamente. Vetor de referência: `1341bb92c336ebacfca6f3bd0284b3ff6744eab27519b072ef1b2ef9fa26becc` para post 41/draft/categoria 10/mídia 12/slug noticia/título Notícia/conteúdo `<p>Texto</p>`. Conferido em PHP 8.4 e Python 3.13 no executor isolado; testes golden foram adicionados aos dois repositórios. **Não** houve checkout completo ou homologação com WordPress/MySQL nesta execução. Permissões editoriais, autenticidade do revisor e proteção transacional no banco continuam sem validação real. Publicação automática continua bloqueada.
