@@ -71,3 +71,11 @@ Para homologar: executar a suíte completa no SHA da branch, testar com mocks o 
 - `editorial_atomic_transition.supervised_atomic_publish` exige um backend injetado `commit_if_unchanged(post_id, draft_digest, operation_id, certificate)`. O backend **ainda não existe na integração WordPress** e deve implementar exclusão mútua/compare-and-swap e idempotência no próprio servidor, além de confirmação persistida. GET seguido de POST via REST **não** oferece essa garantia.
 - Estes módulos foram testados offline em cópias verificadas por hash Git (13 testes de comportamento passaram). A suíte completa do checkout Git **não foi executada**. A integração ao `editorial_publish_gate` continua deliberadamente fechada; uma assinatura correta isoladamente não autoriza publicar.
 - O próximo passo exige: emissor autenticado e auditado com revisão humana independente das fontes; endpoint WordPress com transação e política de idempotência; testes de concorrência reais em homologação; suíte integral no SHA exato. Não alterar o estado do gate até comprovar esses requisitos e obter autorização operacional específica.
+
+## Revisão das garantias — 2026-10-30
+
+A certificação agora exige `version=1`, `review_type=independent_human`, `review_record_url` e assinatura vinculada ao digest que inclui `status=draft`. Esses campos são verificações de integridade de um registro: **não autenticam sozinhos o revisor ou a revisão**, pois o emissor ainda precisa de autenticação, lista autorizada e trilha auditável independente.
+
+O backend PHP/WordPress que execute bloqueio transacional, compare-and-swap sobre o estado persistido e idempotência **não foi localizado nem implementado** nesta branch. Não conectar a interface Python a um POST REST simples. Nenhuma via de publicação é liberada.
+
+Foram executados **16 testes isolados** de certificação e fronteira atômica no executor local, sem rede, com blob Git dos dois módulos correspondente à branch. Esses testes não constituem homologação no WordPress ou da suíte integral do checkout.
