@@ -223,6 +223,12 @@ def autorizar_transicao_publicacao(post_persistido: dict, revisao_factual: dict)
     return authorize_publish(post_persistido, revisao_factual)
 
 
+def planejar_transicao_publicacao(post_persistido: dict, revisao_factual: dict) -> dict:
+    """Return an offline plan only; never publish directly from RSS."""
+    from editorial_publish_transition import plan_publish_transition
+    return plan_publish_transition(post_persistido, revisao_factual)
+
+
 def publicar_indice() -> dict:
     """Public sitemap is disabled for the draft-only RSS pipeline."""
     return {"aviso": "indice publico desativado: RSS produz apenas rascunhos"}
