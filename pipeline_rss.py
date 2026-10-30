@@ -213,6 +213,16 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     }
 
 
+def autorizar_transicao_publicacao(post_persistido: dict, revisao_factual: dict) -> dict:
+    """Guard shared by any future WordPress publisher; no remote write.
+
+    The caller must supply a freshly read WordPress post and independently
+    certified editorial evidence. Never infer approval from RSS queue status.
+    """
+    from editorial_publish_gate import authorize_publish
+    return authorize_publish(post_persistido, revisao_factual)
+
+
 def publicar_indice() -> dict:
     """Public sitemap is disabled for the draft-only RSS pipeline."""
     return {"aviso": "indice publico desativado: RSS produz apenas rascunhos"}
