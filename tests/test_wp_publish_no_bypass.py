@@ -24,20 +24,15 @@ def test_unknown_status_is_blocked_before_network():
         post.assert_not_called()
 
 
-def test_draft_payload_never_contains_publish():
-    from unittest.mock import Mock
-    response = Mock(status_code=201)
-    response.json.return_value = {"id": 123, "status": "draft",
-                                  "link": "https://conexotech.com.br/?p=123"}
-    with patch("mkt_flow_p0.wp_publisher.requests.post", return_value=response) as post, \
+def test_draft_without_canonical_package_cannot_send_http():
+    with patch("mkt_flow_p0.wp_publisher.requests.post") as post, \
          patch("mkt_flow_p0.wp_publisher.requests.get") as get:
         result = publicar_no_wordpress(
             "Título", "<p>Texto</p>", "UNKNOWN", "https://conexotech.com.br",
             "user", "password", status_desejado="draft",
             categoria_ids=[10], slug="titulo")
-        assert result["status"] == "draft"
-        assert post.call_count == 1
-        assert post.call_args.kwargs["json"]["status"] == "draft"
+        assert "erro" in result
+        post.assert_not_called()
         get.assert_not_called()
 
 
