@@ -23,7 +23,8 @@ from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
 from typing import Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, urlsplit
+import re
 
 import requests
 
@@ -106,7 +107,22 @@ def normalizar_data_captura(valor) -> str:
 
 
 def _eh_url(valor) -> bool:
-    return bool(re.match(r"^https?://", str(valor or "")))
+    """Rejeita URL sem HTTPS, host, caminho ou com credenciais embutidas."""
+    try:
+        parsed = urlsplit(valor if isinstance(valor, str) else "")
+        return (parsed.scheme == "https" and bool(parsed.hostname)
+                and not parsed.username and not parsed.password
+                and parsed.port in (None, 443) and parsed.path not in ("", "/"))
+    except ValueError:
+        return False
+
+
+def _eh_url_mercadolivre(valor) -> bool:
+    """Não confia apenas no transporte injetado para validar a origem."""
+    return (_eh_url(valor) and urlsplit(valor).hostname in {
+        "mercadolivre.com.br", "www.mercadolivre.com.br",
+        "produto.mercadolivre.com.br",
+    })
 
 
 # --- Persistência local de evidência ----------------------------------------
@@ -246,12 +262,18 @@ def coletar_preco_produto(
         except PriceAPIError as erro:
             erros.append("mercadolivre: " + str(erro))
             r = None
-        if r:
-            resultados.append({"marketplace": "mercadolivre", **r})
+        if isinstance(r, dict):
+            if (r.get("item_id") != ml_item_id
+                    or r.get("marketplace") != "mercadolivre"
+                    or not _eh_url_mercadolivre(r.get("url") or r.get("link"))):
+                erros.append("mercadolivre: identidade ou fonte nao verificavel")
+            else:
+                resultados.append({"marketplace": "mercadolivre", **r})
         elif r is None:
-            erros.append("mercadolivre: coleta indisponivel")
+            if not erros:
+                erros.append("mercadolivre: coleta indisponivel")
         else:
-            erros.append("mercadolivre: falha na coleta")
+            erros.append("mercadolivre: resposta invalida")
     elif ml_item_id:
         erros.append("mercadolivre: item_id fornecido mas credenciais não configuradas")
     
@@ -273,7 +295,7 @@ def coletar_preco_produto(
     # Pega o primeiro resultado válido (melhor preço poderia ser lógica futura)
     r = resultados[0]
     preco_br = normalizar_preco(r.get("preco"))
-    data_captura = normalizar_data_captura(r.get("data_captura") or datetime.now().isoformat())
+    data_captura = normalizar_data_captura(r.get("data_captura"))
     url_oferta = r.get("url") or r.get("link") or ""
     
     if not preco_br or not data_captura or not _eh_url(url_oferta):
@@ -376,12 +398,3 @@ def _main_cli(argv=None):
 if __name__ == "__main__":
     import sys
     sys.exit(_main_cli())
-
-
-# Importações tardias para evitar dependência circular
-import re
-import sqlite3
-from datetime import datetime
-from urllib.parse import urlparse
-from typing import Optional
-import json
