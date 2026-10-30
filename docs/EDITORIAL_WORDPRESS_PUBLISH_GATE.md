@@ -38,3 +38,21 @@ python -m pytest -q tests/test_editorial_wordpress_readiness.py tests/test_edito
 Testes foram adicionados, mas não executados neste ambiente. Não habilitar
 GitHub Actions, não fazer merge, deploy nem publicação a partir deste PR
 antes de validar a integração real e obter autorização específica.
+
+## Segurança adicional — 2026-10-30
+
+Até existir um contrato de certificação factual independente, com identidade do
+aprovador, evidências rastreáveis e vínculo ao artigo/SHA revisado,
+`authorize_publish` **sempre** retorna `autorizado=False`, inclusive quando
+um dicionário de flags diz `APROVADO`. A validação de prontidão é necessária,
+mas não suficiente. `plan_publish_transition` também não retorna uma
+solicitação de escrita executável. Esta é uma suspensão deliberada, não
+uma homologação de publicação.
+
+WordPress REST GET→POST não garante atualização atômica sob concorrência.
+Uma futura implementação deve resolver idempotência e exclusão mútua de forma
+verificável e testar falhas por mocks antes de qualquer teste supervisionado.
+
+Validações locais nesta sessão: foram reproduzidos casos isolados em cópias
+manuais consultadas via conector GitHub (11 passaram), **não** a suíte oficial
+sobre um checkout verificado por SHA. A suíte integral continua pendente.
