@@ -56,3 +56,11 @@ verificável e testar falhas por mocks antes de qualquer teste supervisionado.
 Validações locais nesta sessão: foram reproduzidos casos isolados em cópias
 manuais consultadas via conector GitHub (11 passaram), **não** a suíte oficial
 sobre um checkout verificado por SHA. A suíte integral continua pendente.
+
+## Inspeção offline supervisionada
+
+O método `editorial_wordpress_adapter.inspect_wordpress_draft(fetch_post, post_id, factual_review)` recebe uma função de leitura injetada. O orquestrador expõe `inspecionar_rascunho_wordpress`. Esta etapa lê dados persistidos simulados, normaliza campos `title.raw/content.raw` e executa o gate factual existente. Não realiza HTTP por conta própria e **não publica**.
+
+Cinco testes isolados da nova etapa passaram no executor Python da sessão em 2026-10-30. Os arquivos foram reconstruídos manualmente a partir das versões consultadas; **não** representam o checkout completo validado pelo commit.
+
+Para homologar: executar a suíte completa no SHA da branch, testar com mocks o adaptador REST integral, integrar fonte autenticada de revisão factual vinculada à versão do artigo e resolver concorrência transacional na transição do WordPress. Manter publicação automática desabilitada até isso ser comprovado.
