@@ -1,0 +1,13 @@
+{
+  "schema": "conexo-editorial-core-lock/1",
+  "origin_repository": "rmsports33/conexo-os",
+  "base_commit": "8786cc82256c9b4e80765e47a3d1469d6a7cfc1d",
+  "files": {
+    "scripts/validate_editorial_package.py": "bf6755e69b6ad3134f536b7b5bee9f39640ec6f72e7725aa937b94fb42722b59",
+    "scripts/editorial_write.py": "823d97d51fb3df87a23f24c7b73c6c0fa5d46464b6a42352d90c38c9c4284038",
+    "AGENTS.md": "e29bbd265439d12a7645db49e77c235520bd20aa1ba8fa71c7bad67f6162cca8",
+    "docs/EDITORIAL_DNA_V1.md": "cfb2408dc4ccc9d6d3a43209af84a96fbd91b834d03e66a2be92cb1765d7bad9",
+    "docs/EDITORIAL_WORKFLOW.md": "bf7382bd043a461305de73a9688416aa988d90f5a6a4080f101a8496088ad279"
+  },
+  "commit": "b485d910c80501d64c5f15ab45366a61832fae17"
+}
