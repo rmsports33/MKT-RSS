@@ -252,6 +252,25 @@ def test_duplicate_model_identity_blocks_before_collection():
     c.get_item.assert_not_called()
 
 
+
+def test_cli_with_mocked_ml_is_independent_of_late_imports(monkeypatch, capsys):
+    """Execução como __main__ deve preparar todos os imports antes da CLI."""
+    import runpy
+    monkeypatch.setenv('MERCADOLIVRE_ACCESS_TOKEN', TOKEN)
+    monkeypatch.setattr(sys, 'argv', [
+        'price_collector', '--produto', 'A', '--ml-id', 'MLB123',
+    ])
+    mocked_get = Mock(return_value=response())
+    monkeypatch.setattr(requests.sessions.Session, 'get', mocked_get)
+    with pytest.raises(SystemExit) as done:
+        runpy.run_module('mkt_flow_p0.price_collector', run_name='__main__')
+    assert done.value.code == 0
+    assert mocked_get.call_count == 1
+    output = capsys.readouterr().out
+    assert '"ok": true' in output
+    assert TOKEN not in output
+
+
 def test_environment_client_reused_for_all_products(monkeypatch):
     # Caminho normal: sem injetar client no helper; só o transporte é simulado.
     session = Mock()
