@@ -12,7 +12,7 @@ REVIEW = {"veredito": "APROVADO", "revisao_substantiva": True,
 def test_self_asserted_review_cannot_approve():
     result = authorize_publish(POST, REVIEW)
     assert result["autorizado"] is False
-    assert "trusted_factual_review_missing" in result["bloqueios"]
+    assert "canonical_editorial_package_missing" in result["bloqueios"]
     with pytest.raises(PermissionError):
         require_publish_authorization(POST, REVIEW)
 
@@ -31,7 +31,7 @@ def test_factual_gate_fails_closed(key, value):
 
 
 def test_missing_factual_review():
-    assert "factual_review_missing" in authorize_publish(POST, None)["bloqueios"]
+    assert "canonical_editorial_package_missing" in authorize_publish(POST, None)["bloqueios"]
 
 
 def test_media_missing_even_with_approved_facts():
