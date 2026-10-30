@@ -29,3 +29,13 @@ Estado: PREPARAÇÃO SEGURA. NÃO HOMOLOGADO / NÃO IMPLANTAR.
 - Homologar plugin com WordPress/Jetpack reais em ambiente isolado e testar rota assinada, recusas diretas REST/MCP/XML-RPC, cron, concorrência e reversão.
 - Instalar exclusivamente `wp-content/mu-plugins/conexo-editorial-gate.php` após validação, preservando `hostinger-auto-updates.php` e `hostinger-preview-domain.php`.
 - Sem merge, deploy, Actions, publicação ou alteração do servidor por este preflight.
+
+## Resultado desta reconciliação (30/10/2026)
+
+- Branch recebeu o transporte assinado, lock do núcleo, publicador protegido, gate canônico, validador WordPress, funções RSS e documentação da PR #34.
+- Foram preservados `editorial_publish_transition.py`, `tests/test_editorial_publish_transition.py` e as funções de planejamento/autorização da PR #33.
+- Os testes da PR #34 foram incluídos em arquivos independentes (`tests/test_editorial_publish_gate_signed.py`, `tests/test_editorial_transport.py`, `tests/unit/test_wp_publisher_signed.py`) para não apagar os testes anteriores; as asserções de bloqueio antigas foram alinhadas ao gate canônico.
+- Comparação GitHub confirmou 13 arquivos alterados relativamente ao head fixado da PR #33.
+- **Testes completos: NÃO EXECUTADOS**. O ambiente de execução disponível não resolve `github.com` por DNS, portanto não obteve checkout verificável para `pytest`. Não usar os 46/169 testes históricos como evidência desta branch.
+- Execução recomendada em executor gratuito com checkout desta branch e checkout do núcleo fixado no lock: `python -m pytest -q`. Repetir com `CONEXO_TEST_CORE_ROOT`, `CXEG_WASM_RUNNER`, `CXEG_TEST_SITE_ROOT`, `CXEG_WASM_MODULES` e `CONEXO_TEST_DISCOVERY_CONSUMER` válidos para evitar skips das integrações críticas; registrar versão, exit code, número de casos e skips.
+- Nenhum merge, GitHub Actions, deploy, acesso WordPress, credencial real ou publicação foi feito. Estado: `RECONCILED_UNTESTED_NO_DEPLOY`.
