@@ -101,13 +101,13 @@ def _renderizar_markdown_editorial(markdown):
 
     def flush():
         if buffer:
-            out.append(markdown_para_html("\\n".join(buffer)))
+            out.append(markdown_para_html("\n".join(buffer)))
             buffer.clear()
 
     i = 0
     while i < len(lines):
         if (i + 1 < len(lines) and lines[i].strip().startswith("|")
-                and re.fullmatch(r"[|:\\-\\s]+", lines[i + 1].strip() or "x")):
+                and re.fullmatch(r"[|:\-\s]+", lines[i + 1].strip() or "x")):
             header = [x.strip() for x in lines[i].strip().strip("|").split("|")]
             divider = [x.strip() for x in lines[i + 1].strip().strip("|").split("|")]
             if (len(header) > 1 and len(header) == len(divider)
@@ -130,7 +130,7 @@ def _renderizar_markdown_editorial(markdown):
         buffer.append(lines[i])
         i += 1
     flush()
-    return "\\n".join(out)
+    return "\n".join(out)
 
 
 def gerar_corpo_wordpress(article, markdown):
