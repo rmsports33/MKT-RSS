@@ -213,6 +213,28 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     }
 
 
+def autorizar_transicao_publicacao(post_persistido: dict, revisao_factual: dict) -> dict:
+    """Guard shared by any future WordPress publisher; no remote write.
+
+    The caller must supply a freshly read WordPress post and independently
+    certified editorial evidence. Never infer approval from RSS queue status.
+    """
+    from editorial_publish_gate import authorize_publish
+    return authorize_publish(post_persistido, revisao_factual)
+
+
+def inspecionar_rascunho_wordpress(fetch_post, post_id: int, revisao_factual: dict) -> dict:
+    """Read-only persisted draft check; never writes or publishes."""
+    from editorial_wordpress_adapter import inspect_wordpress_draft
+    return inspect_wordpress_draft(fetch_post, post_id, revisao_factual)
+
+
+def planejar_transicao_publicacao(post_persistido: dict, revisao_factual: dict) -> dict:
+    """Return an offline plan only; never publish directly from RSS."""
+    from editorial_publish_transition import plan_publish_transition
+    return plan_publish_transition(post_persistido, revisao_factual)
+
+
 def publicar_indice() -> dict:
     """Public sitemap is disabled for the draft-only RSS pipeline."""
     return {"aviso": "indice publico desativado: RSS produz apenas rascunhos"}
