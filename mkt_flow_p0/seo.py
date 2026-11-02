@@ -185,7 +185,10 @@ class _ConteudoSEO(HTMLParser):
                 self.sem_alt += 1
         elif tag == "a" and a.get("href"):
             href = a["href"].strip()
-            p = urlsplit(href)
+            try:
+                p = urlsplit(href)
+            except ValueError:
+                return
             if (not p.scheme and not p.netloc and href.startswith("/")) or (
                 p.scheme == "https" and p.hostname == "conexotech.com.br"
             ):
