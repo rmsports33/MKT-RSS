@@ -84,3 +84,28 @@ def test_nunca_renderiza_aprovacao_autodeclarada():
 def test_links_maliciosos_nao_chegam_ao_wordpress():
     with pytest.raises(ValueError):
         gerar_corpo_wordpress(_pacote(), _texto() + "\n[link](javascript:alert)")
+
+
+def test_bridge_rejects_raw_html():
+    with pytest.raises(ValueError, match="HTML bruto"):
+        gerar_corpo_wordpress(_pacote(), _texto() + "\n<div onclick='bad()'>Inseguro</div>")
+
+
+def test_bridge_factual_contract_not_implicitly_approved(tmp_path):
+    meta = tmp_path / "article.json"
+    markdown = tmp_path / "article.md"
+    meta.write_text(json.dumps(_pacote(), ensure_ascii=False), encoding="utf-8")
+    markdown.write_text(_texto(), encoding="utf-8")
+    manifest = processar(meta, markdown, tmp_path / "output")
+    assert manifest["aprovacao_publicacao"] is False
+    assert manifest["contrato_editorial"]["veredito"] == "BLOQUEADO"
+
+
+def test_bridge_rejects_invalid_canonical_snapshot():
+    packet = _pacote()
+    packet["contrato_editorial"] = {
+        "contract_version": "0.9", "content_type": "noticia",
+        "sources": [], "claims": []
+    }
+    with pytest.raises(ValueError, match="Contrato editorial canonico invalido"):
+        gerar_corpo_wordpress(packet, _texto())
