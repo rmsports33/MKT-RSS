@@ -37,4 +37,7 @@ def test_android_drop_9711_processa_html_real_sem_wordpress(tmp_path):
     assert "seo_preflight" in result
     assert result["revisao_factual_humana_pendente"] is True
     assert result["fontes_sem_vinculo_canonico"] == list(range(len(m["sources"])))
-    assert result["rastreabilidade_claims"] == []
+    assert len(result["rastreabilidade_claims"]) == 4
+    assert all(x["status"] == "PENDENTE_REVISAO" for x in result["rastreabilidade_claims"])
+    assert all(x["source_urls"] and x["texto_localizado"] for x in result["rastreabilidade_claims"])
+    assert all(not x["vinculo_completo"] for x in result["rastreabilidade_claims"])
