@@ -7,7 +7,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from mkt_flow_p0.format import markdown_para_html
-from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
+from mkt_flow_p0.adaptador_contrato_editorial import normalizar_snapshot_editorial, avaliar_snapshot_editorial
 
 MAX_BYTES = 1024 * 1024
 VALID_STATES = {"aguardando_revisao", "revisado"}
@@ -18,7 +18,9 @@ def _safe_url(value):
     if not isinstance(value, str) or any(ord(c) < 32 for c in value):
         return False
     u = urlparse(value)
-    return u.scheme == "https" and bool(u.hostname) and not u.username and not u.password
+    return (u.scheme == "https" and bool(u.hostname) and not u.username and not u.password
+            and not any(c.isspace() for c in value) and u.port in (None, 443)
+            and not u.hostname.endswith(".") and "." in u.hostname)
 
 
 def _safe_slug(value):
@@ -31,8 +33,10 @@ def _string(value):
 
 def _escape_links(markdown):
     """Rejeita links potencialmente ativos antes de delegar ao renderizador legado."""
-    if re.search(r"<\s*(?:script|iframe|img|svg|object|style)\b", markdown, re.I):
-        raise ValueError("HTML ativo nao permitido")
+    # O conversor legado escapa o texto HTML; para a pre-visualizacao,
+    # recusar qualquer HTML bruto evita ambiguidades e usos indevidos.
+    if re.search(r"<\s*/?\s*[a-z][^>]*>", markdown, re.I):
+        raise ValueError("HTML bruto nao permitido")
     for url in re.findall(r"!?\[[^\]]*\]\(([^)]+)\)", markdown):
         if not _safe_url(url):
             raise ValueError("Link Markdown deve usar HTTPS valido")
@@ -68,6 +72,9 @@ def validar_pacote(article, markdown):
         erros.append("Fontes HTTPS obrigatorias")
     if not isinstance(article.get("claims"), list):
         erros.append("Claims invalidas")
+    contract = article.get("contrato_editorial")
+    if contract is not None and normalizar_snapshot_editorial(contract) is None:
+        erros.append("Contrato editorial canonico invalido")
     review = article.get("review")
     if not isinstance(review, dict) or review.get("approved") is not False:
         erros.append("Pacote de pre-visualizacao exige approved=false")
@@ -125,7 +132,11 @@ def processar(metadata_file, markdown_file, output_dir):
     output.mkdir(parents=True, exist_ok=True)
     path = output / (article["seo"]["slug"] + ".html")
     path.write_text(rendered, encoding="utf-8")
+    snapshot = article.get("contrato_editorial")
+    contract_check = (avaliar_snapshot_editorial(snapshot) if snapshot is not None
+                      else {"veredito": "BLOQUEADO", "motivos": ["contrato_editorial_ausente"]})
     manifest = {"article_id": article["article_id"], "status": "aguardando_revisao",
+                "aprovacao_publicacao": False, "contrato_editorial": contract_check,
                 "html": str(path), "wordpress_written": False,
                 "seo": article["seo"], "source_count": len(article["sources"])}
     (output / (article["seo"]["slug"] + ".report.json")).write_text(
