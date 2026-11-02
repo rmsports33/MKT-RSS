@@ -5,7 +5,6 @@ from editorial_wordpress_readiness import validate_wordpress_readiness
 
 def authorize_publish(post, factual_review=None, *, package=None, core_root=None,
                       expected_category_id=10):
-    from mkt_flow_p0.editorial_transport import load_core
     problems = list(validate_wordpress_readiness(post, expected_category_id=expected_category_id).errors)
     if not isinstance(package, dict) or not core_root:
         problems.append("canonical_editorial_package_missing")
@@ -14,6 +13,7 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
             problems.append("factual_review_missing")
     else:
         try:
+            from mkt_flow_p0.editorial_transport import load_core
             core = load_core(core_root)
             errors, blockers = core.validator().evaluate(package, Path(core_root), require_editorial_ready=True)
             problems.extend(errors + blockers)
@@ -26,7 +26,7 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
                     "slug": p["slug"], "featured_media": wp["featured_media"],
                     "categories": wp["categories"]}.items()):
                 problems.append("remote_version_mismatch")
-        except (OSError, ValueError, TypeError, KeyError):
+        except (ImportError, OSError, ValueError, TypeError, KeyError, RuntimeError):
             problems.append("canonical_gate_unavailable_or_invalid")
     return {"autorizado": not problems, "bloqueios": problems}
 
