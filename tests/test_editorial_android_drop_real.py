@@ -18,6 +18,9 @@ def test_android_drop_9711_processa_html_real_sem_wordpress(tmp_path):
     preview = Path(result["html"]).read_text(encoding="utf-8")
     body = Path(result["wordpress_body"]).read_text(encoding="utf-8")
     assert "<h2>" in body
+    assert "<table>" in body and "<th>Recurso</th>" in body
+    assert "<td>Motion Assist</td>" in body
+    assert "| --- |" not in body
     assert "Visão Guiada" in body
     assert "Find Hub" in body
     assert "Fonte" in body
