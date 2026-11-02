@@ -1,5 +1,6 @@
 """Conexo editorial core: importacao segura, SEO e HTML offline, sem API nem WP."""
 import argparse
+import hashlib
 import html
 import json
 import re
@@ -7,6 +8,7 @@ from pathlib import Path
 from urllib.parse import urlparse
 
 from mkt_flow_p0.format import markdown_para_html
+from mkt_flow_p0.seo import validar_artigo_wordpress
 from mkt_flow_p0.adaptador_contrato_editorial import normalizar_snapshot_editorial, avaliar_snapshot_editorial
 
 MAX_BYTES = 1024 * 1024
@@ -93,11 +95,14 @@ def validar_pacote(article, markdown):
     return erros
 
 
-def gerar_html(article, markdown):
+def gerar_corpo_wordpress(article, markdown):
+    """Fragmento editorial sem <head>, <h1> duplicado ou noindex de pre-visualizacao.
+
+    Somente gera HTML; nao autoriza escrita e nao confere fatos automaticamente.
+    """
     erros = validar_pacote(article, markdown)
     if erros:
         raise ValueError("; ".join(erros))
-    seo = article["seo"]
     body = markdown_para_html(markdown)
     fontes = "\n".join(
         '<li><a rel="noopener noreferrer" href="' + html.escape(s["url"], quote=True) +
@@ -107,21 +112,28 @@ def gerar_html(article, markdown):
         '<li><a rel="noopener noreferrer" href="' + html.escape(r["url"], quote=True) +
         '">' + html.escape(r.get("title") or r["url"]) + '</a></li>' for r in article.get("related_articles", [])
     )
-    preview = [
-        "<!doctype html>", '<html lang="pt-BR"><head><meta charset="utf-8">',
+    items = [body, "<h2>Fontes</h2><ul>" + fontes + "</ul>"]
+    if related:
+        items.append("<h2>Leia também</h2><ul>" + related + "</ul>")
+    return "\n".join(items)
+
+
+def gerar_html(article, markdown):
+    """Documento completo SOMENTE para pre-visualizacao offline, sempre noindex."""
+    fragmento = gerar_corpo_wordpress(article, markdown)
+    seo = article["seo"]
+    return "\n".join([
+        "<!doctype html>",
+        '<html lang="pt-BR"><head><meta charset="utf-8">',
         '<meta name="robots" content="noindex,nofollow">',
         '<meta name="viewport" content="width=device-width,initial-scale=1">',
         "<title>" + html.escape(seo["title"]) + "</title>",
         '<meta name="description" content="' + html.escape(seo["description"], quote=True) + '">',
         "</head><body><main><article>",
         "<h1>" + html.escape(article["title"]) + "</h1>",
-        body,
-        "<h2>Fontes</h2><ul>" + fontes + "</ul>",
-    ]
-    if related:
-        preview.append("<h2>Leia também</h2><ul>" + related + "</ul>")
-    preview.extend(["</article></main></body></html>"])
-    return "\n".join(preview)
+        fragmento,
+        "</article></main></body></html>",
+    ])
 
 
 def processar(metadata_file, markdown_file, output_dir):
@@ -131,16 +143,24 @@ def processar(metadata_file, markdown_file, output_dir):
     article = json.loads(metadata_file.read_text(encoding="utf-8"))
     markdown = markdown_file.read_text(encoding="utf-8")
     rendered = gerar_html(article, markdown)
+    wordpress_body = gerar_corpo_wordpress(article, markdown)
+    seo_preflight = validar_artigo_wordpress(article["title"], wordpress_body,
+                                           tem_capa=bool(article.get("featured_image")))
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     path = output / (article["seo"]["slug"] + ".html")
     path.write_text(rendered, encoding="utf-8")
+    body_path = output / (article["seo"]["slug"] + ".wordpress-body.html")
+    body_path.write_text(wordpress_body, encoding="utf-8")
     snapshot = article.get("contrato_editorial")
     contract_check = (avaliar_snapshot_editorial(snapshot) if snapshot is not None
                       else {"veredito": "BLOQUEADO", "motivos": ["contrato_editorial_ausente"]})
     manifest = {"article_id": article["article_id"], "status": "aguardando_revisao",
                 "aprovacao_publicacao": False, "contrato_editorial": contract_check,
-                "html": str(path), "wordpress_written": False,
+                "html": str(path), "wordpress_body": str(body_path),
+                "wordpress_written": False, "factual_review": "NAO_VERIFICADO",
+                "seo_preflight": seo_preflight,
+                "content_sha256": hashlib.sha256((json.dumps(article, sort_keys=True, ensure_ascii=False) + "\\n" + markdown).encode("utf-8")).hexdigest(),
                 "seo": article["seo"], "source_count": len(article["sources"])}
     (output / (article["seo"]["slug"] + ".report.json")).write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
