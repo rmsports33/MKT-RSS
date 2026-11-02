@@ -45,3 +45,13 @@ def test_published_post_is_not_valid_transition_source():
 
 def test_missing_review_fails_closed():
     assert "factual_review_missing" in authorize_publish(POST, None)["bloqueios"]
+
+
+def test_missing_core_blocks_publication():
+    result = authorize_publish(
+        POST, REVIEW,
+        package={"stage": "ready", "payload": {}},
+        core_root="/missing-conexo-editorial-core-for-regression",
+    )
+    assert result["autorizado"] is False
+    assert "canonical_gate_unavailable_or_invalid" in result["bloqueios"]
