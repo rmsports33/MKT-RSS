@@ -1,0 +1,59 @@
+{
+  "schema_version": "1.0",
+  "article_id": "cx-android-drop-9711",
+  "status": "aguardando_revisao",
+  "title": "Android Drop: como conferir os novos recursos no seu celular",
+  "seo": {
+    "title": "Android Drop: como conferir os recursos no celular",
+    "description": "Saiba como conferir os recursos anunciados pelo Google para o Android, os requisitos de cada novidade e o que verificar antes de trocar de aparelho.",
+    "slug": "android-drop-como-conferir-recursos",
+    "keyword": "Android Drop"
+  },
+  "sources": [
+    {
+      "name": "Google — Android Drop setembro",
+      "url": "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/"
+    },
+    {
+      "name": "Android — novos recursos setembro",
+      "url": "https://www.android.com/intl/en_us/new-features-on-android/featured/september-2026/"
+    },
+    {
+      "name": "Google — Gemini Guided Vision",
+      "url": "https://blog.google/innovation-and-ai/products/gemini-app/guided-vision-gemini-live/"
+    },
+    {
+      "name": "Google suporte — Gemini",
+      "url": "https://support.google.com/gemini/answer/14579026?co=GENIE.Platform%3DAndroid&hl=pt-BR"
+    },
+    {
+      "name": "Google suporte — RCS",
+      "url": "https://support.google.com/messages/answer/7189714?hl=pt-BR"
+    }
+  ],
+  "claims": [],
+  "review": {
+    "approved": false
+  },
+  "featured_image": {
+    "wp_media_id": 9714,
+    "alt": "Smartphone Android em imagem ilustrativa",
+    "credit": "Deyvi Romero/Pexels — verificar licença antes de publicar"
+  },
+  "related_articles": [
+    {
+      "title": "Samsung Galaxy A57 5G: vale a pena em 2026?",
+      "url": "https://conexotech.com.br/reviews/samsung-galaxy-a57-5g-vale-a-pena-em-2026/"
+    },
+    {
+      "title": "Megapixels não garantem qualidade: avalie a câmera",
+      "url": "https://conexotech.com.br/megapixels-nao-garantem-qualidade-avalie-a-camera-do-celular/"
+    },
+    {
+      "title": "Galaxy A54 vs Redmi Note 13 — Comparativo completo",
+      "url": "https://conexotech.com.br/comparativos/comparativo-galaxy-a54-vs-redmi-note-13/"
+    }
+  ],
+  "source_wp_post_id": 9711,
+  "source_wp_status": "draft"
+}
