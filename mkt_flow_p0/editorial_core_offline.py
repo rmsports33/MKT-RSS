@@ -214,7 +214,8 @@ def processar(metadata_file, markdown_file, output_dir):
         rastreio.append({"claim_id": claim.get("id"), "status": "PENDENTE_REVISAO",
                          "evidence_ids": validas, "source_urls": urls_validas,
                          "texto_localizado": no_corpo,
-                         "vinculo_completo": bool(validas and no_corpo and len(validas) == len(refs))})
+                         "vinculo_completo": bool(validas and no_corpo and len(validas) == len(refs)),
+                         "evidencia_aprovada": False})
     fontes_sem_vinculo = [i for i in range(len(article["sources"]))
                          if not any(article["sources"][i]["url"] == src.get("url")
                                     for src in fontes_can.values())]
