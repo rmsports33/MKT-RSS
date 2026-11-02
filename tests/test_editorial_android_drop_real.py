@@ -35,3 +35,6 @@ def test_android_drop_9711_processa_html_real_sem_wordpress(tmp_path):
     assert result["contrato_editorial"]["veredito"] == "BLOQUEADO"
     assert result["content_sha256"]
     assert "seo_preflight" in result
+    assert result["revisao_factual_humana_pendente"] is True
+    assert result["fontes_sem_vinculo_canonico"] == list(range(len(m["sources"])))
+    assert result["rastreabilidade_claims"] == []
