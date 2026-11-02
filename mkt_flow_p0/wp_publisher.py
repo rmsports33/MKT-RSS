@@ -5,6 +5,7 @@ Gateado por status_validacao==PASS para publish; draft sempre permitido.
 import base64
 import logging
 import requests
+from .seo import validar_artigo_wordpress
 
 logger = logging.getLogger("wp_publisher")
 
@@ -112,6 +113,9 @@ def publicar_no_wordpress(
         "User-Agent": "MKT-Flow-P0/3.6",
     }
 
+    # SEO consultivo, sem rede e sem alterar o gate de revisao/publicacao.
+    seo_preflight = validar_artigo_wordpress(titulo, conteudo_html, tem_capa=bool(imagem_url))
+
     # Upload de imagem destacada se houver
     featured_media = None
     if imagem_url and imagem_url.startswith("http"):
@@ -165,6 +169,7 @@ def publicar_no_wordpress(
                 "link": data.get("link"),
                 "status": data.get("status"),
                 "status_validacao": status_validacao,
+                "seo_preflight": seo_preflight,
             }
             if rank_math:
                 out.update(_aplicar_rank_math(wp_url, wp_user, wp_app_password,
