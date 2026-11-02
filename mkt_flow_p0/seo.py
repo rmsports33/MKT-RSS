@@ -155,3 +155,80 @@ def enriquecer_com_keywords(nome: str, categoria: str = "eletronicos", limit: in
         return sugerir_keywords_review(nome, limit=limit)
     except Exception:
         return []
+
+
+# Preflight editorial WordPress: o artigo é um fragmento HTML, não uma página.
+# Canonical, <title>, meta description e robots são gerados pelo tema/WordPress.
+from html.parser import HTMLParser
+from urllib.parse import urlsplit
+
+
+class _ConteudoSEO(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.h2 = 0
+        self.imagens = 0
+        self.sem_alt = 0
+        self.links_internos = set()
+        self.textos = []
+        self._ignore = 0
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag in ("script", "style"):
+            self._ignore += 1
+        elif tag == "h2":
+            self.h2 += 1
+        elif tag == "img":
+            self.imagens += 1
+            if not str(a.get("alt") or "").strip():
+                self.sem_alt += 1
+        elif tag == "a" and a.get("href"):
+            href = a["href"].strip()
+            p = urlsplit(href)
+            if (not p.scheme and not p.netloc and href.startswith("/")) or (
+                p.scheme == "https" and p.hostname == "conexotech.com.br"
+            ):
+                if p.path and p.path != "/":
+                    self.links_internos.add(p.path.rstrip("/"))
+
+    def handle_endtag(self, tag):
+        if tag in ("script", "style") and self._ignore:
+            self._ignore -= 1
+
+    def handle_data(self, data):
+        if not self._ignore:
+            self.textos.append(data)
+
+
+def validar_artigo_wordpress(titulo: str, conteudo_html: str, *, tem_capa=False) -> dict:
+    """Prévia SEO sem rede; nunca bloqueia nem substitui o gate editorial.
+
+    Valida somente conteúdo fornecido ao WordPress. Não exige tags do
+    <head> em posts, pois são responsabilidade do tema/plugin já existente.
+    """
+    p = _ConteudoSEO()
+    p.feed(conteudo_html or "")
+    palavras = len(" ".join(p.textos).split())
+    avisos = []
+    if len((titulo or "").strip()) < 20:
+        avisos.append("titulo_pouco_descritivo")
+    if palavras < 300:
+        avisos.append("conteudo_curto_revisar")
+    if p.h2 == 0:
+        avisos.append("sem_subtitulos_h2")
+    if not p.imagens and not tem_capa:
+        avisos.append("sem_imagem")
+    if p.sem_alt:
+        avisos.append("imagem_sem_alt")
+    if len(p.links_internos) < 3:
+        avisos.append("menos_de_tres_links_internos")
+    return {
+        "status": "REVISAR" if avisos else "SEM_ALERTAS",
+        "avisos": avisos,
+        "palavras": palavras,
+        "subtitulos_h2": p.h2,
+        "imagens_sem_alt": p.sem_alt,
+        "links_internos": len(p.links_internos),
+        "observacao": "Avaliacao editorial do fragmento; metadados finais sao gerados no WordPress.",
+    }
