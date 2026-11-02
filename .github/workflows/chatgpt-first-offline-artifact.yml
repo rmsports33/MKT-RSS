@@ -1,13 +1,7 @@
 name: ChatGPT-first offline article artifact
+# Artefato opcional: CI pytest valida o renderizador a cada mudanca.
+# Gerar ZIP sob demanda evita execucoes repetidas por commit.
 on:
-  pull_request:
-    paths:
-      - 'mkt_flow_p0/editorial_core_offline.py'
-      - 'mkt_flow_p0/seo.py'
-      - 'mkt_flow_p0/format.py'
-      - 'tests/fixtures/chatgpt_first/**'
-      - 'tests/test_editorial_android_drop_real.py'
-      - '.github/workflows/chatgpt-first-offline-artifact.yml'
   workflow_dispatch:
 
 permissions:
