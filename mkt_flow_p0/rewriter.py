@@ -91,6 +91,12 @@ def _get_client():
             return None, "Endpoint HTTPS nao permitido; configure base URL e REWRITER_ALLOWED_HOSTS explicitamente"
         if not model or not key:
             return None, "Modelo ou chave do provedor compativel ausente"
+        # OpenRouter: protecao contra modelos tarifados por engano.
+        if uri.hostname.lower() == "openrouter.ai":
+            if uri.path.rstrip("/") != "/api/v1":
+                return None, "OpenRouter exige endpoint /api/v1"
+            if model != "openrouter/free" and not model.endswith(":free"):
+                return None, "Modelo OpenRouter nao gratuito bloqueado: use openrouter/free ou ID :free"
         try:
             from openai import OpenAI
             return OpenAI(api_key=key, base_url=base_url, max_retries=0), ""
