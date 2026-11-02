@@ -1,0 +1,146 @@
+"""Conexo editorial core: importacao segura, SEO e HTML offline, sem API nem WP."""
+import argparse
+import html
+import json
+import re
+from pathlib import Path
+from urllib.parse import urlparse
+
+from mkt_flow_p0.format import markdown_para_html
+from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
+
+MAX_BYTES = 1024 * 1024
+VALID_STATES = {"aguardando_revisao", "revisado"}
+REQUIRED = ("schema_version", "article_id", "status", "title", "seo", "sources", "claims", "review")
+
+
+def _safe_url(value):
+    if not isinstance(value, str) or any(ord(c) < 32 for c in value):
+        return False
+    u = urlparse(value)
+    return u.scheme == "https" and bool(u.hostname) and not u.username and not u.password
+
+
+def _safe_slug(value):
+    return isinstance(value, str) and bool(re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", value))
+
+
+def _string(value):
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _escape_links(markdown):
+    """Rejeita links potencialmente ativos antes de delegar ao renderizador legado."""
+    if re.search(r"<\s*(?:script|iframe|img|svg|object|style)\b", markdown, re.I):
+        raise ValueError("HTML ativo nao permitido")
+    for url in re.findall(r"!?\[[^\]]*\]\(([^)]+)\)", markdown):
+        if not _safe_url(url):
+            raise ValueError("Link Markdown deve usar HTTPS valido")
+    if re.search(r"(?i)\b(?:javascript|data|vbscript)\s*:", markdown):
+        raise ValueError("Esquema perigoso no artigo")
+
+
+def validar_pacote(article, markdown):
+    erros = []
+    if not isinstance(article, dict):
+        return ["Metadados devem ser objeto JSON"]
+    for key in REQUIRED:
+        if key not in article:
+            erros.append("Campo ausente: " + key)
+    if article.get("schema_version") != "1.0":
+        erros.append("Versao incompatível")
+    if not _string(article.get("article_id")) or not re.fullmatch(r"[a-zA-Z0-9_-]{3,64}", article.get("article_id") or ""):
+        erros.append("ID invalido")
+    if article.get("status") not in VALID_STATES:
+        erros.append("Estado editorial invalido")
+    if not _string(article.get("title")):
+        erros.append("Titulo ausente")
+    seo = article.get("seo")
+    if not isinstance(seo, dict):
+        erros.append("SEO invalido")
+    else:
+        if not _string(seo.get("title")) or not _string(seo.get("description")):
+            erros.append("Titulo ou descricao SEO ausente")
+        if not _safe_slug(seo.get("slug")):
+            erros.append("Slug invalido")
+    sources = article.get("sources")
+    if not isinstance(sources, list) or not sources or any(not isinstance(s, dict) or not _safe_url(s.get("url")) for s in sources):
+        erros.append("Fontes HTTPS obrigatorias")
+    if not isinstance(article.get("claims"), list):
+        erros.append("Claims invalidas")
+    review = article.get("review")
+    if not isinstance(review, dict) or review.get("approved") is not False:
+        erros.append("Pacote de pre-visualizacao exige approved=false")
+    if not isinstance(markdown, str) or len(markdown.split()) < 100:
+        erros.append("Texto editorial insuficiente")
+    related = article.get("related_articles", [])
+    if not isinstance(related, list) or len(related) > 3 or any(not isinstance(r, dict) or not _safe_url(r.get("url")) for r in related):
+        erros.append("Links relacionados invalidos")
+    try:
+        _escape_links(markdown)
+    except ValueError as exc:
+        erros.append(str(exc))
+    return erros
+
+
+def gerar_html(article, markdown):
+    erros = validar_pacote(article, markdown)
+    if erros:
+        raise ValueError("; ".join(erros))
+    seo = article["seo"]
+    body = markdown_para_html(markdown)
+    fontes = "\n".join(
+        '<li><a rel="noopener noreferrer" href="' + html.escape(s["url"], quote=True) +
+        '">' + html.escape(s.get("name") or s["url"]) + '</a></li>' for s in article["sources"]
+    )
+    related = "\n".join(
+        '<li><a rel="noopener noreferrer" href="' + html.escape(r["url"], quote=True) +
+        '">' + html.escape(r.get("title") or r["url"]) + '</a></li>' for r in article.get("related_articles", [])
+    )
+    preview = [
+        "<!doctype html>", '<html lang="pt-BR"><head><meta charset="utf-8">',
+        '<meta name="robots" content="noindex,nofollow">',
+        '<meta name="viewport" content="width=device-width,initial-scale=1">',
+        "<title>" + html.escape(seo["title"]) + "</title>",
+        '<meta name="description" content="' + html.escape(seo["description"], quote=True) + '">',
+        "</head><body><main><article>",
+        "<h1>" + html.escape(article["title"]) + "</h1>",
+        body,
+        "<h2>Fontes</h2><ul>" + fontes + "</ul>",
+    ]
+    if related:
+        preview.append("<h2>Leia também</h2><ul>" + related + "</ul>")
+    preview.extend(["</article></main></body></html>"])
+    return "\n".join(preview)
+
+
+def processar(metadata_file, markdown_file, output_dir):
+    metadata_file, markdown_file = Path(metadata_file), Path(markdown_file)
+    if metadata_file.stat().st_size > MAX_BYTES or markdown_file.stat().st_size > MAX_BYTES:
+        raise ValueError("Arquivo muito grande")
+    article = json.loads(metadata_file.read_text(encoding="utf-8"))
+    markdown = markdown_file.read_text(encoding="utf-8")
+    rendered = gerar_html(article, markdown)
+    output = Path(output_dir)
+    output.mkdir(parents=True, exist_ok=True)
+    path = output / (article["seo"]["slug"] + ".html")
+    path.write_text(rendered, encoding="utf-8")
+    manifest = {"article_id": article["article_id"], "status": "aguardando_revisao",
+                "html": str(path), "wordpress_written": False,
+                "seo": article["seo"], "source_count": len(article["sources"])}
+    (output / (article["seo"]["slug"] + ".report.json")).write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
+    return manifest
+
+
+def main():
+    p = argparse.ArgumentParser(description="Renderizador editorial offline, sem WordPress")
+    p.add_argument("--metadata", required=True)
+    p.add_argument("--markdown", required=True)
+    p.add_argument("--output-dir", required=True)
+    args = p.parse_args()
+    print(json.dumps(processar(args.metadata, args.markdown, args.output_dir), ensure_ascii=False))
+
+
+if __name__ == "__main__":
+    main()
