@@ -61,3 +61,24 @@ def test_escreve_html_e_relatorio_local(tmp_path):
     assert result["wordpress_written"] is False
     assert (tmp_path / "outputs" / "noticia-em-revisao.html").is_file()
     assert (tmp_path / "outputs" / "noticia-em-revisao.report.json").is_file()
+
+
+def test_html_bruto_rejeitado():
+    with pytest.raises(ValueError, match="HTML bruto"):
+        gerar_html(artigo(), corpo() + "\n<div onclick='x'>Inseguro</div>")
+
+
+def test_contrato_canonico_invalido_bloqueado():
+    a = artigo()
+    a["contrato_editorial"] = {"contract_version": "0.9", "content_type": "noticia", "sources": [], "claims": []}
+    assert "Contrato editorial canonico invalido" in validar_pacote(a, corpo())
+
+
+def test_contrato_ausente_nao_concede_aprovacao(tmp_path):
+    metadata = tmp_path / "artigo.json"
+    md = tmp_path / "artigo.md"
+    metadata.write_text(json.dumps(artigo(), ensure_ascii=False), encoding="utf-8")
+    md.write_text(corpo(), encoding="utf-8")
+    result = processar(metadata, md, tmp_path / "outputs")
+    assert result["aprovacao_publicacao"] is False
+    assert result["contrato_editorial"]["veredito"] == "BLOQUEADO"
