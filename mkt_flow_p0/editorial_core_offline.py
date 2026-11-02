@@ -134,7 +134,8 @@ def processar(metadata_file, markdown_file, output_dir):
     markdown = markdown_file.read_text(encoding="utf-8")
     rendered = gerar_html(article, markdown)
     wordpress_body = gerar_corpo_wordpress(article, markdown)
-    seo_preflight = validar_artigo_wordpress(article["title"], wordpress_body,\n                                           tem_capa=bool(article.get("featured_image")))
+    seo_preflight = validar_artigo_wordpress(article["title"], wordpress_body,
+                                           tem_capa=bool(article.get("featured_image")))
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     path = output / (article["seo"]["slug"] + ".html")
