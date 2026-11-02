@@ -18,9 +18,12 @@ def _safe_url(value):
     if not isinstance(value, str) or any(ord(c) < 32 for c in value):
         return False
     u = urlparse(value)
-    return (u.scheme == "https" and bool(u.hostname) and not u.username and not u.password
-            and not any(c.isspace() for c in value) and u.port in (None, 443)
-            and not u.hostname.endswith(".") and "." in u.hostname)
+    try:
+        return (u.scheme == "https" and bool(u.hostname) and not u.username and not u.password
+                and not any(c.isspace() for c in value) and u.port in (None, 443)
+                and not u.hostname.endswith(".") and "." in u.hostname)
+    except ValueError:
+        return False
 
 
 def _safe_slug(value):
