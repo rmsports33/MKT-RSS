@@ -12,6 +12,10 @@ def test_android_drop_9711_processa_html_real_sem_wordpress(tmp_path):
     assert m["source_wp_post_id"] == 9711
     assert len(texto.split()) >= 900
     assert len(m["related_articles"]) == 3
+    assert len(m["claims"]) == 4
+    assert all(c["source_excerpt_for_review"]["excerpt"] for c in m["claims"])
+    assert all(c["source_excerpt_for_review"]["review_status"] == "PENDING_HUMAN_REVIEW" for c in m["claims"])
+    assert all(c["status"] == "PENDING" and c["pending"] for c in m["contrato_editorial"]["claims"])
     assert len(m["sources"]) >= 4
     assert m["review"]["approved"] is False
     result = processar(fixtures / "android_drop_9711.json", fixtures / "android_drop_9711.md", tmp_path)
