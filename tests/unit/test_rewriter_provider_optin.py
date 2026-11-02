@@ -46,3 +46,32 @@ def test_cliente_compativel_inicializa_sem_rede(monkeypatch):
     assert client.params["max_retries"] == 0
     assert client.params["base_url"] == "https://api.exemplo.test/v1"
     assert R._modelo() == "modelo-teste"
+
+
+def test_openrouter_rejeita_modelo_pago(monkeypatch):
+    monkeypatch.setenv("REWRITER_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("REWRITER_ALLOW_EXTERNAL_API", "1")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_BASE_URL", "https://openrouter.ai/api/v1")
+    monkeypatch.setenv("REWRITER_ALLOWED_HOSTS", "openrouter.ai")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_API_KEY", "chave-falsa")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_MODEL", "openai/gpt-4o")
+    client, erro = R._get_client()
+    assert client is None
+    assert "nao gratuito bloqueado" in erro
+
+
+def test_openrouter_free_mock_sem_chamada(monkeypatch):
+    monkeypatch.setenv("REWRITER_PROVIDER", "openai_compatible")
+    monkeypatch.setenv("REWRITER_ALLOW_EXTERNAL_API", "1")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_BASE_URL", "https://openrouter.ai/api/v1")
+    monkeypatch.setenv("REWRITER_ALLOWED_HOSTS", "openrouter.ai")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_API_KEY", "chave-falsa")
+    monkeypatch.setenv("OPENAI_COMPATIBLE_MODEL", "openrouter/free")
+    class FakeClient:
+        def __init__(self, **kwargs):
+            self.params = kwargs
+    monkeypatch.setitem(sys.modules, "openai", types.SimpleNamespace(OpenAI=FakeClient))
+    client, erro = R._get_client()
+    assert erro == ""
+    assert client.params["base_url"] == "https://openrouter.ai/api/v1"
+    assert R._modelo() == "openrouter/free"
