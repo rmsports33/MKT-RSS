@@ -205,10 +205,15 @@ def processar(metadata_file, markdown_file, output_dir):
         refs = claim.get("evidence_ids")
         refs = refs if isinstance(refs, list) else []
         validas = [i for i in refs if isinstance(i, str) and i in fontes_can]
+        urls = claim.get("source_urls")
+        urls = urls if isinstance(urls, list) else []
+        fontes_pacote = {f["url"] for f in article["sources"]}
+        urls_validas = [u for u in urls if isinstance(u, str) and u in fontes_pacote]
         texto = claim.get("text") or claim.get("texto") or ""
         no_corpo = bool(isinstance(texto, str) and texto.strip() and texto.strip() in markdown)
         rastreio.append({"claim_id": claim.get("id"), "status": "PENDENTE_REVISAO",
-                         "evidence_ids": validas, "texto_localizado": no_corpo,
+                         "evidence_ids": validas, "source_urls": urls_validas,
+                         "texto_localizado": no_corpo,
                          "vinculo_completo": bool(validas and no_corpo and len(validas) == len(refs))})
     fontes_sem_vinculo = [i for i in range(len(article["sources"]))
                          if not any(article["sources"][i]["url"] == src.get("url")
