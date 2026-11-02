@@ -210,7 +210,8 @@ def processar(metadata_file, markdown_file, output_dir):
         fontes_pacote = {f["url"] for f in article["sources"]}
         urls_validas = [u for u in urls if isinstance(u, str) and u in fontes_pacote]
         texto = claim.get("text") or claim.get("texto") or ""
-        no_corpo = bool(isinstance(texto, str) and texto.strip() and texto.strip() in markdown)
+        texto_plano = re.sub(r"!?\[([^\]]+)\]\(https://[^)]+\)", r"\1", markdown)
+        no_corpo = bool(isinstance(texto, str) and texto.strip() and texto.strip() in texto_plano)
         rastreio.append({"claim_id": claim.get("id"), "status": "PENDENTE_REVISAO",
                          "evidence_ids": validas, "source_urls": urls_validas,
                          "texto_localizado": no_corpo,
