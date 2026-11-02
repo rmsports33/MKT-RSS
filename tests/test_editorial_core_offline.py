@@ -82,3 +82,17 @@ def test_contrato_ausente_nao_concede_aprovacao(tmp_path):
     result = processar(metadata, md, tmp_path / "outputs")
     assert result["aprovacao_publicacao"] is False
     assert result["contrato_editorial"]["veredito"] == "BLOQUEADO"
+
+
+def test_claim_localizada_com_link_markdown_na_frase(tmp_path):
+    a = artigo()
+    a["claims"] = [{"id": "cl1", "text": "Google lançou Android hoje.", "evidence_ids": []}]
+    md = corpo() + "\n\nGoogle lançou [Android](https://www.python.org/) hoje.\n"
+    metadata = tmp_path / "a.json"
+    body = tmp_path / "a.md"
+    metadata.write_text(json.dumps(a, ensure_ascii=False), encoding="utf-8")
+    body.write_text(md, encoding="utf-8")
+    result = processar(metadata, body, tmp_path / "out")
+    assert result["rastreabilidade_claims"][0]["texto_localizado"] is True
+    assert result["rastreabilidade_claims"][0]["evidencia_aprovada"] is False
+    assert result["aprovacao_publicacao"] is False
