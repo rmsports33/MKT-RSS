@@ -42,7 +42,15 @@
       "reviewed": false,
       "evidence_ids": [
         "s1"
-      ]
+      ],
+      "source_excerpt_for_review": {
+        "source_id": "s1",
+        "excerpt": "Sep 01, 2026",
+        "section": "Publication date",
+        "source_published_at": "2026-09-01",
+        "consulted_at": "2026-11-02",
+        "review_status": "PENDING_HUMAN_REVIEW"
+      }
     },
     {
       "id": "guided-vision-outubro",
@@ -54,7 +62,15 @@
       "reviewed": false,
       "evidence_ids": [
         "s3"
-      ]
+      ],
+      "source_excerpt_for_review": {
+        "source_id": "s3",
+        "excerpt": "Today, we’re launching Guided Vision in Gemini Live",
+        "section": "Guided Vision in Gemini Live: built for accessibility",
+        "source_published_at": "2026-10-01",
+        "consulted_at": "2026-11-02",
+        "review_status": "PENDING_HUMAN_REVIEW"
+      }
     },
     {
       "id": "find-hub-android-16",
@@ -66,7 +82,15 @@
       "reviewed": false,
       "evidence_ids": [
         "s2"
-      ]
+      ],
+      "source_excerpt_for_review": {
+        "source_id": "s2",
+        "excerpt": "Requires Android 16.",
+        "section": "Footnote 11 (Find Hub)",
+        "source_published_at": null,
+        "consulted_at": "2026-11-02",
+        "review_status": "PENDING_HUMAN_REVIEW"
+      }
     },
     {
       "id": "motion-assist-android-17",
@@ -78,7 +102,15 @@
       "reviewed": false,
       "evidence_ids": [
         "s1"
-      ]
+      ],
+      "source_excerpt_for_review": {
+        "source_id": "s1",
+        "excerpt": "Try it during your next ride on phones using Android 17.",
+        "section": "Help reduce motion sickness during your ride",
+        "source_published_at": "2026-09-01",
+        "consulted_at": "2026-11-02",
+        "review_status": "PENDING_HUMAN_REVIEW"
+      }
     }
   ],
   "review": {
@@ -161,7 +193,15 @@
         "evidence_ids": [
           "s1"
         ],
-        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes"
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes",
+        "source_excerpt_for_review": {
+          "source_id": "s1",
+          "excerpt": "Sep 01, 2026",
+          "section": "Publication date",
+          "source_published_at": "2026-09-01",
+          "consulted_at": "2026-11-02",
+          "review_status": "PENDING_HUMAN_REVIEW"
+        }
       },
       {
         "id": "guided-vision-outubro",
@@ -172,7 +212,15 @@
         "evidence_ids": [
           "s3"
         ],
-        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes"
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes",
+        "source_excerpt_for_review": {
+          "source_id": "s3",
+          "excerpt": "Today, we’re launching Guided Vision in Gemini Live",
+          "section": "Guided Vision in Gemini Live: built for accessibility",
+          "source_published_at": "2026-10-01",
+          "consulted_at": "2026-11-02",
+          "review_status": "PENDING_HUMAN_REVIEW"
+        }
       },
       {
         "id": "find-hub-android-16",
@@ -183,7 +231,15 @@
         "evidence_ids": [
           "s2"
         ],
-        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes"
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes",
+        "source_excerpt_for_review": {
+          "source_id": "s2",
+          "excerpt": "Requires Android 16.",
+          "section": "Footnote 11 (Find Hub)",
+          "source_published_at": null,
+          "consulted_at": "2026-11-02",
+          "review_status": "PENDING_HUMAN_REVIEW"
+        }
       },
       {
         "id": "motion-assist-android-17",
@@ -194,7 +250,15 @@
         "evidence_ids": [
           "s1"
         ],
-        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes"
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes",
+        "source_excerpt_for_review": {
+          "source_id": "s1",
+          "excerpt": "Try it during your next ride on phones using Android 17.",
+          "section": "Help reduce motion sickness during your ride",
+          "source_published_at": "2026-09-01",
+          "consulted_at": "2026-11-02",
+          "review_status": "PENDING_HUMAN_REVIEW"
+        }
       }
     ]
   }
