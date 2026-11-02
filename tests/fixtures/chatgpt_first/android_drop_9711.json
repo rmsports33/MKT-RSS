@@ -31,7 +31,44 @@
       "url": "https://support.google.com/messages/answer/7189714?hl=pt-BR"
     }
   ],
-  "claims": [],
+  "claims": [
+    {
+      "id": "android-drop-original",
+      "text": "O anúncio original, de 1º de setembro",
+      "source_urls": [
+        "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/"
+      ],
+      "status": "PENDENTE_REVISAO",
+      "reviewed": false
+    },
+    {
+      "id": "guided-vision-outubro",
+      "text": "anunciou o lançamento da Visão Guiada em 1º de outubro",
+      "source_urls": [
+        "https://blog.google/innovation-and-ai/products/gemini-app/guided-vision-gemini-live/"
+      ],
+      "status": "PENDENTE_REVISAO",
+      "reviewed": false
+    },
+    {
+      "id": "find-hub-android-16",
+      "text": "A documentação consultada exige Android 16",
+      "source_urls": [
+        "https://www.android.com/intl/en_us/new-features-on-android/featured/september-2026/"
+      ],
+      "status": "PENDENTE_REVISAO",
+      "reviewed": false
+    },
+    {
+      "id": "motion-assist-android-17",
+      "text": "O anúncio exige Android 17",
+      "source_urls": [
+        "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/"
+      ],
+      "status": "PENDENTE_REVISAO",
+      "reviewed": false
+    }
+  ],
   "review": {
     "approved": false
   },
