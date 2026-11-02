@@ -193,8 +193,31 @@ def processar(metadata_file, markdown_file, output_dir):
     snapshot = article.get("contrato_editorial")
     contract_check = (avaliar_snapshot_editorial(snapshot) if snapshot is not None
                       else {"veredito": "BLOQUEADO", "motivos": ["contrato_editorial_ausente"]})
+    # Vinculo consultivo, nao certificado: aponta exatamente quais claims do
+    # pacote possuem IDs de fonte rastreaveis no snapshot canonico.
+    fontes_can = {x.get("id"): x for x in (snapshot or {}).get("sources", [])
+                   if isinstance(x, dict) and isinstance(x.get("id"), str)}
+    rastreio = []
+    for claim in article.get("claims", []):
+        if not isinstance(claim, dict):
+            rastreio.append({"claim_id": None, "status": "PENDENTE", "motivo": "claim_invalida"})
+            continue
+        refs = claim.get("evidence_ids")
+        refs = refs if isinstance(refs, list) else []
+        validas = [i for i in refs if isinstance(i, str) and i in fontes_can]
+        texto = claim.get("text") or claim.get("texto") or ""
+        no_corpo = bool(isinstance(texto, str) and texto.strip() and texto.strip() in markdown)
+        rastreio.append({"claim_id": claim.get("id"), "status": "PENDENTE_REVISAO",
+                         "evidence_ids": validas, "texto_localizado": no_corpo,
+                         "vinculo_completo": bool(validas and no_corpo and len(validas) == len(refs))})
+    fontes_sem_vinculo = [i for i in range(len(article["sources"]))
+                         if not any(article["sources"][i]["url"] == src.get("url")
+                                    for src in fontes_can.values())]
     manifest = {"article_id": article["article_id"], "status": "aguardando_revisao",
                 "aprovacao_publicacao": False, "contrato_editorial": contract_check,
+                "rastreabilidade_claims": rastreio,
+                "fontes_sem_vinculo_canonico": fontes_sem_vinculo,
+                "revisao_factual_humana_pendente": True,
                 "html": str(path), "wordpress_body": str(body_path),
                 "wordpress_written": False, "factual_review": "NAO_VERIFICADO",
                 "seo_preflight": seo_preflight,
