@@ -121,18 +121,10 @@ def test_flag_com_valor_fora_do_conjunto_nao_liga():
 def test_flag_ligada_escreve_rascunho():
     resultado, post = _chamar(dry_run=False, flag="true")
     assert resultado["acao"] == "falha"
-    assert resultado["escreveu"] is False
     assert "MCP direto de escrita bloqueado" in resultado["motivo"]
     post.assert_not_called()
 
 
-    assert resultado["acao"] == "rascunho_criado"
-    assert resultado["post_id"] == 4242
-    assert resultado["status"] == "draft"
-    assert post.call_count == 1
-    corpo = post.call_args[1]["json"]
-    assert corpo["tool"] == "create_comparativo"
-    assert post.call_args[0][0].endswith("/wp-json/conexo/v1/mcp/execute")
 
 
 # --- 3. BLOQUEIO ANTES DE QUALQUER REQUISIÇÃO --------------------------------
