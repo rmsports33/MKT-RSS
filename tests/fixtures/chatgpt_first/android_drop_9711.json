@@ -39,7 +39,10 @@
         "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/"
       ],
       "status": "PENDENTE_REVISAO",
-      "reviewed": false
+      "reviewed": false,
+      "evidence_ids": [
+        "s1"
+      ]
     },
     {
       "id": "guided-vision-outubro",
@@ -48,7 +51,10 @@
         "https://blog.google/innovation-and-ai/products/gemini-app/guided-vision-gemini-live/"
       ],
       "status": "PENDENTE_REVISAO",
-      "reviewed": false
+      "reviewed": false,
+      "evidence_ids": [
+        "s3"
+      ]
     },
     {
       "id": "find-hub-android-16",
@@ -57,7 +63,10 @@
         "https://www.android.com/intl/en_us/new-features-on-android/featured/september-2026/"
       ],
       "status": "PENDENTE_REVISAO",
-      "reviewed": false
+      "reviewed": false,
+      "evidence_ids": [
+        "s2"
+      ]
     },
     {
       "id": "motion-assist-android-17",
@@ -66,7 +75,10 @@
         "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/"
       ],
       "status": "PENDENTE_REVISAO",
-      "reviewed": false
+      "reviewed": false,
+      "evidence_ids": [
+        "s1"
+      ]
     }
   ],
   "review": {
@@ -92,5 +104,98 @@
     }
   ],
   "source_wp_post_id": 9711,
-  "source_wp_status": "draft"
+  "source_wp_status": "draft",
+  "contrato_editorial": {
+    "contract_version": "1.0",
+    "content_type": "noticia",
+    "status": "PENDING",
+    "sources": [
+      {
+        "id": "s1",
+        "url": "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      },
+      {
+        "id": "s2",
+        "url": "https://www.android.com/intl/en_us/new-features-on-android/featured/september-2026/",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      },
+      {
+        "id": "s3",
+        "url": "https://blog.google/innovation-and-ai/products/gemini-app/guided-vision-gemini-live/",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      },
+      {
+        "id": "s4",
+        "url": "https://support.google.com/gemini/answer/14579026?co=GENIE.Platform%3DAndroid&hl=pt-BR",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      },
+      {
+        "id": "s5",
+        "url": "https://support.google.com/messages/answer/7189714?hl=pt-BR",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      }
+    ],
+    "claims": [
+      {
+        "id": "android-drop-original",
+        "text": "anúncio original, de 1º de setembro",
+        "status": "PENDING",
+        "pending": true,
+        "heuristic": false,
+        "evidence_ids": [
+          "s1"
+        ],
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes"
+      },
+      {
+        "id": "guided-vision-outubro",
+        "text": "anunciou o lançamento da Visão Guiada em 1º de outubro",
+        "status": "PENDING",
+        "pending": true,
+        "heuristic": false,
+        "evidence_ids": [
+          "s3"
+        ],
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes"
+      },
+      {
+        "id": "find-hub-android-16",
+        "text": "A documentação consultada exige Android 16",
+        "status": "PENDING",
+        "pending": true,
+        "heuristic": false,
+        "evidence_ids": [
+          "s2"
+        ],
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes"
+      },
+      {
+        "id": "motion-assist-android-17",
+        "text": "O anúncio exige Android 17",
+        "status": "PENDING",
+        "pending": true,
+        "heuristic": false,
+        "evidence_ids": [
+          "s1"
+        ],
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes"
+      }
+    ]
+  }
 }
