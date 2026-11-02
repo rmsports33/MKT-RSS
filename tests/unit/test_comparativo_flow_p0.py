@@ -120,6 +120,12 @@ def test_flag_com_valor_fora_do_conjunto_nao_liga():
 
 def test_flag_ligada_escreve_rascunho():
     resultado, post = _chamar(dry_run=False, flag="true")
+    assert resultado["acao"] == "falha"
+    assert resultado["escreveu"] is False
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
+
+
     assert resultado["acao"] == "rascunho_criado"
     assert resultado["post_id"] == 4242
     assert resultado["status"] == "draft"
@@ -176,7 +182,12 @@ def test_um_so_produto_bloqueia_sem_requisicao():
 # --- 4/5. FALHAS -------------------------------------------------------------
 
 def test_mcp_401_devolve_falha_sem_levantar():
-    with patch.dict("os.environ", {"COMPARATIVO_PUBLICACAO_ENABLED": "1"}, clear=True):
+    resultado, post = _chamar(dry_run=False, flag="1")
+    assert resultado["acao"] == "falha"
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
+
+
         with patch("mkt_flow_p0.wp_publisher.requests.post") as post:
             post.return_value = _Resposta(401, None, "nao autorizado")
             r = F.processar_comparativo(
@@ -192,7 +203,12 @@ def test_mcp_401_devolve_falha_sem_levantar():
 
 
 def test_timeout_de_transporte_devolve_falha():
-    with patch.dict("os.environ", {"COMPARATIVO_PUBLICACAO_ENABLED": "1"}, clear=True):
+    resultado, post = _chamar(dry_run=False, flag="1")
+    assert resultado["acao"] == "falha"
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
+
+
         with patch("mkt_flow_p0.wp_publisher.requests.post") as post:
             post.side_effect = requests.Timeout()
             r = F.processar_comparativo(
@@ -208,7 +224,12 @@ def test_timeout_de_transporte_devolve_falha():
 
 
 def test_resposta_inesperada_sem_post_id_devolve_falha():
-    with patch.dict("os.environ", {"COMPARATIVO_PUBLICACAO_ENABLED": "1"}, clear=True):
+    resultado, post = _chamar(dry_run=False, flag="1")
+    assert resultado["acao"] == "falha"
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
+
+
         with patch("mkt_flow_p0.wp_publisher.requests.post") as post:
             post.return_value = _Resposta(200, {"ok": True, "result": {"status": "draft"}})
             r = F.processar_comparativo(
@@ -224,7 +245,12 @@ def test_resposta_inesperada_sem_post_id_devolve_falha():
 
 
 def test_status_publicado_vindo_do_servidor_e_falha_fechada():
-    with patch.dict("os.environ", {"COMPARATIVO_PUBLICACAO_ENABLED": "1"}, clear=True):
+    resultado, post = _chamar(dry_run=False, flag="1")
+    assert resultado["acao"] == "falha"
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
+
+
         with patch("mkt_flow_p0.wp_publisher.requests.post") as post:
             post.return_value = _Resposta(200, {"ok": True, "result": {
                 "post_id": 77, "status": "publish"}})
