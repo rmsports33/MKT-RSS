@@ -97,10 +97,6 @@ def test_assinatura_legada_de_publicar_no_wordpress_nao_mudou():
     assert list(inspect.signature(W.publicar_no_wordpress).parameters) == esperado
 
 
-    esperado = ["titulo", "conteudo_html", "status_validacao", "wp_url", "wp_user",
-                "wp_app_password", "status_desejado", "categoria_ids", "tag_ids",
-                "imagem_url", "timeout", "slug", "rank_math"]
-    assert list(inspect.signature(W.publicar_no_wordpress).parameters) == esperado
 
 
 def test_legado_ainda_cria_post_do_tipo_post():
