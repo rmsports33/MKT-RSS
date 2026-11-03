@@ -144,6 +144,7 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                     or state.get("schema") != "conexo-seo-readiness/1"
                     or state.get("editorial_gate_ready") is not True
                     or state.get("seo_signing_ready") is not True
+                    or state.get("seo_public_output_ready") is not True
                     or state.get("seo_key_mode") != _seo_key_mode()):
                 raise ValueError("Gate/chave de SEO no WordPress nao prontos")
         if nonce is not None:
