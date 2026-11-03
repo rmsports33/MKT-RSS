@@ -29,6 +29,15 @@ def _effective_seo_key():
     return hmac.new(master, b"conexo-native-seo-v1", hashlib.sha256).digest()
 
 
+def _seo_key_mode():
+    explicit = os.environ.get("CONEXO_NATIVE_SEO_SIGNING_KEY", "")
+    if explicit:
+        return "explicit" if len(explicit.encode("utf-8")) >= 32 else "invalid"
+    if os.environ.get("CONEXO_DERIVE_SEO_KEY_FROM_EDITORIAL") == "1":
+        return "derived" if len(os.environ.get("CONEXO_EDITORIAL_GATE_KEY", "").encode("utf-8")) >= 32 else "invalid"
+    return "absent"
+
+
 def load_core(root):
     root = Path(root).resolve()
     lock = json.loads(Path(__file__).with_name("editorial_core.lock.json").read_text())
@@ -134,7 +143,8 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             if (not isinstance(state, dict)
                     or state.get("schema") != "conexo-seo-readiness/1"
                     or state.get("editorial_gate_ready") is not True
-                    or state.get("seo_signing_ready") is not True):
+                    or state.get("seo_signing_ready") is not True
+                    or state.get("seo_key_mode") != _seo_key_mode()):
                 raise ValueError("Gate/chave de SEO no WordPress nao prontos")
         if nonce is not None:
             if not isinstance(nonce, str) or not re.fullmatch(r"[a-f0-9]{32}", nonce):
