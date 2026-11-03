@@ -9,10 +9,9 @@ REVIEW = {"veredito": "APROVADO", "revisao_substantiva": True,
           "evidencias_verificadas": True, "aprovacao_atual": True}
 
 
-def test_self_asserted_review_cannot_approve():
-    result = authorize_publish(POST, REVIEW)
-    assert result["autorizado"] is False
-    assert "trusted_factual_review_missing" in result["bloqueios"]
+def test_four_flags_do_not_replace_canonical_package():
+    assert not authorize_publish(POST, REVIEW)["autorizado"]
+    assert "trusted_factual_review_missing" in authorize_publish(POST, REVIEW)["bloqueios"]
     with pytest.raises(PermissionError):
         require_publish_authorization(POST, REVIEW)
 
@@ -31,7 +30,7 @@ def test_factual_gate_fails_closed(key, value):
 
 
 def test_missing_factual_review():
-    assert "factual_review_missing" in authorize_publish(POST, None)["bloqueios"]
+    assert "canonical_editorial_package_missing" in authorize_publish(POST, None)["bloqueios"]
 
 
 def test_media_missing_even_with_approved_facts():
@@ -41,3 +40,18 @@ def test_media_missing_even_with_approved_facts():
 
 def test_published_post_is_not_valid_transition_source():
     assert not authorize_publish({**POST, "status": "publish"}, REVIEW)["autorizado"]
+
+
+
+def test_missing_review_fails_closed():
+    assert "factual_review_missing" in authorize_publish(POST, None)["bloqueios"]
+
+
+def test_missing_core_blocks_publication():
+    result = authorize_publish(
+        POST, REVIEW,
+        package={"stage": "ready", "payload": {}},
+        core_root="/missing-conexo-editorial-core-for-regression",
+    )
+    assert result["autorizado"] is False
+    assert "canonical_gate_unavailable_or_invalid" in result["bloqueios"]

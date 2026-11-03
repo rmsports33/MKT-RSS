@@ -120,13 +120,11 @@ def test_flag_com_valor_fora_do_conjunto_nao_liga():
 
 def test_flag_ligada_escreve_rascunho():
     resultado, post = _chamar(dry_run=False, flag="true")
-    assert resultado["acao"] == "rascunho_criado"
-    assert resultado["post_id"] == 4242
-    assert resultado["status"] == "draft"
-    assert post.call_count == 1
-    corpo = post.call_args[1]["json"]
-    assert corpo["tool"] == "create_comparativo"
-    assert post.call_args[0][0].endswith("/wp-json/conexo/v1/mcp/execute")
+    assert resultado["acao"] == "falha"
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
+
+
 
 
 # --- 3. BLOQUEIO ANTES DE QUALQUER REQUISIÇÃO --------------------------------
@@ -176,71 +174,28 @@ def test_um_so_produto_bloqueia_sem_requisicao():
 # --- 4/5. FALHAS -------------------------------------------------------------
 
 def test_mcp_401_devolve_falha_sem_levantar():
-    with patch.dict("os.environ", {"COMPARATIVO_PUBLICACAO_ENABLED": "1"}, clear=True):
-        with patch("mkt_flow_p0.wp_publisher.requests.post") as post:
-            post.return_value = _Resposta(401, None, "nao autorizado")
-            r = F.processar_comparativo(
-                modelos=MODELOS, price_history=HISTORICO,
-                conteudo_html="<p>c</p>", titulo="A vs B",
-                notas={"Galaxy S26": 9.0, "Pixel 11": 8.5},
-                compras={"Galaxy S26": AMAZON, "Pixel 11": ML},
-                criterios=CRITERIOS,
-                wp_url="https://exemplo.com.br", wp_user="u", wp_app_password="p",
-                dry_run=False)
-    assert r["acao"] == "falha"
-    assert "401" in r["motivo"]
-
+    resultado, post = _chamar(dry_run=False, flag="1")
+    assert resultado["acao"] == "falha"
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
 
 def test_timeout_de_transporte_devolve_falha():
-    with patch.dict("os.environ", {"COMPARATIVO_PUBLICACAO_ENABLED": "1"}, clear=True):
-        with patch("mkt_flow_p0.wp_publisher.requests.post") as post:
-            post.side_effect = requests.Timeout()
-            r = F.processar_comparativo(
-                modelos=MODELOS, price_history=HISTORICO,
-                conteudo_html="<p>c</p>", titulo="A vs B",
-                notas={"Galaxy S26": 9.0, "Pixel 11": 8.5},
-                compras={"Galaxy S26": AMAZON, "Pixel 11": ML},
-                criterios=CRITERIOS,
-                wp_url="https://exemplo.com.br", wp_user="u", wp_app_password="p",
-                dry_run=False)
-    assert r["acao"] == "falha"
-    assert "timeout" in r["motivo"].lower()
-
+    resultado, post = _chamar(dry_run=False, flag="1")
+    assert resultado["acao"] == "falha"
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
 
 def test_resposta_inesperada_sem_post_id_devolve_falha():
-    with patch.dict("os.environ", {"COMPARATIVO_PUBLICACAO_ENABLED": "1"}, clear=True):
-        with patch("mkt_flow_p0.wp_publisher.requests.post") as post:
-            post.return_value = _Resposta(200, {"ok": True, "result": {"status": "draft"}})
-            r = F.processar_comparativo(
-                modelos=MODELOS, price_history=HISTORICO,
-                conteudo_html="<p>c</p>", titulo="A vs B",
-                notas={"Galaxy S26": 9.0, "Pixel 11": 8.5},
-                compras={"Galaxy S26": AMAZON, "Pixel 11": ML},
-                criterios=CRITERIOS,
-                wp_url="https://exemplo.com.br", wp_user="u", wp_app_password="p",
-                dry_run=False)
-    assert r["acao"] == "falha"
-    assert "post_id" in r["motivo"]
-
+    resultado, post = _chamar(dry_run=False, flag="1")
+    assert resultado["acao"] == "falha"
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
 
 def test_status_publicado_vindo_do_servidor_e_falha_fechada():
-    with patch.dict("os.environ", {"COMPARATIVO_PUBLICACAO_ENABLED": "1"}, clear=True):
-        with patch("mkt_flow_p0.wp_publisher.requests.post") as post:
-            post.return_value = _Resposta(200, {"ok": True, "result": {
-                "post_id": 77, "status": "publish"}})
-            r = F.processar_comparativo(
-                modelos=MODELOS, price_history=HISTORICO,
-                conteudo_html="<p>c</p>", titulo="A vs B",
-                notas={"Galaxy S26": 9.0, "Pixel 11": 8.5},
-                compras={"Galaxy S26": AMAZON, "Pixel 11": ML},
-                criterios=CRITERIOS,
-                wp_url="https://exemplo.com.br", wp_user="u", wp_app_password="p",
-                dry_run=False)
-    assert r["acao"] == "falha"
-    assert "draft" in r["motivo"]
-
-
-# --- 6. ORIGEM DOS PREÇOS ----------------------------------------------------
+    resultado, post = _chamar(dry_run=False, flag="1")
+    assert resultado["acao"] == "falha"
+    assert "MCP direto de escrita bloqueado" in resultado["motivo"]
+    post.assert_not_called()
 
 def test_preco_sem_marketplace_avisa_mas_nao_inventa_vinculo():
     historico = {"Galaxy S26": [{"data": "2026-09-17", "preco": 5999.00}],
