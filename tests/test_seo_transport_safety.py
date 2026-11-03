@@ -65,7 +65,8 @@ def test_completed_publication_resume_finalizes_seo_without_republishing():
     result = {"post_id": 9711, "status": "publish", "intent": "publish",
               "nonce": NONCE, "version_sha256": VERSION, "snapshot": snapshot}
     get_results = [Response({"schema": "conexo-seo-readiness/1",
-                             "editorial_gate_ready": True, "seo_signing_ready": True}),
+                             "editorial_gate_ready": True, "seo_signing_ready": True,
+                             "seo_key_mode": "explicit"}),
                    Response({"state": "COMPLETE", "result": result.copy()}),
                    Response({"snapshot": snapshot})]
     with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "1",
@@ -160,3 +161,21 @@ def test_strict_publish_rejects_provider_and_canonical_before_network():
         assert result["erro"] == "fluxo editorial bloqueado"
         get.assert_not_called()
         post.assert_not_called()
+
+def test_strict_publish_blocks_when_server_has_different_key_mode():
+    server = {"schema": "conexo-seo-readiness/1",
+              "editorial_gate_ready": True, "seo_signing_ready": True,
+              "seo_key_mode": "derived"}
+    with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "1",
+                                  "CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                  "CONEXO_NATIVE_SEO_SIGNING_KEY": KEY}), \
+         patch.object(transport, "load_core", return_value=_core()), \
+         patch.object(transport.requests, "get", return_value=Response(server)) as get, \
+         patch.object(transport.requests, "post") as post:
+        result = transport.publish_package(
+            package({"title": "SEO", "description": "Descrição"}),
+            core_root="/unused", wp_url=transport.SITE,
+            wp_user="u", wp_password="p", actor_id=4, intent="publish")
+    assert result["erro"] == "fluxo editorial bloqueado"
+    assert get.call_count == 1
+    post.assert_not_called()
