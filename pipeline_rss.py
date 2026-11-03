@@ -215,10 +215,25 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     except Exception as exc:
         logger.warning("Auditoria de cobertura pos-IA falhou: %s", exc)
         auditoria_cobertura = {"veredito": "BLOQUEADO", "motivos": ["erro_auditoria_cobertura"]}
-    # Mesmo EVIDENCIAS_ESTRUTURADAS nao certifica as claims do HTML.
+    # Nenhuma análise automática certifica fatos: a publicação continua
+    # condicionada à revisão humana. Porém o WordPress nativo pode receber
+    # rascunhos privados para edição sem depender do novo Editorial Gate.
     verificacao_factual = "NAO_VERIFICADO"
-    # M05.2C: uma unica saida fail-closed, independente de credenciais WP.
-    # Nenhum estado de evidencias atual autoriza publicacao ou draft remoto.
+    if os.environ.get("CONEXO_RSS_DRAFT_STAGING") == "1":
+        from mkt_flow_p0.wp_draft_staging import stage_rss_draft
+        staged = stage_rss_draft(
+            title=rw["titulo_seo"], content=html, source_url=url_fonte,
+            wp_url=os.environ.get("WP_URL", ""), wp_user=os.environ.get("WP_USER", ""),
+            wp_password=os.environ.get("WP_APP_PASSWORD", ""),
+        )
+        return {**staged,
+                "url": url_fonte,
+                "verificacao_factual": verificacao_factual,
+                "auditoria_pos_ia": auditoria_pos_ia,
+                "auditoria_evidencias": auditoria_evidencias,
+                "auditoria_lastro": auditoria_lastro,
+                "auditoria_cobertura": auditoria_cobertura}
+    # Compatibilidade: modo desligado mantém a recusa anterior e não escreve.
     return {
         "acao": "bloqueado",
         "motivo": "gate_factual_pos_ia_nao_integrado",
