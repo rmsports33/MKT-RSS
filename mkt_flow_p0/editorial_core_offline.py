@@ -10,6 +10,7 @@ from urllib.parse import urlparse
 from mkt_flow_p0.format import markdown_para_html
 from mkt_flow_p0.seo import validar_artigo_wordpress
 from mkt_flow_p0.seo_contract_native import contrato_seo_nativo, contrato_seo_staging_wordpress
+from mkt_flow_p0.editorial_package_handoff import vincular_seo_antes_da_revisao
 from mkt_flow_p0.adaptador_contrato_editorial import normalizar_snapshot_editorial, avaliar_snapshot_editorial
 
 MAX_BYTES = 1024 * 1024
@@ -175,7 +176,7 @@ def gerar_html(article, markdown):
     ])
 
 
-def processar(metadata_file, markdown_file, output_dir):
+def processar(metadata_file, markdown_file, output_dir, editorial_package_file=None):
     metadata_file, markdown_file = Path(metadata_file), Path(markdown_file)
     if metadata_file.stat().st_size > MAX_BYTES or markdown_file.stat().st_size > MAX_BYTES:
         raise ValueError("Arquivo muito grande")
@@ -233,6 +234,16 @@ def processar(metadata_file, markdown_file, output_dir):
                 "seo_wp_staging": contrato_seo_staging_wordpress(contrato_seo_nativo(article)),
                 "content_sha256": hashlib.sha256((json.dumps(article, sort_keys=True, ensure_ascii=False) + "\\n" + markdown).encode("utf-8")).hexdigest(),
                 "seo": article["seo"], "source_count": len(article["sources"])}
+    if editorial_package_file is not None:
+        # The ChatGPT-first preview only prepares a NEW review version. It
+        # cannot reuse approvals or publish through WordPress in this step.
+        canonical = json.loads(Path(editorial_package_file).read_text(encoding="utf-8"))
+        for_review = vincular_seo_antes_da_revisao(canonical, manifest, wordpress_body)
+        handoff_path = output / (article["seo"]["slug"] + ".editorial-review.json")
+        handoff_path.write_text(json.dumps(for_review, ensure_ascii=False, indent=2),
+                                encoding="utf-8")
+        manifest["editorial_handoff"] = str(handoff_path)
+        manifest["editorial_handoff_status"] = "requires_new_review_and_acceptance"
     (output / (article["seo"]["slug"] + ".report.json")).write_text(
         json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
     return manifest
@@ -243,8 +254,10 @@ def main():
     p.add_argument("--metadata", required=True)
     p.add_argument("--markdown", required=True)
     p.add_argument("--output-dir", required=True)
+    p.add_argument("--editorial-package", help="Pacote canônico ainda não revisado, para vincular SEO ao hash")
     args = p.parse_args()
-    print(json.dumps(processar(args.metadata, args.markdown, args.output_dir), ensure_ascii=False))
+    print(json.dumps(processar(args.metadata, args.markdown, args.output_dir,
+                                  editorial_package_file=args.editorial_package), ensure_ascii=False))
 
 
 if __name__ == "__main__":
