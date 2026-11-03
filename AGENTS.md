@@ -13,6 +13,14 @@
 
 
 
+## Correção da decisão operacional — 03/11/2026 (prevalece sobre instruções antigas)
+
+**Executor atual do ConexoTech: ChatGPT Work/ChatGPT-first + WordPress REST/MCP.** Não solicitar criação, deploy ou ativação de executor Python permanente como condição para produzir artigos, gravar rascunhos, revisar ou publicar supervisionadamente. O WordPress já foi testado criando/editando draft #9752; o teste foi movido à lixeira sem publicação. Python do MKT-RSS permanece auxiliar de RSS, testes e transformação, e o modo `CONEXO_RSS_DRAFT_STAGING=1` do PR #39 é opção para quem realmente implantar esse pipeline, NÃO é o executor obrigatório.
+
+**Distinção essencial:** o bloqueio factual no pipeline automático não deve impedir o ChatGPT Work de salvar um rascunho privado via WordPress; contudo, o código antigo do transporte editorial assinado mantém seus controles próprios e **não deve ser contornado** para realizar publicação automática. Quando o Gate está inativo, publicar supervisionadamente pelo WordPress atual requer revisão factual, conferência de imagem/direitos e links, autorização da versão exata e readback. Não pressupor que "execute" equivale a aprovação do artigo #9711 ou qualquer outro.
+
+**Escopo emergencial temporário:** produção/rastreamento em WordPress via Work, depuração de código via Codex Cloud e GitHub. Sem Hostinger MCP, PowerShell, máquina física, novos serviços pagos ou GitHub Actions como pré-requisitos. A engenharia de Gate/SEO 0.5.2 continua separada para automação futura e não bloqueia artigo supervisionado. Se o WordPress existente está operacional, priorizar artigo real, não infraestrutura.
+
 ## Escrita editorial controlada — 30/10/2026
 
 As referências antigas acima são proveniência, não a revisão atual. Consumir o
