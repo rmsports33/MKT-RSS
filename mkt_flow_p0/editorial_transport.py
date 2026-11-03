@@ -100,6 +100,21 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         wp = package["payload"]["wordpress"]
         post_id = wp["post_id"]
         auth = (wp_user, wp_password)
+        if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":
+            # Guarded GET is a preflight, not proof of successful SEO delivery.
+            # Refuse to publish when the Gate or its server-side SEO key
+            # is unavailable; never let a later failed SEO step go unnoticed.
+            readiness = requests.get(
+                f"{SITE}/wp-json/conexo/v1/editorial/seo-readiness",
+                auth=auth, timeout=timeout, allow_redirects=False)
+            if readiness.status_code != 200:
+                raise ValueError("Gate de SEO assinado indisponivel")
+            state = readiness.json()
+            if (not isinstance(state, dict)
+                    or state.get("schema") != "conexo-seo-readiness/1"
+                    or state.get("editorial_gate_ready") is not True
+                    or state.get("seo_signing_ready") is not True):
+                raise ValueError("Gate/chave de SEO no WordPress nao prontos")
         if nonce is not None:
             if not isinstance(nonce, str) or not re.fullmatch(r"[a-f0-9]{32}", nonce):
                 raise ValueError("identidade de retomada inválida")
