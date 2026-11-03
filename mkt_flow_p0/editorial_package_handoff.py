@@ -61,8 +61,10 @@ def vincular_seo_antes_da_revisao(package, manifest, wordpress_body):
             or len(title.strip().encode("utf-8")) > 250
             or not isinstance(description, str) or not description.strip()
             or len(description.strip().encode("utf-8")) > 600
-            or candidate.get("title", "").strip() != title.strip()
-            or candidate.get("description", "").strip() != description.strip()):
+            or not isinstance(candidate.get("title"), str)
+            or not isinstance(candidate.get("description"), str)
+            or candidate["title"].strip() != title.strip()
+            or candidate["description"].strip() != description.strip()):
         raise ValueError("titulo/descricao SEO inconsistentes")
     result = deepcopy(package)
     result["payload"]["seo"] = {
