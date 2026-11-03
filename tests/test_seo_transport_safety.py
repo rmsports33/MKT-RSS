@@ -1,5 +1,7 @@
 """Fail-closed SEO preflight and safe recovery; no actual HTTP or credentials."""
 import os
+import hashlib
+import hmac
 from unittest.mock import MagicMock, patch
 
 from mkt_flow_p0 import editorial_transport as transport
@@ -116,3 +118,23 @@ def test_strict_publish_blocks_when_server_gate_lacks_signing_key():
     assert result["erro"] == "fluxo editorial bloqueado"
     assert get.call_count == 1
     post.assert_not_called()
+
+def test_single_master_key_mode_derives_separate_seo_key():
+    with patch.dict(os.environ, {"CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                  "CONEXO_NATIVE_SEO_SIGNING_KEY": "",
+                                  "CONEXO_DERIVE_SEO_KEY_FROM_EDITORIAL": "1"}):
+        derived = transport._effective_seo_key()
+    expected = hmac.new(KEY.encode(), b"conexo-native-seo-v1",
+                        hashlib.sha256).digest()
+    assert derived == expected and len(derived) == 32
+
+
+def test_dedicated_seo_key_wins_and_malformed_explicit_key_fails_closed():
+    with patch.dict(os.environ, {"CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                  "CONEXO_NATIVE_SEO_SIGNING_KEY": KEY,
+                                  "CONEXO_DERIVE_SEO_KEY_FROM_EDITORIAL": "1"}):
+        assert transport._effective_seo_key() == KEY.encode()
+    with patch.dict(os.environ, {"CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                  "CONEXO_NATIVE_SEO_SIGNING_KEY": "short",
+                                  "CONEXO_DERIVE_SEO_KEY_FROM_EDITORIAL": "1"}):
+        assert transport._effective_seo_key() == b""
