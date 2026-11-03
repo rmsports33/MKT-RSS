@@ -13,7 +13,9 @@ def _setup():
         "stage": "ready", "version_sha256": "a"*64,
         "payload": {"title": "Título editorial", "content": content,
                     "slug": "materia-revisada",
-                    "seo": {"title": "Título SEO aprovado",
+                    "seo": {"provider": "native",
+                            "canonical": "https://conexotech.com.br/materia-revisada/",
+                            "title": "Título SEO aprovado",
                             "description": "Descrição SEO aprovada"}}
     }
     snapshot = {"ID": 9711, "post_type": "post", "post_status": "publish",
@@ -43,7 +45,7 @@ def test_seo_contract_is_signed_for_exact_post_bytes():
     assert set(signed).isdisjoint({"rank_math_title", "rank_math_description"})
 
 @pytest.mark.parametrize("change", ["stage", "draft", "actor", "content", "seo",
-                                    "canonical", "version", "key", "id", "slug"])
+                                    "canonical", "version", "key", "id", "slug", "provider", "seo_canonical"])
 def test_refuse_unverified_or_mutated_publishing_receipt(change):
     package, result = _setup()
     key = KEY
@@ -57,6 +59,8 @@ def test_refuse_unverified_or_mutated_publishing_receipt(change):
     elif change == "key": key = b"short"
     elif change == "id": result["snapshot"]["ID"] = 100
     elif change == "slug": result["snapshot"]["post_name"] = "outro"
+    elif change == "provider": package["payload"]["seo"]["provider"] = "legacy"
+    elif change == "seo_canonical": package["payload"]["seo"]["canonical"] = "https://conexotech.com.br/outro/"
     with pytest.raises(ValueError):
         prepare_signed_seo_contract(package, result, seo_key=key)
 
