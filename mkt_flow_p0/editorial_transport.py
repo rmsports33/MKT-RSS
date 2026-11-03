@@ -188,6 +188,9 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                         "status": "pending_original_publication_signature",
                         "retry_automatic": False,
                     }
+                result["publicacao_seo_concluidos"] = result["seo_private_delivery"].get("status") == "verified"
+                if not result["publicacao_seo_concluidos"]:
+                    result["acao"] = "published_seo_pending_inspection"
             return result
         snapshot, link = None, None
         if post_id:
@@ -235,6 +238,9 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         if intent == "publish":
             result["seo_private_delivery"] = _finalize_seo_after_publish(
                 package, result, envelope=envelope, wp_auth=auth, timeout=timeout)
+            result["publicacao_seo_concluidos"] = result["seo_private_delivery"].get("status") == "verified"
+            if not result["publicacao_seo_concluidos"]:
+                result["acao"] = "published_seo_pending_inspection"
         return result
     except (ValueError, TypeError, KeyError, OSError, requests.RequestException) as exc:
         # Não ecoar exceção de transporte que possa conter URL/credencial.
