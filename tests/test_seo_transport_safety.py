@@ -88,6 +88,8 @@ def test_completed_publication_resume_finalizes_seo_without_republishing():
             operation_nonce=NONCE, seo_publication_signature="c" * 64)
     assert done["resumed"] is True
     assert done["seo_private_delivery"]["status"] == "verified"
+    assert done["publicacao_seo_concluidos"] is True
+    assert done["acao"] == "written_and_verified"
     post.assert_not_called()
     assert finalize.call_args.kwargs["envelope"]["signature"] == "c" * 64
 
@@ -108,6 +110,8 @@ def test_resume_without_original_signature_never_republishes():
             operation_nonce=NONCE)
     assert done["seo_private_delivery"]["status"] == "pending_original_publication_signature"
     assert done["seo_private_delivery"]["retry_automatic"] is False
+    assert done["publicacao_seo_concluidos"] is False
+    assert done["acao"] == "published_seo_pending_inspection"
     post.assert_not_called()
 
 
