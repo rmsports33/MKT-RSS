@@ -9,6 +9,7 @@ import importlib.util
 import json
 import os
 import re
+import secrets
 from pathlib import Path
 import requests
 
@@ -134,8 +135,10 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             # Guarded GET is a preflight, not proof of successful SEO delivery.
             # Refuse to publish when the Gate or its server-side SEO key
             # is unavailable; never let a later failed SEO step go unnoticed.
+            challenge = secrets.token_hex(16)
             readiness = requests.get(
                 f"{SITE}/wp-json/conexo/v1/editorial/seo-readiness",
+                params={"challenge": challenge},
                 auth=auth, timeout=timeout, allow_redirects=False)
             if readiness.status_code != 200:
                 raise ValueError("Gate de SEO assinado indisponivel")
@@ -145,7 +148,13 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                     or state.get("editorial_gate_ready") is not True
                     or state.get("seo_signing_ready") is not True
                     or state.get("seo_public_output_ready") is not True
-                    or state.get("seo_key_mode") != _seo_key_mode()):
+                    or state.get("seo_key_mode") != _seo_key_mode()
+                    or not isinstance(state.get("seo_key_proof"), str)
+                    or not hmac.compare_digest(
+                        state["seo_key_proof"],
+                        hmac.new(_effective_seo_key(),
+                                 ("conexo-seo-readiness-v1:" + challenge).encode(),
+                                 hashlib.sha256).hexdigest())):
                 raise ValueError("Gate/chave de SEO no WordPress nao prontos")
         if nonce is not None:
             if not isinstance(nonce, str) or not re.fullmatch(r"[a-f0-9]{32}", nonce):
