@@ -27,6 +27,38 @@ def load_core(root):
     return module
 
 
+def _finalize_seo_after_publish(package, result, *, envelope, wp_auth, timeout):
+    """Only after signed editorial readback. Missing key stays pending, not an error
+    that could encourage blindly repeating a publication POST.
+    """
+    key = os.environ.get("CONEXO_NATIVE_SEO_SIGNING_KEY", "")
+    if len(key.encode("utf-8")) < 32:
+        return {"status": "pending_signing_key"}
+    from mkt_flow_p0.seo_delivery_signing import prepare_signed_seo_contract
+    try:
+        contract = prepare_signed_seo_contract(package, result, seo_key=key)
+    except (ValueError, TypeError, KeyError):
+        return {"status": "blocked_contract_review"}
+    try:
+        response = requests.post(
+            f"{SITE}/wp-json/conexo/v1/editorial/seo-finalize",
+            json={"nonce": result["nonce"],
+                  "publication_signature": envelope["signature"],
+                  "contract": contract},
+            auth=wp_auth, timeout=timeout, allow_redirects=False,
+        )
+        if response.status_code != 200:
+            return {"status": "remote_refused_inspect", "http_status": response.status_code,
+                    "retry_automatic": False}
+        body = response.json()
+        if (not isinstance(body, dict) or body.get("post_id") != result["post_id"]
+                or body.get("status") != "verified"):
+            return {"status": "readback_mismatch_inspect", "retry_automatic": False}
+        return {"status": "verified", "idempotent": body.get("idempotent") is True}
+    except (requests.RequestException, ValueError, TypeError, KeyError):
+        return {"status": "transport_unknown_inspect", "retry_automatic": False}
+
+
 def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                     actor_id, intent="stage", publication_reference=None,
                     timeout=15, operation_nonce=None):
@@ -116,6 +148,9 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             raise ValueError("versão atual remota diverge da operação")
         result.update(acao="staged_for_theme_review" if intent == "stage" else "written_and_verified",
                       editorial_delivered=intent != "stage", retry_automatic=False)
+        if intent == "publish":
+            result["seo_private_delivery"] = _finalize_seo_after_publish(
+                package, result, envelope=envelope, wp_auth=auth, timeout=timeout)
         return result
     except (ValueError, TypeError, KeyError, OSError, requests.RequestException) as exc:
         # Não ecoar exceção de transporte que possa conter URL/credencial.
