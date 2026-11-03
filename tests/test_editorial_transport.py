@@ -203,3 +203,42 @@ class TransportTests(unittest.TestCase):
 
 
 if __name__=="__main__":unittest.main()
+
+
+def test_seo_finalize_delivers_only_after_verified_publish():
+    from mkt_flow_p0 import editorial_transport as t
+    sample = {"signature": "a" * 64}
+    readback = {"nonce": "b" * 32, "post_id": 987}
+    expected_contract = {"schema_version": "1.0"}
+    with patch.dict(os.environ, {"CONEXO_NATIVE_SEO_SIGNING_KEY": "s" * 40}), \
+         patch("mkt_flow_p0.seo_delivery_signing.prepare_signed_seo_contract", return_value=expected_contract), \
+         patch.object(t.requests, "post", return_value=Response({"post_id": 987, "status": "verified"})) as post:
+        delivered = t._finalize_seo_after_publish({}, readback, envelope=sample,
+            wp_auth=("user", "password"), timeout=10)
+    assert delivered["status"] == "verified"
+    assert post.call_args.args[0].endswith("/wp-json/conexo/v1/editorial/seo-finalize")
+    assert post.call_args.kwargs["json"] == {
+        "nonce": "b" * 32, "publication_signature": "a" * 64,
+        "contract": expected_contract}
+
+
+def test_seo_finalize_missing_key_refuses_network():
+    from mkt_flow_p0 import editorial_transport as t
+    with patch.dict(os.environ, {"CONEXO_NATIVE_SEO_SIGNING_KEY": ""}), \
+         patch.object(t.requests, "post") as post:
+        result = t._finalize_seo_after_publish({}, {"post_id": 987},
+            envelope={"signature": "a" * 64}, wp_auth=("u", "p"), timeout=10)
+    assert result["status"] == "pending_signing_key"
+    post.assert_not_called()
+
+
+def test_seo_finalize_network_refusal_does_not_republish():
+    from mkt_flow_p0 import editorial_transport as t
+    with patch.dict(os.environ, {"CONEXO_NATIVE_SEO_SIGNING_KEY": "s" * 40}), \
+         patch("mkt_flow_p0.seo_delivery_signing.prepare_signed_seo_contract", return_value={}), \
+         patch.object(t.requests, "post", return_value=Response({}, 403)) as post:
+        result = t._finalize_seo_after_publish({}, {"post_id": 987, "nonce": "b" * 32},
+            envelope={"signature": "a" * 64}, wp_auth=("u", "p"), timeout=10)
+    assert result["status"] == "remote_refused_inspect"
+    assert result["retry_automatic"] is False
+    assert post.call_count == 1
