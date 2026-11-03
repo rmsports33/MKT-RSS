@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 
 from mkt_flow_p0.format import markdown_para_html
 from mkt_flow_p0.seo import validar_artigo_wordpress
-from mkt_flow_p0.seo_contract_native import contrato_seo_nativo
+from mkt_flow_p0.seo_contract_native import contrato_seo_nativo, contrato_seo_staging_wordpress
 from mkt_flow_p0.adaptador_contrato_editorial import normalizar_snapshot_editorial, avaliar_snapshot_editorial
 
 MAX_BYTES = 1024 * 1024
@@ -230,6 +230,7 @@ def processar(metadata_file, markdown_file, output_dir):
                 "wordpress_written": False, "factual_review": "NAO_VERIFICADO",
                 "seo_preflight": seo_preflight,
                 "seo_native_contract": contrato_seo_nativo(article),
+                "seo_wp_staging": contrato_seo_staging_wordpress(contrato_seo_nativo(article)),
                 "content_sha256": hashlib.sha256((json.dumps(article, sort_keys=True, ensure_ascii=False) + "\\n" + markdown).encode("utf-8")).hexdigest(),
                 "seo": article["seo"], "source_count": len(article["sources"])}
     (output / (article["seo"]["slug"] + ".report.json")).write_text(
