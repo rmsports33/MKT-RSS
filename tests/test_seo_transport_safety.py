@@ -1,0 +1,98 @@
+"""Fail-closed SEO preflight and safe recovery; no actual HTTP or credentials."""
+import os
+from unittest.mock import MagicMock, patch
+
+from mkt_flow_p0 import editorial_transport as transport
+
+KEY = "synthetic-secret-32-bytes-offline-only-1234"
+NONCE = "a" * 32
+VERSION = "b" * 64
+
+class Response:
+    def __init__(self, payload):
+        self.status_code = 200
+        self.payload = payload
+    def json(self):
+        return self.payload
+
+def package(seo=None):
+    return {"stage": "ready", "version_sha256": VERSION, "payload": {
+        "seo": seo, "wordpress": {"post_id": 9711},
+    }}
+
+def _core():
+    core = MagicMock()
+    validator = core.validator.return_value
+    validator.HUMAN_PENDING = "human pending"
+    validator.evaluate.return_value = ([], [])
+    return core
+
+def test_strict_preflight_blocks_missing_seo_before_any_network():
+    with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "1",
+                                  "CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                  "CONEXO_NATIVE_SEO_SIGNING_KEY": KEY}), \
+         patch.object(transport, "load_core", return_value=_core()), \
+         patch.object(transport.requests, "get") as get, \
+         patch.object(transport.requests, "post") as post:
+        result = transport.publish_package(package(), core_root="/unused",
+            wp_url=transport.SITE, wp_user="u", wp_password="p",
+            actor_id=4, intent="publish")
+    assert result["erro"] == "fluxo editorial bloqueado"
+    get.assert_not_called()
+    post.assert_not_called()
+
+def test_strict_preflight_blocks_missing_key_before_any_network():
+    with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "1",
+                                  "CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                  "CONEXO_NATIVE_SEO_SIGNING_KEY": ""}), \
+         patch.object(transport, "load_core", return_value=_core()), \
+         patch.object(transport.requests, "get") as get, \
+         patch.object(transport.requests, "post") as post:
+        result = transport.publish_package(package({"title": "SEO", "description": "Descrição"}),
+            core_root="/unused", wp_url=transport.SITE,
+            wp_user="u", wp_password="p", actor_id=4, intent="publish")
+    assert result["erro"] == "fluxo editorial bloqueado"
+    get.assert_not_called()
+    post.assert_not_called()
+
+def test_completed_publication_resume_finalizes_seo_without_republishing():
+    snapshot = {"ID": 9711, "post_content": "reviewed body"}
+    result = {"post_id": 9711, "status": "publish", "intent": "publish",
+              "nonce": NONCE, "version_sha256": VERSION, "snapshot": snapshot}
+    get_results = [Response({"state": "COMPLETE", "result": result.copy()}),
+                   Response({"snapshot": snapshot})]
+    with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "1",
+                                  "CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                  "CONEXO_NATIVE_SEO_SIGNING_KEY": KEY}), \
+         patch.object(transport, "load_core", return_value=_core()), \
+         patch.object(transport.requests, "get", side_effect=get_results), \
+         patch.object(transport.requests, "post") as post, \
+         patch.object(transport, "_finalize_seo_after_publish",
+                      return_value={"status": "verified"}) as finalize:
+        done = transport.publish_package(package({"title": "SEO", "description": "Descrição"}),
+            core_root="/unused", wp_url=transport.SITE,
+            wp_user="u", wp_password="p", actor_id=4, intent="publish",
+            operation_nonce=NONCE, seo_publication_signature="c" * 64)
+    assert done["resumed"] is True
+    assert done["seo_private_delivery"]["status"] == "verified"
+    post.assert_not_called()
+    assert finalize.call_args.kwargs["envelope"]["signature"] == "c" * 64
+
+def test_resume_without_original_signature_never_republishes():
+    snapshot = {"ID": 9711, "post_content": "reviewed body"}
+    result = {"post_id": 9711, "status": "publish", "intent": "publish",
+              "nonce": NONCE, "version_sha256": VERSION, "snapshot": snapshot}
+    get_results = [Response({"state": "COMPLETE", "result": result.copy()}),
+                   Response({"snapshot": snapshot})]
+    with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "0",
+                                  "CONEXO_EDITORIAL_GATE_KEY": KEY}), \
+         patch.object(transport, "load_core", return_value=_core()), \
+         patch.object(transport.requests, "get", side_effect=get_results), \
+         patch.object(transport.requests, "post") as post:
+        done = transport.publish_package(package(),
+            core_root="/unused", wp_url=transport.SITE,
+            wp_user="u", wp_password="p", actor_id=4, intent="publish",
+            operation_nonce=NONCE)
+    assert done["seo_private_delivery"]["status"] == "pending_original_publication_signature"
+    assert done["seo_private_delivery"]["retry_automatic"] is False
+    post.assert_not_called()
