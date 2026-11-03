@@ -4,6 +4,7 @@ Chave no executor confiável, nunca no pacote. Sem fallback ao REST/MCP direto.
 """
 import base64
 import hashlib
+import hmac
 import importlib.util
 import json
 import os
@@ -12,6 +13,20 @@ from pathlib import Path
 import requests
 
 SITE = "https://conexotech.com.br"
+
+
+def _effective_seo_key():
+    """Optional single-master-key mode. Existing dedicated SEO secrets win."""
+    explicit = os.environ.get("CONEXO_NATIVE_SEO_SIGNING_KEY", "")
+    if explicit:
+        key = explicit.encode("utf-8")
+        return key if len(key) >= 32 else b""
+    if os.environ.get("CONEXO_DERIVE_SEO_KEY_FROM_EDITORIAL") != "1":
+        return b""
+    master = os.environ.get("CONEXO_EDITORIAL_GATE_KEY", "").encode("utf-8")
+    if len(master) < 32:
+        return b""
+    return hmac.new(master, b"conexo-native-seo-v1", hashlib.sha256).digest()
 
 
 def load_core(root):
@@ -31,8 +46,8 @@ def _finalize_seo_after_publish(package, result, *, envelope, wp_auth, timeout):
     """Only after signed editorial readback. Missing key stays pending, not an error
     that could encourage blindly repeating a publication POST.
     """
-    key = os.environ.get("CONEXO_NATIVE_SEO_SIGNING_KEY", "")
-    if len(key.encode("utf-8")) < 32:
+    key = _effective_seo_key()
+    if len(key) < 32:
         return {"status": "pending_signing_key"}
     from mkt_flow_p0.seo_delivery_signing import prepare_signed_seo_contract
     try:
@@ -84,7 +99,7 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         # have been provisioned. Check before any publication-side network call.
         if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":
             seo = package.get("payload", {}).get("seo")
-            seo_key = os.environ.get("CONEXO_NATIVE_SEO_SIGNING_KEY", "")
+            seo_key = _effective_seo_key()
             if (not isinstance(seo, dict)
                     or not isinstance(seo.get("title"), str)
                     or not seo["title"].strip()
@@ -92,7 +107,7 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                     or not isinstance(seo.get("description"), str)
                     or not seo["description"].strip()
                     or len(seo["description"].strip().encode("utf-8")) > 600
-                    or len(seo_key.encode("utf-8")) < 32):
+                    or len(seo_key) < 32):
                 raise ValueError("SEO aprovado/chave privada ausentes; publicacao bloqueada")
         secret = os.environ.get("CONEXO_EDITORIAL_GATE_KEY", "").encode()
         if len(secret) < 32:
