@@ -59,7 +59,9 @@ def test_completed_publication_resume_finalizes_seo_without_republishing():
     snapshot = {"ID": 9711, "post_content": "reviewed body"}
     result = {"post_id": 9711, "status": "publish", "intent": "publish",
               "nonce": NONCE, "version_sha256": VERSION, "snapshot": snapshot}
-    get_results = [Response({"state": "COMPLETE", "result": result.copy()}),
+    get_results = [Response({"schema": "conexo-seo-readiness/1",
+                             "editorial_gate_ready": True, "seo_signing_ready": True}),
+                   Response({"state": "COMPLETE", "result": result.copy()}),
                    Response({"snapshot": snapshot})]
     with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "1",
                                   "CONEXO_EDITORIAL_GATE_KEY": KEY,
@@ -95,4 +97,22 @@ def test_resume_without_original_signature_never_republishes():
             operation_nonce=NONCE)
     assert done["seo_private_delivery"]["status"] == "pending_original_publication_signature"
     assert done["seo_private_delivery"]["retry_automatic"] is False
+    post.assert_not_called()
+
+
+def test_strict_publish_blocks_when_server_gate_lacks_signing_key():
+    with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "1",
+                                  "CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                  "CONEXO_NATIVE_SEO_SIGNING_KEY": KEY}), \
+         patch.object(transport, "load_core", return_value=_core()), \
+         patch.object(transport.requests, "get", return_value=Response({
+             "schema": "conexo-seo-readiness/1", "editorial_gate_ready": True,
+             "seo_signing_ready": False})) as get, \
+         patch.object(transport.requests, "post") as post:
+        result = transport.publish_package(
+            package({"title": "SEO", "description": "Descrição"}),
+            core_root="/unused", wp_url=transport.SITE,
+            wp_user="u", wp_password="p", actor_id=4, intent="publish")
+    assert result["erro"] == "fluxo editorial bloqueado"
+    assert get.call_count == 1
     post.assert_not_called()
