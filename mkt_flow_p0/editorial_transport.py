@@ -98,9 +98,15 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         # Strict mode becomes mandatory only after the executor and SEO Gate
         # have been provisioned. Check before any publication-side network call.
         if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":
-            seo = package.get("payload", {}).get("seo")
+            payload = package.get("payload", {})
+            seo = payload.get("seo")
             seo_key = _effective_seo_key()
+            slug = payload.get("slug")
             if (not isinstance(seo, dict)
+                    or seo.get("provider") != "native"
+                    or not isinstance(slug, str)
+                    or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug)
+                    or seo.get("canonical") != f"{SITE}/{slug}/"
                     or not isinstance(seo.get("title"), str)
                     or not seo["title"].strip()
                     or len(seo["title"].strip().encode("utf-8")) > 250
