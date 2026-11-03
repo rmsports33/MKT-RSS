@@ -103,3 +103,28 @@ assinada; por isso **não basta** gerar um contrato SEO assinado no Python.
 **Sem implementação dessa rota restrita, não ativar o Gate** nem
 `CONEXO_RANKMATH_BRIDGE_OUTPUT`. Não desligar Rank Math. Não transformar
 a existência do backup em prova de restauração testada.
+
+
+## Escopo de conectores e desbloqueio da operação (03/11/2026)
+
+**Conector Hostinger MCP fora do mecanismo.** O executor confia no pacote
+editorial revisado, na autenticação REST WordPress e nas permissões do Conexo
+Editorial Core; não há etapa de descoberta, autorização ou publicação dependente
+do conector Hostinger. Nenhuma falha desse conector pode ser considerada bloqueio
+do pipeline, nem deve ocasionar novas tentativas de sua configuração.
+
+**Trilha já operável:** ChatGPT-first produz material revisável, o WordPress
+autenticado mantém rascunhos, e a publicação permanece supervisionada com revisão
+factual/substantiva e aceite da versão. O Gate permanece desligado enquanto a
+homologação separada não estiver comprovada.
+
+**Trilha de migração:** PR #37 insere o SEO consultivo no pacote antes da revisão
+e recalcula o hash; PR #35 publica somente pelo transporte autorizado e, no
+modo estrito opt-in, testa o readiness do WordPress; PR #58 fornece Gate e ponte
+SEO em código de branch. Backups UpdraftPlus existentes foram informados pelo
+usuário, mas restauração testada e configuração privada de chaves ainda precisam
+de evidência. O conector Hostinger não é uma dessas pendências.
+
+Referência canônica de implantação e rollback: Conexo OS PR #46,
+`docs/CHATGPT_FIRST_WORDPRESS_UNIFICATION_20261103.md`. Sem merge, deploy,
+publicação ou segredo neste registro.
