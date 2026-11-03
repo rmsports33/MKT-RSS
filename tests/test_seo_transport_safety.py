@@ -64,9 +64,12 @@ def test_completed_publication_resume_finalizes_seo_without_republishing():
     snapshot = {"ID": 9711, "post_content": "reviewed body"}
     result = {"post_id": 9711, "status": "publish", "intent": "publish",
               "nonce": NONCE, "version_sha256": VERSION, "snapshot": snapshot}
+    challenge = "d" * 32
+    proof = hmac.new(KEY.encode(), ("conexo-seo-readiness-v1:" + challenge).encode(),
+                     hashlib.sha256).hexdigest()
     get_results = [Response({"schema": "conexo-seo-readiness/1",
                              "editorial_gate_ready": True, "seo_signing_ready": True,
-                             "seo_public_output_ready": True,
+                             "seo_public_output_ready": True, "seo_key_proof": proof,
                              "seo_key_mode": "explicit"}),
                    Response({"state": "COMPLETE", "result": result.copy()}),
                    Response({"snapshot": snapshot})]
@@ -74,6 +77,7 @@ def test_completed_publication_resume_finalizes_seo_without_republishing():
                                   "CONEXO_EDITORIAL_GATE_KEY": KEY,
                                   "CONEXO_NATIVE_SEO_SIGNING_KEY": KEY}), \
          patch.object(transport, "load_core", return_value=_core()), \
+         patch.object(transport.secrets, "token_hex", return_value=challenge), \
          patch.object(transport.requests, "get", side_effect=get_results), \
          patch.object(transport.requests, "post") as post, \
          patch.object(transport, "_finalize_seo_after_publish",
@@ -197,4 +201,25 @@ def test_strict_publish_blocks_when_public_seo_output_is_off():
             wp_user="u", wp_password="p", actor_id=4, intent="publish")
     assert result["erro"] == "fluxo editorial bloqueado"
     assert get.call_count == 1
+    post.assert_not_called()
+
+def test_strict_publish_rejects_wrong_key_proof_without_writes():
+    challenge = "e" * 32
+    server = {"schema": "conexo-seo-readiness/1",
+              "editorial_gate_ready": True, "seo_signing_ready": True,
+              "seo_public_output_ready": True, "seo_key_mode": "explicit",
+              "seo_key_proof": "0" * 64}
+    with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "1",
+                                  "CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                  "CONEXO_NATIVE_SEO_SIGNING_KEY": KEY}), \
+         patch.object(transport, "load_core", return_value=_core()), \
+         patch.object(transport.secrets, "token_hex", return_value=challenge), \
+         patch.object(transport.requests, "get", return_value=Response(server)) as get, \
+         patch.object(transport.requests, "post") as post:
+        result = transport.publish_package(package({"title":"SEO","description":"Descrição"}),
+            core_root="/unused", wp_url=transport.SITE, wp_user="u",
+            wp_password="p", actor_id=4, intent="publish")
+    assert result["erro"] == "fluxo editorial bloqueado"
+    get.assert_called_once()
+    assert get.call_args.kwargs["params"]["challenge"] == challenge
     post.assert_not_called()
