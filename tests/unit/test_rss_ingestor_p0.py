@@ -30,6 +30,7 @@ def _resp_ok():
     return m
 
 
+@pytest.mark.skipif(not R._HAS_FEEDPARSER, reason="feedparser opcional ausente; testar com extras instalados")
 def test_fetch_feed_offline():
     with patch.object(R._session, "get", return_value=_resp_ok()):
         r = R.fetch_feed("https://exemplo.com/feed", fonte="exemplo", max_items=5)
@@ -44,12 +45,23 @@ def test_dedup_url_e_similaridade(tmp_path, monkeypatch):
     assert R.item_ja_visto("https://e.com/b", "Fone JBL em OFERTA!!") is True
 
 
+@pytest.mark.skipif(not R._HAS_FEEDPARSER, reason="feedparser opcional ausente; testar com extras instalados")
 def test_buscar_novidades_filtra(tmp_path, monkeypatch):
     monkeypatch.setattr(R, "DB_PATH", tmp_path / "rss2.db")
     with patch.object(R._session, "get", return_value=_resp_ok()):
         r1 = R.buscar_novidades("https://exemplo.com/feed", fonte="ex", limit=5)
         r2 = R.buscar_novidades("https://exemplo.com/feed", fonte="ex", limit=5)
         assert r1["total_novos"] == 2 and r2["total_novos"] == 0
+
+
+def test_feedparser_ausente_bloqueia_sem_http(monkeypatch):
+    monkeypatch.setattr(R, "_HAS_FEEDPARSER", False)
+    with patch.object(R._session, "get", side_effect=AssertionError("HTTP indevido")) as http:
+        r = R.fetch_feed("https://exemplo.com/feed")
+        assert "erro" in r and "feedparser" in r["erro"]
+        http.assert_not_called()
+        assert "erro" in R.buscar_novidades("https://exemplo.com/feed")
+        http.assert_not_called()
 
 
 def test_feed_erro():

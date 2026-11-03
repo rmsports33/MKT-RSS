@@ -80,8 +80,12 @@ def test_credenciais_carregam_do_ambiente(monkeypatch):
     monkeypatch.setenv("AMAZON_PA_API_ASSOCIATE_TAG", "tag-20")
     monkeypatch.setenv("MERCADOLIVRE_APP_ID", "123")
     monkeypatch.setenv("MERCADOLIVRE_CLIENT_SECRET", "secret")
-    # recarrega módulo não é trivial; testamos a instância existente
-    # Este teste serve de documentação: as credenciais devem vir do ambiente
+    monkeypatch.setenv("MERCADOLIVRE_ACCESS_TOKEN", "token-ficticio")
+    from mkt_flow_p0.price_collector import _Credenciais
+    creds = _Credenciais()
+    assert creds.tem_amazon()
+    assert creds.tem_mercadolivre()
+    assert creds.mercadolivre["access_token"] == "token-ficticio"
 
 
 # --- Coleta sem credenciais (fallback) -------------------------------------
@@ -116,14 +120,14 @@ def test_coletar_sem_identificadores_retorna_erro():
 def test_gerar_price_history_sem_credenciais_nao_faz_requisicao():
     """Sem credenciais, a geração de price_history não faz requisição de rede."""
     modelos = [
-        {"nome": "Galaxy S26", "asin": "B0XXX"},
-        {"nome": "Pixel 11", "asin": "B0YYY"},
+        {"nome": "Galaxy S26", "asin": "B0XXX", "ml_item_id": "MLB123"},
+        {"nome": "Pixel 11", "asin": "B0YYY", "ml_item_id": "MLB456"},
     ]
-    with patch("mkt_flow_p0.price_collector.coletar_preco_produto") as mock_coletar:
-        mock_coletar.return_value = {"ok": False, "erro": "sem credenciais"}
+    with patch("requests.sessions.Session.request", side_effect=AssertionError("HTTP proibido")) as mock_http:
         ph = gerar_price_history_para_modelos(modelos)
         # Sem credenciais, a coleta falha e o price_history fica vazio
         assert ph == {}
+        mock_http.assert_not_called()
 
 
 # --- Formato compatível com o gate -----------------------------------------
@@ -187,7 +191,12 @@ def test_price_history_formato_esperado_pelo_gate():
     """
     # O price_history aceita preço sem R$ (o contrato adiciona)
     # mas o gate espera R$ no preco_br final
-    pass  # documentação do contrato
+    from mkt_flow_p0.comparativo_contract import construir_contrato
+    contrato = construir_contrato(
+        modelos=[{"nome": "A"}],
+        price_history={"A": [{"preco": "1.500,50", "data": "30/10/2026",
+                               "fonte": "https://www.mercadolivre.com.br/a"}]})
+    assert contrato["produtos"][0]["preco"] == "R$ 1.500,50"
 
 
 if __name__ == "__main__":

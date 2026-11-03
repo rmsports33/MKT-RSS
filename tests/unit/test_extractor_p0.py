@@ -6,6 +6,8 @@ import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 sys.path.insert(0, str(Path(__file__).parent.parent))
+import pytest
+import mkt_flow_p0.extractor as E
 from mkt_flow_p0.extractor import extrair_conteudo, contar_palavras
 
 PARAGRAFOS = "\n".join(
@@ -28,11 +30,20 @@ def _resp_html():
     return m
 
 
+@pytest.mark.skipif(not E._HAS_TRAFILATURA, reason="trafilatura opcional ausente; testar com extras instalados")
 def test_extracao_offline_ok():
     with patch("mkt_flow_p0.extractor._session.get", return_value=_resp_html()):
         r = extrair_conteudo("https://exemplo.com/review")
         assert r["qualidade_ok"] is True and r["palavras"] >= 400
         assert "menu" not in (r["texto"] or "") and "Parágrafo 7" in r["texto"]
+
+
+def test_extracao_sem_trafilatura_bloqueia_sem_http(monkeypatch):
+    monkeypatch.setattr(E, "_HAS_TRAFILATURA", False)
+    with patch.object(E._session, "get", side_effect=AssertionError("HTTP indevido")) as http:
+        r = extrair_conteudo("https://exemplo.com/review")
+        assert "erro" in r and "trafilatura" in r["erro"]
+        http.assert_not_called()
 
 
 def test_url_invalida():

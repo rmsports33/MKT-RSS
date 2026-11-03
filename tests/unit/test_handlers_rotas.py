@@ -102,11 +102,19 @@ def test_patterns_nao_se_sobrepoem():
     assert re.match(PAT_LINK, "pub:9249") is None
 
 
+@pytest.mark.skipif(not PTB_REAL, reason="integração Telegram legada depende de python-telegram-bot")
 def test_linkflow_registra_o_padrao_lk():
     padroes = [_padrao(h) for h in L.link_handlers()]
     assert PAT_LINK in padroes, padroes
     cmds = [_comandos(h) for h in L.link_handlers()]
     assert any(c and "link" in c for c in cmds), cmds
+
+
+def test_linkflow_sem_ptb_nao_registra_handlers():
+    """Sem PTB, handlers ausentes são comportamento fail-closed esperado."""
+    if PTB_REAL:
+        pytest.skip("Validação da ausência de PTB exige executor sem a biblioteca")
+    assert L.link_handlers() == []
 
 
 # --- com PTB real: prova nos objetos de verdade ---
