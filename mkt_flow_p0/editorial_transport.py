@@ -61,7 +61,7 @@ def _finalize_seo_after_publish(package, result, *, envelope, wp_auth, timeout):
 
 def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                     actor_id, intent="stage", publication_reference=None,
-                    timeout=15, operation_nonce=None):
+                    timeout=15, operation_nonce=None, seo_publication_signature=None):
     """Não gera texto nem atesta fatos. Encaminha versão realmente revisada.
 
     Prévia stage permanece draft e não conta como entrega. Timeout nunca
@@ -80,6 +80,20 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             blockers = [b for b in blockers if b != v.HUMAN_PENDING]
         if errors or blockers:
             raise ValueError("gate editorial bloqueou: " + "; ".join(errors + blockers))
+        # Strict mode becomes mandatory only after the executor and SEO Gate
+        # have been provisioned. Check before any publication-side network call.
+        if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":
+            seo = package.get("payload", {}).get("seo")
+            seo_key = os.environ.get("CONEXO_NATIVE_SEO_SIGNING_KEY", "")
+            if (not isinstance(seo, dict)
+                    or not isinstance(seo.get("title"), str)
+                    or not seo["title"].strip()
+                    or len(seo["title"].strip().encode("utf-8")) > 250
+                    or not isinstance(seo.get("description"), str)
+                    or not seo["description"].strip()
+                    or len(seo["description"].strip().encode("utf-8")) > 600
+                    or len(seo_key.encode("utf-8")) < 32):
+                raise ValueError("SEO aprovado/chave privada ausentes; publicacao bloqueada")
         secret = os.environ.get("CONEXO_EDITORIAL_GATE_KEY", "").encode()
         if len(secret) < 32:
             raise ValueError("chave do executor ausente")
@@ -104,6 +118,20 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                 raise ValueError("versão remota diverge da operação retomada")
             result.update(acao="staged_for_theme_review" if intent == "stage" else "written_and_verified",
                 editorial_delivered=intent != "stage", retry_automatic=False, resumed=True)
+            if intent == "publish":
+                # Never regenerate an original editorial receipt on resume.
+                # The already-signed envelope must be retained by the trusted executor.
+                if (isinstance(seo_publication_signature, str)
+                        and re.fullmatch(r"[a-f0-9]{64}", seo_publication_signature)):
+                    result["seo_private_delivery"] = _finalize_seo_after_publish(
+                        package, result,
+                        envelope={"signature": seo_publication_signature},
+                        wp_auth=auth, timeout=timeout)
+                else:
+                    result["seo_private_delivery"] = {
+                        "status": "pending_original_publication_signature",
+                        "retry_automatic": False,
+                    }
             return result
         snapshot, link = None, None
         if post_id:
