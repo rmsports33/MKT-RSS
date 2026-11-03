@@ -18,8 +18,11 @@ class Response:
         return self.payload
 
 def package(seo=None):
+    if isinstance(seo, dict):
+        seo = {"provider": "native",
+               "canonical": transport.SITE + "/materia-revisada/", **seo}
     return {"stage": "ready", "version_sha256": VERSION, "payload": {
-        "seo": seo, "wordpress": {"post_id": 9711},
+        "seo": seo, "slug": "materia-revisada", "wordpress": {"post_id": 9711},
     }}
 
 def _core():
@@ -138,3 +141,22 @@ def test_dedicated_seo_key_wins_and_malformed_explicit_key_fails_closed():
                                   "CONEXO_NATIVE_SEO_SIGNING_KEY": "short",
                                   "CONEXO_DERIVE_SEO_KEY_FROM_EDITORIAL": "1"}):
         assert transport._effective_seo_key() == b""
+
+def test_strict_publish_rejects_provider_and_canonical_before_network():
+    from copy import deepcopy
+    valid = {"title": "SEO", "description": "Descrição"}
+    for mutation in ({"provider": "rank_math"}, {"canonical": "https://evil.example/x/"},
+                     {"canonical": "https://conexotech.com.br/other/"}):
+        source = package({**valid, **mutation})
+        with patch.dict(os.environ, {"CONEXO_REQUIRE_SIGNED_SEO": "1",
+                                      "CONEXO_EDITORIAL_GATE_KEY": KEY,
+                                      "CONEXO_NATIVE_SEO_SIGNING_KEY": KEY}), \
+             patch.object(transport, "load_core", return_value=_core()), \
+             patch.object(transport.requests, "get") as get, \
+             patch.object(transport.requests, "post") as post:
+            result = transport.publish_package(source, core_root="/unused",
+                wp_url=transport.SITE, wp_user="u", wp_password="p",
+                actor_id=4, intent="publish")
+        assert result["erro"] == "fluxo editorial bloqueado"
+        get.assert_not_called()
+        post.assert_not_called()
