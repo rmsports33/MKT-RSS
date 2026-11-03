@@ -60,3 +60,46 @@ Ainda não instalado, integrado à master ou homologado no WordPress/Jetpack rea
 Não afirmar bloqueio remoto a partir do cliente ou desses testes isolados.
 
 O teste de descoberta usa SQLite real e os fontes das PRs MKT-RSS #32 e Conexo OS #43 (3bd50bab / 692ad488), sem reimplementar o adaptador. Configure CONEXO_TEST_DISCOVERY_CONSUMER para o arquivo do consumidor fixado; sem essa dependência, o teste é explicitamente ignorado. A execução registrada teve zero skips. As fontes de descoberta foram sobrepostas apenas no checkout de teste, sem copiá-las para esta branch.
+
+
+## Integração de SEO privado — 03/11/2026
+
+O WordPress já opera com Conexo Native SEO **0.5.1**, mas essa informação é
+distinta da homologação de materialização de contratos privados. Rank Math
+permanece ativo, sendo apenas um transportador temporário de metadados.
+O usuário confirmou que o UpdraftPlus exibe conjuntos de backup completos;
+a **restauração isolada ainda não foi testada**.
+
+Foi acrescentado `mkt_flow_p0/seo_delivery_signing.py` com a função pura
+`prepare_signed_seo_contract`. Ela não toca na rede, não escreve WordPress e
+não aprova conteúdo por conta própria. Requer: pacote editorial `stage=ready`,
+SEO declarado dentro do pacote aprovado, resultado já conferido pelo transporte
+autenticado do Gate com `intent=publish`, mesmo `version_sha256`, snapshot
+publicado com conteúdo, título, slug e ID idênticos; canonical real e chave
+privada exclusiva de no mínimo 32 bytes. A assinatura usa HMAC-SHA256 sobre o
+JSON canônico `conexo-seo-v1`, compatível com o verificador PHP do Conexo SEO.
+
+### Falta fechar o circuito remoto
+
+**Bloqueio real identificado no código atual:** o `Conexo Editorial Gate`
+instalado mas inativo impede escrita genérica de post meta quando ativado.
+Atualmente o canal protegido só permite a imagem destacada durante a escrita
+assinada; por isso **não basta** gerar um contrato SEO assinado no Python.
+É necessária uma operação de materialização **dentro do Gate** que:
+
+1. Confirme o nonce de uma publicação `COMPLETE` do operador autenticado,
+   compare o snapshot atual com o snapshot aprovado e valide também a versão
+   do conteúdo no WordPress.
+2. Exija o contrato SEO assinado com uma chave exclusiva do servidor e
+   canonical idêntico a `get_permalink(post_id)`, title/description já
+   vinculados ao pacote revisto.
+3. Autorize exclusivamente a meta privada `_conexo_native_seo_contract`
+   dentro desse contexto e faça readback da meta salva, com idempotência.
+4. Não aceite promoção da meta REST `_conexo_native_seo_draft` nem bypass por
+   chamadas diretas de `wp/v2/posts` ou pelo MCP legado.
+5. Seja testada em execução isolada antes de ativar o Gate no site público.
+   Nunca instalar segredos em commits ou comentários GitHub.
+
+**Sem implementação dessa rota restrita, não ativar o Gate** nem
+`CONEXO_RANKMATH_BRIDGE_OUTPUT`. Não desligar Rank Math. Não transformar
+a existência do backup em prova de restauração testada.
