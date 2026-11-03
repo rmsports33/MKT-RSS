@@ -36,8 +36,9 @@ def prepare_signed_seo_contract(package, verified_result, *, seo_key):
     if not isinstance(payload, dict):
         raise ValueError("payload editorial ausente")
     seo = payload.get("seo")
-    if not isinstance(seo, dict):
-        raise ValueError("seo revisado nao incluído no pacote")
+    if (not isinstance(seo, dict)
+            or seo.get("provider") != "native"):
+        raise ValueError("seo nativo revisado nao incluído no pacote")
     post = verified_result.get("snapshot")
     post_id = verified_result.get("post_id")
     if not isinstance(post, dict) or type(post_id) is not int or post_id <= 0:
@@ -49,6 +50,8 @@ def prepare_signed_seo_contract(package, verified_result, *, seo_key):
             or post.get("post_name") != payload.get("slug")):
         raise ValueError("snapshot nao corresponde ao pacote aprovado")
     canonical = verified_result.get("link")
+    if not isinstance(canonical, str) or seo.get("canonical") != canonical:
+        raise ValueError("canonical SEO revisada diverge do WordPress")
     parsed = urlsplit(canonical) if isinstance(canonical, str) else None
     if (not parsed or parsed.scheme != "https" or parsed.netloc != "conexotech.com.br"
             or parsed.path != "/" + post["post_name"] + "/"
