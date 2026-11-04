@@ -176,6 +176,25 @@ def test_publicar_pagina_preflight_nao_lista_recusa_escrita():
     post.assert_not_called()
 
 
+def test_publicar_pagina_preflight_403_sem_post():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(403, {})
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert "preflight" in result["erro"]
+    post.assert_not_called()
+
+
+def test_publicar_pagina_rejeita_resposta_publicada():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(200, [])
+        post.return_value = _Resposta(201, {"id": 9, "status": "publish"})
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert result["page_id"] == 9
+    assert "erro" in result
+
+
 def test_publicar_pagina_recusa_alterar_publicada_sem_post():
     with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
          patch("mkt_flow_p0.wp_publisher.requests.post") as post:
