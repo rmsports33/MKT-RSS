@@ -1,6 +1,6 @@
 """
 mkt_flow_p0.wp_publisher — Publicação WordPress via REST API
-Artigos exigem o gate editorial canônico inclusive em draft; sem fallback direto.
+Publicação de artigos exige gate assinado. Páginas de apoio podem ser rascunhos autenticados.
 """
 import base64
 import logging
@@ -18,6 +18,8 @@ def _get_ou_criar_termo(wp_url: str, user: str, app_password: str, tipo: str, no
 
     tipo: "categories" | "tags". Falha de rede → None (publica sem taxonomia).
     """
+    if tipo not in {"categories", "tags"} or not wp_url or not user or not app_password:
+        return None
     nome = (nome or "").strip()
     if not nome:
         return None
@@ -46,28 +48,10 @@ def garantir_tag(wp_url: str, user: str, app_password: str, nome: str, timeout: 
     return _get_ou_criar_termo((wp_url or "").rstrip("/"), user, app_password, "tags", nome, timeout)
 
 
-def _aplicar_rank_math(wp_url: str, user: str, app_password: str, post_id, rank_math: dict, timeout: int = 10) -> dict:
-    """2º passo: grava title/description/focus no Rank Math. Falha → só aviso (post já existe)."""
-    meta = {}
-    if rank_math.get("title"):
-        meta["rank_math_title"] = str(rank_math["title"])[:60]
-    if rank_math.get("description"):
-        meta["rank_math_description"] = str(rank_math["description"])[:160]
-    if rank_math.get("focus"):
-        meta["rank_math_focusKeyword"] = str(rank_math["focus"])
-    if not meta:
-        return {}
-    try:
-        r = requests.post(f"{wp_url}/wp-json/wp/v2/posts/{post_id}",
-                          headers={"Authorization": _auth_header(user, app_password),
-                                   "Content-Type": "application/json", "User-Agent": "MKT-Flow-P0/3.6"},
-                          json={"meta": meta}, timeout=timeout)
-        if r.status_code in (200, 201):
-            return {"meta_ok": True}
-        return {"meta_aviso": f"Rank Math recusou ({r.status_code}) — meta vai só no HTML"}
-    except Exception as e:
-        return {"meta_aviso": f"Rank Math falhou: {str(e)[:100]} — meta vai só no HTML"}
-
+def _aplicar_rank_math(wp_url: str, user: str, app_password: str, post_id,
+                      rank_math: dict, timeout: int = 10) -> dict:
+    """Meta de SEO só pelo contrato assinado na operação do gate."""
+    return {"meta_aviso": "escrita SEO direta bloqueada: usar gate editorial assinado"}
 
 def publicar_no_wordpress(
     titulo, conteudo_html, status_validacao, wp_url, wp_user, wp_app_password,
@@ -105,38 +89,54 @@ def publicar_no_wordpress(
 
 def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_user: str,
                     wp_app_password: str, timeout: int = 10) -> dict:
-    """Cria ou atualiza 1 página pelo slug (idempotente — ex.: sitemap editorial).
+    """Cria somente rascunho ou atualiza página ainda não publicada pelo slug.
 
     Sem gate de afiliado: páginas de índice não divulgam produto.
     Retorna {"page_id":..., "link":..., "atualizada":bool} ou {"erro":...}.
     """
     wp_url = (wp_url or "").rstrip("/")
+    slug = (slug or "").strip()
     if not wp_url or not wp_user or not wp_app_password:
         return {"erro": "WP_URL/WP_USER/WP_APP_PASSWORD ausentes no .env"}
+    if not slug:
+        return {"erro": "slug obrigatorio para impedir paginas duplicadas"}
     headers = {"Authorization": _auth_header(wp_user, wp_app_password),
                "Content-Type": "application/json", "User-Agent": "MKT-Flow-P0/3.6"}
     try:
         busca = requests.get(f"{wp_url}/wp-json/wp/v2/pages",
-                             headers=headers, params={"slug": slug}, timeout=timeout)
-        existente = (busca.json() or [None])[0] if busca.status_code == 200 else None
+                             headers=headers, params={"slug": slug, "status": "any", "context": "edit"}, timeout=timeout)
+        if busca.status_code != 200:
+            return {"erro": "Falha na consulta de páginas: WordPress recusou o preflight"}
+        paginas = busca.json()
+        if not isinstance(paginas, list):
+            return {"erro": "preflight de paginas retornou formato invalido"}
+        if len(paginas) > 1:
+            return {"erro": "slug ambiguo: existem multiplas paginas; revisao manual necessaria"}
+        if paginas and not isinstance(paginas[0], dict):
+            return {"erro": "preflight de paginas retornou entrada invalida"}
+        existente = paginas[0] if paginas else None
     except Exception as e:
         return {"erro": f"Falha ao buscar página: {str(e)[:120]}"}
+    if existente and existente.get("status") not in {"draft"}:
+        return {"erro": "página publicada ou pendente não pode ser alterada pelo helper de rascunho"}
     try:
         if existente and existente.get("id"):
             resp = requests.post(f"{wp_url}/wp-json/wp/v2/pages/{existente['id']}",
                                  headers=headers,
-                                 json={"title": titulo, "content": conteudo_html, "slug": slug},
+                                 json={"title": titulo, "content": conteudo_html, "slug": slug, "status": "draft"},
                                  timeout=timeout)
             atualizada = True
         else:
             resp = requests.post(f"{wp_url}/wp-json/wp/v2/pages",
                                  headers=headers,
                                  json={"title": titulo, "content": conteudo_html, "slug": slug,
-                                       "status": "publish"},
+                                       "status": "draft"},
                                  timeout=timeout)
             atualizada = False
         if resp.status_code in (200, 201):
             data = resp.json()
+            if data.get("status") != "draft":
+                return {"erro": "resposta não confirmou draft; inspecionar", "page_id": data.get("id")}
             return {"page_id": data.get("id"), "link": data.get("link"), "atualizada": atualizada}
         return {"erro": f"WP {resp.status_code}: {resp.text[:200]}"}
     except requests.Timeout:

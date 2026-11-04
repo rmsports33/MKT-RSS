@@ -122,13 +122,95 @@ def test_legado_mantem_forca_draft_quando_validacao_nao_e_pass():
     assert "erro" in result
     post.assert_not_called()
 
-def test_publicar_pagina_ainda_vai_para_pages():
+def test_publicar_pagina_cria_apenas_rascunho():
     with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
          patch("mkt_flow_p0.wp_publisher.requests.post") as post:
         busca.return_value = _Resposta(200, [])
-        post.return_value = _Resposta(201, {"id": 9, "link": "l"})
-        W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+        post.return_value = _Resposta(201, {"id": 9, "link": "l", "status": "draft"})
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert result["page_id"] == 9
     assert post.call_args[0][0] == "https://exemplo.com.br/wp-json/wp/v2/pages"
+    assert post.call_args.kwargs["json"]["status"] == "draft"
+
+
+def test_publicar_pagina_preflight_inclui_rascunhos_na_busca():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(200, [{"id": 9, "status": "draft"}])
+        post.return_value = _Resposta(200, {"id": 9, "link": "l", "status": "draft"})
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert result["page_id"] == 9
+    assert result["atualizada"] is True
+    assert busca.call_args.kwargs["params"] == {
+        "slug": "slug-x", "status": "any", "context": "edit"
+    }
+    assert post.call_args[0][0].endswith("/wp/v2/pages/9")
+
+
+def test_publicar_pagina_recusa_slug_vazio_sem_rede():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "", "https://exemplo.com.br", "u", "p")
+    assert "slug" in result["erro"]
+    busca.assert_not_called()
+    post.assert_not_called()
+
+
+def test_publicar_pagina_recusa_slug_ambiguo_sem_post():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(200, [
+            {"id": 9, "status": "draft"}, {"id": 10, "status": "publish"}
+        ])
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert "ambiguo" in result["erro"]
+    post.assert_not_called()
+
+
+def test_publicar_pagina_preflight_nao_lista_recusa_escrita():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(200, {"id": 9})
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert "formato invalido" in result["erro"]
+    post.assert_not_called()
+
+
+def test_publicar_pagina_preflight_item_invalido_sem_post():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(200, ["pagina-invalida"])
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert "entrada invalida" in result["erro"]
+    post.assert_not_called()
+
+
+def test_publicar_pagina_preflight_403_sem_post():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(403, {})
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert "preflight" in result["erro"]
+    post.assert_not_called()
+
+
+def test_publicar_pagina_rejeita_resposta_publicada():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(200, [])
+        post.return_value = _Resposta(201, {"id": 9, "status": "publish"})
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert result["page_id"] == 9
+    assert "erro" in result
+
+
+def test_publicar_pagina_recusa_alterar_publicada_sem_post():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(200, [{"id": 9, "status": "publish"}])
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert "publicada" in result["erro"]
+    post.assert_not_called()
 
 
 # --- 3. FALHAS ---------------------------------------------------------------

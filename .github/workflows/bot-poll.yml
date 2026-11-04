@@ -1,23 +1,20 @@
-name: Bot Telegram (polling auto-acendido)
+name: Bot Telegram (manual, sem looping)
 
-# O bot roda ~4,5 min e, ao terminar, DISPARA a proxima rodada (self-dispatch).
-# Isso elimina o buraco entre rodadas e nao depende do cron, que em repo publico
-# pode atrasar horas. O cron de 15 min fica so como rede de seguranca.
-# Repo publico = minutos ilimitados, sem cartao.
+# O bot só roda por solicitação manual do responsável; não há cron nem
+# autodespacho recursivo, para reduzir consumo desnecessário.
+# Orçamento Actions da conta US$ 0: não presumir runners ilimitados.
 #
 # Segredos (Settings -> Secrets and variables -> Actions):
 #   TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_IDS, WP_URL, WP_USER, WP_APP_PASSWORD,
 #   GROQ_API_KEY, GOOGLE_SHEETS_JSON
-# (GITHUB_TOKEN e automatico e so serve para o auto-dispatch.)
+# Sem permissão de auto-dispatch.
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"   # rede de seguranca (a cada 15 min)
-  workflow_dispatch:         # permite disparo manual
+  workflow_dispatch:   # operação supervisionada, sem polling contínuo
 
 permissions:
   contents: read
-  actions: write             # permite o bot disparar a proxima rodada
+  actions: read              # sem permissão de auto-dispatch
 
 concurrency:
   group: bot-telegram
@@ -39,7 +36,7 @@ jobs:
       - name: Instala deps do bot
         run: pip install -r admin/bot-requirements.txt
 
-      # REGRA CRITICA (bug de 26/09): o bot pode MORRER em segundos com
+      # REGRA DE SEGURANCA (bug de 26/09): o bot pode MORRER em segundos com
       # 409 Conflict (outro poller vivo). Se o passo de reacender rodasse
       # mesmo assim, cada morte gerava um disparo novo que cancelava o
       # poller saudavel -> tempestade de 100 rodadas. Entao:
@@ -55,7 +52,7 @@ jobs:
           ec=$?
           echo "bot saiu com codigo $ec" >> "$GITHUB_STEP_SUMMARY"
           if [ "$ec" = "124" ]; then
-            echo "rodada-ok" > .rodada-ok
+            echo "rodada concluída sem auto-dispatch" >> "$GITHUB_STEP_SUMMARY"
           else
             echo "rodada NAO concluida (codigo $ec)" >> "$GITHUB_STEP_SUMMARY"
           fi
@@ -70,9 +67,3 @@ jobs:
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GOOGLE_SHEETS_JSON: ${{ secrets.GOOGLE_SHEETS_JSON }}
-
-      - name: Reacende o bot para a proxima rodada
-        if: success() && hashFiles('.rodada-ok') != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run bot-poll.yml --ref master || echo "falhou o auto-dispatch (a rede de seguranca cobre)"
