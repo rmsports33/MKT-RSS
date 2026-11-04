@@ -112,6 +112,8 @@ def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_
             return {"erro": "preflight de paginas retornou formato invalido"}
         if len(paginas) > 1:
             return {"erro": "slug ambiguo: existem multiplas paginas; revisao manual necessaria"}
+        if paginas and not isinstance(paginas[0], dict):
+            return {"erro": "preflight de paginas retornou entrada invalida"}
         existente = paginas[0] if paginas else None
     except Exception as e:
         return {"erro": f"Falha ao buscar página: {str(e)[:120]}"}
