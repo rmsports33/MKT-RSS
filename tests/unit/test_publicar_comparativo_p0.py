@@ -122,12 +122,23 @@ def test_legado_mantem_forca_draft_quando_validacao_nao_e_pass():
     assert "erro" in result
     post.assert_not_called()
 
-def test_publicar_pagina_bloqueia_escrita_sem_gate():
+def test_publicar_pagina_cria_apenas_rascunho():
     with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
          patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(200, [])
+        post.return_value = _Resposta(201, {"id": 9, "link": "l", "status": "draft"})
         result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
-    assert "gate editorial" in result["erro"]
-    busca.assert_not_called()
+    assert result["page_id"] == 9
+    assert post.call_args[0][0] == "https://exemplo.com.br/wp-json/wp/v2/pages"
+    assert post.call_args.kwargs["json"]["status"] == "draft"
+
+
+def test_publicar_pagina_recusa_alterar_publicada_sem_post():
+    with patch("mkt_flow_p0.wp_publisher.requests.get") as busca, \
+         patch("mkt_flow_p0.wp_publisher.requests.post") as post:
+        busca.return_value = _Resposta(200, [{"id": 9, "status": "publish"}])
+        result = W.publicar_pagina("Titulo", "<p>c</p>", "slug-x", "https://exemplo.com.br", "u", "p")
+    assert "publicada" in result["erro"]
     post.assert_not_called()
 
 
