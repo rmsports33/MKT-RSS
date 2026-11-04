@@ -95,16 +95,24 @@ def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_
     Retorna {"page_id":..., "link":..., "atualizada":bool} ou {"erro":...}.
     """
     wp_url = (wp_url or "").rstrip("/")
+    slug = (slug or "").strip()
     if not wp_url or not wp_user or not wp_app_password:
         return {"erro": "WP_URL/WP_USER/WP_APP_PASSWORD ausentes no .env"}
+    if not slug:
+        return {"erro": "slug obrigatorio para impedir paginas duplicadas"}
     headers = {"Authorization": _auth_header(wp_user, wp_app_password),
                "Content-Type": "application/json", "User-Agent": "MKT-Flow-P0/3.6"}
     try:
         busca = requests.get(f"{wp_url}/wp-json/wp/v2/pages",
-                             headers=headers, params={"slug": slug}, timeout=timeout)
+                             headers=headers, params={"slug": slug, "status": "any", "context": "edit"}, timeout=timeout)
         if busca.status_code != 200:
             return {"erro": "Falha na consulta de páginas: WordPress recusou o preflight"}
-        existente = (busca.json() or [None])[0]
+        paginas = busca.json()
+        if not isinstance(paginas, list):
+            return {"erro": "preflight de paginas retornou formato invalido"}
+        if len(paginas) > 1:
+            return {"erro": "slug ambiguo: existem multiplas paginas; revisao manual necessaria"}
+        existente = paginas[0] if paginas else None
     except Exception as e:
         return {"erro": f"Falha ao buscar página: {str(e)[:120]}"}
     if existente and existente.get("status") not in {"draft"}:
