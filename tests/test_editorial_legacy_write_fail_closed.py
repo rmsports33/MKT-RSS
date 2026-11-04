@@ -1,29 +1,44 @@
-"""Regression: legacy WordPress writers may not bypass the signed editorial gate.
+"""Regressão: rascunhos/taxonomia nativos sem liberar publicação editorial.
 
-No network, credentials, WordPress changes or paid runners required.
+Chamadas de rede são inteiramente mockadas. Nenhuma escrita real no WordPress.
 """
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 from mkt_flow_p0 import wp_publisher as wp
 
 
-def test_page_writer_fails_closed_before_network():
-    with patch.object(wp.requests, "get") as get, patch.object(wp.requests, "post") as post:
+def _response(status, data):
+    r = MagicMock()
+    r.status_code = status
+    r.json.return_value = data
+    return r
+
+
+def test_new_support_page_stays_draft():
+    with patch.object(wp.requests, "get", return_value=_response(200, [])), \
+         patch.object(wp.requests, "post", return_value=_response(201, {"id": 7, "link": "x", "status": "draft"})) as post:
         result = wp.publicar_pagina("Página", "<p>texto</p>", "pagina", "https://conexotech.com.br", "u", "p")
-        assert "gate editorial" in result["erro"]
-        get.assert_not_called()
-        post.assert_not_called()
+    assert result["page_id"] == 7
+    assert post.call_args.kwargs["json"]["status"] == "draft"
 
 
-def test_legacy_term_creation_fails_closed_before_network():
-    with patch.object(wp.requests, "get") as get, patch.object(wp.requests, "post") as post:
-        assert wp.garantir_categoria("https://conexotech.com.br", "u", "p", "Notícias") is None
-        assert wp.garantir_tag("https://conexotech.com.br", "u", "p", "Tecnologia") is None
-        get.assert_not_called()
-        post.assert_not_called()
+def test_existing_published_page_is_not_modified():
+    with patch.object(wp.requests, "get", return_value=_response(200, [{"id": 8, "status": "publish"}])), \
+         patch.object(wp.requests, "post") as post:
+        result = wp.publicar_pagina("Página", "<p>texto</p>", "pagina", "https://conexotech.com.br", "u", "p")
+    assert "erro" in result
+    post.assert_not_called()
 
 
-def test_rank_math_legacy_meta_fails_closed_before_network():
+def test_terms_use_normal_authenticated_wordpress_permissions():
+    with patch.object(wp.requests, "get", return_value=_response(200, [])), \
+         patch.object(wp.requests, "post", return_value=_response(201, {"id": 10})) as post:
+        assert wp.garantir_categoria("https://conexotech.com.br", "u", "p", "Notícias") == 10
+        assert wp.garantir_tag("https://conexotech.com.br", "u", "p", "Tecnologia") == 10
+    assert post.call_count == 2
+
+
+def test_rank_math_direct_post_stays_blocked():
     with patch.object(wp.requests, "post") as post:
         result = wp._aplicar_rank_math("https://conexotech.com.br", "u", "p", 123, {"title": "Teste"})
         assert "bloqueada" in result["meta_aviso"]
