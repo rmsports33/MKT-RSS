@@ -5,10 +5,27 @@ on:
   push:
     branches: [main, master]
   pull_request:
+    paths:
+      - '**/*.py'
+      - '**/*.php'
+      - '**/*.json'
+      - '**/*.toml'
+      - '**/*.ini'
+      - 'requirements/**'
+      - '**/requirements*.txt'
+      - '.github/workflows/ci.yml'
+      - 'AGENTS.md'
+      - 'docs/EDITORIAL*'
   workflow_dispatch:
 
 permissions:
   contents: read
+
+# PR mais recente cancela validação obsoleta; commits na master mantêm
+# a verificação própria e não cancelam outra branch.
+concurrency:
+  group: ci-pytest-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   test:
