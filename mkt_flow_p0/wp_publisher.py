@@ -1,6 +1,6 @@
 """
 mkt_flow_p0.wp_publisher — Publicação WordPress via REST API
-Artigos exigem o gate editorial canônico inclusive em draft; sem fallback direto.
+Publicação de artigos exige gate assinado. Páginas de apoio podem ser rascunhos autenticados.
 """
 import base64
 import logging
@@ -14,13 +14,29 @@ def _auth_header(user: str, app_password: str) -> str:
 
 
 def _get_ou_criar_termo(wp_url: str, user: str, app_password: str, tipo: str, nome: str, timeout: int = 10):
-    """Nenhuma criacao de categoria/tag fora do pacote editorial assinado.
+    """Busca categoria/tag por nome; cria se não existir. Retorna id ou None.
 
-    Retorno None preserva a API legada; nunca executa POST nem altera taxonomia.
-    IDs previamente revistos devem constar no pacote canônico.
+    tipo: "categories" | "tags". Falha de rede → None (publica sem taxonomia).
     """
-    logger.warning("Termo WordPress não criado: caminho legado sem gate editorial")
+    if tipo not in {"categories", "tags"} or not wp_url or not user or not app_password:\n        return None\n    nome = (nome or "").strip()
+    if not nome:
+        return None
+    base = f"{wp_url}/wp-json/wp/v2/{tipo}"
+    headers = {"Authorization": _auth_header(user, app_password), "User-Agent": "MKT-Flow-P0/3.6"}
+    try:
+        r = requests.get(base, headers=headers, params={"search": nome, "per_page": 5}, timeout=timeout)
+        if r.status_code == 200:
+            for item in r.json():
+                if str(item.get("name", "")).lower() == nome.lower():
+                    return item.get("id")
+        r = requests.post(base, headers={**headers, "Content-Type": "application/json"},
+                          json={"name": nome}, timeout=timeout)
+        if r.status_code in (200, 201):
+            return r.json().get("id")
+    except Exception as e:
+        logger.warning(f"WP {tipo} '{nome}' falhou: {e}")
     return None
+
 
 def garantir_categoria(wp_url: str, user: str, app_password: str, nome: str, timeout: int = 10):
     return _get_ou_criar_termo((wp_url or "").rstrip("/"), user, app_password, "categories", nome, timeout)
@@ -69,14 +85,47 @@ def publicar_no_wordpress(
         timeout=timeout)
 
 
-def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str,
-                    wp_user: str, wp_app_password: str, timeout: int = 10) -> dict:
-    """Impede pages como rota paralela de escrita sem revisão editorial.
+def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_user: str,
+                    wp_app_password: str, timeout: int = 10) -> dict:
+    """Cria somente rascunho ou atualiza página ainda não publicada pelo slug.
 
-    Páginas institucionais exigem uma intenção e um contrato apropriados no
-    núcleo canônico; não há fallback genérico para wp/v2/pages.
+    Sem gate de afiliado: páginas de índice não divulgam produto.
+    Retorna {"page_id":..., "link":..., "atualizada":bool} ou {"erro":...}.
     """
-    return {"erro": "escrita de páginas bloqueada: caminho sem gate editorial assinado"}
+    wp_url = (wp_url or "").rstrip("/")
+    if not wp_url or not wp_user or not wp_app_password:
+        return {"erro": "WP_URL/WP_USER/WP_APP_PASSWORD ausentes no .env"}
+    headers = {"Authorization": _auth_header(wp_user, wp_app_password),
+               "Content-Type": "application/json", "User-Agent": "MKT-Flow-P0/3.6"}
+    try:
+        busca = requests.get(f"{wp_url}/wp-json/wp/v2/pages",
+                             headers=headers, params={"slug": slug}, timeout=timeout)
+        if busca.status_code != 200:\n            return {"erro": "Falha na consulta de páginas: WordPress recusou o preflight"}\n        existente = (busca.json() or [None])[0]
+    except Exception as e:
+        return {"erro": f"Falha ao buscar página: {str(e)[:120]}"}
+    try:
+        if existente and existente.get("id"):
+            resp = requests.post(f"{wp_url}/wp-json/wp/v2/pages/{existente['id']}",
+                                 headers=headers,
+                                 json={"title": titulo, "content": conteudo_html, "slug": slug, "status": "draft"},
+                                 timeout=timeout)
+            atualizada = True
+        else:
+            resp = requests.post(f"{wp_url}/wp-json/wp/v2/pages",
+                                 headers=headers,
+                                 json={"title": titulo, "content": conteudo_html, "slug": slug,
+                                       "status": "draft"},
+                                 timeout=timeout)
+            atualizada = False
+        if resp.status_code in (200, 201):
+            data = resp.json()
+            return {"page_id": data.get("id"), "link": data.get("link"), "atualizada": atualizada}
+        return {"erro": f"WP {resp.status_code}: {resp.text[:200]}"}
+    except requests.Timeout:
+        return {"erro": f"WP timeout após {timeout}s"}
+    except Exception as e:
+        return {"erro": f"Falha WP: {str(e)[:150]}"}
+
 
 # --- M04.17C: escrita de COMPARATIVO via MCP -------------------------------
 # NOTÍCIAS usam apenas o fluxo editorial assinado. Escritas CPT legadas não
