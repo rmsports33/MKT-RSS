@@ -4,6 +4,17 @@ name: CI (pytest)
 on:
   push:
     branches: [main, master]
+    paths:
+      - '**/*.py'
+      - '**/*.php'
+      - '**/*.json'
+      - '**/*.toml'
+      - '**/*.ini'
+      - 'requirements/**'
+      - '**/requirements*.txt'
+      - '.github/workflows/ci.yml'
+      - 'AGENTS.md'
+      - 'docs/EDITORIAL*'
   pull_request:
     paths:
       - '**/*.py'
