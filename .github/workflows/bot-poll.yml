@@ -1,8 +1,7 @@
 name: Bot Telegram (polling auto-acendido)
 
-# O bot roda ~4,5 min e, ao terminar, DISPARA a proxima rodada (self-dispatch).
-# Isso elimina o buraco entre rodadas e nao depende do cron, que em repo publico
-# pode atrasar horas. O cron de 15 min fica so como rede de seguranca.
+# O bot só roda por solicitação manual do responsável; não há cron nem
+# autodespacho recursivo, para reduzir consumo desnecessário.
 # Repo publico = minutos ilimitados, sem cartao.
 #
 # Segredos (Settings -> Secrets and variables -> Actions):
@@ -11,13 +10,11 @@ name: Bot Telegram (polling auto-acendido)
 # (GITHUB_TOKEN e automatico e so serve para o auto-dispatch.)
 
 on:
-  schedule:
-    - cron: "*/15 * * * *"   # rede de seguranca (a cada 15 min)
-  workflow_dispatch:         # permite disparo manual
+  workflow_dispatch:   # operação supervisionada, sem polling contínuo
 
 permissions:
   contents: read
-  actions: write             # permite o bot disparar a proxima rodada
+  actions: read              # sem permissão de auto-dispatch
 
 concurrency:
   group: bot-telegram
@@ -70,9 +67,3 @@ jobs:
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GOOGLE_SHEETS_JSON: ${{ secrets.GOOGLE_SHEETS_JSON }}
-
-      - name: Reacende o bot para a proxima rodada
-        if: success() && hashFiles('.rodada-ok') != ''
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: gh workflow run bot-poll.yml --ref master || echo "falhou o auto-dispatch (a rede de seguranca cobre)"
