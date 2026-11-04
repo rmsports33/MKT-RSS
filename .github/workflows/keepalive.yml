@@ -1,4 +1,5 @@
 name: Keepalive (anti-pausa 60 dias)
+# Não despacha daily.yml: o RSS possui agenda própria e evita duplicação.
 
 # O GitHub pausa crons sem commits por 60 dias. Este workflow garante 1 commit/mês
 # sem mexer em código de produção — só atualiza .github/keepalive.txt.
@@ -28,14 +29,3 @@ jobs:
           git add .github/keepalive.txt
           git diff --staged --quiet || git commit -m "chore: keepalive $(cat .github/keepalive.txt)"
           git push
-
-      - name: Dispara RSS diario se necessário
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Se o cron do daily atrasou >30min, dispara via API (fallback local)
-          gh workflow run daily.yml --ref master 2>/dev/null || \
-          curl -s -X POST -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            https://api.github.com/repos/${{ github.repository }}/actions/workflows/daily.yml/dispatches \
-            -d '{"ref":"master"}' || true
