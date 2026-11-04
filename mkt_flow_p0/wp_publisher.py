@@ -18,7 +18,9 @@ def _get_ou_criar_termo(wp_url: str, user: str, app_password: str, tipo: str, no
 
     tipo: "categories" | "tags". Falha de rede → None (publica sem taxonomia).
     """
-    if tipo not in {"categories", "tags"} or not wp_url or not user or not app_password:\n        return None\n    nome = (nome or "").strip()
+    if tipo not in {"categories", "tags"} or not wp_url or not user or not app_password:
+        return None
+    nome = (nome or "").strip()
     if not nome:
         return None
     base = f"{wp_url}/wp-json/wp/v2/{tipo}"
