@@ -100,9 +100,13 @@ def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_
     try:
         busca = requests.get(f"{wp_url}/wp-json/wp/v2/pages",
                              headers=headers, params={"slug": slug}, timeout=timeout)
-        if busca.status_code != 200:\n            return {"erro": "Falha na consulta de páginas: WordPress recusou o preflight"}\n        existente = (busca.json() or [None])[0]
+        if busca.status_code != 200:
+            return {"erro": "Falha na consulta de páginas: WordPress recusou o preflight"}
+        existente = (busca.json() or [None])[0]
     except Exception as e:
         return {"erro": f"Falha ao buscar página: {str(e)[:120]}"}
+    if existente and existente.get("status") not in {"draft"}:
+        return {"erro": "página publicada ou pendente não pode ser alterada pelo helper de rascunho"}
     try:
         if existente and existente.get("id"):
             resp = requests.post(f"{wp_url}/wp-json/wp/v2/pages/{existente['id']}",
@@ -119,6 +123,8 @@ def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_
             atualizada = False
         if resp.status_code in (200, 201):
             data = resp.json()
+            if data.get("status") != "draft":
+                return {"erro": "resposta não confirmou draft; inspecionar", "page_id": data.get("id")}
             return {"page_id": data.get("id"), "link": data.get("link"), "atualizada": atualizada}
         return {"erro": f"WP {resp.status_code}: {resp.text[:200]}"}
     except requests.Timeout:
