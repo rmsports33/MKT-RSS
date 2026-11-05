@@ -219,7 +219,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     # condicionada à revisão humana. Porém o WordPress nativo pode receber
     # rascunhos privados para edição sem depender do novo Editorial Gate.
     verificacao_factual = "NAO_VERIFICADO"
-    if os.environ.get("CONEXO_RSS_DRAFT_STAGING") == "1":
+    if os.environ.get("CONEXO_RSS_DRAFT") == "1" or os.environ.get("CONEXO_RSS_DRAFT_STAGING") == "1":
         from mkt_flow_p0.wp_draft_staging import stage_rss_draft
         staged = stage_rss_draft(
             title=rw["titulo_seo"], content=html, source_url=url_fonte,
