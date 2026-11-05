@@ -10,7 +10,7 @@ from urllib.parse import urlsplit
 
 import requests
 
-SITE = "https://conexotech.com.br"
+ALLOWED_SITES = frozenset(("https://conexotech.com.br", "https://staging.conexotech.com.br"))
 
 
 def _slug(title, source_url):
@@ -39,13 +39,14 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
 
     On network uncertainty, never issue a second create request automatically.
     """
-    if (wp_url.rstrip("/") != SITE or not wp_user or not wp_password
+    target = (wp_url or "").rstrip("/")
+    if (target not in ALLOWED_SITES or not wp_user or not wp_password
             or not isinstance(title, str) or len(title.strip()) < 10
             or not isinstance(content, str) or len(content.strip()) < 150
             or not _source_ok(source_url)):
         return {"acao": "bloqueado", "motivo": "entrada_rascunho_invalida", "escreveu": False}
     slug = _slug(title, source_url)
-    endpoint = SITE + "/wp-json/wp/v2/posts"
+    endpoint = target + "/wp-json/wp/v2/posts"
     auth = (wp_user, wp_password)
     try:
         existing = request_client.get(endpoint, params={"slug": slug, "context": "edit"},
