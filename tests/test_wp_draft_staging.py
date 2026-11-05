@@ -84,3 +84,31 @@ def test_failed_readback_never_claims_success():
     assert result["acao"] == "falha"
     assert result["retry_automatic"] is False
     assert result["post_id"] == 9752
+
+def test_staging_is_optional_not_required():
+    import hashlib
+    client = Mock()
+    slug = "android-recebe-novos-recursos-para-usuarios-brasileiros-" + hashlib.sha256(SOURCE.encode()).hexdigest()[:12]
+    client.get.side_effect = [
+        response(200, []),
+        response(200, {"status": "draft", "id": 9763, "slug": slug,
+                       "link": "https://staging.conexotech.com.br/?p=9763"})
+    ]
+    client.post.return_value = response(201, {"id": 9763, "status": "draft"})
+    result = stage_rss_draft(**{**BASE, "wp_url": "https://staging.conexotech.com.br"},
+                             request_client=client)
+    assert result["acao"] == "publicado_rascunho"
+    assert result["post_id"] == 9763 and result["status"] == "draft"
+    assert result["revisao_factual"] == "PENDENTE"
+    assert client.post.call_args.args[0] == "https://staging.conexotech.com.br/wp-json/wp/v2/posts"
+    assert client.post.call_args.kwargs["json"]["status"] == "draft"
+    assert client.post.call_count == 1
+
+
+def test_unknown_host_cannot_be_used_even_with_valid_credentials():
+    client = Mock()
+    result = stage_rss_draft(**{**BASE, "wp_url": "https://other.example"},
+                             request_client=client)
+    assert result["acao"] == "bloqueado" and result["escreveu"] is False
+    client.post.assert_not_called()
+    client.get.assert_not_called()
