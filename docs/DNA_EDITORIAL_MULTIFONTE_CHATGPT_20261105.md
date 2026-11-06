@@ -66,7 +66,7 @@ O PR #39 continua a integração maior em aberto. Esta branch parte de `ops/fast
 O CLI agora pode persistir a saída do MKT-RSS como arquivo JSON, **mesmo se a escrita de rascunho no WordPress estiver desativada**:
 
 ```bash
-python pipeline_rss.py --limit 1 --research-context pesquisa.json --handoff-dir output/handoffs
+python pipeline_rss.py --limit 1 --research-context pesquisa.json --handoff-dir output/handoffs --handoff-only
 ```
 
 - O arquivo é criado sob `output/handoffs/rss_<hash_da_url>-<prefixo_hash_da_versao>.json`; a mesma versão não é sobrescrita e uma revisão de texto gera arquivo distinto.
@@ -90,3 +90,13 @@ python -m mkt_flow_p0.editorial_identity --verify-handoff output/handoffs/arquiv
 - O pipeline completo **não** foi executado nesta sessão, porque o clone público por `git` retorna `Could not resolve host: github.com`; o conector GitHub permite commits mas não executa Python. A próxima verificação em runtime é `pytest` da suíte integral do repositório e `pipeline_rss.py --limit 1 --handoff-dir ...` com Groq já configurado, sem publicar.
 
 **Não disparar GitHub Actions só para gerar esta evidência**. Não criar serviços redundantes para superar o bloqueio DNS do executor da sessão.
+
+### Proteção para execução real — 06/11/2026
+
+Use **`--handoff-only`** para gerar um pacote revisável sem gravar no WordPress, mesmo que `CONEXO_RSS_DRAFT=1` esteja habilitado no ambiente. A opção exige `--handoff-dir` e não pode ser combinada com `--dry-run`, `--queue-only` ou `--editorial-package`. Ela executa a extração e o modelo já configurado, portanto **não garante ausência de custo da API de IA**. Antes de rodar, confira se o provedor e a quota existentes permitem a execução sem gasto.
+
+O status da pauta neste modo é `pacote_editorial_criado`, com `escreveu=false` e `review_status=PENDING_HUMAN_REVIEW`. Se o pacote falhar na validação ou gravação, a ação é `falha`, e **nenhuma postagem remota é tentada**. A pauta não é marcada como vista neste modo; futuras execuções podem gerar nova versão, que será salva separadamente.
+
+Sem `--handoff-only`, o comportamento anterior de `CONEXO_RSS_DRAFT=1` permanece: o pipeline pode enviar um **rascunho privado** ao WordPress configurado. Apenas `--handoff-dir`, isoladamente, **não desabilita** essa escrita remota. A decisão entre exportação offline e rascunho WP deve ser explícita.
+
+Testes adicionais no GitHub: `tests/test_pipeline_handoff_only.py` (sem rede por mocks); execução integral desses novos testes está pendente do checkout real, embora o módulo isolado de handoff tenha 14 testes offline aprovados. Não declarar a execução do Groq/RSS a partir desses testes.
