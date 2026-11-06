@@ -1,4 +1,4 @@
-name: RSS homolog - manual queue only
+name: RSS homolog - pauta, IA e rascunho (manual)
 
 on:
   workflow_dispatch:
@@ -132,7 +132,7 @@ jobs:
               raise SystemExit("BLOCKED: selected Groq model is not listed for this credential")
           print("PASS: Groq credential authenticated and selected model is listed; no generated tokens.")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
-              summary.write("Groq preflight OK. Model listed; this does NOT prove free quota.\\n")
+              summary.write("Groq preflight OK. Model listed; this does NOT prove free quota.\n")
           PY
 
       - name: Install RSS dependencies only for generation
@@ -199,7 +199,7 @@ jobs:
           if mode == "draft":
               lines.append(f"Confirmed private WP draft ID: {item['post_id']}")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
-              out.write("\\n".join(lines) + "\\n")
+              out.write("\n".join(lines) + "\n")
           Path("output/qa").mkdir(parents=True, exist_ok=True)
           manifest = {
               "mode": mode, "version_sha256": check["version_sha256"],
