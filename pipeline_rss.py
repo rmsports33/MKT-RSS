@@ -180,7 +180,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     html = markdown_para_html(texto_final)
 
     imagem_url, credito_foto = "", ""
-    if ext.get("imagem"):
+    # Pacote de revisão não precisa baixar imagem de terceiros; preserve URL/fonte na apuração.
+    if ext.get("imagem") and not handoff_only:
         capa = preparar_capa(sanitizar_url(ext["imagem"]), consulta_fallback=rw["titulo_seo"])
         if "bytes" in capa:
             imagem_url = sanitizar_url(ext["imagem"])  # WP baixa e define como destacada
