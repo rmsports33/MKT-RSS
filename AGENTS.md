@@ -1,5 +1,15 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
+## Decisões vigentes e precedência — 05–06/11/2026
+
+- **MKT-RSS é motor editorial completo**, não mero alimentador RSS: preservar coleta, filtros, pesquisa/insumos de fontes complementares, redação Groq Free ou outro provedor autorizado, DNA ConexoTech, SEO, mídias com direitos verificados, pacote com hash, links relacionados e criação de rascunhos privados. ChatGPT-first é o colaborador de apuração/revisão, não o substituto obrigatório do MKT-RSS. O WordPress REST/MCP também pode operar diretamente uma pauta sem exigir que Python esteja ativo.
+- **Um só fluxo de evidências e publicação**, com executores intercambiáveis (ChatGPT/Work, Python MKT-RSS, OpenCode). Um escritor por artigo/versão, idempotência e readback. Proibição de publicar automaticamente sem aprovação factual/substantiva e aceite explícito; `PENDING_HUMAN_REVIEW` jamais é autorização.
+- **Funcionamento antes de burocracia desnecessária:** rascunhos privados e edição supervisionada não dependem de staging, SFTP, HMAC, migração Native SEO nem novo hosting. Respeitar Gate realmente ativo. Segurança mínima (credenciais, duplicidade, direitos de mídia, revisão humana para publicação) permanece inegociável. Rank Math vigente até homologação de substituição.
+- **Produtividade:** reutilizar ferramentas testadas, desenvolver só pendências, demonstrar uma funcionalidade antes de ampliar; cloud-first, sem PowerShell obrigatório, sem cartão/custos extras. Não abrir novos executores ou auditorias extensas sem necessidade concreta.
+- **Situação comprovada em 06/11:** RSS real → Groq Free → pacote → draft WordPress #9769 com readback, mas artigo ainda superficial, sem imagem/links internos e com uma fonte. A branch `feat/editorial-dna-multisource-20261105` contém avaliação de prontidão, pesquisa multifonte via contexto identificado e seleção opcional de links publicados do WP. **Esta branch não foi mesclada à master**; workflow manual pinado a SHA auditado e coleta diária `daily.yml` opera somente `--queue-only`, sem Groq nem WP.
+- A nota editorial é proporcional ao gênero, não uma contagem fixa universal. Rascunhos podem seguir como candidatos pendentes; somente artigos com fatos verificados, direitos de mídia, revisão e autorização da versão entram na publicação. Expor somente manifesto seguro no Actions público; nunca artigo não revisado, credenciais ou claims.
+- Fonte central: `rmsports33/conexo-os:main/AGENTS.md` (padrão unificado) e `docs/EDITORIAL_DNA_V1.md`. Corrigir regras antigas divergentes em vez de criar duas arquiteturas.
+
 ## Regra durável de execução editorial — 03/11/2026
 
 **ChatGPT Work / ChatGPT-first com WordPress REST/MCP é o executor editorial escolhido.** O WordPress autenticado cria/edita rascunhos e publica/agenda artigos supervisionados. NÃO pedir executor Python permanente, Windows/PowerShell, OpenCode, GitHub Actions, Vercel, novo hosting ou Hostinger MCP como pré-requisito. O Python deste repositório é componente opcional de RSS/transformação/teste; a flag `CONEXO_RSS_DRAFT_STAGING=1` preparada no PR #39 não define a arquitetura operacional.
