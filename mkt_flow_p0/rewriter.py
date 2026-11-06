@@ -264,8 +264,10 @@ def reescrever_materia(
                  "slug": slug, "meta_description": meta},
                 url_fonte=url_fonte, fonte_nome=fonte_nome,
                 contexto_complementar=contexto_complementar)
-        except ValueError:
-            return {"erro": "Fonte original ou handoff editorial inválido"}
+        except ValueError as exc:
+            # Um erro no intercâmbio consultivo não pode apagar artigo gerado.
+            logger.warning("Handoff ChatGPT indisponível: %s", str(exc)[:120])
+            handoff = None
     return {
         "editorial_handoff": handoff,
         "referencias_traducao": referencias,
