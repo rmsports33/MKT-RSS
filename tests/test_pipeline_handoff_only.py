@@ -230,3 +230,57 @@ def test_draft_mode_rejects_invalid_handoff_before_write(monkeypatch):
     assert result["motivo"] == "handoff_editorial_invalido"
     assert result["escreveu"] is False
     assert calls == []
+
+
+@pytest.mark.parametrize("args", [
+    ["--featured-media-id", "9714"],
+    ["--confirm-media-rights"],
+    ["--featured-media-id", "9714", "--confirm-media-rights"],
+    ["--featured-media-id", "9714", "--confirm-media-rights",
+     "--fonte", "tecnoblog", "--limit", "2"],
+])
+def test_media_cli_needs_one_item_and_explicit_rights(monkeypatch, args):
+    monkeypatch.setattr(sys, "argv", ["pipeline_rss.py", *args])
+    with pytest.raises(SystemExit) as exc:
+        pipeline_rss.main()
+    assert exc.value.code == 2
+
+
+def test_draft_receives_media_operator_consent_and_quality_remains_human_pending(monkeypatch):
+    calls = _dependencies(monkeypatch)
+    monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
+    result = pipeline_rss.processar_item(
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        featured_media_id=9714, media_rights_confirmed=True)
+    assert result["acao"] == "publicado_rascunho"
+    assert len(calls) == 1
+    assert calls[0]["featured_media_id"] == 9714
+    assert calls[0]["media_rights_confirmed"] is True
+    assert result["qualidade_editorial"]["pronto_para_publicar"] is False
+
+
+def test_optin_relevant_links_preserve_new_handoff_hash(monkeypatch):
+    calls = _dependencies(monkeypatch)
+    monkeypatch.setenv("CONEXO_RSS_RELATED_LINKS", "1")
+    monkeypatch.setenv("CONEXO_RSS_DRAFT", "0")
+    from mkt_flow_p0 import related_posts
+    related = [
+        {"title": "Android: recursos explicados",
+         "url": "https://conexotech.com.br/android-drop-recursos-como-conferir/"},
+        {"title": "Android e tecnologia móvel",
+         "url": "https://conexotech.com.br/guia-android/"},
+        {"title": "Celulares Samsung e Android",
+         "url": "https://conexotech.com.br/samsung-android/"},
+    ]
+    monkeypatch.setattr(related_posts, "buscar_relacionados_wordpress",
+                        lambda *a, **k: related)
+    output = pipeline_rss.processar_item(
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        handoff_only=True)
+    assert output["acao"] == "pacote_editorial_criado"
+    m = output["editorial_handoff"]
+    from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+    assert validar_handoff_chatgpt(m)["valid"]
+    assert m["metadata"]["related_articles"] == related
+    assert "Leia também" in m["markdown"]
+    assert calls == []
