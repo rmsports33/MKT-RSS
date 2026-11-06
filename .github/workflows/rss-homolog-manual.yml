@@ -1,6 +1,9 @@
 name: RSS homolog - pauta, IA e rascunho (manual)
 
 on:
+  # Temporary, owner-only one-shot handoff test (removed after execution).
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       mode:
@@ -225,3 +228,70 @@ jobs:
 
 
 
+
+
+  one-shot-handoff-free:
+    if: ${{ github.event_name == 'issue_comment' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.event.issue.number == 39 && github.event.comment.body == '/conexo-handoff-free-20261106' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 9
+    steps:
+      - name: Checkout validated MKT-RSS build
+        uses: actions/checkout@v4
+        with:
+          ref: 39d6e1cc948acdfdeb84c23a9c8962ba598c5614
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned RSS dependencies
+        run: python -m pip install -q -r requirements/rss.txt
+      - name: Generate one real RSS handoff on confirmed Free plan
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+          CONEXO_RSS_DRAFT: '0'
+          CONEXO_RSS_DRAFT_STAGING: '0'
+          GATE_PUBLICACAO_ENABLED: 'false'
+        run: |
+          mkdir -p output/handoffs
+          python pipeline_rss.py --fonte tecnoblog --limit 1 \
+            --handoff-only --handoff-dir output/handoffs > output/rss-result.jsonl
+      - name: Verify editorial handoff and save safe manifest
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+          d = Path("output/handoffs")
+          files = list(d.glob("*.json"))
+          if len(files) != 1:
+              raise SystemExit("BLOCKED: expected exactly one editorial handoff")
+          handoff = json.loads(files[0].read_text(encoding="utf-8"))
+          check = validar_handoff_chatgpt(handoff)
+          summaries = []
+          for line in Path("output/rss-result.jsonl").read_text(encoding="utf-8").splitlines():
+              try: x = json.loads(line)
+              except ValueError: continue
+              if isinstance(x,dict) and x.get("acao") == "pacote_editorial_criado":
+                  summaries.append(x)
+          if len(summaries) != 1 or summaries[0].get("escreveu") is not False:
+              raise SystemExit("BLOCKED: article result not a single no-write handoff")
+          report = {"status":"PASS", "mode":"handoff-only",
+                    "version_sha256":check["version_sha256"],
+                    "source_count":check["source_count"],
+                    "claims_pending":check["claims_pending"],
+                    "review_status":check["review_status"],
+                    "wordpress_written":False}
+          Path("output/qa").mkdir(parents=True, exist_ok=True)
+          Path("output/qa/manifest.json").write_text(
+              json.dumps(report,ensure_ascii=False,indent=2),encoding="utf-8")
+          print(json.dumps(report,ensure_ascii=False))
+          PY
+      - name: Upload metadata-only QA manifest (no unpublished text)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mktrss-free-pilot-${{ github.run_id }}
+          path: output/qa/manifest.json
+          retention-days: 1
+          if-no-files-found: error
