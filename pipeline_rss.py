@@ -191,6 +191,14 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     if credito_foto:
         html += f'\n<p class="credito-foto"><small>{credito_foto}</small></p>'
 
+    # Diagnostico de prontidao nao bloqueia o armazenamento de rascunhos;
+    # sinaliza lacunas antes da revisao humana e NUNCA autoriza publicacao.
+    from mkt_flow_p0.editorial_readiness import avaliar_prontidao_editorial
+    qualidade_editorial = avaliar_prontidao_editorial(
+        rw.get("editorial_handoff"), html=html,
+        genero=item.get("genero", "noticia"),
+        featured_media_id=None, direitos_imagem_confirmados=False)
+
     # C19: nunca considerar a ausencia de alertas como aprovacao factual.
     # A integracao do contrato de evidencias permanece obrigatoria.
     from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
@@ -236,6 +244,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
                     "url": url_fonte, "escreveu": False}
         return {
             "acao": "pacote_editorial_criado", "escreveu": False,
+            "qualidade_editorial": qualidade_editorial,
             "editorial_handoff": handoff, "url": url_fonte,
             "verificacao_factual": verificacao_factual,
             "auditoria_pos_ia": auditoria_pos_ia,
@@ -263,6 +272,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             wp_password=os.environ.get("WP_APP_PASSWORD", ""),
         )
         return {**staged,
+                "qualidade_editorial": qualidade_editorial,
                 "editorial_handoff": rw.get("editorial_handoff"),
                 "url": url_fonte,
                 "verificacao_factual": verificacao_factual,
@@ -274,6 +284,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     return {
         "acao": "bloqueado",
         "motivo": "gate_factual_pos_ia_nao_integrado",
+        "qualidade_editorial": qualidade_editorial,
         "editorial_handoff": rw.get("editorial_handoff"),
         "url": url_fonte,
         "escreveu": False,
@@ -338,6 +349,11 @@ def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
         output["motivo"] = next((x for x in allowed if reason.startswith(x)), "falha_processamento")
     elif isinstance(reason, list):
         output["motivo"] = "revisao_necessaria"
+    quality = resultado.get("qualidade_editorial")
+    if isinstance(quality, dict):
+        output["quality_status"] = quality.get("status")
+        output["quality_pending"] = quality.get("pendencias", [])[:12]
+        output["quality_words"] = quality.get("palavras")
     handoff = resultado.get("editorial_handoff")
     if isinstance(handoff, dict):
         v = handoff.get("version_sha256")
