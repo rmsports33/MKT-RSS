@@ -227,64 +227,46 @@ jobs:
           retention-days: 1
 
 
+
   groq-comment-preflight:
-    # Do not use a runner for anyone else's comments or non-matching commands.
     if: ${{ github.event_name == 'issue_comment' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.event.issue.number == 39 && github.event.comment.body == '/conexo-groq-preflight-20261106' }}
     runs-on: ubuntu-latest
     environment: rss-homolog
-    timeout-minutes: 4
+    timeout-minutes: 5
     steps:
-      - name: Verify EXISTING Groq secret and model (read-only, zero generated tokens)
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install official Groq SDK (no inference)
+        run: python -m pip install -q 'groq==1.6.0'
+      - name: Verify existing Groq secret using official SDK, read-only
         env:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
         run: |
           python - <<'PY'
-          import json, os, urllib.request, urllib.error
+          import json, os
+          from groq import Groq
           key = os.environ.get('GROQ_API_KEY', '').strip()
           model = os.environ.get('GROQ_MODEL', '').strip()
           if not key:
-              raise SystemExit('BLOCKED: GROQ_API_KEY unavailable in rss-homolog')
+              raise SystemExit('BLOCKED: GROQ_API_KEY unavailable')
           if not model:
-              raise SystemExit('BLOCKED: GROQ_MODEL unavailable')
-          req = urllib.request.Request('https://api.groq.com/openai/v1/models',
-                                       headers={'Authorization': 'Bearer ' + key, 'Accept': 'application/json'})
+              raise SystemExit('BLOCKED: model unset')
           try:
-              with urllib.request.urlopen(req, timeout=15) as resp:
-                  data = json.loads(resp.read(262144))
-          except urllib.error.HTTPError as exc:
-              # Report only provider classification; never print error bodies or token values.
-              classification = "non_json"
-              subtype = "unavailable"
-              if "json" in (exc.headers.get("Content-Type") or "").lower():
-                  try:
-                      body = json.loads(exc.read(4096))
-                      obj = body.get("error", {}) if isinstance(body, dict) else {}
-                      if isinstance(obj, dict):
-                          val = obj.get("type")
-                          if isinstance(val, str) and val in (
-                              "permissions_error", "permission_error",
-                              "invalid_request_error", "authentication_error",
-                              "rate_limit_error", "api_error"):
-                              classification = val
-                          val = obj.get("code")
-                          if isinstance(val, str) and val in (
-                              "organization_model_blocked", "project_model_blocked",
-                              "model_permission_denied", "invalid_api_key"):
-                              subtype = val
-                  except (ValueError, TypeError):
-                      pass
-              edge = (exc.headers.get("server") or "").lower()
-              edge_kind = "cloudflare" if "cloudflare" in edge else "other"
-              print(json.dumps({"groq_http": exc.code,
-                                "error_type": classification,
-                                "error_code": subtype, "edge": edge_kind}))
-              raise SystemExit('BLOCKED: Groq rejected the model catalog request') from None
-          except (urllib.error.URLError, TimeoutError, ValueError):
-              raise SystemExit('BLOCKED: Groq API/model catalog inaccessible') from None
-          models = {item.get('id') for item in data.get('data', []) if isinstance(item, dict)}
+              response = Groq(api_key=key, timeout=15.0, max_retries=0).models.list()
+              models = {item.id for item in response.data}
+          except Exception as exc:
+              code = getattr(exc, 'status_code', None)
+              label = type(exc).__name__
+              # Never disclose credentials or any HTTP response text.
+              print(json.dumps({'sdk': 'groq==1.6.0',
+                                'error_class': label[:70],
+                                'http_status': code if isinstance(code, int) else None}))
+              raise SystemExit('BLOCKED: Groq SDK read-only model query failed') from None
           if model not in models:
-              raise SystemExit('BLOCKED: configured model is unavailable for this credential')
-          print(json.dumps({'secret_present': True, 'model': model,
-                            'authenticated_catalog': True, 'quota_free_not_verified': True}))
+              raise SystemExit('BLOCKED: configured Groq model not listed')
+          print(json.dumps({'sdk': 'groq==1.6.0', 'authenticated': True,
+                            'model': model, 'catalog_count': len(models),
+                            'free_quota_not_verified': True}))
           PY
