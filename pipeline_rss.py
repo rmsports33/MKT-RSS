@@ -100,7 +100,8 @@ def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", 
 
 
 def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None,
-                   pacote_editorial=None, core_root=None, actor_id=None, contexto_complementar=None, handoff_only=False) -> dict:
+                   pacote_editorial=None, core_root=None, actor_id=None, contexto_complementar=None, handoff_only=False,
+                   featured_media_id=None, media_rights_confirmed=False) -> dict:
     """Processa RSS: rascunho WP, handoff offline ou bloqueio sem publicar."""
     if pacote_editorial is not None:
         if handoff_only:
@@ -213,7 +214,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     qualidade_editorial = avaliar_prontidao_editorial(
         rw.get("editorial_handoff"), html=html,
         genero=item.get("genero", "noticia"),
-        featured_media_id=None, direitos_imagem_confirmados=False)
+        featured_media_id=featured_media_id,
+        direitos_imagem_confirmados=media_rights_confirmed)
 
     # C19: nunca considerar a ausencia de alertas como aprovacao factual.
     # A integracao do contrato de evidencias permanece obrigatoria.
@@ -286,6 +288,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             title=rw["titulo_seo"], content=html, source_url=url_fonte,
             wp_url=os.environ.get("WP_URL", ""), wp_user=os.environ.get("WP_USER", ""),
             wp_password=os.environ.get("WP_APP_PASSWORD", ""),
+            featured_media_id=featured_media_id,
+            media_rights_confirmed=media_rights_confirmed,
         )
         return {**staged,
                 "qualidade_editorial": qualidade_editorial,
@@ -401,6 +405,10 @@ def main():
                     help="JSON com source_url + sources complementares para UMA pauta correspondente")
     ap.add_argument("--handoff-dir", type=Path,
                     help="Salvar pacote editorial versionado em diretório local")
+    ap.add_argument("--featured-media-id", type=int,
+                    help="ID de imagem ja presente no WP, autorizada explicitamente")
+    ap.add_argument("--confirm-media-rights", action="store_true",
+                    help="O operador confirmou os direitos de reutilizacao desta imagem")
     ap.add_argument("--handoff-only", action="store_true",
                     help="Gerar apenas pacote para revisão; nunca escrever no WordPress")
     ap.add_argument("--editorial-package", type=Path, help="Pacote canônico já apurado/revisado; sem geração automática")
@@ -416,6 +424,12 @@ def main():
             ap.error("--handoff-only exige --handoff-dir e não combina com --editorial-package, --queue-only ou --dry-run")
         if not args.fonte or args.limit != 1:
             ap.error("--handoff-only requer --fonte NOME --limit 1 para limitar chamadas à IA")
+    if args.featured_media_id is not None or args.confirm_media_rights:
+        if (args.featured_media_id is None or args.featured_media_id <= 0
+                or not args.confirm_media_rights or not args.fonte or args.limit != 1
+                or args.queue_only or args.handoff_only or args.dry_run
+                or args.editorial_package):
+            ap.error("--featured-media-id exige --confirm-media-rights, --fonte, --limit 1 e modo rascunho")
     contexto_pesquisa = None
     if args.research_context:
         if args.editorial_package:
@@ -485,7 +499,9 @@ def main():
                 contexto_usado = True
             r = processar_item(item, dry_run=args.dry_run,
                                contexto_complementar=enriquecimento,
-                               handoff_only=args.handoff_only)
+                               handoff_only=args.handoff_only,
+                               featured_media_id=args.featured_media_id,
+                               media_rights_confirmed=args.confirm_media_rights)
             if args.handoff_dir and isinstance(r.get("editorial_handoff"), dict):
                 from mkt_flow_p0.editorial_identity import salvar_handoff_chatgpt
                 try:
