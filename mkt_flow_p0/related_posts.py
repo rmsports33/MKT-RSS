@@ -93,6 +93,9 @@ def anexar_relacionados(markdown, relacionados):
                 or any(ch.isspace() or ord(ch) < 32 for ch in link)):
             raise ValueError("dominio relacionado invalido")
         # Headline is data: don't let the title introduce Markdown/HTML links.
-        clean = re.sub(r"[\[\]<>()\r\n]", "", html.unescape(name.strip()))[:130]
+        clean = html.unescape(name.strip())
+        clean = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", clean)
+        clean = re.sub(r"<[^>]*>", "", clean)
+        clean = re.sub(r"[\[\]<>()\r\n]", "", clean)[:130]
         output.append("- [" + clean + "](" + link + ")")
     return markdown.rstrip() + "\n\n## Leia também\n\n" + "\n".join(output) + "\n"
