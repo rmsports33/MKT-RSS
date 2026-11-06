@@ -292,6 +292,8 @@ def main():
     ap.add_argument("--fonte", default="")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--queue-only", action="store_true", help="Coletar apenas pautas na fila, sem IA ou WordPress")
+    ap.add_argument("--research-context", type=Path,
+                    help="JSON com source_url + sources complementares para UMA pauta correspondente")
     ap.add_argument("--editorial-package", type=Path, help="Pacote canônico já apurado/revisado; sem geração automática")
     ap.add_argument("--core-root", type=Path)
     ap.add_argument("--actor-id", type=int)
@@ -299,6 +301,20 @@ def main():
     ap.add_argument("--publication-reference", help="Referência real da ordem específica de publicar/agendar")
     ap.add_argument("--operation-nonce", help="Retoma somente consulta da operação anterior; nunca repete escrita")
     args = ap.parse_args()
+    contexto_pesquisa = None
+    if args.research_context:
+        if args.queue_only:
+            ap.error("--research-context não combina com --queue-only")
+        try:
+            loaded = json.loads(args.research_context.read_text(encoding="utf-8"))
+            if (not isinstance(loaded, dict) or set(loaded) != {"source_url", "sources"}
+                    or not isinstance(loaded["source_url"], str)):
+                raise ValueError("formato exige source_url e sources")
+            from mkt_flow_p0.editorial_identity import normalizar_fontes_complementares
+            normalizar_fontes_complementares({"sources": loaded["sources"]})
+            contexto_pesquisa = loaded
+        except (OSError, ValueError, TypeError) as exc:
+            ap.error("pesquisa complementar inválida: " + str(exc))
     if args.editorial_package:
         if args.dry_run or args.queue_only or not args.core_root or not args.actor_id:
             ap.error("pacote exige core-root/actor-id e não combina com dry-run/queue-only")
@@ -340,7 +356,12 @@ def main():
             print(json.dumps({"fonte": fonte, "erro": nov["erro"]}, ensure_ascii=False))
             continue
         for item in nov.get("novos", []):
-            r = processar_item(item, dry_run=args.dry_run)
+            enriquecimento = ({"sources": contexto_pesquisa["sources"]}
+                              if contexto_pesquisa is not None
+                              and item.get("link") == contexto_pesquisa["source_url"]
+                              else None)
+            r = processar_item(item, dry_run=args.dry_run,
+                               contexto_complementar=enriquecimento)
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
