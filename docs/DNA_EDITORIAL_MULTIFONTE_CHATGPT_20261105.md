@@ -100,3 +100,42 @@ O status da pauta neste modo é `pacote_editorial_criado`, com `escreveu=false` 
 Sem `--handoff-only`, o comportamento anterior de `CONEXO_RSS_DRAFT=1` permanece: o pipeline pode enviar um **rascunho privado** ao WordPress configurado. Apenas `--handoff-dir`, isoladamente, **não desabilita** essa escrita remota. A decisão entre exportação offline e rascunho WP deve ser explícita.
 
 Testes adicionais no GitHub: `tests/test_pipeline_handoff_only.py` (sem rede por mocks); execução integral desses novos testes está pendente do checkout real, embora o módulo isolado de handoff tenha 14 testes offline aprovados. Não declarar a execução do Groq/RSS a partir desses testes.
+
+## Meta entregue em 06/11/2026 — importar artigo real sem Groq nem WordPress
+
+Quando o redator Groq/runner RSS estiver indisponível, o MKT-RSS pode receber artigo produzido e pesquisado pelo ChatGPT **sem perder sua identidade editorial**. Isso é um caminho complementar, não a substituição do coletor/redator RSS original.
+
+Arquivo novo: `mkt_flow_p0/editorial_import.py`. Entrada JSON estrita:
+
+```json
+{
+  "source_url": "https://developer.android.com/ai/appfunctions",
+  "source_name": "Android Developers",
+  "article": {
+    "titulo_seo": "Android e agentes de IA",
+    "meta_description": "Uma explicação verificada dos recursos Android.",
+    "slug": "android-agentes-de-ia",
+    "texto_markdown": "Corpo completo do artigo Markdown, com pelo menos 200 palavras"
+  },
+  "research": {
+    "sources": [{
+      "name": "Documentação complementar",
+      "url": "https://developer.android.com/blog",
+      "facts": ["A documentação explica as funções utilizadas por assistentes."] 
+    }]
+  }
+}
+```
+
+Execução **sem fazer rede nem escrever em WordPress**:
+
+```bash
+python -m mkt_flow_p0.editorial_import --import-article artigo-importacao.json --handoff-dir output/handoffs
+python -m mkt_flow_p0.editorial_identity --verify-handoff output/handoffs/rss_...json
+```
+
+O arquivo resultante é verificável por SHA-256, preserva a fonte inicial, links complementares, dados SEO, voz ConexoTech e `PENDING_HUMAN_REVIEW`. Uma edição cria outra versão e não transfere aceitação anterior. Este comando **não gera texto por IA, não pesquisa e não coleta RSS**: importa texto já produzido, para coexistir com o pipeline original.
+
+**Evidência real:** importado o artigo sobre agentes Android (1.029 palavras, 3 fontes, 6 alegações complementares pendentes), obtendo novamente o SHA de versão `307051c85ed2616ca4b69b4a9350aff32d91b5f310c74fc23cc683b94801d92d`. Testes locais `python -m pytest` totalizaram **31 PASS e 1 teste não executado** por ausência do renderizador integral no checkout parcial. Dois arquivos têm blobs idênticos entre execução e GitHub: `editorial_import.py` (`eaef5746c8f22e5e8e2a55ae2607db1a18b66098`) e `test_editorial_import_public.py` (`de3ff933e8c030a3e507cb17a44412b4c4ab34b0`).
+
+**Pendências separadas:** (1) testar os módulos do pipeline `tests/test_pipeline_handoff_only.py` num checkout integral; (2) executar a coleta de RSS e o rewriter do MKT-RSS com provedor realmente configurado e quota conhecida; (3) comprovar o rascunho privado no WordPress pelo executor MKT-RSS, sem publicar antes de aprovação. Não reabrir staging nem criar serviços apenas por causa dessas pendências.
