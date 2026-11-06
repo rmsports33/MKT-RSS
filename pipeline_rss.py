@@ -177,6 +177,22 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
 
     texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
+    relacionados = []
+    if os.getenv("CONEXO_RSS_RELATED_LINKS") == "1":
+        from mkt_flow_p0.related_posts import buscar_relacionados_wordpress, anexar_relacionados
+        relacionados = buscar_relacionados_wordpress(
+            rw["titulo_seo"], "https://conexotech.com.br")
+        if relacionados:
+            texto_final = anexar_relacionados(texto_final, relacionados)
+    # O pacote deve representar exatamente o Markdown convertido em HTML.
+    # Se o handoff anterior era invalido, NAO regenerar um hash para conserta-lo.
+    if isinstance(rw.get("editorial_handoff"), dict):
+        from mkt_flow_p0.editorial_identity import atualizar_handoff_revisao
+        try:
+            rw["editorial_handoff"] = atualizar_handoff_revisao(
+                rw["editorial_handoff"], texto_final, related_articles=relacionados)
+        except ValueError:
+            pass  # O validador do fluxo bloqueia o handoff antigo ou invalido.
     html = markdown_para_html(texto_final)
 
     imagem_url, credito_foto = "", ""
