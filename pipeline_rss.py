@@ -154,16 +154,14 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
     html = markdown_para_html(texto_final)
 
-    imagem_url, credito_foto = "", ""
-    if ext.get("imagem"):
-        capa = preparar_capa(sanitizar_url(ext["imagem"]), consulta_fallback=rw["titulo_seo"])
-        if "bytes" in capa:
-            imagem_url = sanitizar_url(ext["imagem"])  # WP baixa e define como destacada
-            credito_foto = capa.get("credito", "")
-        else:
-            logger.warning(f"sem capa: {capa.get('erro')}")
-    if credito_foto:
-        html += f'\n<p class="credito-foto"><small>{credito_foto}</small></p>'
+    # Imagens externas e extraídas do RSS não são autorizadas automaticamente.
+    # A pesquisa gratuita é opt-in, sem upload nem escrita WordPress.
+    plano_imagem = {"status": "PESQUISA_NAO_EXECUTADA",
+                    "proxima_etapa": "BUSCAR_BANCO_GRATUITO"}
+    if os.getenv("CONEXO_RSS_PREVIEW_SOURCE_IMAGE") == "1":
+        plano_imagem = preparar_capa(consulta_fallback=rw["titulo_seo"], timeout=10)
+    # Qualquer candidata permanece pendente de licença/atribuição e de
+    # revisão 1440px desktop / 390px celular. Não altera hash do artigo.
 
     # C19: nunca considerar a ausencia de alertas como aprovacao factual.
     # A integracao do contrato de evidencias permanece obrigatoria.
@@ -209,6 +207,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         "auditoria_lastro": auditoria_lastro,
         "auditoria_cobertura": auditoria_cobertura,
         "verificacao_factual": verificacao_factual,
+        "plano_imagem": plano_imagem,
         "aviso": "HTML gerado localmente; envio ao WordPress bloqueado ate certificacao factual.",
     }
 
