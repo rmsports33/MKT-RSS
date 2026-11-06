@@ -301,6 +301,44 @@ def publicar_indice() -> dict:
     return {"aviso": "indice publico desativado: RSS produz apenas rascunhos"}
 
 
+
+def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
+    """Emit only operational metadata: never unpublished body, claims or evidence.
+
+    This is particularly important for public GitHub Actions logs, which may be
+    readable by third parties even when the underlying draft remains private.
+    The complete handoff is stored on disk under --handoff-dir.
+    """
+    if not isinstance(resultado, dict):
+        return {"fonte": fonte, "acao": "falha", "motivo": "resultado_invalido"}
+    output = {"fonte": fonte, "acao": resultado.get("acao", "desconhecido")}
+    simple = ("post_id", "status", "palavras", "escreveu",
+              "verificacao_factual", "handoff_path")
+    for key in simple:
+        value = resultado.get(key)
+        if isinstance(value, (str, int, float, bool)) and not isinstance(value, complex):
+            output[key] = value if not isinstance(value, str) else value[:160]
+    reason = resultado.get("motivo", resultado.get("erro"))
+    if isinstance(reason, str):
+        # Do not print provider error bodies or HTTP secrets verbatim.
+        allowed = ("GROQ_API_KEY ausente", "handoff_editorial_ausente",
+                   "handoff_editorial_invalido", "erro_persistencia_handoff")
+        output["motivo"] = next((x for x in allowed if reason.startswith(x)), "falha_processamento")
+    elif isinstance(reason, list):
+        output["motivo"] = "revisao_necessaria"
+    handoff = resultado.get("editorial_handoff")
+    if isinstance(handoff, dict):
+        v = handoff.get("version_sha256")
+        if isinstance(v, str) and len(v) == 64:
+            output["handoff_sha256"] = v
+        output["review_status"] = handoff.get("review_status") == "PENDING_HUMAN_REVIEW"
+        m = handoff.get("metadata")
+        if isinstance(m, dict):
+            output["sources_count"] = len(m.get("sources", [])) if isinstance(m.get("sources"), list) else 0
+            output["claims_count"] = len(m.get("claims", [])) if isinstance(m.get("claims"), list) else 0
+    return output
+
+
 def main():
     try:
         from dotenv import load_dotenv
@@ -419,7 +457,7 @@ def main():
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
-            print(json.dumps({"fonte": fonte, **r}, ensure_ascii=False))
+            print(json.dumps(resumo_seguro_cli(fonte, r), ensure_ascii=False))
     if contexto_pesquisa is not None and not contexto_usado:
         print(json.dumps({"aviso": "research_context_not_matched",
                           "source_url": contexto_pesquisa["source_url"]}, ensure_ascii=False))
