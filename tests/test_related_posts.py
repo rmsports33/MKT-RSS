@@ -99,3 +99,21 @@ def test_image_rights_alone_cannot_create_valid_version():
         atualizar_handoff_revisao(initial,initial["markdown"],featured_media_id=9714)
     with pytest.raises(ValueError):
         atualizar_handoff_revisao(initial,initial["markdown"],media_rights_confirmed=True)
+
+
+def test_related_links_reject_query_fragment_and_credentials():
+    for raw in ("https://conexotech.com.br/guia/?preview=true",
+                "https://conexotech.com.br/guia/#secreto",
+                "https://user:pass@conexotech.com.br/guia/"):
+        with pytest.raises(ValueError):
+            anexar_relacionados("Texto original", [{"title": "Guia", "url": raw}])
+
+
+def test_related_headline_is_plain_markdown_data_not_an_embedded_link():
+    s = anexar_relacionados("Artigo", [{
+        "url": "https://conexotech.com.br/guia-android/",
+        "title": "Guia [Android](https://evil.example) <img src=x>"
+    }])
+    assert "https://evil.example" not in s
+    assert "<img" not in s
+    assert s.count("](") == 1
