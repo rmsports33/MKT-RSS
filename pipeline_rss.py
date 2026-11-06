@@ -218,8 +218,9 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             credito_foto = capa.get("credito", "")
         else:
             logger.warning(f"sem capa: {capa.get('erro')}")
-    if credito_foto:
-        html += f'\n<p class="credito-foto"><small>{credito_foto}</small></p>'
+    # Preview downloads are not licensed WP attachments; do not mutate the
+    # rendered article with third-party credit after signing its handoff.
+    # Attribution for an approved WP media item is managed with that media.
 
     # Diagnostico de prontidao nao bloqueia o armazenamento de rascunhos;
     # sinaliza lacunas antes da revisao humana e NUNCA autoriza publicacao.
@@ -228,7 +229,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         rw.get("editorial_handoff"), html=html,
         genero=item.get("genero", "noticia"),
         featured_media_id=featured_media_id,
-        direitos_imagem_confirmados=media_rights_confirmed)
+        direitos_imagem_confirmados=media_rights_confirmed,
+        verified_related_urls=[x["url"] for x in relacionados])
 
     # C19: nunca considerar a ausencia de alertas como aprovacao factual.
     # A integracao do contrato de evidencias permanece obrigatoria.
