@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 import pipeline_rss
+import mkt_flow_p0
 from mkt_flow_p0.editorial_identity import criar_handoff_chatgpt
 
 
@@ -21,7 +22,11 @@ ARTICLE = {
 
 
 def _stub(monkeypatch, name, **attrs):
-    monkeypatch.setitem(sys.modules, "mkt_flow_p0." + name, SimpleNamespace(**attrs))
+    # Preserve BOTH Python import caches: sys.modules and the package attribute.
+    # Otherwise a fake extractor can leak into later tests after monkeypatch undo.
+    replacement = SimpleNamespace(**attrs)
+    monkeypatch.setitem(sys.modules, "mkt_flow_p0." + name, replacement)
+    monkeypatch.setattr(mkt_flow_p0, name, replacement, raising=False)
 
 
 def _dependencies(monkeypatch, *, invalid_handoff=False):
