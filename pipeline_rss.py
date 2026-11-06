@@ -201,7 +201,9 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         from mkt_flow_p0.editorial_identity import atualizar_handoff_revisao
         try:
             rw["editorial_handoff"] = atualizar_handoff_revisao(
-                rw["editorial_handoff"], texto_final, related_articles=relacionados)
+                rw["editorial_handoff"], texto_final, related_articles=relacionados,
+                featured_media_id=featured_media_id,
+                media_rights_confirmed=media_rights_confirmed)
         except ValueError:
             pass  # O validador do fluxo bloqueia o handoff antigo ou invalido.
     html = markdown_para_html(texto_final)
