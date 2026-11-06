@@ -46,7 +46,7 @@ def validar_escolha(foto):
             or type(foto["approved_post_id"]) is not int
             or foto["approved_post_id"] <= 0
             or not isinstance(foto["approved_post_modified_gmt"], str)
-            or not re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}", foto["approved_post_modified_gmt"])):
+            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", foto["approved_post_modified_gmt"])):
         raise ValueError("direitos/visual não aprovados ou URL insegura")
     return True
 
