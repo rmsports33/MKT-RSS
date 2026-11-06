@@ -21,6 +21,14 @@ on:
         description: "draft: RASCUNHO (autoriza somente criar/reutilizar rascunho, nunca publicar)"
         type: string
         required: false
+      featured_media_id:
+        description: "Opcional: ID de imagem já autorizada na biblioteca WP para uma única pauta"
+        type: string
+        required: false
+      media_rights_confirmed:
+        description: "Confirme que possui direito de reutilizar essa imagem (nunca por inferência)"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -78,7 +86,7 @@ jobs:
       - name: Checkout exact editorial build (not master)
         uses: actions/checkout@v4
         with:
-          ref: 51bfdbd2539b39f78b77367842ac382e07f39a66
+          ref: 11a0b6c9ad8e0e50403c75befb257fc612854cf7
           persist-credentials: false
 
       - name: Python 3.11
@@ -144,6 +152,8 @@ jobs:
           GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
           CONEXO_RSS_DRAFT: '0'
           CONEXO_RSS_DRAFT_STAGING: '0'
+          CONEXO_RSS_RESEARCH_FEEDS: '1'
+          CONEXO_RSS_RELATED_LINKS: '1'
         run: |
           mkdir -p output/handoffs
           python pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-only --handoff-dir output/handoffs > rss-result.jsonl
@@ -158,9 +168,25 @@ jobs:
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           CONEXO_RSS_DRAFT: '1'
           CONEXO_RSS_DRAFT_STAGING: '0'
+          CONEXO_RSS_RESEARCH_FEEDS: '1'
+          CONEXO_RSS_RELATED_LINKS: '1'
+          FEATURED_MEDIA_ID: ${{ inputs.featured_media_id }}
+          MEDIA_RIGHTS: ${{ inputs.media_rights_confirmed }}
         run: |
           mkdir -p output/handoffs
-          python pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-dir output/handoffs > rss-result.jsonl
+          media_args=()
+          if [ -n "$FEATURED_MEDIA_ID" ]; then
+            case "$FEATURED_MEDIA_ID" in
+              *[!0-9]*|'') echo "BLOCKED: media ID inválido"; exit 2 ;;
+            esac
+            if [ "$MEDIA_RIGHTS" != "true" ]; then
+              echo "BLOCKED: direitos da imagem não confirmados"; exit 2
+            fi
+            media_args+=(--featured-media-id "$FEATURED_MEDIA_ID" --confirm-media-rights)
+          elif [ "$MEDIA_RIGHTS" = "true" ]; then
+            echo "BLOCKED: confirmação de direitos sem media ID"; exit 2
+          fi
+          python pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-dir output/handoffs "${media_args[@]}" > rss-result.jsonl
 
       - name: Verify persisted result and hash (safe summary only)
         if: ${{ inputs.mode == 'handoff' || inputs.mode == 'draft' }}
@@ -204,6 +230,9 @@ jobs:
               "sources_count": check["source_count"],
               "claims_pending": check["claims_pending"],
               "review_status": "PENDING_HUMAN_REVIEW",
+              "quality_status": item.get("quality_status", "SEM_DIAGNOSTICO"),
+              "quality_pending": item.get("quality_pending", []),
+              "quality_words": item.get("quality_words"),
               "private_draft_id": item["post_id"] if mode == "draft" else None,
           }
           Path("output/qa/manifest.json").write_text(
