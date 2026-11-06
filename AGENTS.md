@@ -1,5 +1,11 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
+## Integração de identidade editorial — 05/11/2026
+
+**O MKT-RSS é motor editorial completo**, não apenas coletor de pautas/rascunhos. Preservar coleta, filtragem, enriquecimento com fontes, redação, imagens, SEO, validação e entrega ao WordPress. ChatGPT é colaborador editorial complementar (pesquisa, análise, revisão e aperfeiçoamento), nunca substituto obrigatório do MKT-RSS.
+
+Usar `mkt_flow_p0/editorial_identity.py` como contrato executável de voz, ligado ao DNA oficial `conexo-os/docs/EDITORIAL_DNA_V1.md`. Ao acrescentar fatos, informar sua URL e manter revisão humana pendente; jamais inventar fontes, testes ou declarar `approved`. O handoff JSON da redação conserva identidade, origem RSS, fontes, Markdown, SEO e hash de versão para o fluxo ChatGPT-first. `pipeline_rss.py --research-context` associa a pesquisa a uma única pauta por URL; nenhuma publicação é autorizada por esse arquivo. Instruções: `docs/DNA_EDITORIAL_MULTIFONTE_CHATGPT_20261105.md`.
+
 ## Protocolo de recuperação operacional — 05/11/2026 (prioridade sobre escolhas de ferramenta)
 
 **FUNCIONAR PRIMEIRO, SEM REFAZER A INFRAESTRUTURA.** A entrega prioritária é 1 artigo de qualidade no ciclo prévia → rascunho → revisão/aceite → publicação manual/supervisionada → leitura de confirmação. Não bloquear rascunho por staging, SEO nativo, readiness HMAC, migração cloud, runner, novo conector, auditoria ou cron. O staging é opção de teste de infraestrutura, não requisito para o rascunho no WordPress existente. Reusar resultado comprovado e testar só a diferença atual.
