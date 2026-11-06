@@ -1,7 +1,8 @@
 """
 mkt_flow_p0.image_handler — Pipeline de capa (P0).
-Padrão ConexoTech 1200x675 JPEG (cover crop centralizado). Sem IA paga:
-usa a imagem original da matéria; fallback Unsplash/Pexels só com key free.
+Padrão ConexoTech 1200x675 JPEG. Ordem: banco gratuito licenciado,
+depois encaminhamento para imagem IA se banco não for adequado.
+Imagem original RSS não é prova de direitos. Apenas prévia; nunca publica mídia.
 
 Benchmark: AINP/AutoBlog cobram Pro por "AI image/Imagen"; DALL-E custa
 $0.04-0.08/foto. Aqui: Pillow local (grátis) + upload via wp/v2/media.
@@ -82,41 +83,68 @@ def buscar_fallback(consulta: str, timeout: int = 10) -> dict:
         pass
     key = (os.getenv("UNSPLASH_ACCESS_KEY") or "").strip()
     if not key:
-        return {"erro": "Sem imagem original e sem UNSPLASH_ACCESS_KEY — cole a imagem manualmente"}
+        return {"erro": "Busca de banco gratuito não configurada",
+                "proxima_etapa": "PESQUISA_BANCO_PENDENTE"}
     try:
         r = requests.get("https://api.unsplash.com/search/photos",
-                         params={"query": consulta, "per_page": 1, "orientation": "landscape"},
+                         params={"query": consulta, "per_page": 5, "orientation": "landscape"},
                          headers={"Authorization": f"Client-ID {key}"}, timeout=timeout)
         r.raise_for_status()
         resultados = (r.json().get("results") or [])
         if not resultados:
-            return {"erro": f"Unsplash sem resultado para '{consulta}'"}
-        foto = resultados[0]
-        return {"url": (foto.get("urls") or {}).get("regular", ""),
-                "autor": ((foto.get("user") or {}).get("name") or ""),
-                "origem": "unsplash"}
+            return {"erro": "Banco gratuito não encontrou resultados na consulta",
+                    "proxima_etapa": "AVALIAR_GERACAO_IA"}
+        # Não promover automaticamente a primeira foto a imagem licenciada.
+        # O editor confere a página individual, a licença e o enquadramento.
+        candidatos = []
+        for foto in resultados:
+            link = (foto.get("links") or {}).get("html", "")
+            url = (foto.get("urls") or {}).get("regular", "")
+            autor = ((foto.get("user") or {}).get("name") or "")
+            w, h = foto.get("width", 0), foto.get("height", 0)
+            if (isinstance(link, str) and link.startswith("https://unsplash.com/")
+                    and isinstance(url, str) and url.startswith("https://")
+                    and type(w) is int and type(h) is int and w >= 1200 and h >= 675):
+                candidatos.append({"url": url, "pagina_origem": link,
+                    "autor": autor, "origem": "unsplash",
+                    "licenca_url": "https://unsplash.com/license",
+                    "largura_original": w, "altura_original": h,
+                    "revisao_direitos": "PENDENTE", "revisao_visual": "PENDENTE"})
+        if not candidatos:
+            return {"erro": "Nenhuma imagem gratuita atende à resolução mínima",
+                    "proxima_etapa": "AVALIAR_GERACAO_IA"}
+        return {"candidatos": candidatos, "proxima_etapa": "REVISAO_HUMANA_DE_MIDIA"}
     except Exception as e:
-        return {"erro": f"Unsplash falhou: {str(e)[:120]}"}
+        return {"erro": "Banco gratuito temporariamente indisponível",
+                "proxima_etapa": "PESQUISA_BANCO_PENDENTE"}
 
 
-def preparar_capa(url_original: str = "", consulta_fallback: str = "", timeout: int = 15) -> dict:
-    """Fluxo completo: original → processada; se falhar, tenta fallback gratuito."""
-    if url_original:
+def preparar_capa(url_original: str = "", consulta_fallback: str = "", timeout: int = 15,
+                   *, direitos_original_confirmados: bool = False) -> dict:
+    """Seleção segura: banco gratuito primeiro, imagem IA somente se inadequado.
+
+    Nunca confunde uma foto candidata com autorização de uso. Não associa
+    mídia ao WordPress. A imagem RSS somente pode ser usada após prova de direitos.
+    O chamador deve conferir licença, autoria e recorte em 1440/390 px.
+    """
+    result = {"proxima_etapa": "PESQUISA_BANCO_PENDENTE"}
+    if consulta_fallback:
+        result = buscar_fallback(consulta_fallback, timeout=timeout)
+        if result.get("candidatos"):
+            return {"origem": "banco_gratuito", "candidatos": result["candidatos"],
+                    "status": "REVISAO_HUMANA_DE_MIDIA",
+                    "proxima_etapa": "VALIDAR_LICENCA_E_VISUAL_1440_390"}
+    # Nunca usar automaticamente a imagem extraída do feed sem licença.
+    if url_original and direitos_original_confirmados is True:
         dl = baixar_imagem(url_original, timeout=timeout)
         if "bytes" in dl:
             capa = processar_capa(dl["bytes"])
             if "bytes" in capa:
-                capa["origem"] = "original"
+                capa["origem"] = "fonte_com_direitos_confirmados"
+                capa["status"] = "PREVIA_PENDENTE_DE_REVISAO_VISUAL"
                 return capa
-            logger.warning(f"capa original ilegível, tentando fallback: {capa.get('erro')}")
-    if consulta_fallback:
-        fb = buscar_fallback(consulta_fallback, timeout=timeout)
-        if fb.get("url"):
-            dl = baixar_imagem(fb["url"], timeout=timeout)
-            if "bytes" in dl:
-                capa = processar_capa(dl["bytes"])
-                if "bytes" in capa:
-                    capa["origem"] = "unsplash"
-                    capa["credito"] = f"Foto: {fb.get('autor', '')} / Unsplash"
-                    return capa
-    return {"erro": "Sem capa: original falhou e fallback indisponível"}
+    etapa = result.get("proxima_etapa", "PESQUISA_BANCO_PENDENTE")
+    if etapa not in ("AVALIAR_GERACAO_IA", "PESQUISA_BANCO_PENDENTE"):
+        etapa = "PESQUISA_BANCO_PENDENTE"
+    return {"status": "IMAGEM_PENDENTE", "proxima_etapa": etapa,
+            "erro": "Nenhuma mídia com direitos e qualidade foi aprovada."}
