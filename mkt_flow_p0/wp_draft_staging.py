@@ -6,7 +6,7 @@ Editorial Gate. The independent factual review remains mandatory for publish.
 import hashlib
 import re
 import unicodedata
-from urllib.parse import urlsplit
+from urllib.parse import urlsplit, unquote
 
 import requests
 
@@ -14,11 +14,35 @@ ALLOWED_SITES = frozenset(("https://conexotech.com.br", "https://staging.conexot
 
 
 def _slug(title, source_url):
+    """Stable source-based slug; changing an AI-generated title cannot fork a post."""
+    path = unquote(urlsplit(source_url).path).strip("/").split("/")[-1]
+    normalized = unicodedata.normalize("NFKD", path)
+    ascii_path = normalized.encode("ascii", "ignore").decode("ascii").lower()
+    prefix = re.sub(r"[^a-z0-9]+", "-", ascii_path).strip("-")[:60].strip("-")
+    token = hashlib.sha256(source_url.encode("utf-8")).hexdigest()[:12]
+    return (prefix or "pauta") + "-" + token
+
+
+def _legacy_slug(title, source_url):
+    """Recognize drafts created by the earlier title-based algorithm."""
     normalized = unicodedata.normalize("NFKD", title)
     ascii_title = normalized.encode("ascii", "ignore").decode("ascii").lower()
     prefix = re.sub(r"[^a-z0-9]+", "-", ascii_title).strip("-")[:60].strip("-")
     token = hashlib.sha256(source_url.encode("utf-8")).hexdigest()[:12]
     return (prefix or "pauta") + "-" + token
+
+
+def _matches_expected(post, title, content, allowed_slugs):
+    """Never report delivery success without version readback (edit context)."""
+    if not isinstance(post, dict):
+        return False
+    if (type(post.get("id")) is not int or post["id"] <= 0
+            or post.get("status") not in ("draft", "pending")
+            or post.get("slug") not in allowed_slugs):
+        return False
+    body, heading = post.get("content"), post.get("title")
+    return (isinstance(body, dict) and body.get("raw") == content
+            and isinstance(heading, dict) and heading.get("raw") == title.strip())
 
 
 def _source_ok(url):
@@ -49,18 +73,40 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
     endpoint = target + "/wp-json/wp/v2/posts"
     auth = (wp_user, wp_password)
     try:
-        existing = request_client.get(endpoint, params={"slug": slug, "context": "edit"},
-                                      auth=auth, timeout=timeout, allow_redirects=False)
-        if existing.status_code != 200:
-            return {"acao": "falha", "motivo": "consulta_wp_indisponivel", "escreveu": False}
-        matches = existing.json()
-        if not isinstance(matches, list):
-            return {"acao": "falha", "motivo": "consulta_wp_invalida", "escreveu": False}
+        # Search by stable slug first, then by the previous title-based slug
+        # for backward compatibility. An existing post is never overwritten.
+        matches = []
+        for candidate in dict.fromkeys((slug, _legacy_slug(title, source_url))):
+            existing = request_client.get(
+                endpoint, params={"slug": candidate, "context": "edit",
+                                   "status": ["draft", "pending", "publish", "future", "private"]},
+                auth=auth, timeout=timeout, allow_redirects=False)
+            if existing.status_code != 200:
+                return {"acao": "falha", "motivo": "consulta_wp_indisponivel", "escreveu": False,
+                        "retry_automatic": False}
+            found = existing.json()
+            if not isinstance(found, list):
+                return {"acao": "falha", "motivo": "consulta_wp_invalida", "escreveu": False,
+                        "retry_automatic": False}
+            matches.extend(found)
+        ids = {x.get("id") for x in matches if isinstance(x, dict)}
         if matches:
-            if len(matches) != 1 or matches[0].get("status") not in ("draft", "pending"):
-                return {"acao": "bloqueado", "motivo": "slug_ja_ocupado", "escreveu": False}
-            return {"acao": "publicado_rascunho", "post_id": matches[0]["id"],
-                    "status": matches[0]["status"], "wp_link": matches[0].get("link"),
+            if len(ids) != 1 or not all(isinstance(x, dict) for x in matches):
+                return {"acao": "bloqueado", "motivo": "slug_ja_ocupado", "escreveu": False,
+                        "retry_automatic": False}
+            post_id = next(iter(ids))
+            if type(post_id) is not int or post_id <= 0:
+                return {"acao": "bloqueado", "motivo": "resposta_wp_invalida", "escreveu": False,
+                        "retry_automatic": False}
+            verified = request_client.get(endpoint + "/" + str(post_id),
+                                          params={"context": "edit"}, auth=auth,
+                                          timeout=timeout, allow_redirects=False)
+            current = verified.json() if verified.status_code == 200 else {}
+            if not _matches_expected(current, title, content, {slug, _legacy_slug(title, source_url)}):
+                return {"acao": "bloqueado", "motivo": "versao_rascunho_divergente",
+                        "post_id": post_id, "escreveu": False, "retry_automatic": False}
+            return {"acao": "publicado_rascunho", "post_id": post_id,
+                    "status": current["status"], "wp_link": current.get("link"),
                     "escreveu": False, "reutilizado": True, "revisao_factual": "PENDENTE"}
         result = request_client.post(endpoint, json={
             "title": title.strip(), "content": content, "slug": slug,
@@ -73,13 +119,14 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
         post_id = post.get("id") if isinstance(post, dict) else None
         if type(post_id) is not int or post_id <= 0 or post.get("status") != "draft":
             return {"acao": "falha", "motivo": "resposta_wp_invalida_inspecionar",
-                    "escreveu": False, "retry_automatic": False}
+                    "escreveu": False, "escrita_indeterminada": True,
+                    "retry_automatic": False}
         verified = request_client.get(endpoint + "/" + str(post_id),
                                       params={"context": "edit"}, auth=auth,
                                       timeout=timeout, allow_redirects=False)
         readback = verified.json() if verified.status_code == 200 else {}
-        if (not isinstance(readback, dict) or readback.get("status") != "draft"
-                or readback.get("slug") != slug):
+        if (not _matches_expected(readback, title, content, {slug})
+                or readback.get("status") != "draft"):
             return {"acao": "falha", "motivo": "readback_wp_divergente_inspecionar",
                     "post_id": post_id, "escreveu": True, "retry_automatic": False}
         return {"acao": "publicado_rascunho", "post_id": post_id, "status": "draft",
