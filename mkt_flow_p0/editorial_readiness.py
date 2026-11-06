@@ -55,13 +55,21 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
     links = _LinksInternos()
     links.feed(html if isinstance(html, str) else "")
     fontes = meta["sources"]
+    # RSS excerpts are discovery hints, NOT independent factual corroboration.
+    # The user must review the source before it can satisfy editorial readiness.
+    fontes_rss_pendentes = sum(
+        1 for s in fontes if isinstance(s, dict)
+        and isinstance(s.get("name"), str)
+        and "(RSS pendente de apuração)" in s["name"])
     seo = meta.get("seo", {})
     desc = seo.get("description", "") if isinstance(seo, dict) else ""
     pendencias = []
     if palavras < limite:
         pendencias.append("texto_abaixo_da_referencia_do_genero")
-    if genero != "nota_breve" and len(fontes) < 2:
+    if genero != "nota_breve" and len(fontes) - fontes_rss_pendentes < 2:
         pendencias.append("pesquisa_multifonte_pendente")
+    if fontes_rss_pendentes:
+        pendencias.append("fontes_rss_candidatas_sem_verificacao")
     if links.headings < 2 and genero != "nota_breve":
         pendencias.append("desenvolvimento_em_secoes_pendente")
     if len(links.paths) < 3 and genero != "nota_breve":
@@ -75,7 +83,8 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
         "status": "PRONTO_PARA_REVISAO_HUMANA" if not pendencias else "ENRIQUECIMENTO_PENDENTE",
         "pendencias": pendencias,
         "genero": genero, "palavras": palavras, "referencia_palavras": limite,
-        "fontes": len(fontes), "links_internos": len(links.paths),
+        "fontes": len(fontes), "fontes_rss_pendentes": fontes_rss_pendentes,
+        "links_internos": len(links.paths),
         "subtitulos_h2": links.headings,
         "imagem_destacada_confirmada": "imagem_destacada_com_direitos_pendente" not in pendencias,
         "revisao_factual": "PENDENTE",
