@@ -1,6 +1,6 @@
 """Optional, private WordPress draft staging for unreviewed RSS candidates.
 
-Never publishes, schedules, approves SEO, uploads images or bypasses a live
+Never publishes, schedules, approves SEO, downloads images or bypasses a live
 Editorial Gate. The independent factual review remains mandatory for publish.
 """
 import hashlib
@@ -32,7 +32,7 @@ def _legacy_slug(title, source_url):
     return (prefix or "pauta") + "-" + token
 
 
-def _matches_expected(post, title, content, allowed_slugs):
+def _matches_expected(post, title, content, allowed_slugs, featured_media_id=None):
     """Never report delivery success without version readback (edit context)."""
     if not isinstance(post, dict):
         return False
@@ -41,6 +41,8 @@ def _matches_expected(post, title, content, allowed_slugs):
             or post.get("slug") not in allowed_slugs):
         return False
     body, heading = post.get("content"), post.get("title")
+    if featured_media_id is not None and post.get("featured_media") != featured_media_id:
+        return False
     return (isinstance(body, dict) and body.get("raw") == content
             and isinstance(heading, dict) and heading.get("raw") == title.strip())
 
@@ -58,6 +60,7 @@ def _source_ok(url):
 
 
 def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
+                    featured_media_id=None, media_rights_confirmed=False,
                     timeout=15, request_client=requests):
     """Create or reuse a draft by deterministic source slug, after readback.
 
@@ -69,10 +72,32 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
             or not isinstance(content, str) or len(content.strip()) < 150
             or not _source_ok(source_url)):
         return {"acao": "bloqueado", "motivo": "entrada_rascunho_invalida", "escreveu": False}
+    if featured_media_id is not None:
+        if (type(featured_media_id) is not int or featured_media_id <= 0
+                or media_rights_confirmed is not True):
+            return {"acao": "bloqueado", "motivo": "imagem_sem_direitos_ou_id",
+                    "escreveu": False}
+    elif media_rights_confirmed is True:
+        return {"acao": "bloqueado", "motivo": "imagem_id_ausente", "escreveu": False}
     slug = _slug(title, source_url)
     endpoint = target + "/wp-json/wp/v2/posts"
     auth = (wp_user, wp_password)
     try:
+        if featured_media_id is not None:
+            # Reuse only media that already exists inside the authenticated WP
+            # library; license confirmation must come from the human operator.
+            media = request_client.get(
+                target + "/wp-json/wp/v2/media/" + str(featured_media_id),
+                params={"context": "edit", "_fields": "id,media_type,mime_type,alt_text"},
+                auth=auth, timeout=timeout, allow_redirects=False)
+            data = media.json() if media.status_code == 200 else {}
+            if (not isinstance(data, dict) or data.get("id") != featured_media_id
+                    or data.get("media_type") != "image"
+                    or data.get("mime_type") not in ("image/jpeg", "image/png", "image/webp")
+                    or not isinstance(data.get("alt_text"), str)
+                    or not data["alt_text"].strip()):
+                return {"acao": "bloqueado", "motivo": "midia_wp_nao_validada",
+                        "escreveu": False, "retry_automatic": False}
         # Search by stable slug first, then by the previous title-based slug
         # for backward compatibility. An existing post is never overwritten.
         matches = []
@@ -102,16 +127,18 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
                                           params={"context": "edit"}, auth=auth,
                                           timeout=timeout, allow_redirects=False)
             current = verified.json() if verified.status_code == 200 else {}
-            if not _matches_expected(current, title, content, {slug, _legacy_slug(title, source_url)}):
+            if not _matches_expected(current, title, content, {slug, _legacy_slug(title, source_url)}, featured_media_id):
                 return {"acao": "bloqueado", "motivo": "versao_rascunho_divergente",
                         "post_id": post_id, "escreveu": False, "retry_automatic": False}
             return {"acao": "publicado_rascunho", "post_id": post_id,
                     "status": current["status"], "wp_link": current.get("link"),
                     "escreveu": False, "reutilizado": True, "revisao_factual": "PENDENTE"}
-        result = request_client.post(endpoint, json={
-            "title": title.strip(), "content": content, "slug": slug,
-            "status": "draft", "comment_status": "closed",
-        }, auth=auth, timeout=timeout, allow_redirects=False)
+        payload = {"title": title.strip(), "content": content, "slug": slug,
+                   "status": "draft", "comment_status": "closed"}
+        if featured_media_id is not None:
+            payload["featured_media"] = featured_media_id
+        result = request_client.post(endpoint, json=payload,
+                                     auth=auth, timeout=timeout, allow_redirects=False)
         if result.status_code != 201:
             return {"acao": "falha", "motivo": "wp_recusou_rascunho",
                     "http_status": result.status_code, "escreveu": False}
@@ -125,7 +152,7 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
                                       params={"context": "edit"}, auth=auth,
                                       timeout=timeout, allow_redirects=False)
         readback = verified.json() if verified.status_code == 200 else {}
-        if (not _matches_expected(readback, title, content, {slug})
+        if (not _matches_expected(readback, title, content, {slug}, featured_media_id)
                 or readback.get("status") != "draft"):
             return {"acao": "falha", "motivo": "readback_wp_divergente_inspecionar",
                     "post_id": post_id, "escreveu": True, "retry_automatic": False}
