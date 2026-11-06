@@ -22,7 +22,7 @@ def test_banco_gratuito_tem_prioridade_sobre_imagem_rss():
 
 
 def test_sem_banco_e_sem_direitos_encaminha_ia_sem_gerar():
-    with patch.object(ih, "buscar_fallback", return_value={"erro": "sem chave"}):
+    with patch.object(ih, "buscar_fallback", return_value={"erro": "sem resultado", "proxima_etapa": "AVALIAR_GERACAO_IA"}):
         with patch.object(ih, "baixar_imagem") as download:
             result = ih.preparar_capa("https://publisher.test/image.jpg", "celular")
     download.assert_not_called()
@@ -68,3 +68,19 @@ def test_imagem_original_so_com_confirmacao_e_ainda_pede_conferencia():
             result = ih.preparar_capa("https://publisher.test/pic.jpg",
                                      direitos_original_confirmados=True)
     assert result["status"] == "PREVIA_PENDENTE_DE_REVISAO_VISUAL"
+
+
+def test_ausencia_de_chave_nao_comprova_falta_de_imagens(monkeypatch):
+    monkeypatch.delenv("UNSPLASH_ACCESS_KEY", raising=False)
+    with patch.object(ih, "buscar_fallback", return_value={
+        "erro": "sem chave", "proxima_etapa": "PESQUISA_BANCO_PENDENTE"}):
+        result = ih.preparar_capa(consulta_fallback="noticia tecnologia")
+    assert result["proxima_etapa"] == "PESQUISA_BANCO_PENDENTE"
+    assert result["status"] == "IMAGEM_PENDENTE"
+
+
+def test_banco_inacessivel_nao_promove_ia():
+    with patch.object(ih, "buscar_fallback", return_value={
+        "erro": "falha de rede", "proxima_etapa": "PESQUISA_BANCO_PENDENTE"}):
+        result = ih.preparar_capa(consulta_fallback="smartphone")
+    assert result["proxima_etapa"] == "PESQUISA_BANCO_PENDENTE"
