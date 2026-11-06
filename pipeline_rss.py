@@ -294,6 +294,8 @@ def main():
     ap.add_argument("--queue-only", action="store_true", help="Coletar apenas pautas na fila, sem IA ou WordPress")
     ap.add_argument("--research-context", type=Path,
                     help="JSON com source_url + sources complementares para UMA pauta correspondente")
+    ap.add_argument("--handoff-dir", type=Path,
+                    help="Salvar pacote editorial versionado sem alterar WordPress")
     ap.add_argument("--editorial-package", type=Path, help="Pacote canônico já apurado/revisado; sem geração automática")
     ap.add_argument("--core-root", type=Path)
     ap.add_argument("--actor-id", type=int)
@@ -303,9 +305,13 @@ def main():
     args = ap.parse_args()
     contexto_pesquisa = None
     if args.research_context:
+        if args.editorial_package:
+            ap.error("--research-context exige fluxo RSS, não --editorial-package")
         if args.queue_only:
             ap.error("--research-context não combina com --queue-only")
         try:
+            if args.research_context.stat().st_size > 512 * 1024:
+                raise ValueError("pesquisa complementar excede 512 KiB")
             loaded = json.loads(args.research_context.read_text(encoding="utf-8"))
             if (not isinstance(loaded, dict) or set(loaded) != {"source_url", "sources"}
                     or not isinstance(loaded["source_url"], str)):
@@ -365,6 +371,14 @@ def main():
                 contexto_usado = True
             r = processar_item(item, dry_run=args.dry_run,
                                contexto_complementar=enriquecimento)
+            if args.handoff_dir and isinstance(r.get("editorial_handoff"), dict):
+                from mkt_flow_p0.editorial_identity import salvar_handoff_chatgpt
+                try:
+                    r["handoff_path"] = salvar_handoff_chatgpt(
+                        r["editorial_handoff"], args.handoff_dir)
+                except (ValueError, OSError) as exc:
+                    r["handoff_error"] = str(exc)
+                    logger.warning("Falha ao persistir handoff: %s", exc)
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
