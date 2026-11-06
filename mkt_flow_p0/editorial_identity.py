@@ -207,7 +207,8 @@ def validar_handoff_chatgpt(handoff):
 
 
 
-def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None):
+def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None,
+                             featured_media_id=None, media_rights_confirmed=False):
     """Create a new version for the EXACT Markdown rendered in WordPress.
 
     Prevents old content hash/approval being reused when attribution or
@@ -228,6 +229,14 @@ def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None)
                 not isinstance(item["title"], str) or not item["title"].strip()):
             raise ValueError("link interno nao verificado")
     result["metadata"]["related_articles"] = copy.deepcopy(related)
+    if featured_media_id is not None:
+        if (type(featured_media_id) is not int or featured_media_id <= 0
+                or media_rights_confirmed is not True):
+            raise ValueError("mídia sem autorização explícita")
+        result["metadata"]["featured_image"] = {
+            "wordpress_media_id": featured_media_id, "human_rights_confirmed": True}
+    elif media_rights_confirmed:
+        raise ValueError("confirmação de direitos sem mídia")
     result["markdown"] = markdown_final
     payload = {"metadata": result["metadata"], "markdown": markdown_final}
     result["version_sha256"] = hashlib.sha256(json.dumps(
