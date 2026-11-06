@@ -78,12 +78,8 @@ def test_existing_file_cannot_be_silently_corrupted(tmp_path):
         salvar_handoff_chatgpt(h, tmp_path)
 
 
-def test_pilot_package_from_previous_session_is_compatible():
-    """Only run when the prior pilot fixture is available; no mandatory data."""
-    from pathlib import Path
-    pilot = Path("tests/fixtures/editorial_multisource_android.json")
-    if not pilot.exists():
-        pytest.skip("fixture do piloto não incluída no checkout")
-    result = validar_handoff_chatgpt(json.loads(pilot.read_text(encoding="utf-8")))
-    assert result["source_count"] == 3
-    assert result["claims_pending"] == 6
+def test_package_remains_compatible_with_existing_editorial_renderer():
+    from mkt_flow_p0.editorial_core_offline import validar_pacote
+    h = make()
+    assert validar_pacote(h["metadata"], h["markdown"]) == []
+    assert h["metadata"]["review"] == {"approved": False}
