@@ -5,6 +5,7 @@ Não usa imagens RSS, IA ou links genéricos. Sem confirmação humana de direit
 de adequação visual, não faz solicitações autenticadas nem baixa mídia.
 """
 import io
+import re
 from urllib.parse import urlsplit
 
 import requests
@@ -31,7 +32,8 @@ def _https_host(url, host, path_prefix="/"):
 def validar_escolha(foto):
     """Ficha auditável: não equipara metadados da API à autorização de uso."""
     required = {"url", "pagina_origem", "autor", "licenca_url",
-                "revisao_direitos", "revisao_visual", "alt_text"}
+                "revisao_direitos", "revisao_visual", "alt_text",
+                "approved_post_id", "approved_post_modified_gmt"}
     if not isinstance(foto, dict) or not required.issubset(foto):
         raise ValueError("ficha de mídia incompleta")
     if (not _https_host(foto["url"], "images.unsplash.com", "/photo-")
@@ -40,7 +42,11 @@ def validar_escolha(foto):
             or not isinstance(foto["autor"], str) or not foto["autor"].strip()
             or not isinstance(foto["alt_text"], str) or not foto["alt_text"].strip()
             or foto["revisao_direitos"] != "APROVADO_PELO_EDITOR"
-            or foto["revisao_visual"] != "APROVADO_PELO_EDITOR"):
+            or foto["revisao_visual"] != "APROVADO_PELO_EDITOR"
+            or type(foto["approved_post_id"]) is not int
+            or foto["approved_post_id"] <= 0
+            or not isinstance(foto["approved_post_modified_gmt"], str)
+            or not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", foto["approved_post_modified_gmt"])):
         raise ValueError("direitos/visual não aprovados ou URL insegura")
     return True
 
@@ -58,6 +64,7 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
     except (ValueError, TypeError) as exc:
         return {"status": "BLOQUEADO", "motivo": str(exc), "escreveu": False}
     if (type(post_id) is not int or post_id <= 0 or
+            foto["approved_post_id"] != post_id or
             not _https_host(wp_url.rstrip("/"), "conexotech.com.br", "") or
             not wp_user or not wp_app_password):
         return {"status": "BLOQUEADO", "motivo": "destino ou credenciais inválidos",
@@ -72,7 +79,8 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
             return {"status": "BLOQUEADO", "motivo": "preflight_wp_inacessivel",
                     "escreveu": False}
         post = before.json()
-        if post.get("status") != "draft" or post.get("id") != post_id:
+        if (post.get("status") != "draft" or post.get("id") != post_id
+                or post.get("modified_gmt") != foto["approved_post_modified_gmt"]):
             return {"status": "BLOQUEADO", "motivo": "post_nao_e_draft",
                     "escreveu": False}
         if isinstance(post.get("featured_media"), int) and post["featured_media"] > 0:
@@ -102,7 +110,8 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
                                      timeout=timeout, allow_redirects=False)
         if (recheck.status_code != 200 or
                 recheck.json().get("status") != "draft" or
-                recheck.json().get("featured_media") not in (None, 0)):
+                recheck.json().get("featured_media") not in (None, 0) or
+                recheck.json().get("modified_gmt") != foto["approved_post_modified_gmt"]):
             return {"status": "BLOQUEADO", "motivo": "estado_do_draft_mudou",
                     "escreveu": False}
         caption = "Foto: " + foto["autor"].strip() + " / Unsplash"
@@ -115,9 +124,11 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
                      'attachment; filename="conexotech-unsplash-cover.jpg"',
                      "Content-Type": "image/jpeg"},
             data=capa["bytes"], timeout=timeout, allow_redirects=False)
-        if upload.status_code != 201 or type(upload.json().get("id")) is not int:
+        if (upload.status_code != 201 or
+                type(upload.json().get("id")) is not int or
+                upload.json()["id"] <= 0):
             return {"status": "INSPECIONAR", "motivo": "upload_wp_indeterminado",
-                    "escreveu": False, "retry_automatico": False}
+                    "escrita_indeterminada": True, "retry_automatico": False}
         media_id = upload.json()["id"]
         metadata = request_client.post(
             api + "/media/" + str(media_id), headers=auth,
@@ -128,12 +139,32 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
             return {"status": "INSPECIONAR", "motivo": "metadados_nao_confirmados",
                     "media_id": media_id, "escreveu": True,
                     "retry_automatico": False}
+        media_readback = request_client.get(
+            api + "/media/" + str(media_id), headers=auth,
+            params={"context": "edit"}, timeout=timeout, allow_redirects=False)
+        if media_readback.status_code != 200:
+            return {"status": "INSPECIONAR", "motivo": "media_readback_inacessivel",
+                    "media_id": media_id, "escreveu": True, "retry_automatico": False}
+        media = media_readback.json()
+        raw_caption = media.get("caption", {})
+        raw_description = media.get("description", {})
+        if isinstance(raw_caption, dict):
+            raw_caption = raw_caption.get("raw", "")
+        if isinstance(raw_description, dict):
+            raw_description = raw_description.get("raw", "")
+        if (media.get("id") != media_id or media.get("alt_text") != foto["alt_text"]
+                or caption not in str(raw_caption)
+                or foto["pagina_origem"] not in str(raw_description)
+                or ORIGEM_LICENCA not in str(raw_description)):
+            return {"status": "INSPECIONAR", "motivo": "media_metadados_divergentes",
+                    "media_id": media_id, "escreveu": True, "retry_automatico": False}
         last_check = request_client.get(
             api + "/posts/" + str(post_id), headers=auth,
             params={"context": "edit"}, timeout=timeout, allow_redirects=False)
         if (last_check.status_code != 200 or
                 last_check.json().get("status") != "draft" or
-                last_check.json().get("featured_media") not in (None, 0)):
+                last_check.json().get("featured_media") not in (None, 0) or
+                last_check.json().get("modified_gmt") != foto["approved_post_modified_gmt"]):
             return {"status": "INSPECIONAR",
                     "motivo": "concorrencia_antes_da_associacao",
                     "media_id": media_id, "escreveu": True,
@@ -160,26 +191,44 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
                 "credito": caption, "licenca_url": ORIGEM_LICENCA,
                 "origem_url": foto["pagina_origem"], "retry_automatico": False}
     except (requests.RequestException, ValueError, TypeError, KeyError):
+        # A falha pode ocorrer depois de upload ou vínculo: nunca retry cego.
         return {"status": "INSPECIONAR", "motivo": "transporte_indeterminado",
-                "escreveu": False, "retry_automatico": False}
+                "escrita_indeterminada": True, "retry_automatico": False}
 
 def main(argv=None):
-    """CLI manual com arquivo de aprovação e confirmação específica do post."""
+    """Descoberta gratuita ou associação supervisionada ao draft (nunca publish)."""
     import argparse
     import json
     import os
     from pathlib import Path
-    parser = argparse.ArgumentParser(description="Associar foto gratuita APROVADA a draft WordPress")
-    parser.add_argument("--approved-photo-json", type=Path, required=True)
-    parser.add_argument("--post-id", type=int, required=True)
-    parser.add_argument("--confirm-draft-media", action="store_true", required=True)
+
+    parser = argparse.ArgumentParser(description="Mídia ConexoTech: banco gratuito primeiro")
+    modes = parser.add_mutually_exclusive_group(required=True)
+    modes.add_argument("--discover", help="Consultar imagens gratuitas por assunto, sem escrita WP")
+    modes.add_argument("--approved-photo-json", type=Path,
+                       help="Ficha de imagem já aprovada pelo responsável editorial")
+    parser.add_argument("--post-id", type=int, help="ID de draft para associação")
+    parser.add_argument("--confirm-draft-media", action="store_true",
+                        help="Autoriza apenas anexar mídia ao draft informado, nunca publicar")
     args = parser.parse_args(argv)
+
+    if args.discover is not None:
+        if args.post_id is not None or args.confirm_draft_media:
+            parser.error("descoberta não aceita operação WordPress")
+        from mkt_flow_p0.image_handler import preparar_capa
+        plan = preparar_capa(consulta_fallback=args.discover, timeout=10)
+        # O catálogo só contém candidatas; nenhum selo de direitos ou
+        # aprovação é concedido automaticamente por busca em API.
+        print(json.dumps(plan, ensure_ascii=False, sort_keys=True))
+        return 0 if plan.get("status") == "REVISAO_HUMANA_DE_MIDIA" else 2
+
+    if not args.confirm_draft_media or args.post_id is None or args.post_id <= 0:
+        parser.error("upload exige --confirm-draft-media e --post-id positivo")
     photo = json.loads(args.approved_photo_json.read_text(encoding="utf-8"))
     result = associar_foto_gratuita_a_rascunho(
         photo, post_id=args.post_id, wp_url=os.getenv("WP_URL", ""),
         wp_user=os.getenv("WP_USER", ""),
         wp_app_password=os.getenv("WP_APP_PASSWORD", ""))
-    # A resposta nunca contém credenciais nem bytes da imagem.
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 0 if result.get("status") == "CAPA_ASSOCIADA_A_DRAFT" else 2
 
