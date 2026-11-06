@@ -58,7 +58,7 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
     except (ValueError, TypeError) as exc:
         return {"status": "BLOQUEADO", "motivo": str(exc), "escreveu": False}
     if (type(post_id) is not int or post_id <= 0 or
-            not _https_host(wp_url.rstrip("/"), "conexotech.com.br") or
+            not _https_host(wp_url.rstrip("/"), "conexotech.com.br", "") or
             not wp_user or not wp_app_password):
         return {"status": "BLOQUEADO", "motivo": "destino ou credenciais inválidos",
                 "escreveu": False}
