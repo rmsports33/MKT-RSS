@@ -100,7 +100,7 @@ def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", 
 
 
 def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None,
-                   pacote_editorial=None, core_root=None, actor_id=None) -> dict:
+                   pacote_editorial=None, core_root=None, actor_id=None, contexto_complementar=None) -> dict:
     """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
     if pacote_editorial is not None:
         discovery = pacote_editorial.get("payload", {}).get("discovery", {})
@@ -169,7 +169,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
 
     rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
                             fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
-                            keywords=kws, evidencias_aprovadas=evidencias_aprovadas)
+                            keywords=kws, evidencias_aprovadas=evidencias_aprovadas,
+                            contexto_complementar=contexto_complementar)
     if "erro" in rw:
         return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
 
@@ -227,6 +228,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             wp_password=os.environ.get("WP_APP_PASSWORD", ""),
         )
         return {**staged,
+                "editorial_handoff": rw.get("editorial_handoff"),
                 "url": url_fonte,
                 "verificacao_factual": verificacao_factual,
                 "auditoria_pos_ia": auditoria_pos_ia,
@@ -237,6 +239,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     return {
         "acao": "bloqueado",
         "motivo": "gate_factual_pos_ia_nao_integrado",
+        "editorial_handoff": rw.get("editorial_handoff"),
         "url": url_fonte,
         "escreveu": False,
         "custo_usd": float(rw.get("custo_usd_estimado", 0) or 0),
