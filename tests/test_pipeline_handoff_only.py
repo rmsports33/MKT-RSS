@@ -167,3 +167,17 @@ def test_handoff_only_does_not_download_external_image(monkeypatch):
     assert result["acao"] == "pacote_editorial_criado"
     assert result["escreveu"] is False
     assert calls == []
+
+
+def test_feed_fetch_failure_returns_nonzero_to_executor(monkeypatch, capsys):
+    """Network failures must not be reported as a successful empty RSS cycle."""
+    _stub(monkeypatch, "rss_ingestor",
+          FEEDS_PADRAO={"tecnoblog": "https://tecnoblog.net/feed/"},
+          buscar_novidades=lambda *a, **kw: {"erro": "falha_dns"},
+          marcar_visto=lambda *a, **kw: (_ for _ in ()).throw(AssertionError("não marcar visto")))
+    monkeypatch.setattr(sys, "argv", ["pipeline_rss.py", "--fonte", "tecnoblog",
+                                     "--limit", "1", "--dry-run"])
+    assert pipeline_rss.main() == 1
+    output = capsys.readouterr().out
+    assert '"acao": "falha_feed"' in output
+    assert '"feed_error": 1' in output
