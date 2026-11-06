@@ -331,6 +331,8 @@ def main():
         if (args.editorial_package or args.queue_only or args.dry_run
                 or args.handoff_dir is None):
             ap.error("--handoff-only exige --handoff-dir e não combina com --editorial-package, --queue-only ou --dry-run")
+        if not args.fonte or args.limit != 1:
+            ap.error("--handoff-only requer --fonte NOME --limit 1 para limitar chamadas à IA")
     contexto_pesquisa = None
     if args.research_context:
         if args.editorial_package:
