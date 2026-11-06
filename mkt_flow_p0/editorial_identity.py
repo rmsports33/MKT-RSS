@@ -3,6 +3,7 @@
 Não consulta fontes, certifica alegações, aprova publicação ou escreve no WP.
 As fontes e afirmações complementares são INSUMOS para apuração, não fatos aprovados.
 """
+import copy
 import hashlib
 import hmac
 import json
@@ -202,6 +203,38 @@ def validar_handoff_chatgpt(handoff):
     return {"valid": True, "article_id": m["article_id"],
             "version_sha256": actual, "source_count": len(sources),
             "claims_pending": len(claims), "review_status": "PENDING_HUMAN_REVIEW"}
+
+
+
+
+def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None):
+    """Create a new version for the EXACT Markdown rendered in WordPress.
+
+    Prevents old content hash/approval being reused when attribution or
+    verified internal links are added. This is NOT a factual approval.
+    """
+    validar_handoff_chatgpt(handoff)
+    if not isinstance(markdown_final, str) or not markdown_final.strip():
+        raise ValueError("Markdown final invalido")
+    result = copy.deepcopy(handoff)
+    related = [] if related_articles is None else related_articles
+    if not isinstance(related, list) or len(related) > 3:
+        raise ValueError("relacionados invalidos")
+    for item in related:
+        if not isinstance(item, dict) or set(item) != {"url", "title"}:
+            raise ValueError("relacionado invalido")
+        if (not _url_valida(item["url"]) or
+                urlsplit(item["url"]).hostname != "conexotech.com.br" or
+                not isinstance(item["title"], str) or not item["title"].strip()):
+            raise ValueError("link interno nao verificado")
+    result["metadata"]["related_articles"] = copy.deepcopy(related)
+    result["markdown"] = markdown_final
+    payload = {"metadata": result["metadata"], "markdown": markdown_final}
+    result["version_sha256"] = hashlib.sha256(json.dumps(
+        payload, sort_keys=True, ensure_ascii=False, separators=(",", ":")
+    ).encode("utf-8")).hexdigest()
+    validar_handoff_chatgpt(result)
+    return result
 
 
 def salvar_handoff_chatgpt(handoff, output_dir):
