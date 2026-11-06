@@ -1,6 +1,9 @@
 name: RSS homolog - pauta, IA e rascunho (manual)
 
 on:
+  # Temporary owner-authenticated preflight trigger; no LLM generation.
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       mode:
@@ -31,7 +34,7 @@ concurrency:
 
 jobs:
   collect:
-    if: ${{ (inputs.mode == 'queue' || inputs.mode == '') && github.ref == 'refs/heads/master' && github.repository == 'rmsports33/MKT-RSS' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.mode == 'queue' || inputs.mode == '') && github.ref == 'refs/heads/master' && github.repository == 'rmsports33/MKT-RSS' }}
     runs-on: ubuntu-latest
     environment: rss-homolog
     timeout-minutes: 8
@@ -222,3 +225,40 @@ jobs:
           path: output/qa/manifest.json
           if-no-files-found: error
           retention-days: 1
+
+
+  groq-comment-preflight:
+    # Do not use a runner for anyone else's comments or non-matching commands.
+    if: ${{ github.event_name == 'issue_comment' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.event.issue.number == 39 && github.event.comment.body == '/conexo-groq-preflight-20261106' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 4
+    steps:
+      - name: Verify EXISTING Groq secret and model (read-only, zero generated tokens)
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request, urllib.error
+          key = os.environ.get('GROQ_API_KEY', '').strip()
+          model = os.environ.get('GROQ_MODEL', '').strip()
+          if not key:
+              raise SystemExit('BLOCKED: GROQ_API_KEY unavailable in rss-homolog')
+          if not model:
+              raise SystemExit('BLOCKED: GROQ_MODEL unavailable')
+          req = urllib.request.Request('https://api.groq.com/openai/v1/models',
+                                       headers={'Authorization': 'Bearer ' + key, 'Accept': 'application/json'})
+          try:
+              with urllib.request.urlopen(req, timeout=15) as resp:
+                  data = json.loads(resp.read(262144))
+          except urllib.error.HTTPError as exc:
+              raise SystemExit('BLOCKED: Groq HTTP ' + str(exc.code)) from None
+          except (urllib.error.URLError, TimeoutError, ValueError):
+              raise SystemExit('BLOCKED: Groq API/model catalog inaccessible') from None
+          models = {item.get('id') for item in data.get('data', []) if isinstance(item, dict)}
+          if model not in models:
+              raise SystemExit('BLOCKED: configured model is unavailable for this credential')
+          print(json.dumps({'secret_present': True, 'model': model,
+                            'authenticated_catalog': True, 'quota_free_not_verified': True}))
+          PY
