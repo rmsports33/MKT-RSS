@@ -161,3 +161,60 @@ def test_staging_optional_and_never_publish():
     assert result["acao"] == "publicado_rascunho"
     assert client.post.call_args.args[0] == "https://staging.conexotech.com.br/wp-json/wp/v2/posts"
     assert client.post.call_args.kwargs["json"]["status"] == "draft"
+
+
+def test_media_requires_operator_rights_and_valid_id_without_network():
+    for fields in (
+            {"featured_media_id": 9714},
+            {"media_rights_confirmed": True},
+            {"featured_media_id": -1, "media_rights_confirmed": True}):
+        client = Mock()
+        result = mod.stage_rss_draft(**BASE, **fields, request_client=client)
+        assert result["acao"] == "bloqueado"
+        client.get.assert_not_called()
+        client.post.assert_not_called()
+
+
+def test_existing_authorized_media_is_attached_with_readback():
+    client = Mock()
+    media = {"id": 9714, "media_type": "image",
+             "mime_type": "image/jpeg", "alt_text": "Imagem autorizada do artigo"}
+    post = readback()
+    post["featured_media"] = 9714
+    client.get.side_effect = [response(200, media), response(200, []), response(200, []),
+                              response(200, post)]
+    client.post.return_value = response(201, {"id": 9752, "status": "draft"})
+    result = mod.stage_rss_draft(**BASE, featured_media_id=9714,
+                                 media_rights_confirmed=True, request_client=client)
+    assert result["acao"] == "publicado_rascunho"
+    assert client.post.call_args.kwargs["json"]["featured_media"] == 9714
+    assert client.post.call_args.kwargs["json"]["status"] == "draft"
+
+
+def test_unavailable_or_unlabeled_media_blocks_before_writing():
+    for media in (response(404, {}),
+                  response(200, {"id": 9714, "media_type": "image",
+                                 "mime_type": "image/png", "alt_text": ""}),
+                  response(200, {"id": 9714, "media_type": "file",
+                                 "mime_type": "application/pdf", "alt_text": "PDF"})):
+        client = Mock()
+        client.get.return_value = media
+        r = mod.stage_rss_draft(**BASE, featured_media_id=9714,
+                                media_rights_confirmed=True, request_client=client)
+        assert r["acao"] == "bloqueado"
+        assert r["motivo"] == "midia_wp_nao_validada"
+        client.post.assert_not_called()
+
+
+def test_existing_draft_with_different_featured_media_is_not_overwritten():
+    client = Mock()
+    media = {"id": 9714, "media_type": "image",
+             "mime_type": "image/jpeg", "alt_text": "Imagem autorizada"}
+    old = readback()
+    old["featured_media"] = 1234
+    client.get.side_effect = [response(200, media), response(200, [old]),
+                              response(200, []), response(200, old)]
+    r = mod.stage_rss_draft(**BASE, featured_media_id=9714,
+                            media_rights_confirmed=True, request_client=client)
+    assert r["acao"] == "bloqueado"
+    client.post.assert_not_called()
