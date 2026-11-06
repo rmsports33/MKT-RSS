@@ -40,7 +40,8 @@ class _LinksInternos(HTMLParser):
 
 
 def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
-                                featured_media_id=None, direitos_imagem_confirmados=False):
+                                featured_media_id=None, direitos_imagem_confirmados=False,
+                                verified_related_urls=None):
     """Checklist verificavel, sem inferir evidencias nem criar referencias falsas."""
     try:
         validar_handoff_chatgpt(handoff)
@@ -54,6 +55,23 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
     limite = LIMITES_POR_GENERO[genero]
     links = _LinksInternos()
     links.feed(html if isinstance(html, str) else "")
+    # URLs in the article are untrusted until confirmed from published WP posts.
+    # Merely pointing to the correct domain does not prove an article exists.
+    trusted = set()
+    if isinstance(verified_related_urls, (list, tuple, set)):
+        for url in verified_related_urls:
+            if not isinstance(url, str):
+                continue
+            try:
+                parsed = urlsplit(url)
+                if (parsed.scheme == "https" and parsed.hostname == SITE
+                        and not parsed.username and not parsed.password
+                        and not parsed.query and not parsed.fragment
+                        and parsed.path not in ("", "/")):
+                    trusted.add(parsed.path.rstrip("/"))
+            except ValueError:
+                continue
+    linked_verified = links.paths & trusted
     fontes = meta["sources"]
     # RSS excerpts are discovery hints, NOT independent factual corroboration.
     # The user must review the source before it can satisfy editorial readiness.
@@ -72,7 +90,7 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
         pendencias.append("fontes_rss_candidatas_sem_verificacao")
     if links.headings < 2 and genero != "nota_breve":
         pendencias.append("desenvolvimento_em_secoes_pendente")
-    if len(links.paths) < 3 and genero != "nota_breve":
+    if len(linked_verified) < 3 and genero != "nota_breve":
         pendencias.append("tres_links_internos_pendentes")
     if (type(featured_media_id) is not int or featured_media_id <= 0
             or direitos_imagem_confirmados is not True):
@@ -85,6 +103,7 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
         "genero": genero, "palavras": palavras, "referencia_palavras": limite,
         "fontes": len(fontes), "fontes_rss_pendentes": fontes_rss_pendentes,
         "links_internos": len(links.paths),
+        "links_internos_verificados": len(linked_verified),
         "subtitulos_h2": links.headings,
         "imagem_destacada_confirmada": "imagem_destacada_com_direitos_pendente" not in pendencias,
         "revisao_factual": "PENDENTE",
