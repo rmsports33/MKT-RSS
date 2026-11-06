@@ -87,7 +87,12 @@ def anexar_relacionados(markdown, relacionados):
         if not isinstance(link, str) or not isinstance(name, str) or not name.strip():
             raise ValueError("relacionado incompleto")
         p = urlsplit(link)
-        if p.scheme != "https" or p.hostname != "conexotech.com.br" or not p.path.strip("/"):
+        if (p.scheme != "https" or p.hostname != "conexotech.com.br"
+                or p.username or p.password or p.port not in (None, 443)
+                or p.query or p.fragment or not p.path.strip("/")
+                or any(ch.isspace() or ord(ch) < 32 for ch in link)):
             raise ValueError("dominio relacionado invalido")
-        output.append("- [" + re.sub(r"[\[\]<>]", "", name.strip())[:130] + "](" + link + ")")
+        # Headline is data: don't let the title introduce Markdown/HTML links.
+        clean = re.sub(r"[\[\]<>()\r\n]", "", html.unescape(name.strip()))[:130]
+        output.append("- [" + clean + "](" + link + ")")
     return markdown.rstrip() + "\n\n## Leia também\n\n" + "\n".join(output) + "\n"
