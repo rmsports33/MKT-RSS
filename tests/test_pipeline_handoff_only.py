@@ -101,6 +101,8 @@ def test_legacy_explicit_draft_mode_remains_available(monkeypatch):
 
 @pytest.mark.parametrize("arguments", [
     ["--handoff-only"],
+    ["--handoff-only", "--handoff-dir", "/tmp/test", "--limit", "1"],
+    ["--handoff-only", "--handoff-dir", "/tmp/test", "--fonte", "tecnoblog"],
     ["--handoff-only", "--handoff-dir", "/tmp/test", "--dry-run"],
     ["--handoff-only", "--handoff-dir", "/tmp/test", "--queue-only"],
     ["--handoff-only", "--handoff-dir", "/tmp/test",
@@ -111,3 +113,34 @@ def test_cli_rejects_incompatible_modes(monkeypatch, arguments):
     with pytest.raises(SystemExit) as error:
         pipeline_rss.main()
     assert error.value.code == 2
+
+
+def test_cli_saves_one_handoff_without_marking_seen(monkeypatch, tmp_path, capsys):
+    import json
+    from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+    item = {"titulo": "Android e agentes", "resumo": "Pesquisa",
+            "link": URL, "fonte": "tecnoblog"}
+    package = criar_handoff_chatgpt(ARTICLE, url_fonte=URL, fonte_nome="Fonte original")
+    seen, processed = [], []
+
+    def fake_process(*args, **kwargs):
+        processed.append(kwargs)
+        return {"acao": "pacote_editorial_criado", "escreveu": False,
+                "editorial_handoff": package, "url": URL}
+
+    _stub(monkeypatch, "rss_ingestor",
+          FEEDS_PADRAO={"tecnoblog": "https://example.org/feed"},
+          buscar_novidades=lambda *a, **k: {"novos": [item]},
+          marcar_visto=lambda *a, **k: seen.append((a, k)))
+    monkeypatch.setattr(pipeline_rss, "processar_item", fake_process)
+    monkeypatch.setattr(sys, "argv", ["pipeline_rss.py", "--fonte", "tecnoblog",
+                                     "--limit", "1", "--handoff-only",
+                                     "--handoff-dir", str(tmp_path)])
+    pipeline_rss.main()
+    output = capsys.readouterr().out
+    files = list(tmp_path.glob("*.json"))
+    assert len(files) == 1
+    assert validar_handoff_chatgpt(json.loads(files[0].read_text(encoding="utf-8")))["valid"]
+    assert processed[0]["handoff_only"] is True
+    assert '"pacote_editorial_criado": 1' in output
+    assert seen == []
