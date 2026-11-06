@@ -66,7 +66,7 @@ O PR #39 continua a integração maior em aberto. Esta branch parte de `ops/fast
 O CLI agora pode persistir a saída do MKT-RSS como arquivo JSON, **mesmo se a escrita de rascunho no WordPress estiver desativada**:
 
 ```bash
-python pipeline_rss.py --limit 1 --research-context pesquisa.json --handoff-dir output/handoffs --handoff-only
+python pipeline_rss.py --fonte tecnoblog --limit 1 --research-context pesquisa.json --handoff-dir output/handoffs --handoff-only
 ```
 
 - O arquivo é criado sob `output/handoffs/rss_<hash_da_url>-<prefixo_hash_da_versao>.json`; a mesma versão não é sobrescrita e uma revisão de texto gera arquivo distinto.
@@ -93,7 +93,7 @@ python -m mkt_flow_p0.editorial_identity --verify-handoff output/handoffs/arquiv
 
 ### Proteção para execução real — 06/11/2026
 
-Use **`--handoff-only`** para gerar um pacote revisável sem gravar no WordPress, mesmo que `CONEXO_RSS_DRAFT=1` esteja habilitado no ambiente. A opção exige `--handoff-dir` e não pode ser combinada com `--dry-run`, `--queue-only` ou `--editorial-package`. Ela executa a extração e o modelo já configurado, portanto **não garante ausência de custo da API de IA**. Antes de rodar, confira se o provedor e a quota existentes permitem a execução sem gasto.
+Use **`--handoff-only`** para gerar um pacote revisável sem gravar no WordPress, mesmo que `CONEXO_RSS_DRAFT=1` esteja habilitado no ambiente. A opção também exige **`--fonte NOME --limit 1`** para limitar o ensaio a uma fonte e uma pauta, evitando chamadas inesperadas à API de IA. O nome da fonte deve existir em `FEEDS_PADRAO`; no exemplo, `tecnoblog` é apenas ilustrativo: o campo `source_url` da pesquisa precisa coincidir com o URL real de uma notícia daquela fonte. A opção exige `--handoff-dir` e não pode ser combinada com `--dry-run`, `--queue-only` ou `--editorial-package`. Ela executa a extração e o modelo já configurado, portanto **não garante ausência de custo da API de IA**. Antes de rodar, confira se o provedor e a quota existentes permitem a execução sem gasto.
 
 O status da pauta neste modo é `pacote_editorial_criado`, com `escreveu=false` e `review_status=PENDING_HUMAN_REVIEW`. Se o pacote falhar na validação ou gravação, a ação é `falha`, e **nenhuma postagem remota é tentada**. A pauta não é marcada como vista neste modo; futuras execuções podem gerar nova versão, que será salva separadamente.
 
