@@ -1,6 +1,9 @@
 name: RSS homolog - pauta, IA e rascunho (manual)
 
 on:
+  # Temporary owner-only WordPress READ-ONLY credential verification.
+  issue_comment:
+    types: [created]
   workflow_dispatch:
     inputs:
       mode:
@@ -223,3 +226,49 @@ jobs:
 
 
 
+
+
+  wp-comment-readonly:
+    if: ${{ github.event_name == 'issue_comment' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.event.issue.number == 39 && github.event.comment.body == '/conexo-wp-readback-20261106' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 4
+    steps:
+      - name: Install requests (read-only only)
+        run: python -m pip install -q 'requests==2.34.2'
+      - name: Verify EXISTING WordPress credentials by GET; never write
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import json, os
+          import requests
+          target = os.getenv('WP_URL', '').rstrip('/')
+          user = os.getenv('WP_USER', '')
+          passwd = os.getenv('WP_APP_PASSWORD', '')
+          if target != 'https://conexotech.com.br':
+              raise SystemExit('BLOCKED: WP_URL missing or not approved production host')
+          if not user or not passwd:
+              raise SystemExit('BLOCKED: WordPress secrets missing')
+          try:
+              r = requests.get(target + '/wp-json/wp/v2/posts',
+                               params={'context': 'edit', 'status': 'draft', 'per_page': 1},
+                               auth=(user, passwd), allow_redirects=False, timeout=15)
+          except requests.RequestException:
+              raise SystemExit('BLOCKED: WordPress endpoint unavailable') from None
+          server = (r.headers.get('server') or '').lower()
+          edge = 'cloudflare' if 'cloudflare' in server else 'other'
+          if r.status_code != 200:
+              print(json.dumps({'wp_rest_http': r.status_code, 'edge': edge}))
+              raise SystemExit('BLOCKED: WordPress draft-read authorization failed')
+          try:
+              posts = r.json()
+          except ValueError:
+              raise SystemExit('BLOCKED: WordPress returned malformed JSON') from None
+          if not isinstance(posts, list):
+              raise SystemExit('BLOCKED: unexpected WordPress draft listing')
+          print(json.dumps({'wp_rest': 'authenticated', 'draft_readable': True,
+                            'entries_returned': len(posts), 'wrote': False}))
+          PY
