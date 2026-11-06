@@ -284,3 +284,26 @@ def test_optin_relevant_links_preserve_new_handoff_hash(monkeypatch):
     assert m["metadata"]["related_articles"] == related
     assert "Leia também" in m["markdown"]
     assert calls == []
+
+
+def test_optin_research_feeds_supplies_sourced_context_without_second_writer(monkeypatch):
+    calls = _dependencies(monkeypatch)
+    monkeypatch.setenv("CONEXO_RSS_RESEARCH_FEEDS", "1")
+    from mkt_flow_p0 import research_candidates, rewriter
+    research = {"sources": [{"name": "Canaltech", "url": "https://canaltech.com.br/android/ia/",
+                             "facts": ["Reportagem externa informa dados a conferir durante a revisão."]}]}
+    monkeypatch.setattr(research_candidates, "descobrir_fontes_candidatas",
+                        lambda *a, **kw: research)
+    used = []
+    previous = rewriter.reescrever_materia
+    def capture(*a, **kw):
+        used.append(kw.get("contexto_complementar"))
+        return previous(*a, **kw)
+    monkeypatch.setattr(rewriter, "reescrever_materia", capture)
+    result = pipeline_rss.processar_item(
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        handoff_only=True)
+    assert result["acao"] == "pacote_editorial_criado"
+    assert used == [research]
+    assert result["escreveu"] is False
+    assert calls == []
