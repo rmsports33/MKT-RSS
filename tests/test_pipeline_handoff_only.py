@@ -199,3 +199,21 @@ def test_article_generation_failure_returns_nonzero_to_executor(monkeypatch, cap
     out = capsys.readouterr().out
     assert '"falha": 1' in out
     assert "GROQ_API_KEY ausente" in out
+
+
+def test_cli_sanitizer_never_leaks_draft_content_or_api_details():
+    handoff = criar_handoff_chatgpt(ARTICLE, url_fonte=URL)
+    handoff["markdown"] = "UNPUBLISHED_ARTICLE_CONTENT_DO_NOT_LOG"
+    result = {"acao": "pacote_editorial_criado", "escreveu": False,
+              "editorial_handoff": handoff,
+              "auditoria_pos_ia": {"raw": "HIDDEN_EDITORIAL_EVIDENCE"},
+              "motivo": "ProviderError Authorization: Bearer SECRET_TOKEN"}
+    sanitized = pipeline_rss.resumo_seguro_cli("tecnoblog", result)
+    output = json.dumps(sanitized)
+    assert "UNPUBLISHED_ARTICLE_CONTENT_DO_NOT_LOG" not in output
+    assert "HIDDEN_EDITORIAL_EVIDENCE" not in output
+    assert "SECRET_TOKEN" not in output
+    assert sanitized["handoff_sha256"] == handoff["version_sha256"]
+    assert sanitized["sources_count"] == 1
+    assert sanitized["review_status"] is True
+    assert sanitized["motivo"] == "falha_processamento"
