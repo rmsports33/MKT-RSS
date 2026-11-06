@@ -3,6 +3,7 @@
 Testes offline: substitui conectores externos por stubs, nunca usa Groq/rede.
 """
 import sys
+import json
 from types import SimpleNamespace
 
 import pytest
