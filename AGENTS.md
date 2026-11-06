@@ -40,3 +40,12 @@ A divisão Work (operação) / Codex Cloud (engenharia) é temporária para desb
 - SEM_ALERTAS não comprova factualidade. Preservar o bloqueio de escrita quando o gate factual não estiver integrado.
 - Trabalhar em branch isolada, validar proporcionalmente e preservar mudanças preexistentes. Merge, deploy, publicação e custos dependem do escopo autorizado.
 - Drive V3 continua oficial; memória não concede autorização. Não ativar publicação ou agendamentos ao aplicar estas diretrizes.
+
+
+## Prioridade vinculante de imagens — 06/11/2026
+
+1. **Primeira opção:** buscar banco gratuito com licença verificada e registrar página individual, autor, banco, URL dos termos, data da consulta e crédito. Conferir qualidade, recorte e legibilidade em 1440px desktop e 390px mobile antes de validar.
+2. **Segunda opção:** solicitar imagem original gerada por IA somente quando nenhuma opção gratuita atender à pauta ou ao padrão visual. Registrar proveniência da geração; não apresentar a imagem como foto documental, de pessoa ou modelo real.
+3. Imagem do RSS, imagem já na biblioteca ou item retornado por API **não prova licença**. Seleção automática gera apenas *candidatos*, nunca autorização de uso. Somente associar imagem destacada após revisão e ID/autorização explícitos. Ausência de mídia mantém o post em draft/enriquecimento pendente.
+
+A implementação gradual da precedência de busca está em `mkt_flow_p0/image_handler.py`. A integração com criação/upload de mídia WordPress permanece supervisionada. Não disparar inferência, Actions, publicação nem importação sem autorização.
