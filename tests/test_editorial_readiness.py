@@ -87,3 +87,25 @@ def test_unsupported_genre_defaults_to_news():
                                     featured_media_id=9714,
                                     direitos_imagem_confirmados=True)
     assert r["genero"] == "noticia"
+
+
+def test_rss_excerpt_is_candidate_not_multisource_verification():
+    """A promising second RSS link does not certify independent corroboration."""
+    article = {"titulo_seo": "Android e assistentes de IA", 
+               "meta_description": DESCRIPTION, "slug": "android-assistentes-de-ia",
+               "texto_markdown": packet(True)["markdown"]}
+    rss = {"sources": [
+        {"name": "Canaltech (RSS pendente de apuração)",
+         "url": "https://canaltech.com.br/android/candidato/",
+         "facts": ["Resumo de RSS (alegações NÃO verificadas): O novo sistema adiciona recursos."]}]}
+    handoff = criar_handoff_chatgpt(article, url_fonte=SOURCE,
+                                    fonte_nome="Noticiário", contexto_complementar=rss)
+    report = avaliar_prontidao_editorial(
+        handoff, html=HTML, featured_media_id=9714,
+        direitos_imagem_confirmados=True)
+    assert report["fontes"] == 2
+    assert report["fontes_rss_pendentes"] == 1
+    assert report["status"] == "ENRIQUECIMENTO_PENDENTE"
+    assert "pesquisa_multifonte_pendente" in report["pendencias"]
+    assert "fontes_rss_candidatas_sem_verificacao" in report["pendencias"]
+    assert report["pronto_para_publicar"] is False
