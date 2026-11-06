@@ -218,3 +218,15 @@ def test_cli_sanitizer_never_leaks_draft_content_or_api_details():
     assert sanitized["sources_count"] == 1
     assert sanitized["review_status"] is True
     assert sanitized["motivo"] == "falha_processamento"
+
+
+def test_draft_mode_rejects_invalid_handoff_before_write(monkeypatch):
+    calls = _dependencies(monkeypatch, invalid_handoff=True)
+    monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
+    result = pipeline_rss.processar_item(
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        handoff_only=False)
+    assert result["acao"] == "falha"
+    assert result["motivo"] == "handoff_editorial_invalido"
+    assert result["escreveu"] is False
+    assert calls == []
