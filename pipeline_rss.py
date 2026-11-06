@@ -348,6 +348,7 @@ def main():
         print(json.dumps({"erro": f"fonte desconhecida: {args.fonte}. Opções: {sorted(FEEDS_PADRAO)}"}))
         sys.exit(2)
     total = {"publicado_rascunho": 0, "bloqueado": 0, "falha": 0, "dry_run_ok": 0}
+    contexto_usado = False
     from mkt_flow_p0.rss_ingestor import marcar_visto
     for fonte, url in alvos.items():
         # dry-run nunca marca como visto (não gasta a pauta do dia)
@@ -360,12 +361,17 @@ def main():
                               if contexto_pesquisa is not None
                               and item.get("link") == contexto_pesquisa["source_url"]
                               else None)
+            if enriquecimento is not None:
+                contexto_usado = True
             r = processar_item(item, dry_run=args.dry_run,
                                contexto_complementar=enriquecimento)
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
             print(json.dumps({"fonte": fonte, **r}, ensure_ascii=False))
+    if contexto_pesquisa is not None and not contexto_usado:
+        print(json.dumps({"aviso": "research_context_not_matched",
+                          "source_url": contexto_pesquisa["source_url"]}, ensure_ascii=False))
     print(json.dumps({"resumo": total}, ensure_ascii=False))
 
 
