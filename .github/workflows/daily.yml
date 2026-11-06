@@ -1,6 +1,7 @@
-name: RSS diario (WP draft)
+name: RSS diario - fila editorial sem IA nem WordPress
 
-# Roda o pipeline RSS 1x/dia sem PC ligado. PC vira só revisão no WP.
+# Coleta somente pautas: nao gera texto com IA, nao cria rascunhos, nao publica.
+# Producao supervisionada permanece no workflow manual rss-homolog-manual.yml.
 on:
   schedule:
     # 12:00 UTC = 09:00 BRT. Mínimo do Actions: 5 min; atraso de 5-15 min é normal.
@@ -34,25 +35,24 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements/rss.txt
 
-      - name: Rodar pipeline RSS
+      - name: Coletar fila RSS, sem inferencia e sem WordPress
         env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GROQ_MODEL: ${{ secrets.GROQ_MODEL }}
-          WP_URL: ${{ secrets.WP_URL }}
-          WP_USER: ${{ secrets.WP_USER }}
-          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-          UNSPLASH_ACCESS_KEY: ${{ secrets.UNSPLASH_ACCESS_KEY }}
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           INPUT_LIMIT: ${{ inputs.limit }}
         run: |
           LIMIT="${INPUT_LIMIT:-2}"
-          python pipeline_rss.py --limit "$LIMIT"
+          case "$LIMIT" in
+            1|2|3) ;;
+            *) echo "BLOCKED: limite deve ser 1 a 3"; exit 2 ;;
+          esac
+          python pipeline_rss.py --queue-only --fonte tecnoblog --limit "$LIMIT"
 
       - name: Anexar DB do dia (auditoria)
-        if: always()
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: rss-runs-${{ github.run_number }}
           path: mkt_flow_p0.db
-          retention-days: 14
+          retention-days: 1
+          if-no-files-found: ignore
