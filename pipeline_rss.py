@@ -384,14 +384,15 @@ def main():
     if args.fonte and args.fonte not in FEEDS_PADRAO:
         print(json.dumps({"erro": f"fonte desconhecida: {args.fonte}. Opções: {sorted(FEEDS_PADRAO)}"}))
         sys.exit(2)
-    total = {"publicado_rascunho": 0, "pacote_editorial_criado": 0, "bloqueado": 0, "falha": 0, "dry_run_ok": 0}
+    total = {"publicado_rascunho": 0, "pacote_editorial_criado": 0, "bloqueado": 0, "falha": 0, "feed_error": 0, "dry_run_ok": 0}
     contexto_usado = False
     from mkt_flow_p0.rss_ingestor import marcar_visto
     for fonte, url in alvos.items():
         # dry-run nunca marca como visto (não gasta a pauta do dia)
         nov = buscar_novidades(url, fonte=fonte, limit=args.limit, marcar=False)
         if "erro" in nov:
-            print(json.dumps({"fonte": fonte, "erro": nov["erro"]}, ensure_ascii=False))
+            total["feed_error"] += 1
+            print(json.dumps({"fonte": fonte, "erro": nov["erro"], "acao": "falha_feed"}, ensure_ascii=False))
             continue
         for item in nov.get("novos", []):
             enriquecimento = ({"sources": contexto_pesquisa["sources"]}
@@ -423,6 +424,8 @@ def main():
         print(json.dumps({"aviso": "research_context_not_matched",
                           "source_url": contexto_pesquisa["source_url"]}, ensure_ascii=False))
     print(json.dumps({"resumo": total}, ensure_ascii=False))
+    # Falha da fonte deve ser visível para o executor/agendador, mesmo sem itens.
+    return 1 if total["feed_error"] else 0
 
 
 if __name__ == "__main__":
