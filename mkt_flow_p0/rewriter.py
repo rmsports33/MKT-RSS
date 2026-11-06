@@ -76,7 +76,7 @@ def _get_client():
     try:
         return Groq(api_key=api_key), ""
     except Exception as e:
-        return None, f"Falha ao inicializar Groq: {str(e)[:120]}"
+        return None, "Falha ao inicializar Groq (detalhes privados omitidos)"
 
 
 def gerar_slug(titulo: str) -> str:
@@ -204,8 +204,9 @@ def reescrever_materia(
             return {"erro": "GROQ_API_KEY inválida — gere outra em console.groq.com"}
         if "429" in msg or "rate" in msg.lower():
             return {"erro": "Limite Groq atingido (429) — aguarde 1-2 min e tente de novo (tier grátis)."}
-        logger.warning(f"rewriter groq falhou: {msg[:200]}")
-        return {"erro": f"Falha Groq: {msg[:150]}"}
+        logger.warning("rewriter Groq falhou: tipo=%s, status=%s",
+                       type(e).__name__, getattr(e, "status_code", None))
+        return {"erro": "Falha Groq: provider_error (detalhes privados omitidos)"}
 
     try:
         raw = resp.choices[0].message.content or ""
@@ -214,7 +215,7 @@ def reescrever_materia(
         ct = int(getattr(uso, "completion_tokens", 0) or 0)
         dados = _parse_json_resposta(raw)
     except Exception as e:
-        return {"erro": f"Resposta IA fora do JSON esperado: {str(e)[:120]}"}
+        return {"erro": "Resposta IA fora do JSON esperado (detalhes privados omitidos)"}
 
     titulo_seo = str(dados.get("titulo_seo") or titulo_original)[:META_TITULO_MAX]
     meta = str(dados.get("meta_description") or "")[:META_DESC_MAX]
@@ -266,7 +267,7 @@ def reescrever_materia(
                 contexto_complementar=contexto_complementar)
         except ValueError as exc:
             # Um erro no intercâmbio consultivo não pode apagar artigo gerado.
-            logger.warning("Handoff ChatGPT indisponível: %s", str(exc)[:120])
+            logger.warning("Handoff ChatGPT indisponível: validação do pacote falhou")
             handoff = None
     return {
         "editorial_handoff": handoff,
