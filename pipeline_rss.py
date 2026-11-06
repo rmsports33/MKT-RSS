@@ -208,19 +208,15 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             pass  # O validador do fluxo bloqueia o handoff antigo ou invalido.
     html = markdown_para_html(texto_final)
 
-    imagem_url, credito_foto = "", ""
-    # Pacote de revisão não precisa baixar imagem de terceiros; preserve URL/fonte na apuração.
-    if (ext.get("imagem") and not handoff_only
-            and os.getenv("CONEXO_RSS_PREVIEW_SOURCE_IMAGE") == "1"):
-        capa = preparar_capa(sanitizar_url(ext["imagem"]), consulta_fallback=rw["titulo_seo"])
-        if "bytes" in capa:
-            imagem_url = sanitizar_url(ext["imagem"])  # WP baixa e define como destacada
-            credito_foto = capa.get("credito", "")
-        else:
-            logger.warning(f"sem capa: {capa.get('erro')}")
-    # Preview downloads are not licensed WP attachments; do not mutate the
-    # rendered article with third-party credit after signing its handoff.
-    # Attribution for an approved WP media item is managed with that media.
+    # Candidatas de banco gratuito são apenas encaminhamento para revisão,
+    # nunca cópia automática da imagem RSS nem autorização para upload.
+    plano_imagem = {"status": "PESQUISA_NAO_EXECUTADA",
+                    "proxima_etapa": "BUSCAR_BANCO_GRATUITO"}
+    if (not handoff_only and os.getenv("CONEXO_RSS_PREVIEW_SOURCE_IMAGE") == "1"):
+        plano_imagem = preparar_capa(
+            consulta_fallback=rw["titulo_seo"], timeout=10)
+    # Foto externa ou IA ainda exige procedência, avaliação visual 1440/390,
+    # ID WP confirmado e aceite específico da mídia antes de usar como capa.
 
     # Diagnostico de prontidao nao bloqueia o armazenamento de rascunhos;
     # sinaliza lacunas antes da revisao humana e NUNCA autoriza publicacao.
@@ -231,6 +227,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         featured_media_id=featured_media_id,
         direitos_imagem_confirmados=media_rights_confirmed,
         verified_related_urls=[x["url"] for x in relacionados])
+    qualidade_editorial["plano_imagem"] = plano_imagem
 
     # C19: nunca considerar a ausencia de alertas como aprovacao factual.
     # A integracao do contrato de evidencias permanece obrigatoria.
