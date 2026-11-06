@@ -12,7 +12,7 @@
 
 ## Regra durável de execução editorial — 03/11/2026
 
-**ChatGPT Work / ChatGPT-first com WordPress REST/MCP é o executor editorial escolhido.** O WordPress autenticado cria/edita rascunhos e publica/agenda artigos supervisionados. NÃO pedir executor Python permanente, Windows/PowerShell, OpenCode, GitHub Actions, Vercel, novo hosting ou Hostinger MCP como pré-requisito. O Python deste repositório é componente opcional de RSS/transformação/teste; a flag `CONEXO_RSS_DRAFT_STAGING=1` preparada no PR #39 não define a arquitetura operacional.
+**ChatGPT-first com WordPress REST/MCP é uma via supervisionada preferencial, não um executor exclusivo.** O MKT-RSS permanece o motor completo da automação RSS. O WordPress autenticado cria/edita rascunhos e publica/agenda artigos supervisionados. NÃO pedir executor Python permanente, Windows/PowerShell, OpenCode, GitHub Actions, Vercel, novo hosting ou Hostinger MCP como pré-requisito. O Python deste repositório é componente opcional de RSS/transformação/teste; a flag `CONEXO_RSS_DRAFT_STAGING=1` preparada no PR #39 não define a arquitetura operacional.
 
 **Operação supervisionada ≠ automação estrita:** rascunho não precisa certificação de publicação; publicação exige revisão factual e substantiva, fontes, imagem autorizada, aceite específico da versão e confirmação no WordPress. Gate assinado e SEO nativo v0.5.2 permanecem iniciativa de automação futura, sem bloquear artigos supervisionados enquanto Gate está inativo e Rank Math segue ativo. Não desativar as proteções próprias do transporte assinado para publicar sem revisão.
 
