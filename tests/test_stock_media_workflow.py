@@ -14,6 +14,8 @@ PHOTO = {
     "revisao_direitos": "APROVADO_PELO_EDITOR",
     "revisao_visual": "APROVADO_PELO_EDITOR",
     "alt_text": "Microfone em estúdio de gravação",
+    "approved_post_id": 9769,
+    "approved_post_modified_gmt": "2026-11-06T20:31:11",
 }
 
 
@@ -44,12 +46,19 @@ class Client:
         self.featured = existing_media
         self.calls = []
         self.created = None
+        self.metadata = {}
+        self.post_modified_gmt = PHOTO["approved_post_modified_gmt"]
 
     def get(self, url, **kwargs):
         self.calls.append(("GET", url))
         if url.endswith("/posts/9769"):
             return Response(200, {"id": 9769, "status": self.post_status,
-                                  "featured_media": self.featured})
+                                  "featured_media": self.featured,
+                                  "modified_gmt": self.post_modified_gmt})
+        if url.endswith("/media/12345"):
+            return Response(200, {"id": 12345, "alt_text": self.metadata.get("alt_text"),
+                "caption": {"raw": self.metadata.get("caption", "")},
+                "description": {"raw": self.metadata.get("description", "")}})
         if url.startswith("https://images.unsplash.com/"):
             return Response(200, headers={"Content-Type": "image/jpeg"},
                             image=_picture())
@@ -142,3 +151,49 @@ def test_licenca_ou_referencia_invalida_bloqueia():
         cl = Client()
         assert run(cl, dict(PHOTO, **patch))["status"] == "BLOQUEADO"
         assert cl.calls == []
+
+
+def test_aprovacao_de_outra_versao_bloqueia_preflight():
+    cl = Client()
+    cl.post_modified_gmt = "2026-11-06T20:35:00"
+    result = run(cl)
+    assert result["status"] == "BLOQUEADO"
+    assert len(cl.calls) == 1
+
+
+def test_aprovacao_para_outro_post_bloqueia_sem_rede():
+    cl = Client()
+    result = run(cl, dict(PHOTO, approved_post_id=999))
+    assert result["status"] == "BLOQUEADO"
+    assert cl.calls == []
+
+
+def test_media_readback_divergente_nao_associa():
+    cl = Client()
+    get_original = cl.get
+    def mismatch(url, **kwargs):
+        if url.endswith("/media/12345"):
+            cl.calls.append(("GET", url))
+            return Response(200, {"id": 12345, "alt_text": "ERRADO",
+                "caption": {"raw": "errado"}, "description": {"raw": ""}})
+        return get_original(url, **kwargs)
+    cl.get = mismatch
+    result = run(cl)
+    assert result["motivo"] == "media_metadados_divergentes"
+    assert not any(method == "POST" and url.endswith("/posts/9769")
+                   for method, url in cl.calls)
+
+
+def test_upload_indeterminado_requer_inspecao_sem_retry():
+    cl = Client()
+    original = cl.post
+    def uncertain(url, **kwargs):
+        if url.endswith("/media"):
+            cl.calls.append(("POST", url))
+            return Response(500, {})
+        return original(url, **kwargs)
+    cl.post = uncertain
+    result = run(cl)
+    assert result["motivo"] == "upload_wp_indeterminado"
+    assert result["escrita_indeterminada"] is True
+    assert result["retry_automatico"] is False
