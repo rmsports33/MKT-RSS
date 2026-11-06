@@ -307,3 +307,22 @@ def test_optin_research_feeds_supplies_sourced_context_without_second_writer(mon
     assert used == [research]
     assert result["escreveu"] is False
     assert calls == []
+
+
+def test_draft_mode_does_not_download_source_image_without_optin(monkeypatch):
+    calls = _dependencies(monkeypatch)
+    from mkt_flow_p0 import extractor, image_handler
+    extractor.extrair_conteudo = lambda _: {
+        "titulo": "Android e agentes", "texto": "Texto apurado " * 170,
+        "qualidade_ok": True, "palavras": 340,
+        "imagem": "https://example.org/unlicensed-source-image.png"}
+    def forbidden(*args, **kwargs):
+        raise AssertionError("No unreviewed third-party image download")
+    image_handler.preparar_capa = forbidden
+    monkeypatch.delenv("CONEXO_RSS_PREVIEW_SOURCE_IMAGE", raising=False)
+    monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
+    r = pipeline_rss.processar_item(
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL})
+    assert r["acao"] == "publicado_rascunho"
+    assert r["qualidade_editorial"]["imagem_destacada_confirmada"] is False
+    assert calls and calls[0]["featured_media_id"] is None
