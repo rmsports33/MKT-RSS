@@ -197,3 +197,34 @@ def test_upload_indeterminado_requer_inspecao_sem_retry():
     assert result["motivo"] == "upload_wp_indeterminado"
     assert result["escrita_indeterminada"] is True
     assert result["retry_automatico"] is False
+
+
+def test_cli_descoberta_nao_chama_wordpress(monkeypatch, capsys):
+    from mkt_flow_p0 import stock_media_workflow as sm
+    from mkt_flow_p0 import image_handler
+    with patch.object(image_handler, "preparar_capa", return_value={
+        "status": "REVISAO_HUMANA_DE_MIDIA", "candidatos": [PHOTO]
+    }) as stock:
+        with patch.object(sm, "associar_foto_gratuita_a_rascunho") as wp:
+            assert sm.main(["--discover", "microfone estúdio"]) == 0
+    stock.assert_called_once()
+    wp.assert_not_called()
+    assert "REVISAO_HUMANA_DE_MIDIA" in capsys.readouterr().out
+
+
+def test_cli_upload_nao_aceita_falta_de_confirmacao():
+    import pytest
+    from mkt_flow_p0 import stock_media_workflow as sm
+    with pytest.raises(SystemExit) as err:
+        sm.main(["--approved-photo-json", "foto.json", "--post-id", "9769"])
+    assert err.value.code == 2
+
+
+def test_cli_sem_chave_gratuita_fica_pendente(monkeypatch, capsys):
+    from mkt_flow_p0 import stock_media_workflow as sm
+    from mkt_flow_p0 import image_handler
+    with patch.object(image_handler, "preparar_capa", return_value={
+        "status": "IMAGEM_PENDENTE", "proxima_etapa": "PESQUISA_BANCO_PENDENTE"
+    }):
+        assert sm.main(["--discover", "tema"]) == 2
+    assert "PESQUISA_BANCO_PENDENTE" in capsys.readouterr().out
