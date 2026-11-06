@@ -80,3 +80,18 @@ Leitura GitHub após a cópia comprovou igualdade exata dos blobs entre master e
 **Limites verificáveis:** este turno não executou o CLI novo com credenciais WordPress reais em um novo draft e não autenticou navegador para visualizar o artigo privado em 1440/390 px. O E2E supervisionado por ferramentas já conectadas para #9769 foi comprovado anteriormente; as rotas Python de escrita permanecem validadas por mocks e pré-condições reais de leitura. Busca automática Unsplash continua precisando chave Free; falta de chave mantém pesquisa pendente em vez de sugerir IA. Nada aqui autoriza publicar ou agendar. Não declarar 100% da automação editorial ou da revisão visual.
 
 **Próxima ação específica:** utilizar navegador autenticado com acesso a prévia privada para validar renderização desktop/mobile do draft; em outro draft específico sem capa e com revisão editorial concluída, executar o CLI autenticado em um operador exclusivo e conferir post + mídia por readback. Não sobrescrever #9769 nem usar imagem genérica potencialmente enganosa no comparativo Samsung #9681.
+
+
+## Preflight final de autenticação e visual — 06/11/2026
+
+Solicitação: executar o módulo Python com autenticação real e conferir o rascunho privado em 390/1440 px, sem publicar.
+
+**Acessos efetivamente disponíveis no turno:**
+- WordPress MCP autenticado: `GET` de post #9769 confirmou `status=draft`, `featured_media=9776`, modificado 2026-11-06T17:31:11; post #9681 segue `draft` sem capa.
+- Projetos Vercel investigados sem revelar segredos: `conexo-jules-mcp-staging` e `conexotech-panel` não apresentam variáveis `WP_URL`, `WP_USER`, `WP_APP_PASSWORD` para o módulo; `conexo-sftp-mcp` expõe nomes SFTP/WorkOS apenas, não as credenciais WP exigidas. O conector WordPress não transfere autenticação para um subprocesso Python.
+- TinyFish Browser Context Profile padrão identificado, com `signed_in_sites=[]`; nenhuma sessão WordPress previamente autenticada para visualizar `/wp-admin/post.php?post=9769&action=edit` ou preview privada.
+- API WordPress MCP pode ler o rascunho, mas não renderiza sua prévia privada autenticada em janelas de 390/1440. Screenshots públicos não provam esse requisito.
+
+**Resultado honesto:** execução autenticada do novo CLI Python **NÃO realizada** neste turno por falta de acesso autenticado no ambiente de execução. A revisão visual do draft privado **NÃO realizada** por ausência de browser WordPress autenticado. Nenhuma imagem nova foi anexada e nenhum estado de artigo foi alterado. Não contornar com publicação temporária, credenciais copiadas manualmente no chat, nem falso PASS.
+
+**Desbloqueio mínimo:** disponibilizar ao executor uma conexão autorizada com WordPress apenas no ambiente cloud, sem publicar os segredos na conversa, e salvar uma sessão de navegador autenticada que permita ler a prévia. Após isso: selecionar rascunho específico sem imagem e ficha de foto revista, rodar CLI único com confirmação explícita; conferir POST media, GET media, POST featured_media e GET post em status draft; capturar tema em 390 e 1440. Não reutilizar o draft #9769 como alvo de nova associação porque já contém capa.
