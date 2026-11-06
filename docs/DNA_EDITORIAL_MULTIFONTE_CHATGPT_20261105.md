@@ -139,3 +139,17 @@ O arquivo resultante é verificável por SHA-256, preserva a fonte inicial, link
 **Evidência real:** importado o artigo sobre agentes Android (1.029 palavras, 3 fontes, 6 alegações complementares pendentes), obtendo novamente o SHA de versão `307051c85ed2616ca4b69b4a9350aff32d91b5f310c74fc23cc683b94801d92d`. Testes locais `python -m pytest` totalizaram **31 PASS e 1 teste não executado** por ausência do renderizador integral no checkout parcial. Dois arquivos têm blobs idênticos entre execução e GitHub: `editorial_import.py` (`eaef5746c8f22e5e8e2a55ae2607db1a18b66098`) e `test_editorial_import_public.py` (`de3ff933e8c030a3e507cb17a44412b4c4ab34b0`).
 
 **Pendências separadas:** (1) testar os módulos do pipeline `tests/test_pipeline_handoff_only.py` num checkout integral; (2) executar a coleta de RSS e o rewriter do MKT-RSS com provedor realmente configurado e quota conhecida; (3) comprovar o rascunho privado no WordPress pelo executor MKT-RSS, sem publicar antes de aprovação. Não reabrir staging nem criar serviços apenas por causa dessas pendências.
+
+## Publicador de rascunhos: correções de confiabilidade (06/11/2026)
+
+Foram reproduzidas falhas em testes com código cujo blob Git SHA coincidia com o repositório: (1) mudança de título gerava novo slug para uma mesma URL, (2) draft antigo era declarado entregue sem comparar conteúdo e (3) readback do POST não verificava o corpo; além disso, (4) a consulta REST por slug não explicitava `status=draft` e outros estados, podendo ignorar rascunhos.
+
+**Correção aplicada** em `mkt_flow_p0/wp_draft_staging.py` (blob SHA `b5a023613abf402a96be97045573fa68fbe4ba60`):
+- Slug de novas pautas baseado **na URL de origem**, invariável quando a IA altera o título. A rotina também procura o slug legado com o **mesmo título atual**, mas um post legado cujo título mudou antes da migração pode exigir reconciliação manual — não presumir migração global.
+- Consulta explícita por status `draft,pending,publish,future,private`, contexto `edit`, sem criar o post se a listagem falhar.
+- Ao encontrar um post, lê `content.raw` e `title.raw` por ID e exige correspondência exata da versão atual; versão divergente retorna `bloqueado` e não sobrescreve.
+- Após um POST, exige leitura confirmada de ID, slug, título, conteúdo e status `draft`; readback divergente retorna falha sem retry automático. Resposta 201 sem ID confiável reporta `escrita_indeterminada=true`.
+
+**Evidência:** módulo Python exato copiado do GitHub, hash do arquivo confirmado; suíte offline focal com **16 passed** (13 testes de contrato, três regressões reproduzidas e depois corrigidas). A suíte do repositório foi atualizada em `tests/test_wp_draft_staging.py`; seus casos ainda não foram executados no checkout integral. Nenhum teste dessa suíte chamou o WordPress real.
+
+**Importante:** estas correções **não** fazem upload automático de imagem destacada nem homologam o executor Groq. O WordPress #9768 foi salvo por conector MCP supervisionado e confirmado por leitura, não pelo `stage_rss_draft` Python.
