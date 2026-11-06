@@ -425,7 +425,7 @@ def main():
                           "source_url": contexto_pesquisa["source_url"]}, ensure_ascii=False))
     print(json.dumps({"resumo": total}, ensure_ascii=False))
     # Falha da fonte deve ser visível para o executor/agendador, mesmo sem itens.
-    return 1 if total["feed_error"] else 0
+    return 1 if (total["feed_error"] or total["falha"]) else 0
 
 
 if __name__ == "__main__":
