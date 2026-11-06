@@ -128,6 +128,16 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
             return {"status": "INSPECIONAR", "motivo": "metadados_nao_confirmados",
                     "media_id": media_id, "escreveu": True,
                     "retry_automatico": False}
+        last_check = request_client.get(
+            api + "/posts/" + str(post_id), headers=auth,
+            params={"context": "edit"}, timeout=timeout, allow_redirects=False)
+        if (last_check.status_code != 200 or
+                last_check.json().get("status") != "draft" or
+                last_check.json().get("featured_media") not in (None, 0)):
+            return {"status": "INSPECIONAR",
+                    "motivo": "concorrencia_antes_da_associacao",
+                    "media_id": media_id, "escreveu": True,
+                    "retry_automatico": False}
         attached = request_client.post(
             api + "/posts/" + str(post_id), headers=auth,
             json={"featured_media": media_id}, timeout=timeout,
@@ -152,3 +162,27 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
     except (requests.RequestException, ValueError, TypeError, KeyError):
         return {"status": "INSPECIONAR", "motivo": "transporte_indeterminado",
                 "escreveu": False, "retry_automatico": False}
+
+def main(argv=None):
+    """CLI manual com arquivo de aprovação e confirmação específica do post."""
+    import argparse
+    import json
+    import os
+    from pathlib import Path
+    parser = argparse.ArgumentParser(description="Associar foto gratuita APROVADA a draft WordPress")
+    parser.add_argument("--approved-photo-json", type=Path, required=True)
+    parser.add_argument("--post-id", type=int, required=True)
+    parser.add_argument("--confirm-draft-media", action="store_true", required=True)
+    args = parser.parse_args(argv)
+    photo = json.loads(args.approved_photo_json.read_text(encoding="utf-8"))
+    result = associar_foto_gratuita_a_rascunho(
+        photo, post_id=args.post_id, wp_url=os.getenv("WP_URL", ""),
+        wp_user=os.getenv("WP_USER", ""),
+        wp_app_password=os.getenv("WP_APP_PASSWORD", ""))
+    # A resposta nunca contém credenciais nem bytes da imagem.
+    print(json.dumps(result, ensure_ascii=False, sort_keys=True))
+    return 0 if result.get("status") == "CAPA_ASSOCIADA_A_DRAFT" else 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
