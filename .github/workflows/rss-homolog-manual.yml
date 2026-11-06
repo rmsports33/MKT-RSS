@@ -253,7 +253,33 @@ jobs:
               with urllib.request.urlopen(req, timeout=15) as resp:
                   data = json.loads(resp.read(262144))
           except urllib.error.HTTPError as exc:
-              raise SystemExit('BLOCKED: Groq HTTP ' + str(exc.code)) from None
+              # Report only provider classification; never print error bodies or token values.
+              classification = "non_json"
+              subtype = "unavailable"
+              if "json" in (exc.headers.get("Content-Type") or "").lower():
+                  try:
+                      body = json.loads(exc.read(4096))
+                      obj = body.get("error", {}) if isinstance(body, dict) else {}
+                      if isinstance(obj, dict):
+                          val = obj.get("type")
+                          if isinstance(val, str) and val in (
+                              "permissions_error", "permission_error",
+                              "invalid_request_error", "authentication_error",
+                              "rate_limit_error", "api_error"):
+                              classification = val
+                          val = obj.get("code")
+                          if isinstance(val, str) and val in (
+                              "organization_model_blocked", "project_model_blocked",
+                              "model_permission_denied", "invalid_api_key"):
+                              subtype = val
+                  except (ValueError, TypeError):
+                      pass
+              edge = (exc.headers.get("server") or "").lower()
+              edge_kind = "cloudflare" if "cloudflare" in edge else "other"
+              print(json.dumps({"groq_http": exc.code,
+                                "error_type": classification,
+                                "error_code": subtype, "edge": edge_kind}))
+              raise SystemExit('BLOCKED: Groq rejected the model catalog request') from None
           except (urllib.error.URLError, TimeoutError, ValueError):
               raise SystemExit('BLOCKED: Groq API/model catalog inaccessible') from None
           models = {item.get('id') for item in data.get('data', []) if isinstance(item, dict)}
