@@ -86,7 +86,7 @@ jobs:
       - name: Checkout exact editorial build (not master)
         uses: actions/checkout@v4
         with:
-          ref: 9e6fdc7b63a2f1e7fa20401ff4f51891277f992b
+          ref: c9c77a0fcfbe4791d872f8e458dc78b01932347d
           persist-credentials: false
 
       - name: Python 3.11
