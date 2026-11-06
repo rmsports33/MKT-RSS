@@ -83,7 +83,8 @@ def buscar_fallback(consulta: str, timeout: int = 10) -> dict:
         pass
     key = (os.getenv("UNSPLASH_ACCESS_KEY") or "").strip()
     if not key:
-        return {"erro": "Sem imagem original e sem UNSPLASH_ACCESS_KEY — cole a imagem manualmente"}
+        return {"erro": "Busca de banco gratuito não configurada",
+                "proxima_etapa": "PESQUISA_BANCO_PENDENTE"}
     try:
         r = requests.get("https://api.unsplash.com/search/photos",
                          params={"query": consulta, "per_page": 5, "orientation": "landscape"},
@@ -91,7 +92,8 @@ def buscar_fallback(consulta: str, timeout: int = 10) -> dict:
         r.raise_for_status()
         resultados = (r.json().get("results") or [])
         if not resultados:
-            return {"erro": f"Unsplash sem resultado para '{consulta}'"}
+            return {"erro": "Banco gratuito não encontrou resultados na consulta",
+                    "proxima_etapa": "AVALIAR_GERACAO_IA"}
         # Não promover automaticamente a primeira foto a imagem licenciada.
         # O editor confere a página individual, a licença e o enquadramento.
         candidatos = []
@@ -113,7 +115,8 @@ def buscar_fallback(consulta: str, timeout: int = 10) -> dict:
                     "proxima_etapa": "AVALIAR_GERACAO_IA"}
         return {"candidatos": candidatos, "proxima_etapa": "REVISAO_HUMANA_DE_MIDIA"}
     except Exception as e:
-        return {"erro": f"Unsplash falhou: {str(e)[:120]}"}
+        return {"erro": "Banco gratuito temporariamente indisponível",
+                "proxima_etapa": "PESQUISA_BANCO_PENDENTE"}
 
 
 def preparar_capa(url_original: str = "", consulta_fallback: str = "", timeout: int = 15,
@@ -124,6 +127,7 @@ def preparar_capa(url_original: str = "", consulta_fallback: str = "", timeout: 
     mídia ao WordPress. A imagem RSS somente pode ser usada após prova de direitos.
     O chamador deve conferir licença, autoria e recorte em 1440/390 px.
     """
+    result = {"proxima_etapa": "PESQUISA_BANCO_PENDENTE"}
     if consulta_fallback:
         result = buscar_fallback(consulta_fallback, timeout=timeout)
         if result.get("candidatos"):
@@ -139,5 +143,8 @@ def preparar_capa(url_original: str = "", consulta_fallback: str = "", timeout: 
                 capa["origem"] = "fonte_com_direitos_confirmados"
                 capa["status"] = "PREVIA_PENDENTE_DE_REVISAO_VISUAL"
                 return capa
-    return {"status": "IMAGEM_PENDENTE", "proxima_etapa": "AVALIAR_GERACAO_IA",
-            "erro": "Banco gratuito não forneceu candidata adequada; nenhuma mídia foi aprovada."}
+    etapa = result.get("proxima_etapa", "PESQUISA_BANCO_PENDENTE")
+    if etapa not in ("AVALIAR_GERACAO_IA", "PESQUISA_BANCO_PENDENTE"):
+        etapa = "PESQUISA_BANCO_PENDENTE"
+    return {"status": "IMAGEM_PENDENTE", "proxima_etapa": etapa,
+            "erro": "Nenhuma mídia com direitos e qualidade foi aprovada."}
