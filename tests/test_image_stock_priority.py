@@ -35,7 +35,7 @@ def test_sem_consulta_nao_usa_imagem_rss_nao_autorizada():
     with patch.object(ih, "baixar_imagem") as download:
         result = ih.preparar_capa("https://publisher.test/photo.jpg")
     download.assert_not_called()
-    assert result["proxima_etapa"] == "AVALIAR_GERACAO_IA"
+    assert result["proxima_etapa"] == "PESQUISA_BANCO_PENDENTE"
 
 
 def test_api_unsplash_retorna_referencias_sem_aprovar_licenca(monkeypatch):
