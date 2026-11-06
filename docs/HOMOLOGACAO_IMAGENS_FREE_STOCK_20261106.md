@@ -53,3 +53,30 @@ Leitura GitHub após a cópia comprovou igualdade exata dos blobs entre master e
 **Limite não resolvido:** nenhuma sessão de navegador autenticado disponível para renderizar o *draft* de Microsoft em 1440/390 px; portanto QA visual do **artigo privado** não foi concluído. O WP confirma imagem `conexo-wide` 1200×675, mas tamanho não substitui inspeção de enquadramento no tema. A rotina de busca automática de candidatos continua opt-in, com chave gratuita Unsplash necessária. O módulo novo oferece associação REST supervisionada depois de licença/visual explicitamente aprovadas, não decide automaticamente direitos de terceiros e não realiza geração IA. Não declarar publicação ou operação autônoma contínua.
 
 **Próxima ação exata:** validar uma imagem e prévia em navegador WordPress autenticado com acesso ao draft, sem tornar o artigo público; depois executar o módulo CLI com aprovação específica em um novo draft **sem capa** e verificar readback, sob operador exclusivo. Não repetir o upload no #9769, que já possui mídia.
+
+
+## Fechamento da integração de contrato de mídia — 06/11/2026
+
+**Código reconciliado na master (mudanças seletivas):**
+- `mkt_flow_p0/stock_media_workflow.py`: commit `295dd648496c081ee7f9c5b124db50f75b25759e`.
+- `tests/test_stock_media_workflow.py`: commit `bf10e69060c0e5a25af25c661cc30b4f1bc3c1e1`.
+- SHA testado diretamente no checkout da master após esses commits: `bf10e69060c0e5a25af25c661cc30b4f1bc3c1e1`.
+
+**Correções de integração e segurança:**
+1. A escolha de fotografia exige `approved_post_id` e `approved_post_modified_gmt` iguais à versão privada em edição; conteúdo alterado invalida o aceite anterior. O PHP/WP REST fornece `modified_gmt` no contexto de edição, independentemente da projeção resumida do WordPress MCP.
+2. Verificação da mídia após upload: `GET /wp/v2/media/{id}?context=edit`, conferindo ID, texto ALT, crédito e referência de licença/origem.
+3. Upload sem confirmação do ID e falhas de transporte são explicitamente indeterminados; sem retry automático para evitar imagens duplicadas.
+4. Antes da associação, novo readback bloqueia se status, versão ou imagem destacada mudarem.
+5. CLI `python -m mkt_flow_p0.stock_media_workflow --discover "termo"` pesquisa banco gratuito *sem escrever no WordPress*; caminho de anexação exige `--approved-photo-json`, `--post-id` e `--confirm-draft-media`.
+
+**Evidências de teste da master (sandbox remoto, Python, sem segredo WP/Groq):**
+- `python -m pytest -q tests/test_stock_media_workflow.py tests/test_image_stock_priority.py`: **21 PASS / 0 FAIL**.
+- `python -m pytest -q tests`: **615 PASS / 0 FAIL**.
+- `python -m compileall -q mkt_flow_p0 pipeline_rss.py`: **PASS**.
+- Descoberta via CLI no checkout real, sem `UNSPLASH_ACCESS_KEY`: `IMAGEM_PENDENTE`, `PESQUISA_BANCO_PENDENTE`; não inventou inexistência de imagens nem acionou geração de IA.
+
+**Prova real do destino WordPress e da entrega da mídia:** WordPress REST/MCP autenticado confirmou post **#9769** com `status=draft` e `featured_media=9776`, mídia **#9776** com ALT, crédito, página individual Unsplash e URL de licença. Requisições HTTPS de leitura à imagem em produção retornaram **HTTP 200, image/jpeg**, com decodificação Pillow **1200x675 RGB** para `conexo-wide` e **800x525 RGB** para `conexo-thumb`. Nenhuma escrita WordPress foi necessária na etapa atual.
+
+**Limites verificáveis:** este turno não executou o CLI novo com credenciais WordPress reais em um novo draft e não autenticou navegador para visualizar o artigo privado em 1440/390 px. O E2E supervisionado por ferramentas já conectadas para #9769 foi comprovado anteriormente; as rotas Python de escrita permanecem validadas por mocks e pré-condições reais de leitura. Busca automática Unsplash continua precisando chave Free; falta de chave mantém pesquisa pendente em vez de sugerir IA. Nada aqui autoriza publicar ou agendar. Não declarar 100% da automação editorial ou da revisão visual.
+
+**Próxima ação específica:** utilizar navegador autenticado com acesso a prévia privada para validar renderização desktop/mobile do draft; em outro draft específico sem capa e com revisão editorial concluída, executar o CLI autenticado em um operador exclusivo e conferir post + mídia por readback. Não sobrescrever #9769 nem usar imagem genérica potencialmente enganosa no comparativo Samsung #9681.
