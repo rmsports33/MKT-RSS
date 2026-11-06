@@ -244,6 +244,18 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             "auditoria_cobertura": auditoria_cobertura,
         }
     if os.environ.get("CONEXO_RSS_DRAFT") == "1" or os.environ.get("CONEXO_RSS_DRAFT_STAGING") == "1":
+        # Drafts must carry the same verified, still-unapproved editorial
+        # handoff as the no-write pipeline. No silent bypass on missing data.
+        handoff = rw.get("editorial_handoff")
+        if not isinstance(handoff, dict):
+            return {"acao": "falha", "motivo": "handoff_editorial_ausente",
+                    "url": url_fonte, "escreveu": False}
+        from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+        try:
+            validar_handoff_chatgpt(handoff)
+        except ValueError:
+            return {"acao": "falha", "motivo": "handoff_editorial_invalido",
+                    "url": url_fonte, "escreveu": False}
         from mkt_flow_p0.wp_draft_staging import stage_rss_draft
         staged = stage_rss_draft(
             title=rw["titulo_seo"], content=html, source_url=url_fonte,
