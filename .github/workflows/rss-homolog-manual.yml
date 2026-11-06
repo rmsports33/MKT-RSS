@@ -78,7 +78,7 @@ jobs:
       - name: Checkout exact editorial build (not master)
         uses: actions/checkout@v4
         with:
-          ref: 228b328ab7f4a8204e5b95f3829e532934471741
+          ref: a89a9f3b41cd2c26887d4a749de1082412472379
           persist-credentials: false
 
       - name: Python 3.11
@@ -200,14 +200,25 @@ jobs:
               lines.append(f"Confirmed private WP draft ID: {item['post_id']}")
           with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
               out.write("\\n".join(lines) + "\\n")
+          Path("output/qa").mkdir(parents=True, exist_ok=True)
+          manifest = {
+              "mode": mode, "version_sha256": check["version_sha256"],
+              "sources_count": check["source_count"],
+              "claims_pending": check["claims_pending"],
+              "review_status": "PENDING_HUMAN_REVIEW",
+              "private_draft_id": item["post_id"] if mode == "draft" else None,
+          }
+          Path("output/qa/manifest.json").write_text(
+              json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
           print("PASS: private editorial package verified; no publication.")
           PY
 
-      - name: Retain editorial package for one day
+      - name: Retain only a redacted manifest for one day
         if: ${{ success() && (inputs.mode == 'handoff' || inputs.mode == 'draft') }}
         uses: actions/upload-artifact@v4
         with:
           name: mkt-rss-review-${{ github.run_id }}
-          path: output/handoffs/*.json
+          # Public repo: never upload unpublished article text or source claims.
+          path: output/qa/manifest.json
           if-no-files-found: error
           retention-days: 1
