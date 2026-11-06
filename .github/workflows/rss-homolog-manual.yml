@@ -295,3 +295,94 @@ jobs:
           path: output/qa/manifest.json
           retention-days: 1
           if-no-files-found: error
+
+
+  one-shot-private-draft-free:
+    if: ${{ github.event_name == 'issue_comment' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.event.issue.number == 39 && github.event.comment.body == '/conexo-draft-free-20261106' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 10
+    steps:
+      - name: Checkout tested MKT-RSS candidate
+        uses: actions/checkout@v4
+        with:
+          ref: 51bfdbd2539b39f78b77367842ac382e07f39a66
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install pinned RSS dependencies
+        run: python -m pip install -q -r requirements/rss.txt
+      - name: Fail closed on WordPress target and secrets
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          python - <<'PY'
+          import os
+          if (os.getenv('WP_URL','').rstrip('/') != 'https://conexotech.com.br'
+              or not os.getenv('WP_USER') or not os.getenv('WP_APP_PASSWORD')):
+              raise SystemExit('BLOCKED: WordPress private draft credentials/target unavailable')
+          if not os.getenv('GROQ_API_KEY'):
+              raise SystemExit('BLOCKED: Groq Free API key unavailable')
+          print('PASS: required private draft credentials present (values hidden)')
+          PY
+      - name: Process exactly one RSS item into private WP draft
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          CONEXO_RSS_DRAFT: '1'
+          CONEXO_RSS_DRAFT_STAGING: '0'
+          GATE_PUBLICACAO_ENABLED: 'false'
+        run: |
+          mkdir -p output/handoffs
+          python pipeline_rss.py --fonte tecnoblog --limit 1 \
+            --handoff-dir output/handoffs > output/rss-result.jsonl
+      - name: Verify WP draft readback and editorial handoff
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+          events = []
+          for line in Path('output/rss-result.jsonl').read_text(encoding='utf-8').splitlines():
+              try:
+                  value = json.loads(line)
+              except ValueError:
+                  continue
+              if isinstance(value,dict): events.append(value)
+          matches = [x for x in events if x.get('acao') == 'publicado_rascunho']
+          if len(matches) != 1:
+              raise SystemExit('BLOCKED: no unique private WordPress draft readback')
+          item = matches[0]
+          if (type(item.get('post_id')) is not int or item['post_id'] <= 0
+                  or item.get('status') != 'draft'
+                  or not isinstance(item.get('handoff_path'),str)):
+              raise SystemExit('BLOCKED: WordPress status or handoff invalid')
+          path = Path(item['handoff_path'])
+          if not path.is_file() or not str(path).startswith('output/handoffs/'):
+              raise SystemExit('BLOCKED: editorial handoff absent')
+          check = validar_handoff_chatgpt(json.loads(path.read_text(encoding='utf-8')))
+          manifest = {'result':'PASS','post_id':item['post_id'],
+                      'wp_status':item['status'],'article_published':False,
+                      'wordpress_write':item.get('escreveu',None),
+                      'handoff_sha256':check['version_sha256'],
+                      'sources_count':check['source_count'],
+                      'claims_pending':check['claims_pending'],
+                      'review_status':check['review_status']}
+          Path('output/qa').mkdir(parents=True,exist_ok=True)
+          Path('output/qa/manifest.json').write_text(json.dumps(manifest,indent=2),encoding='utf-8')
+          print(json.dumps(manifest))
+          PY
+      - name: Upload only QA manifest (no draft body)
+        uses: actions/upload-artifact@v4
+        with:
+          name: mktrss-free-draft-${{ github.run_id }}
+          path: output/qa/manifest.json
+          retention-days: 1
+          if-no-files-found: error
