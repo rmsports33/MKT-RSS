@@ -170,10 +170,20 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     except Exception as e:
         logger.warning(f"keywords puladas: {e}")
 
+    contexto_pesquisa = contexto_complementar
+    if contexto_pesquisa is None and os.getenv("CONEXO_RSS_RESEARCH_FEEDS") == "1":
+        from mkt_flow_p0.research_candidates import descobrir_fontes_candidatas
+        try:
+            contexto_pesquisa = descobrir_fontes_candidatas(
+                ext.get("titulo") or item.get("titulo", ""), url_fonte,
+                fonte_original=item.get("fonte", ""))
+        except (ValueError, TypeError, OSError) as exc:
+            logger.warning("Pesquisa RSS auxiliar indisponivel: %s", str(exc)[:100])
+            contexto_pesquisa = None
     rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
                             fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
                             keywords=kws, evidencias_aprovadas=evidencias_aprovadas,
-                            contexto_complementar=contexto_complementar)
+                            contexto_complementar=contexto_pesquisa)
     if "erro" in rw:
         return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
 
