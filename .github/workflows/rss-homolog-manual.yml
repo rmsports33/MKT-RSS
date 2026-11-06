@@ -2,6 +2,25 @@ name: RSS homolog - manual queue only
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "queue: rotina antiga; preflight: somente verifica Groq; handoff: pacote; draft: rascunho privado"
+        type: choice
+        required: true
+        default: queue
+        options:
+          - queue
+          - preflight
+          - handoff
+          - draft
+      quota_confirmation:
+        description: "handoff/draft: QUOTA_GRATUITA (confirme o plano/limite antes da chamada)"
+        type: string
+        required: false
+      draft_confirmation:
+        description: "draft: RASCUNHO (autoriza somente criar/reutilizar rascunho, nunca publicar)"
+        type: string
+        required: false
 
 permissions:
   contents: read
@@ -12,7 +31,7 @@ concurrency:
 
 jobs:
   collect:
-    if: ${{ github.ref == 'refs/heads/master' && github.repository == 'rmsports33/MKT-RSS' }}
+    if: ${{ (inputs.mode == 'queue' || inputs.mode == '') && github.ref == 'refs/heads/master' && github.repository == 'rmsports33/MKT-RSS' }}
     runs-on: ubuntu-latest
     environment: rss-homolog
     timeout-minutes: 8
@@ -48,3 +67,147 @@ jobs:
           TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
         run: python pipeline_rss.py --queue-only --fonte 9to5google --limit 3
+
+  editorial:
+    # Manual only, repository owner only, zero cron and no deploy. Does not run for mode=queue.
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.ref == 'refs/heads/master' && github.actor == 'rmsports33' && inputs.mode != 'queue' && inputs.mode != '' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 9
+    steps:
+      - name: Checkout exact editorial build (not master)
+        uses: actions/checkout@v4
+        with:
+          ref: 228b328ab7f4a8204e5b95f3829e532934471741
+          persist-credentials: false
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Confirm secrets and model without generation
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+          MODE: ${{ inputs.mode }}
+          QUOTA_CONFIRMATION: ${{ inputs.quota_confirmation }}
+          DRAFT_CONFIRMATION: ${{ inputs.draft_confirmation }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from urllib import request, error
+          mode = os.environ.get("MODE", "")
+          if mode not in ("preflight", "handoff", "draft"):
+              raise SystemExit("BLOCKED: invalid mode")
+          if mode in ("handoff", "draft") and os.environ.get("QUOTA_CONFIRMATION") != "QUOTA_GRATUITA":
+              raise SystemExit("BLOCKED: free quota was not confirmed for generation")
+          if mode == "draft":
+              if os.environ.get("DRAFT_CONFIRMATION") != "RASCUNHO":
+                  raise SystemExit("BLOCKED: explicit private-draft confirmation missing")
+              if (os.environ.get("WP_URL","").rstrip("/") != "https://conexotech.com.br"
+                      or not os.environ.get("WP_USER") or not os.environ.get("WP_APP_PASSWORD")):
+                  raise SystemExit("BLOCKED: WordPress target or credentials unavailable")
+          key = os.environ.get("GROQ_API_KEY", "").strip()
+          if not key:
+              raise SystemExit("BLOCKED: GROQ_API_KEY missing in GitHub Actions secrets")
+          model = os.environ.get("GROQ_MODEL", "").strip()
+          if not model:
+              raise SystemExit("BLOCKED: GROQ_MODEL empty")
+          req = request.Request("https://api.groq.com/openai/v1/models",
+                                headers={"Authorization":"Bearer " + key,
+                                         "Accept":"application/json"})
+          try:
+              with request.urlopen(req, timeout=20) as response:
+                  body = json.load(response)
+          except error.HTTPError as exc:
+              raise SystemExit("BLOCKED: Groq model listing returned HTTP " + str(exc.code))
+          except (error.URLError, TimeoutError, ValueError):
+              raise SystemExit("BLOCKED: Groq model listing unavailable or malformed")
+          models = {x.get("id") for x in body.get("data", []) if isinstance(x, dict)}
+          if model not in models:
+              raise SystemExit("BLOCKED: selected Groq model is not listed for this credential")
+          print("PASS: Groq credential authenticated and selected model is listed; no generated tokens.")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as summary:
+              summary.write("Groq preflight OK. Model listed; this does NOT prove free quota.\\n")
+          PY
+
+      - name: Install RSS dependencies only for generation
+        if: ${{ inputs.mode == 'handoff' || inputs.mode == 'draft' }}
+        run: python -m pip install -r requirements/rss.txt
+
+      - name: Create one editorial handoff (no WordPress credentials)
+        if: ${{ inputs.mode == 'handoff' }}
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+          CONEXO_RSS_DRAFT: '0'
+          CONEXO_RSS_DRAFT_STAGING: '0'
+        run: |
+          mkdir -p output/handoffs
+          python pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-only --handoff-dir output/handoffs > rss-result.jsonl
+
+      - name: Stage exactly one private WordPress draft (no publication)
+        if: ${{ inputs.mode == 'draft' }}
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          CONEXO_RSS_DRAFT: '1'
+          CONEXO_RSS_DRAFT_STAGING: '0'
+        run: |
+          mkdir -p output/handoffs
+          python pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-dir output/handoffs > rss-result.jsonl
+
+      - name: Verify persisted result and hash (safe summary only)
+        if: ${{ inputs.mode == 'handoff' || inputs.mode == 'draft' }}
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+          events = []
+          for line in Path("rss-result.jsonl").read_text(encoding="utf-8").splitlines():
+              try: events.append(json.loads(line))
+              except ValueError: continue
+          mode = os.environ["MODE"]
+          expected = "pacote_editorial_criado" if mode == "handoff" else "publicado_rascunho"
+          matches = [x for x in events if x.get("acao") == expected]
+          if len(matches) != 1:
+              raise SystemExit("BLOCKED: no single expected article result; inspect sanitised RSS logs")
+          item = matches[0]
+          handoff_file = Path(item.get("handoff_path") or "")
+          if not handoff_file.is_file() or not str(handoff_file).startswith("output/handoffs/"):
+              raise SystemExit("BLOCKED: editorial handoff was not persisted")
+          packet = json.loads(handoff_file.read_text(encoding="utf-8"))
+          check = validar_handoff_chatgpt(packet)
+          if mode == "handoff" and item.get("escreveu") is not False:
+              raise SystemExit("BLOCKED: unexpected WordPress write in handoff")
+          if mode == "draft" and (item.get("status") != "draft" or
+                  type(item.get("post_id")) is not int or item["post_id"] < 1):
+              raise SystemExit("BLOCKED: private draft did not pass WordPress readback")
+          lines = [f"Mode: {mode}", f"Handoff SHA-256: {check['version_sha256']}",
+                   f"Sources: {check['source_count']}; pending claims: {check['claims_pending']}",
+                   "Editorial approval: PENDING_HUMAN_REVIEW"]
+          if mode == "draft":
+              lines.append(f"Confirmed private WP draft ID: {item['post_id']}")
+          with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
+              out.write("\\n".join(lines) + "\\n")
+          print("PASS: private editorial package verified; no publication.")
+          PY
+
+      - name: Retain editorial package for one day
+        if: ${{ success() && (inputs.mode == 'handoff' || inputs.mode == 'draft') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mkt-rss-review-${{ github.run_id }}
+          path: output/handoffs/*.json
+          if-no-files-found: error
+          retention-days: 1
