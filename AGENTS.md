@@ -6,6 +6,12 @@
 
 Usar `mkt_flow_p0/editorial_identity.py` como contrato executável de voz, ligado ao DNA oficial `conexo-os/docs/EDITORIAL_DNA_V1.md`. Ao acrescentar fatos, informar sua URL e manter revisão humana pendente; jamais inventar fontes, testes ou declarar `approved`. O handoff JSON da redação conserva identidade, origem RSS, fontes, Markdown, SEO e hash de versão para o fluxo ChatGPT-first. `pipeline_rss.py --research-context` associa a pesquisa a uma única pauta por URL; nenhuma publicação é autorizada por esse arquivo. Instruções: `docs/DNA_EDITORIAL_MULTIFONTE_CHATGPT_20261105.md`.
 
+## Modo editorial sem escrita remota — 06/11/2026
+
+Para teste real do RSS e do redator sem tocar o WordPress, **usar conjuntamente** `pipeline_rss.py --handoff-only --handoff-dir <diretório>` e, opcionalmente, `--research-context pesquisa.json`. Mesmo que `CONEXO_RSS_DRAFT=1` esteja habilitado, `--handoff-only` tem precedência e bloqueia a escrita remota. O resultado `pacote_editorial_criado` mantém revisão humana pendente; não é publicação nem confirmação factual. Não confundir `--handoff-dir` isolado com desativação de escrita. Este fluxo ainda exige provedor de IA configurado, que pode consumir quota.
+
+Teste de regression: `tests/test_pipeline_handoff_only.py`. Documento: `docs/DNA_EDITORIAL_MULTIFONTE_CHATGPT_20261105.md`. O ambiente atual só comprovou o módulo de intercâmbio offline; homologação integral depende de checkout/runtime com dependências e execução de uma pauta real.
+
 ## Protocolo de recuperação operacional — 05/11/2026 (prioridade sobre escolhas de ferramenta)
 
 **FUNCIONAR PRIMEIRO, SEM REFAZER A INFRAESTRUTURA.** A entrega prioritária é 1 artigo de qualidade no ciclo prévia → rascunho → revisão/aceite → publicação manual/supervisionada → leitura de confirmação. Não bloquear rascunho por staging, SEO nativo, readiness HMAC, migração cloud, runner, novo conector, auditoria ou cron. O staging é opção de teste de infraestrutura, não requisito para o rascunho no WordPress existente. Reusar resultado comprovado e testar só a diferença atual.
