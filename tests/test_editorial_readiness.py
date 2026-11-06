@@ -12,6 +12,11 @@ SOURCE = "https://example.org/pauta"
 EXTRA = {"sources": [{"name": "Fonte oficial", "url": "https://www.example.com/detalhes",
                        "facts": ["A documentacao informa a disponibilidade do recurso citado."]}]}
 DESCRIPTION = "O recurso anunciado pelo fabricante sera analisado a partir da documentacao e de informacoes complementares de uso real no Brasil."
+VERIFIED = [
+    "https://conexotech.com.br/android-drop-recursos-como-conferir/",
+    "https://conexotech.com.br/ssd-sata-ou-nvme-como-escolher/",
+    "https://conexotech.com.br/hdmi-arc-soundbar-tv-como-conectar/",
+]
 HTML = ('<h2>O que mudou</h2><p>Contexto</p><h2>Impactos</h2>'
         '<a href="https://conexotech.com.br/android-drop-recursos-como-conferir/">Android</a>'
         '<a href="https://conexotech.com.br/ssd-sata-ou-nvme-como-escolher/">SSD</a>'
@@ -41,7 +46,8 @@ def test_short_single_source_draft_is_flagged_not_published():
 def test_full_pack_is_ready_only_for_human_review():
     r = avaliar_prontidao_editorial(packet(True), html=HTML,
                                     featured_media_id=9714,
-                                    direitos_imagem_confirmados=True)
+                                    direitos_imagem_confirmados=True,
+                                    verified_related_urls=VERIFIED)
     assert r["status"] == "PRONTO_PARA_REVISAO_HUMANA"
     assert r["pendencias"] == []
     assert r["links_internos"] == 3
@@ -61,7 +67,8 @@ def test_external_and_fabricated_links_do_not_count():
         '<a href="https://conexotech.com.br/">home</a>')
     r = avaliar_prontidao_editorial(packet(True), html=html,
                                     featured_media_id=9714,
-                                    direitos_imagem_confirmados=True)
+                                    direitos_imagem_confirmados=True,
+                                    verified_related_urls=VERIFIED)
     assert r["links_internos"] == 0
     assert "tres_links_internos_pendentes" in r["pendencias"]
 
@@ -71,7 +78,8 @@ def test_tampered_handoff_cannot_pass_quality_gate():
     h["markdown"] += " texto modificado fora do hash"
     r = avaliar_prontidao_editorial(h, html=HTML,
                                     featured_media_id=9714,
-                                    direitos_imagem_confirmados=True)
+                                    direitos_imagem_confirmados=True,
+                                    verified_related_urls=VERIFIED)
     assert r["status"] == "PACOTE_INVALIDO"
     assert r["pronto_para_publicar"] is False
 
@@ -85,7 +93,8 @@ def test_short_news_can_be_labeled_brief_but_not_auto_published():
 def test_unsupported_genre_defaults_to_news():
     r = avaliar_prontidao_editorial(packet(True), genero="faz_de_conta", html=HTML,
                                     featured_media_id=9714,
-                                    direitos_imagem_confirmados=True)
+                                    direitos_imagem_confirmados=True,
+                                    verified_related_urls=VERIFIED)
     assert r["genero"] == "noticia"
 
 
@@ -102,10 +111,31 @@ def test_rss_excerpt_is_candidate_not_multisource_verification():
                                     fonte_nome="Noticiário", contexto_complementar=rss)
     report = avaliar_prontidao_editorial(
         handoff, html=HTML, featured_media_id=9714,
-        direitos_imagem_confirmados=True)
+        direitos_imagem_confirmados=True,
+                                    verified_related_urls=VERIFIED)
     assert report["fontes"] == 2
     assert report["fontes_rss_pendentes"] == 1
     assert report["status"] == "ENRIQUECIMENTO_PENDENTE"
     assert "pesquisa_multifonte_pendente" in report["pendencias"]
     assert "fontes_rss_candidatas_sem_verificacao" in report["pendencias"]
     assert report["pronto_para_publicar"] is False
+
+
+def test_fake_internal_links_are_not_equivalent_to_published_posts():
+    # The domain alone is insufficient. No verified REST evidence, no pass.
+    report = avaliar_prontidao_editorial(
+        packet(True), html=HTML,
+        featured_media_id=9714, direitos_imagem_confirmados=True)
+    assert report["links_internos"] == 3
+    assert report["links_internos_verificados"] == 0
+    assert "tres_links_internos_pendentes" in report["pendencias"]
+    assert report["status"] == "ENRIQUECIMENTO_PENDENTE"
+
+
+def test_verified_whitelist_does_not_count_links_absent_from_content():
+    report = avaliar_prontidao_editorial(
+        packet(True), html="<h2>Seção</h2><h2>Contexto</h2>",
+        featured_media_id=9714, direitos_imagem_confirmados=True,
+        verified_related_urls=VERIFIED)
+    assert report["links_internos_verificados"] == 0
+    assert "tres_links_internos_pendentes" in report["pendencias"]
