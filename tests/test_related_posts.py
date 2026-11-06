@@ -73,3 +73,29 @@ def test_invalid_links_cannot_be_signed_into_new_version(invalid):
     original=criar_handoff_chatgpt(data,url_fonte=ORIGIN)
     with pytest.raises(ValueError):
         atualizar_handoff_revisao(original,original["markdown"],related_articles=invalid)
+
+
+def test_featured_media_selection_is_part_of_handoff_version():
+    article={"titulo_seo":"Android e IA no Brasil","slug":"android-ia-no-brasil",
+             "meta_description":"Panorama dos recursos anunciados e das implicações para o público brasileiro com informações adicionais de fontes reconhecidas sobre Android.",
+             "texto_markdown":"## Android\n\n"+("Texto original com explicações verificáveis. "*40)}
+    initial=criar_handoff_chatgpt(article,url_fonte=ORIGIN)
+    a=atualizar_handoff_revisao(initial,initial["markdown"],
+                                featured_media_id=9714,media_rights_confirmed=True)
+    b=atualizar_handoff_revisao(initial,initial["markdown"],
+                                featured_media_id=9764,media_rights_confirmed=True)
+    assert a["version_sha256"]!=b["version_sha256"]
+    assert a["metadata"]["featured_image"]["wordpress_media_id"]==9714
+    assert a["metadata"]["review"]["approved"] is False
+    assert validar_handoff_chatgpt(a)["valid"]
+
+
+def test_image_rights_alone_cannot_create_valid_version():
+    article={"titulo_seo":"Android e IA no Brasil","slug":"android-ia-no-brasil",
+             "meta_description":"Panorama dos recursos anunciados e das implicações para o público brasileiro com informações adicionais de fontes reconhecidas sobre Android.",
+             "texto_markdown":"## Android\n\n"+("Texto original com explicações verificáveis. "*40)}
+    initial=criar_handoff_chatgpt(article,url_fonte=ORIGIN)
+    with pytest.raises(ValueError):
+        atualizar_handoff_revisao(initial,initial["markdown"],featured_media_id=9714)
+    with pytest.raises(ValueError):
+        atualizar_handoff_revisao(initial,initial["markdown"],media_rights_confirmed=True)
