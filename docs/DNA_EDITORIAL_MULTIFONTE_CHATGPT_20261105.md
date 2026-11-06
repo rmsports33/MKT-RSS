@@ -60,3 +60,33 @@ A execução real com Groq depende de chave e ambiente já existentes e não foi
 ## Compatibilidade
 
 O PR #39 continua a integração maior em aberto. Esta branch parte de `ops/fast-track-20261105` e mantém os arquivos e contratos existentes. Não exige staging, migração Native SEO nem GitHub Actions para **rascunhos**; a revisão e autorização específicas permanecem obrigatórias para publicação.
+
+## Fechamento do intercâmbio (06/11/2026)
+
+O CLI agora pode persistir a saída do MKT-RSS como arquivo JSON, **mesmo se a escrita de rascunho no WordPress estiver desativada**:
+
+```bash
+python pipeline_rss.py --limit 1 --research-context pesquisa.json --handoff-dir output/handoffs
+```
+
+- O arquivo é criado sob `output/handoffs/rss_<hash_da_url>-<prefixo_hash_da_versao>.json`; a mesma versão não é sobrescrita e uma revisão de texto gera arquivo distinto.
+- `--research-context` só é aplicado quando `source_url` é exatamente a URL do item RSS; caso contrário, `research_context_not_matched` é reportado. Não combinar com `--editorial-package` nem com `--queue-only`.
+- O retorno em stdout inclui `handoff_path`; falhas na persistência são reportadas como `handoff_error` sem duplicar escrita em WordPress.
+- A integridade do arquivo é verificável **offline**, por quem recebeu o JSON:
+
+```bash
+python -m mkt_flow_p0.editorial_identity --verify-handoff output/handoffs/arquivo.json
+```
+
+- A validação rejeita edição sem novo hash, alteração do status de revisão, declaração de publicação, URLs conflitantes e claims sem origem. **Hash íntegro não significa informação verdadeira**, não equivale à revisão humana e não autoriza publicar.
+- Para operar em modo apenas saída editorial, mantenha `CONEXO_RSS_DRAFT` desativado; Groq/LLM continua sendo exigido pelo caminho produtivo atual. Este patch não instala LLM nem cria agendador.
+
+### Evidência executada nesta sessão
+
+- Arquivo `mkt_flow_p0/editorial_identity.py` copiado integralmente para o ambiente de teste e conferido por `git hash-object` = `318599a270f45e406d51a8d47631d82000e73403`, idêntico ao blob no GitHub.
+- `tests/test_editorial_handoff_operational.py` conferido por blob SHA `4123da61785af100b7c7f0fcbe2beb37bcc9e731`.
+- `pytest -q -k 'not package_remains_compatible_with_existing_editorial_renderer'`: **14 PASS**, um teste não executado porque o checkout integral com dependências não estava disponível.
+- Pacote real do piloto Android: validação positiva, três URLs e seis claims pendentes, rejeição de cinco adulterações, persistência idempotente e criação de segunda versão, sem uso de rede, Actions, Groq nem WordPress.
+- O pipeline completo **não** foi executado nesta sessão, porque o clone público por `git` retorna `Could not resolve host: github.com`; o conector GitHub permite commits mas não executa Python. A próxima verificação em runtime é `pytest` da suíte integral do repositório e `pipeline_rss.py --limit 1 --handoff-dir ...` com Groq já configurado, sem publicar.
+
+**Não disparar GitHub Actions só para gerar esta evidência**. Não criar serviços redundantes para superar o bloqueio DNS do executor da sessão.
