@@ -144,3 +144,21 @@ def test_cli_saves_one_handoff_without_marking_seen(monkeypatch, tmp_path, capsy
     assert processed[0]["handoff_only"] is True
     assert '"pacote_editorial_criado": 1' in output
     assert seen == []
+
+def test_handoff_only_does_not_download_external_image(monkeypatch):
+    calls = _dependencies(monkeypatch)
+    from mkt_flow_p0 import extractor, image_handler
+    extractor.extrair_conteudo = lambda _: {
+        "titulo": "Android e agentes", "texto": "Texto apurado " * 170,
+        "qualidade_ok": True, "palavras": 340,
+        "imagem": "https://example.org/protected-image.png"}
+    def forbidden_image(*args, **kwargs):
+        raise AssertionError("handoff-only should not fetch image bytes")
+    image_handler.preparar_capa = forbidden_image
+    monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
+    result = pipeline_rss.processar_item(
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        handoff_only=True)
+    assert result["acao"] == "pacote_editorial_criado"
+    assert result["escreveu"] is False
+    assert calls == []
