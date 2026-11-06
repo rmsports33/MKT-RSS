@@ -4,8 +4,10 @@ Não consulta fontes, certifica alegações, aprova publicação ou escreve no W
 As fontes e afirmações complementares são INSUMOS para apuração, não fatos aprovados.
 """
 import hashlib
+import hmac
 import json
 import re
+from pathlib import Path
 from urllib.parse import urlsplit
 
 DNA_REFERENCE = "https://github.com/rmsports33/conexo-os/blob/main/docs/EDITORIAL_DNA_V1.md"
@@ -124,3 +126,113 @@ def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_compl
     return {"schema": "conexo-editorial-handoff/1", "metadata": metadata,
             "markdown": markdown, "version_sha256": digest,
             "review_status": "PENDING_HUMAN_REVIEW", "wordpress_written": False}
+
+
+def validar_handoff_chatgpt(handoff):
+    """Verifica integridade e estado pendente; NAO certifica veracidade factual.
+
+    Aceita somente o formato produzido por criar_handoff_chatgpt; impede que
+    edicoes no artigo reutilizem silenciosamente o hash/aceite de outra versao.
+    """
+    required = {"schema", "metadata", "markdown", "version_sha256",
+                "review_status", "wordpress_written"}
+    if not isinstance(handoff, dict) or set(handoff) != required:
+        raise ValueError("estrutura do handoff inválida")
+    if (handoff["schema"] != "conexo-editorial-handoff/1"
+            or handoff["review_status"] != "PENDING_HUMAN_REVIEW"
+            or handoff["wordpress_written"] is not False):
+        raise ValueError("handoff já promovido ou estado inválido")
+    m, markdown = handoff["metadata"], handoff["markdown"]
+    if not isinstance(m, dict) or not isinstance(markdown, str) or not markdown.strip():
+        raise ValueError("metadados ou artigo inválidos")
+    if (m.get("status") != "aguardando_revisao"
+            or m.get("review") != {"approved": False}
+            or not isinstance(m.get("article_id"), str)
+            or not re.fullmatch(r"[a-zA-Z0-9_-]{3,64}", m["article_id"])):
+        raise ValueError("artigo sem versão de revisão pendente")
+    seo, identity, origin = m.get("seo"), m.get("editorial_identity"), m.get("origin")
+    if (not isinstance(seo, dict) or not isinstance(identity, dict)
+            or not isinstance(origin, dict)
+            or identity.get("brand") != "ConexoTech"
+            or identity.get("voice") != "Conexo Insight"
+            or origin.get("system") != "MKT-RSS"
+            or not _url_valida(origin.get("source_url"))
+            or not isinstance(seo.get("slug"), str)
+            or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", seo["slug"])):
+        raise ValueError("identidade, SEO ou origem inválida")
+    sources, claims = m.get("sources"), m.get("claims")
+    if not isinstance(sources, list) or not sources or not isinstance(claims, list):
+        raise ValueError("fontes/alegações ausentes")
+    source_urls = set()
+    for source in sources:
+        if (not isinstance(source, dict) or not _url_valida(source.get("url"))
+                or not isinstance(source.get("name"), str)
+                or not source["name"].strip() or source["url"] in source_urls):
+            raise ValueError("fonte do artigo inválida ou repetida")
+        source_urls.add(source["url"])
+    if origin["source_url"] not in source_urls:
+        raise ValueError("origem não corresponde às fontes")
+    claim_ids = set()
+    for claim in claims:
+        if (not isinstance(claim, dict)
+                or not isinstance(claim.get("id"), str)
+                or claim["id"] in claim_ids
+                or not isinstance(claim.get("text"), str)
+                or not claim["text"].strip()
+                or claim.get("review_status") != "PENDING_HUMAN_REVIEW"
+                or claim.get("evidence_ids") != []
+                or not isinstance(claim.get("source_urls"), list)
+                or not claim["source_urls"]
+                or any(u not in source_urls for u in claim["source_urls"])):
+            raise ValueError("alegação sem origem ou revisão pendente")
+        claim_ids.add(claim["id"])
+    try:
+        canonical = json.dumps(
+            {"metadata": m, "markdown": markdown}, sort_keys=True,
+            ensure_ascii=False, separators=(",", ":"), allow_nan=False
+        ).encode("utf-8")
+    except (TypeError, ValueError):
+        raise ValueError("conteúdo impossível de versionar") from None
+    actual = hashlib.sha256(canonical).hexdigest()
+    supplied = handoff.get("version_sha256")
+    if (not isinstance(supplied, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", supplied)
+            or not hmac.compare_digest(actual, supplied)):
+        raise ValueError("hash da versão não corresponde ao texto e metadados")
+    return {"valid": True, "article_id": m["article_id"],
+            "version_sha256": actual, "source_count": len(sources),
+            "claims_pending": len(claims), "review_status": "PENDING_HUMAN_REVIEW"}
+
+
+def salvar_handoff_chatgpt(handoff, output_dir):
+    """Persiste JSON identificável, sem substituir versão existente e sem WP."""
+    report = validar_handoff_chatgpt(handoff)
+    path = Path(output_dir)
+    path.mkdir(parents=True, exist_ok=True)
+    filename = report["article_id"] + "-" + report["version_sha256"][:16] + ".json"
+    target = path / filename
+    data = json.dumps(handoff, sort_keys=True, ensure_ascii=False, indent=2)
+    try:
+        with target.open("x", encoding="utf-8") as writer:
+            writer.write(data + "\n")
+    except FileExistsError:
+        if target.read_text(encoding="utf-8").strip() != data:
+            raise ValueError("arquivo da versão existente não corresponde ao handoff") from None
+    validar_handoff_chatgpt(json.loads(target.read_text(encoding="utf-8")))
+    return str(target)
+
+
+def main():
+    """Ferramenta offline: validar handoff enviado pelo MKT-RSS/ChatGPT."""
+    import argparse
+    parser = argparse.ArgumentParser(description="Verificar handoff editorial sem rede/WordPress")
+    parser.add_argument("--verify-handoff", type=Path, required=True)
+    args = parser.parse_args()
+    report = validar_handoff_chatgpt(
+        json.loads(args.verify_handoff.read_text(encoding="utf-8")))
+    print(json.dumps(report, ensure_ascii=False, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
