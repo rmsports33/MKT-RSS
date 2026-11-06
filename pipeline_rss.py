@@ -100,9 +100,11 @@ def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", 
 
 
 def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None,
-                   pacote_editorial=None, core_root=None, actor_id=None, contexto_complementar=None) -> dict:
-    """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
+                   pacote_editorial=None, core_root=None, actor_id=None, contexto_complementar=None, handoff_only=False) -> dict:
+    """Processa RSS: rascunho WP, handoff offline ou bloqueio sem publicar."""
     if pacote_editorial is not None:
+        if handoff_only:
+            return {"acao": "bloqueado", "erro": "handoff-only não aceita pacote de publicação"}
         discovery = pacote_editorial.get("payload", {}).get("discovery", {})
         if dry_run or discovery.get("source_url") != item.get("link"):
             return {"acao": "bloqueado", "erro": "dry-run não escreve; pauta deve corresponder ao pacote"}
@@ -220,6 +222,26 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     # condicionada à revisão humana. Porém o WordPress nativo pode receber
     # rascunhos privados para edição sem depender do novo Editorial Gate.
     verificacao_factual = "NAO_VERIFICADO"
+    if handoff_only:
+        handoff = rw.get("editorial_handoff")
+        if not isinstance(handoff, dict):
+            return {"acao": "falha", "motivo": "handoff_editorial_ausente",
+                    "url": url_fonte, "escreveu": False}
+        from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+        try:
+            validar_handoff_chatgpt(handoff)
+        except ValueError:
+            return {"acao": "falha", "motivo": "handoff_editorial_invalido",
+                    "url": url_fonte, "escreveu": False}
+        return {
+            "acao": "pacote_editorial_criado", "escreveu": False,
+            "editorial_handoff": handoff, "url": url_fonte,
+            "verificacao_factual": verificacao_factual,
+            "auditoria_pos_ia": auditoria_pos_ia,
+            "auditoria_evidencias": auditoria_evidencias,
+            "auditoria_lastro": auditoria_lastro,
+            "auditoria_cobertura": auditoria_cobertura,
+        }
     if os.environ.get("CONEXO_RSS_DRAFT") == "1" or os.environ.get("CONEXO_RSS_DRAFT_STAGING") == "1":
         from mkt_flow_p0.wp_draft_staging import stage_rss_draft
         staged = stage_rss_draft(
@@ -295,7 +317,9 @@ def main():
     ap.add_argument("--research-context", type=Path,
                     help="JSON com source_url + sources complementares para UMA pauta correspondente")
     ap.add_argument("--handoff-dir", type=Path,
-                    help="Salvar pacote editorial versionado sem alterar WordPress")
+                    help="Salvar pacote editorial versionado em diretório local")
+    ap.add_argument("--handoff-only", action="store_true",
+                    help="Gerar apenas pacote para revisão; nunca escrever no WordPress")
     ap.add_argument("--editorial-package", type=Path, help="Pacote canônico já apurado/revisado; sem geração automática")
     ap.add_argument("--core-root", type=Path)
     ap.add_argument("--actor-id", type=int)
@@ -303,6 +327,10 @@ def main():
     ap.add_argument("--publication-reference", help="Referência real da ordem específica de publicar/agendar")
     ap.add_argument("--operation-nonce", help="Retoma somente consulta da operação anterior; nunca repete escrita")
     args = ap.parse_args()
+    if args.handoff_only:
+        if (args.editorial_package or args.queue_only or args.dry_run
+                or args.handoff_dir is None):
+            ap.error("--handoff-only exige --handoff-dir e não combina com --editorial-package, --queue-only ou --dry-run")
     contexto_pesquisa = None
     if args.research_context:
         if args.editorial_package:
@@ -353,7 +381,7 @@ def main():
     if args.fonte and args.fonte not in FEEDS_PADRAO:
         print(json.dumps({"erro": f"fonte desconhecida: {args.fonte}. Opções: {sorted(FEEDS_PADRAO)}"}))
         sys.exit(2)
-    total = {"publicado_rascunho": 0, "bloqueado": 0, "falha": 0, "dry_run_ok": 0}
+    total = {"publicado_rascunho": 0, "pacote_editorial_criado": 0, "bloqueado": 0, "falha": 0, "dry_run_ok": 0}
     contexto_usado = False
     from mkt_flow_p0.rss_ingestor import marcar_visto
     for fonte, url in alvos.items():
@@ -370,7 +398,8 @@ def main():
             if enriquecimento is not None:
                 contexto_usado = True
             r = processar_item(item, dry_run=args.dry_run,
-                               contexto_complementar=enriquecimento)
+                               contexto_complementar=enriquecimento,
+                               handoff_only=args.handoff_only)
             if args.handoff_dir and isinstance(r.get("editorial_handoff"), dict):
                 from mkt_flow_p0.editorial_identity import salvar_handoff_chatgpt
                 try:
@@ -379,6 +408,10 @@ def main():
                 except (ValueError, OSError) as exc:
                     r["handoff_error"] = str(exc)
                     logger.warning("Falha ao persistir handoff: %s", exc)
+                    if args.handoff_only:
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_persistencia_handoff"
+                        r["escreveu"] = False
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
