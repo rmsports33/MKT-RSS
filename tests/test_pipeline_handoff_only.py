@@ -181,3 +181,21 @@ def test_feed_fetch_failure_returns_nonzero_to_executor(monkeypatch, capsys):
     output = capsys.readouterr().out
     assert '"acao": "falha_feed"' in output
     assert '"feed_error": 1' in output
+
+
+def test_article_generation_failure_returns_nonzero_to_executor(monkeypatch, capsys):
+    """Missing LLM credentials must never look like a successful RSS cycle."""
+    item = {"titulo": "Android", "resumo": "Pesquisa", "link": URL, "fonte": "tecnoblog"}
+    _stub(monkeypatch, "rss_ingestor",
+          FEEDS_PADRAO={"tecnoblog": "https://tecnoblog.net/feed/"},
+          buscar_novidades=lambda *a, **kw: {"novos": [item]},
+          marcar_visto=lambda *a, **kw: (_ for _ in ()).throw(AssertionError("não marcar visto")))
+    monkeypatch.setattr(pipeline_rss, "processar_item",
+                        lambda *a, **kw: {"acao": "falha", "motivo": "GROQ_API_KEY ausente"})
+    monkeypatch.setattr(sys, "argv", ["pipeline_rss.py", "--fonte", "tecnoblog",
+                                     "--limit", "1", "--handoff-only",
+                                     "--handoff-dir", "/tmp/no-write-rss"])
+    assert pipeline_rss.main() == 1
+    out = capsys.readouterr().out
+    assert '"falha": 1' in out
+    assert "GROQ_API_KEY ausente" in out
