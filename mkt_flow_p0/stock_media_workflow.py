@@ -196,22 +196,39 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
                 "escrita_indeterminada": True, "retry_automatico": False}
 
 def main(argv=None):
-    """CLI manual com arquivo de aprovação e confirmação específica do post."""
+    """Descoberta gratuita ou associação supervisionada ao draft (nunca publish)."""
     import argparse
     import json
     import os
     from pathlib import Path
-    parser = argparse.ArgumentParser(description="Associar foto gratuita APROVADA a draft WordPress")
-    parser.add_argument("--approved-photo-json", type=Path, required=True)
-    parser.add_argument("--post-id", type=int, required=True)
-    parser.add_argument("--confirm-draft-media", action="store_true", required=True)
+
+    parser = argparse.ArgumentParser(description="Mídia ConexoTech: banco gratuito primeiro")
+    modes = parser.add_mutually_exclusive_group(required=True)
+    modes.add_argument("--discover", help="Consultar imagens gratuitas por assunto, sem escrita WP")
+    modes.add_argument("--approved-photo-json", type=Path,
+                       help="Ficha de imagem já aprovada pelo responsável editorial")
+    parser.add_argument("--post-id", type=int, help="ID de draft para associação")
+    parser.add_argument("--confirm-draft-media", action="store_true",
+                        help="Autoriza apenas anexar mídia ao draft informado, nunca publicar")
     args = parser.parse_args(argv)
+
+    if args.discover is not None:
+        if args.post_id is not None or args.confirm_draft_media:
+            parser.error("descoberta não aceita operação WordPress")
+        from mkt_flow_p0.image_handler import preparar_capa
+        plan = preparar_capa(consulta_fallback=args.discover, timeout=10)
+        # O catálogo só contém candidatas; nenhum selo de direitos ou
+        # aprovação é concedido automaticamente por busca em API.
+        print(json.dumps(plan, ensure_ascii=False, sort_keys=True))
+        return 0 if plan.get("status") == "REVISAO_HUMANA_DE_MIDIA" else 2
+
+    if not args.confirm_draft_media or args.post_id is None or args.post_id <= 0:
+        parser.error("upload exige --confirm-draft-media e --post-id positivo")
     photo = json.loads(args.approved_photo_json.read_text(encoding="utf-8"))
     result = associar_foto_gratuita_a_rascunho(
         photo, post_id=args.post_id, wp_url=os.getenv("WP_URL", ""),
         wp_user=os.getenv("WP_USER", ""),
         wp_app_password=os.getenv("WP_APP_PASSWORD", ""))
-    # A resposta nunca contém credenciais nem bytes da imagem.
     print(json.dumps(result, ensure_ascii=False, sort_keys=True))
     return 0 if result.get("status") == "CAPA_ASSOCIADA_A_DRAFT" else 2
 
