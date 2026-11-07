@@ -5,6 +5,7 @@ allowlisted host and credentials. Do NOT use this module to approve posts.
 """
 import json
 import os
+import re
 from datetime import datetime, timezone
 from urllib.parse import urlsplit
 
@@ -37,10 +38,19 @@ def save_turso_trace(packet, *, execute=turso_execute):
     """
     if not _allowed():
         return {"ok": False, "reason": "TRACE_STORAGE_NOT_CONFIGURED"}
+    # Validate all required metadata BEFORE creating a table or writing data.
     if (not isinstance(packet, dict) or packet.get("schema") != SCHEMA
             or packet.get("publication_authorized") is not False
+            or not isinstance(packet.get("run_id"), str)
+            or not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", packet["run_id"])
+            or not isinstance(packet.get("article_id"), str)
+            or not 1 <= len(packet["article_id"]) <= 128
+            or not isinstance(packet.get("content_sha256"), str)
+            or not re.fullmatch(r"[0-9a-f]{64}", packet["content_sha256"])
+            or type(packet.get("post_id")) not in (int, type(None))
+            or (type(packet.get("post_id")) is int and packet["post_id"] <= 0)
             or not isinstance(packet.get("events"), list)
-            or not isinstance(packet.get("run_id"), str)):
+            or not 1 <= len(packet["events"]) <= 64):
         return {"ok": False, "reason": "TRACE_INVALID"}
     out = execute("""CREATE TABLE IF NOT EXISTS conexo_editorial_trace_v1 (
         run_id TEXT PRIMARY KEY,
