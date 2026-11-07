@@ -558,10 +558,11 @@ def main():
                     logger.error("Falha ao gravar trilha editorial: %s", type(exc).__name__)
                     # Do not claim full operational trace when persistence fails.
                     r["trace_error"] = "trace_persistence_failed"
-                    if args.handoff_only:
+                    if r.get("acao") in ("pacote_editorial_criado", "publicado_rascunho"):
                         r["acao"] = "falha"
                         r["motivo"] = "erro_persistencia_trilha"
-                        r["escreveu"] = False
+                        # A draft might already exist: retain its original
+                        # wrote flag and post_id, never retry the POST.
             if args.trace_db and isinstance(r.get("editorial_trace"), dict):
                 try:
                     # The import happens in this cloud executor, not on the user's PC.
@@ -578,10 +579,10 @@ def main():
                     logger.error("Trilha central indisponivel: %s", type(exc).__name__)
                     r["central_trace_synced"] = False
                     r["trace_error"] = "central_trace_ingestion_failed"
-                    if args.handoff_only:
+                    if r.get("acao") in ("pacote_editorial_criado", "publicado_rascunho"):
                         r["acao"] = "falha"
                         r["motivo"] = "erro_ingestao_trilha"
-                        r["escreveu"] = False
+                        # Preserve post_id for reconciliation of any written draft.
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
