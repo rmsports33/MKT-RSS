@@ -1,0 +1,40 @@
+name: Editorial trace regression - manual only
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type TESTES_OFFLINE (no Groq, Turso or WordPress external writes)"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: editorial-trace-regression
+  cancel-in-progress: false
+jobs:
+  regression:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && inputs.confirm == 'TESTES_OFFLINE' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Authenticated checkout of selected branch
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install actual RSS dependencies
+        run: python -m pip install -r requirements/rss.txt
+      - name: Run repository regression files - fake provider and Turso
+        env:
+          GROQ_API_KEY: ''
+          TURSO_AUTH_TOKEN: ''
+          WP_APP_PASSWORD: ''
+          CONEXO_RSS_DRAFT: '0'
+          CONEXO_RSS_DRAFT_STAGING: '0'
+        run: |
+          python -m unittest discover -s tests -p 'test_editorial_trace_bridge.py' -v
+          python -m unittest discover -s tests -p 'test_editorial_trace_turso.py' -v
+          python -m unittest discover -s tests -p 'test_groq_trace_fingerprint.py' -v
