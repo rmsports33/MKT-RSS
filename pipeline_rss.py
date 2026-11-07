@@ -318,8 +318,10 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         staged_trace = make_trace(
             url_fonte, texto_final, generated=rw, readiness=qualidade_editorial,
             post_id=staged.get("post_id") if type(staged.get("post_id")) is int else None,
-            wp_readback=(staged.get("status") == "draft" and
-                         staged.get("post_id") is not None and
+            wp_readback=(staged.get("acao") == "publicado_rascunho" and
+                         staged.get("status") == "draft" and
+                         type(staged.get("post_id")) is int and
+                         staged.get("post_id") > 0 and
                          not staged.get("erro")))
         return {**staged,
                 "editorial_trace": staged_trace,
