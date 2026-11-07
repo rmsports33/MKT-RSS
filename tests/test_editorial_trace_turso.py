@@ -22,6 +22,15 @@ class TursoTraceTests(unittest.TestCase):
             self.assertEqual(save_turso_trace(self.packet, execute=lambda *a: {}),
                              {"ok": False, "reason": "TRACE_STORAGE_NOT_CONFIGURED"})
 
+    def test_invalid_packet_has_no_database_side_effects(self):
+        invalid = dict(self.packet)
+        invalid.pop("article_id")
+        def reject_write(*args, **kwargs):
+            raise AssertionError("invalid packet attempted a database call")
+        result = save_turso_trace(invalid, execute=reject_write)
+        self.assertFalse(result["ok"])
+        self.assertEqual(result["reason"], "TRACE_INVALID")
+
     def test_uses_parameterized_insert(self):
         calls = []
         def execute(sql, args=()):
