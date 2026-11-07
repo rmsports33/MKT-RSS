@@ -68,3 +68,14 @@ def make_trace(source_url, markdown, *, generated=None, readiness=None,
 
 def json_trace(packet):
     return json.dumps(packet, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def save_trace(packet, handoff_dir):
+    """Durable per-run sidecar with exclusive create; no content or secrets."""
+    from pathlib import Path
+    directory = Path(handoff_dir)
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / ("trace-" + packet["run_id"] + ".json")
+    with path.open("x", encoding="utf-8") as stream:
+        stream.write(json_trace(packet) + "\n")
+    return str(path)
