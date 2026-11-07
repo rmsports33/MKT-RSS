@@ -186,6 +186,11 @@ def reescrever_materia(
         return {"erro": erro}
 
     modelo = _modelo()
+    # Stable template identification without saving source text or credentials.
+    import hashlib
+    prompt_sha256 = hashlib.sha256(
+        (SYSTEM_PROMPT + "\\n" + prompt).encode("utf-8")
+    ).hexdigest()
     try:
         resp = client.chat.completions.create(
             model=modelo,
@@ -283,6 +288,7 @@ def reescrever_materia(
         "fonte_nome": fonte_nome,
         "url_fonte": url_fonte,
         "modelo": modelo,
+        "prompt_sha256": prompt_sha256,
         "uso_tokens": {"prompt": pt, "completion": ct, "total": pt + ct},
         "custo_usd_estimado": _estimar_custo(pt, ct),
     }
