@@ -4,6 +4,7 @@ Somente triagem. Não consulta audiência real, não verifica fontes, não aprov
 não agenda, não escreve no WordPress e não contorna o Gate Editorial.
 """
 from datetime import date, datetime, timezone
+from email.utils import parsedate_to_datetime
 from html import unescape
 import re
 
@@ -57,7 +58,10 @@ def _data(value):
         try:
             return date.fromisoformat(value[:10])
         except ValueError:
-            pass
+            try:
+                return parsedate_to_datetime(value).date()
+            except (TypeError, ValueError, IndexError, OverflowError):
+                pass
     return None
 
 
