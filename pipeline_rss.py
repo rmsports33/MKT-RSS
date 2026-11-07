@@ -398,7 +398,8 @@ def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
         return {"fonte": fonte, "acao": "falha", "motivo": "resultado_invalido"}
     output = {"fonte": fonte, "acao": resultado.get("acao", "desconhecido")}
     simple = ("post_id", "status", "palavras", "escreveu",
-              "verificacao_factual", "handoff_path")
+              "verificacao_factual", "handoff_path", "trace_path",
+              "central_trace_synced", "turso_trace_synced")
     for key in simple:
         value = resultado.get(key)
         if isinstance(value, (str, int, float, bool)) and not isinstance(value, complex):
@@ -416,6 +417,19 @@ def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
         output["quality_status"] = quality.get("status")
         output["quality_pending"] = quality.get("pendencias", [])[:12]
         output["quality_words"] = quality.get("palavras")
+    # Identifiers only: never log unpublished content or credentials.
+    trace = resultado.get("editorial_trace")
+    if isinstance(trace, dict):
+        run_id = trace.get("run_id")
+        if isinstance(run_id, str) and len(run_id) <= 128:
+            output["trace_run_id"] = run_id
+        output["trace_statuses"] = {
+            event["stage"]: event["status"]
+            for event in trace.get("events", [])[:12]
+            if isinstance(event, dict)
+            and isinstance(event.get("stage"), str)
+            and isinstance(event.get("status"), str)
+        }
     handoff = resultado.get("editorial_handoff")
     if isinstance(handoff, dict):
         v = handoff.get("version_sha256")
