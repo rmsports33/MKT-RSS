@@ -32,6 +32,18 @@ class EditorialTraceTests(unittest.TestCase):
                        post_id=9769, wp_readback=True)
         self.assertEqual(q["events"][-1]["status"], "PASS")
 
+    def test_telemetry_only_accepts_confirmed_wordpress_readback(self):
+        from pipeline_rss import confirmar_readback_trilha
+        verified = {"acao": "publicado_rascunho", "status": "draft",
+                    "post_id": 9769, "escreveu": True}
+        self.assertTrue(confirmar_readback_trilha(verified))
+        self.assertFalse(confirmar_readback_trilha(
+            {**verified, "acao": "falha"}))
+        self.assertFalse(confirmar_readback_trilha(
+            {**verified, "post_id": True}))
+        self.assertFalse(confirmar_readback_trilha(
+            {**verified, "status": "publish"}))
+
     def test_persistent_sidecar_exclusive(self):
         p = make_trace("https://example.org/source", "text")
         with tempfile.TemporaryDirectory() as tmp:
