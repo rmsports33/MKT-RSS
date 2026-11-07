@@ -185,7 +185,10 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
                             keywords=kws, evidencias_aprovadas=evidencias_aprovadas,
                             contexto_complementar=contexto_pesquisa)
     if "erro" in rw:
-        return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
+        from mkt_flow_p0.editorial_trace import make_trace
+        trace = make_trace(url_fonte, "", error=rw["erro"])
+        return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte,
+                "editorial_trace": trace}
 
     texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
     relacionados = []
@@ -264,6 +267,11 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     # condicionada à revisão humana. Porém o WordPress nativo pode receber
     # rascunhos privados para edição sem depender do novo Editorial Gate.
     verificacao_factual = "NAO_VERIFICADO"
+    # Build provenance from the observed Groq response, not from an
+    # imagined editorial approval. Full output gets its own content hash.
+    from mkt_flow_p0.editorial_trace import make_trace
+    trace = make_trace(url_fonte, texto_final, generated=rw,
+                       readiness=qualidade_editorial)
     if handoff_only:
         handoff = rw.get("editorial_handoff")
         if not isinstance(handoff, dict):
@@ -279,6 +287,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             "acao": "pacote_editorial_criado", "escreveu": False,
             "qualidade_editorial": qualidade_editorial,
             "editorial_handoff": handoff, "url": url_fonte,
+            "editorial_trace": trace,
             "verificacao_factual": verificacao_factual,
             "auditoria_pos_ia": auditoria_pos_ia,
             "auditoria_evidencias": auditoria_evidencias,
@@ -306,7 +315,14 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             featured_media_id=featured_media_id,
             media_rights_confirmed=media_rights_confirmed,
         )
+        staged_trace = make_trace(
+            url_fonte, texto_final, generated=rw, readiness=qualidade_editorial,
+            post_id=staged.get("post_id") if type(staged.get("post_id")) is int else None,
+            wp_readback=(staged.get("status") == "draft" and
+                         staged.get("post_id") is not None and
+                         not staged.get("erro")))
         return {**staged,
+                "editorial_trace": staged_trace,
                 "qualidade_editorial": qualidade_editorial,
                 "editorial_handoff": rw.get("editorial_handoff"),
                 "url": url_fonte,
@@ -320,6 +336,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         "acao": "bloqueado",
         "motivo": "gate_factual_pos_ia_nao_integrado",
         "qualidade_editorial": qualidade_editorial,
+        "editorial_trace": trace,
         "editorial_handoff": rw.get("editorial_handoff"),
         "url": url_fonte,
         "escreveu": False,
