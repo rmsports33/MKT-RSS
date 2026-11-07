@@ -95,7 +95,7 @@ def avaliar_gate_publicacao(titulo: str, texto: str, links: list) -> dict:
         }
 
 
-def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", publication_reference=None, operation_nonce=None):
+def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", publication_reference=None, operation_nonce=None, trace_run_id=None):
     """Conclusão supervisionada da pauta RSS; jamais certifica texto automaticamente."""
     from mkt_flow_p0.editorial_transport import publish_package
     payload = package.get("payload", {}) if isinstance(package, dict) else {}
@@ -107,7 +107,7 @@ def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", 
                        for s in payload.get("sources", []))):
         return {"acao": "bloqueado", "erro": "origem da pauta RSS não corresponde às fontes apuradas"}
     return publish_package(package, core_root=core_root, actor_id=actor_id, intent=intent, operation_nonce=operation_nonce,
-        publication_reference=publication_reference, wp_url=os.getenv("WP_URL", ""),
+        trace_run_id=trace_run_id, publication_reference=publication_reference, wp_url=os.getenv("WP_URL", ""),
         wp_user=os.getenv("WP_USER", ""), wp_password=os.getenv("WP_APP_PASSWORD", ""))
 
 
@@ -477,6 +477,7 @@ def main():
     ap.add_argument("--intent", choices=("stage", "draft", "publish", "schedule"), default="stage")
     ap.add_argument("--publication-reference", help="Referência real da ordem específica de publicar/agendar")
     ap.add_argument("--operation-nonce", help="Retoma somente consulta da operação anterior; nunca repete escrita")
+    ap.add_argument("--trace-run-id", help="Execução no Turso homologada para preflight de publicação assinada")
     args = ap.parse_args()
     if args.trace_db and not args.core_root:
         ap.error("--trace-db requer --core-root; sem ele só o sidecar é gravado")
@@ -516,7 +517,8 @@ def main():
         try:
             package = json.loads(args.editorial_package.read_text(encoding="utf-8"))
             result = processar_pacote_editorial(package, core_root=args.core_root, actor_id=args.actor_id,
-                intent=args.intent, publication_reference=args.publication_reference, operation_nonce=args.operation_nonce)
+                intent=args.intent, publication_reference=args.publication_reference, operation_nonce=args.operation_nonce,
+                trace_run_id=args.trace_run_id)
         except (ValueError, OSError, TypeError) as exc:
             result = {"erro": "pacote inválido", "reason": str(exc)}
         print(json.dumps(result, ensure_ascii=False))
