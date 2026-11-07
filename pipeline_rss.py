@@ -447,6 +447,8 @@ def main():
     ap.add_argument("--core-root", type=Path)
     ap.add_argument("--trace-db", type=Path,
                     help="SQLite do traço central; exige --core-root com biblioteca Conexo OS")
+    ap.add_argument("--trace-turso", action="store_true",
+                    help="Persistir traço no Turso existente, somente host explicitamente autorizado")
     ap.add_argument("--actor-id", type=int)
     ap.add_argument("--intent", choices=("stage", "draft", "publish", "schedule"), default="stage")
     ap.add_argument("--publication-reference", help="Referência real da ordem específica de publicar/agendar")
@@ -583,6 +585,16 @@ def main():
                         r["acao"] = "falha"
                         r["motivo"] = "erro_ingestao_trilha"
                         # Preserve post_id for reconciliation of any written draft.
+            if args.trace_turso and isinstance(r.get("editorial_trace"), dict):
+                from mkt_flow_p0.editorial_trace_turso import save_turso_trace
+                persistence = save_turso_trace(r["editorial_trace"])
+                r["turso_trace_synced"] = persistence["ok"] is True
+                if not r["turso_trace_synced"]:
+                    r["trace_error"] = persistence["reason"]
+                    if r.get("acao") in ("pacote_editorial_criado", "publicado_rascunho"):
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_persistencia_trilha_cloud"
+                        # Preserve any preexisting WP draft and ID for reconciliation.
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
