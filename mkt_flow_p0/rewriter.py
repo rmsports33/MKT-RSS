@@ -186,18 +186,20 @@ def reescrever_materia(
         return {"erro": erro}
 
     modelo = _modelo()
-    # Stable template identification without saving source text or credentials.
+    # Fingerprint exactly the canonical messages sent to the provider, not
+    # an approximation of the prompt. Never store raw prompt in telemetry.
     import hashlib
-    prompt_sha256 = hashlib.sha256(
-        (SYSTEM_PROMPT + "\\n" + prompt).encode("utf-8")
-    ).hexdigest()
+    messages = [
+        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "user", "content": prompt},
+    ]
+    prompt_sha256 = hashlib.sha256(json.dumps(
+        messages, ensure_ascii=False, sort_keys=True, separators=(",", ":")
+    ).encode("utf-8")).hexdigest()
     try:
         resp = client.chat.completions.create(
             model=modelo,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt},
-            ],
+            messages=messages,
             temperature=temperature,
             max_tokens=max_tokens,
             timeout=timeout,
