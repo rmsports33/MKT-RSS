@@ -546,6 +546,18 @@ def main():
                         r["acao"] = "falha"
                         r["motivo"] = "erro_persistencia_handoff"
                         r["escreveu"] = False
+            if args.handoff_dir and isinstance(r.get("editorial_trace"), dict):
+                from mkt_flow_p0.editorial_trace import save_trace
+                try:
+                    r["trace_path"] = save_trace(r["editorial_trace"], args.handoff_dir)
+                except (OSError, ValueError) as exc:
+                    logger.error("Falha ao gravar trilha editorial: %s", type(exc).__name__)
+                    # Do not claim full operational trace when persistence fails.
+                    r["trace_error"] = "trace_persistence_failed"
+                    if args.handoff_only:
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_persistencia_trilha"
+                        r["escreveu"] = False
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
