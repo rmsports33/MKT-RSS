@@ -45,6 +45,18 @@ def init_db():
     con.close()
 
 
+def confirmar_readback_trilha(resultado: dict) -> bool:
+    """A telemetry PASS requires the actual successful draft readback result."""
+    return (
+        isinstance(resultado, dict)
+        and resultado.get("acao") == "publicado_rascunho"
+        and resultado.get("status") == "draft"
+        and type(resultado.get("post_id")) is int
+        and resultado["post_id"] > 0
+        and not resultado.get("erro")
+    )
+
+
 def classificar_resultado_wp(resultado: dict) -> str:
     """Only a confirmed WordPress draft counts as successful delivery."""
     if (isinstance(resultado, dict) and not resultado.get("erro")
@@ -83,7 +95,7 @@ def avaliar_gate_publicacao(titulo: str, texto: str, links: list) -> dict:
         }
 
 
-def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", publication_reference=None, operation_nonce=None):
+def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", publication_reference=None, operation_nonce=None, trace_run_id=None):
     """Conclusão supervisionada da pauta RSS; jamais certifica texto automaticamente."""
     from mkt_flow_p0.editorial_transport import publish_package
     payload = package.get("payload", {}) if isinstance(package, dict) else {}
@@ -95,7 +107,7 @@ def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", 
                        for s in payload.get("sources", []))):
         return {"acao": "bloqueado", "erro": "origem da pauta RSS não corresponde às fontes apuradas"}
     return publish_package(package, core_root=core_root, actor_id=actor_id, intent=intent, operation_nonce=operation_nonce,
-        publication_reference=publication_reference, wp_url=os.getenv("WP_URL", ""),
+        trace_run_id=trace_run_id, publication_reference=publication_reference, wp_url=os.getenv("WP_URL", ""),
         wp_user=os.getenv("WP_USER", ""), wp_password=os.getenv("WP_APP_PASSWORD", ""))
 
 
@@ -185,7 +197,10 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
                             keywords=kws, evidencias_aprovadas=evidencias_aprovadas,
                             contexto_complementar=contexto_pesquisa)
     if "erro" in rw:
-        return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
+        from mkt_flow_p0.editorial_trace import make_trace
+        trace = make_trace(url_fonte, "", error=rw["erro"])
+        return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte,
+                "editorial_trace": trace}
 
     texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
     relacionados = []
@@ -264,6 +279,11 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     # condicionada à revisão humana. Porém o WordPress nativo pode receber
     # rascunhos privados para edição sem depender do novo Editorial Gate.
     verificacao_factual = "NAO_VERIFICADO"
+    # Build provenance from the observed Groq response, not from an
+    # imagined editorial approval. Full output gets its own content hash.
+    from mkt_flow_p0.editorial_trace import make_trace
+    trace = make_trace(url_fonte, texto_final, generated=rw,
+                       readiness=qualidade_editorial)
     if handoff_only:
         handoff = rw.get("editorial_handoff")
         if not isinstance(handoff, dict):
@@ -279,6 +299,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             "acao": "pacote_editorial_criado", "escreveu": False,
             "qualidade_editorial": qualidade_editorial,
             "editorial_handoff": handoff, "url": url_fonte,
+            "editorial_trace": trace,
             "verificacao_factual": verificacao_factual,
             "auditoria_pos_ia": auditoria_pos_ia,
             "auditoria_evidencias": auditoria_evidencias,
@@ -306,7 +327,12 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             featured_media_id=featured_media_id,
             media_rights_confirmed=media_rights_confirmed,
         )
+        staged_trace = make_trace(
+            url_fonte, texto_final, generated=rw, readiness=qualidade_editorial,
+            post_id=staged.get("post_id") if type(staged.get("post_id")) is int else None,
+            wp_readback=confirmar_readback_trilha(staged))
         return {**staged,
+                "editorial_trace": staged_trace,
                 "qualidade_editorial": qualidade_editorial,
                 "editorial_handoff": rw.get("editorial_handoff"),
                 "url": url_fonte,
@@ -320,6 +346,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         "acao": "bloqueado",
         "motivo": "gate_factual_pos_ia_nao_integrado",
         "qualidade_editorial": qualidade_editorial,
+        "editorial_trace": trace,
         "editorial_handoff": rw.get("editorial_handoff"),
         "url": url_fonte,
         "escreveu": False,
@@ -371,7 +398,8 @@ def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
         return {"fonte": fonte, "acao": "falha", "motivo": "resultado_invalido"}
     output = {"fonte": fonte, "acao": resultado.get("acao", "desconhecido")}
     simple = ("post_id", "status", "palavras", "escreveu",
-              "verificacao_factual", "handoff_path")
+              "verificacao_factual", "handoff_path", "trace_path",
+              "central_trace_synced", "turso_trace_synced")
     for key in simple:
         value = resultado.get(key)
         if isinstance(value, (str, int, float, bool)) and not isinstance(value, complex):
@@ -389,6 +417,19 @@ def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
         output["quality_status"] = quality.get("status")
         output["quality_pending"] = quality.get("pendencias", [])[:12]
         output["quality_words"] = quality.get("palavras")
+    # Identifiers only: never log unpublished content or credentials.
+    trace = resultado.get("editorial_trace")
+    if isinstance(trace, dict):
+        run_id = trace.get("run_id")
+        if isinstance(run_id, str) and len(run_id) <= 128:
+            output["trace_run_id"] = run_id
+        output["trace_statuses"] = {
+            event["stage"]: event["status"]
+            for event in trace.get("events", [])[:12]
+            if isinstance(event, dict)
+            and isinstance(event.get("stage"), str)
+            and isinstance(event.get("status"), str)
+        }
     handoff = resultado.get("editorial_handoff")
     if isinstance(handoff, dict):
         v = handoff.get("version_sha256")
@@ -428,11 +469,18 @@ def main():
                     help="Gerar apenas pacote para revisão; nunca escrever no WordPress")
     ap.add_argument("--editorial-package", type=Path, help="Pacote canônico já apurado/revisado; sem geração automática")
     ap.add_argument("--core-root", type=Path)
+    ap.add_argument("--trace-db", type=Path,
+                    help="SQLite do traço central; exige --core-root com biblioteca Conexo OS")
+    ap.add_argument("--trace-turso", action="store_true",
+                    help="Persistir traço no Turso existente, somente host explicitamente autorizado")
     ap.add_argument("--actor-id", type=int)
     ap.add_argument("--intent", choices=("stage", "draft", "publish", "schedule"), default="stage")
     ap.add_argument("--publication-reference", help="Referência real da ordem específica de publicar/agendar")
     ap.add_argument("--operation-nonce", help="Retoma somente consulta da operação anterior; nunca repete escrita")
+    ap.add_argument("--trace-run-id", help="Execução no Turso homologada para preflight de publicação assinada")
     args = ap.parse_args()
+    if args.trace_db and not args.core_root:
+        ap.error("--trace-db requer --core-root; sem ele só o sidecar é gravado")
     if args.handoff_only:
         if (args.editorial_package or args.queue_only or args.dry_run
                 or args.handoff_dir is None):
@@ -469,7 +517,8 @@ def main():
         try:
             package = json.loads(args.editorial_package.read_text(encoding="utf-8"))
             result = processar_pacote_editorial(package, core_root=args.core_root, actor_id=args.actor_id,
-                intent=args.intent, publication_reference=args.publication_reference, operation_nonce=args.operation_nonce)
+                intent=args.intent, publication_reference=args.publication_reference, operation_nonce=args.operation_nonce,
+                trace_run_id=args.trace_run_id)
         except (ValueError, OSError, TypeError) as exc:
             result = {"erro": "pacote inválido", "reason": str(exc)}
         print(json.dumps(result, ensure_ascii=False))
@@ -529,6 +578,49 @@ def main():
                         r["acao"] = "falha"
                         r["motivo"] = "erro_persistencia_handoff"
                         r["escreveu"] = False
+            if args.handoff_dir and isinstance(r.get("editorial_trace"), dict):
+                from mkt_flow_p0.editorial_trace import save_trace
+                try:
+                    r["trace_path"] = save_trace(r["editorial_trace"], args.handoff_dir)
+                except (OSError, ValueError) as exc:
+                    logger.error("Falha ao gravar trilha editorial: %s", type(exc).__name__)
+                    # Do not claim full operational trace when persistence fails.
+                    r["trace_error"] = "trace_persistence_failed"
+                    if r.get("acao") in ("pacote_editorial_criado", "publicado_rascunho"):
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_persistencia_trilha"
+                        # A draft might already exist: retain its original
+                        # wrote flag and post_id, never retry the POST.
+            if args.trace_db and isinstance(r.get("editorial_trace"), dict):
+                try:
+                    # The import happens in this cloud executor, not on the user's PC.
+                    core_path = str(args.core_root.resolve())
+                    if core_path not in sys.path:
+                        sys.path.insert(0, core_path)
+                    from editorial.trace_store import TraceStore
+                    from editorial.trace_ingest import ingest_envelope
+                    report = ingest_envelope(TraceStore(args.trace_db),
+                                             r["editorial_trace"])
+                    r["central_trace_synced"] = (
+                        report["run_id"] == r["editorial_trace"]["run_id"])
+                except (ImportError, OSError, ValueError, sqlite3.Error) as exc:
+                    logger.error("Trilha central indisponivel: %s", type(exc).__name__)
+                    r["central_trace_synced"] = False
+                    r["trace_error"] = "central_trace_ingestion_failed"
+                    if r.get("acao") in ("pacote_editorial_criado", "publicado_rascunho"):
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_ingestao_trilha"
+                        # Preserve post_id for reconciliation of any written draft.
+            if args.trace_turso and isinstance(r.get("editorial_trace"), dict):
+                from mkt_flow_p0.editorial_trace_turso import save_turso_trace
+                persistence = save_turso_trace(r["editorial_trace"])
+                r["turso_trace_synced"] = persistence["ok"] is True
+                if not r["turso_trace_synced"]:
+                    r["trace_error"] = persistence["reason"]
+                    if r.get("acao") in ("pacote_editorial_criado", "publicado_rascunho"):
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_persistencia_trilha_cloud"
+                        # Preserve any preexisting WP draft and ID for reconciliation.
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1

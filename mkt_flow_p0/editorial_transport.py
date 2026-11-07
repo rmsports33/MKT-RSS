@@ -86,7 +86,8 @@ def _finalize_seo_after_publish(package, result, *, envelope, wp_auth, timeout):
 
 def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                     actor_id, intent="stage", publication_reference=None,
-                    timeout=15, operation_nonce=None, seo_publication_signature=None):
+                    timeout=15, operation_nonce=None, seo_publication_signature=None,
+                    trace_run_id=None):
     """Não gera texto nem atesta fatos. Encaminha versão realmente revisada.
 
     Prévia stage permanece draft e não conta como entrega. Timeout nunca
@@ -105,6 +106,12 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             blockers = [b for b in blockers if b != v.HUMAN_PENDING]
         if errors or blockers:
             raise ValueError("gate editorial bloqueou: " + "; ".join(errors + blockers))
+        # Opt-in trusted provenance preflight: does not replace the canonical
+        # gate/receipt, and never blocks private stage/draft creation.
+        if intent in ("publish", "schedule") and os.environ.get(
+                "CONEXO_REQUIRE_TRACE_FOR_PUBLICATION") == "1":
+            from mkt_flow_p0.editorial_trace_gate import require_release_trace
+            require_release_trace(package, trace_run_id)
         # Strict mode becomes mandatory only after the executor and SEO Gate
         # have been provisioned. Check before any publication-side network call.
         if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":
