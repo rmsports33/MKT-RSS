@@ -1,0 +1,265 @@
+{
+  "schema_version": "1.0",
+  "article_id": "cx-android-drop-9711",
+  "status": "aguardando_revisao",
+  "title": "Android Drop: como conferir os novos recursos no seu celular",
+  "seo": {
+    "title": "Android Drop: como conferir os recursos no celular",
+    "description": "Saiba como conferir os recursos anunciados pelo Google para o Android, os requisitos de cada novidade e o que verificar antes de trocar de aparelho.",
+    "slug": "android-drop-como-conferir-recursos",
+    "keyword": "Android Drop"
+  },
+  "sources": [
+    {
+      "name": "Google — Android Drop setembro",
+      "url": "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/"
+    },
+    {
+      "name": "Android — novos recursos setembro",
+      "url": "https://www.android.com/intl/en_us/new-features-on-android/featured/september-2026/"
+    },
+    {
+      "name": "Google — Gemini Guided Vision",
+      "url": "https://blog.google/innovation-and-ai/products/gemini-app/guided-vision-gemini-live/"
+    },
+    {
+      "name": "Google suporte — Gemini",
+      "url": "https://support.google.com/gemini/answer/14579026?co=GENIE.Platform%3DAndroid&hl=pt-BR"
+    },
+    {
+      "name": "Google suporte — RCS",
+      "url": "https://support.google.com/messages/answer/7189714?hl=pt-BR"
+    }
+  ],
+  "claims": [
+    {
+      "id": "android-drop-original",
+      "text": "anúncio original, de 1º de setembro",
+      "source_urls": [
+        "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/"
+      ],
+      "status": "PENDENTE_REVISAO",
+      "reviewed": false,
+      "evidence_ids": [
+        "s1"
+      ],
+      "source_excerpt_for_review": {
+        "source_id": "s1",
+        "excerpt": "Sep 01, 2026",
+        "section": "Publication date",
+        "source_published_at": "2026-09-01",
+        "consulted_at": "2026-11-02",
+        "review_status": "PENDING_HUMAN_REVIEW"
+      }
+    },
+    {
+      "id": "guided-vision-outubro",
+      "text": "anunciou o lançamento da Visão Guiada em 1º de outubro",
+      "source_urls": [
+        "https://blog.google/innovation-and-ai/products/gemini-app/guided-vision-gemini-live/"
+      ],
+      "status": "PENDENTE_REVISAO",
+      "reviewed": false,
+      "evidence_ids": [
+        "s3"
+      ],
+      "source_excerpt_for_review": {
+        "source_id": "s3",
+        "excerpt": "Today, we’re launching Guided Vision in Gemini Live",
+        "section": "Guided Vision in Gemini Live: built for accessibility",
+        "source_published_at": "2026-10-01",
+        "consulted_at": "2026-11-02",
+        "review_status": "PENDING_HUMAN_REVIEW"
+      }
+    },
+    {
+      "id": "find-hub-android-16",
+      "text": "A documentação consultada exige Android 16",
+      "source_urls": [
+        "https://www.android.com/intl/en_us/new-features-on-android/featured/september-2026/"
+      ],
+      "status": "PENDENTE_REVISAO",
+      "reviewed": false,
+      "evidence_ids": [
+        "s2"
+      ],
+      "source_excerpt_for_review": {
+        "source_id": "s2",
+        "excerpt": "Requires Android 16.",
+        "section": "Footnote 11 (Find Hub)",
+        "source_published_at": null,
+        "consulted_at": "2026-11-02",
+        "review_status": "PENDING_HUMAN_REVIEW"
+      }
+    },
+    {
+      "id": "motion-assist-android-17",
+      "text": "O anúncio exige Android 17",
+      "source_urls": [
+        "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/"
+      ],
+      "status": "PENDENTE_REVISAO",
+      "reviewed": false,
+      "evidence_ids": [
+        "s1"
+      ],
+      "source_excerpt_for_review": {
+        "source_id": "s1",
+        "excerpt": "Try it during your next ride on phones using Android 17.",
+        "section": "Help reduce motion sickness during your ride",
+        "source_published_at": "2026-09-01",
+        "consulted_at": "2026-11-02",
+        "review_status": "PENDING_HUMAN_REVIEW"
+      }
+    }
+  ],
+  "review": {
+    "approved": false
+  },
+  "featured_image": {
+    "wp_media_id": 9714,
+    "alt": "Smartphone Android em imagem ilustrativa",
+    "credit": "Deyvi Romero/Pexels — verificar licença antes de publicar"
+  },
+  "related_articles": [
+    {
+      "title": "Samsung Galaxy A57 5G: vale a pena em 2026?",
+      "url": "https://conexotech.com.br/reviews/samsung-galaxy-a57-5g-vale-a-pena-em-2026/"
+    },
+    {
+      "title": "Megapixels não garantem qualidade: avalie a câmera",
+      "url": "https://conexotech.com.br/megapixels-nao-garantem-qualidade-avalie-a-camera-do-celular/"
+    },
+    {
+      "title": "Galaxy A54 vs Redmi Note 13 — Comparativo completo",
+      "url": "https://conexotech.com.br/comparativos/comparativo-galaxy-a54-vs-redmi-note-13/"
+    }
+  ],
+  "source_wp_post_id": 9711,
+  "source_wp_status": "draft",
+  "contrato_editorial": {
+    "contract_version": "1.0",
+    "content_type": "noticia",
+    "status": "PENDING",
+    "sources": [
+      {
+        "id": "s1",
+        "url": "https://blog.google/products-and-platforms/platforms/android/android-drop-september-2026/",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      },
+      {
+        "id": "s2",
+        "url": "https://www.android.com/intl/en_us/new-features-on-android/featured/september-2026/",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      },
+      {
+        "id": "s3",
+        "url": "https://blog.google/innovation-and-ai/products/gemini-app/guided-vision-gemini-live/",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      },
+      {
+        "id": "s4",
+        "url": "https://support.google.com/gemini/answer/14579026?co=GENIE.Platform%3DAndroid&hl=pt-BR",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      },
+      {
+        "id": "s5",
+        "url": "https://support.google.com/messages/answer/7189714?hl=pt-BR",
+        "status": "PENDING",
+        "pending": true,
+        "observed_date": "2026-11-02",
+        "note": "Fonte identificada para revisao; sem certificacao de captura literal"
+      }
+    ],
+    "claims": [
+      {
+        "id": "android-drop-original",
+        "text": "anúncio original, de 1º de setembro",
+        "status": "PENDING",
+        "pending": true,
+        "heuristic": false,
+        "evidence_ids": [
+          "s1"
+        ],
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes",
+        "source_excerpt_for_review": {
+          "source_id": "s1",
+          "excerpt": "Sep 01, 2026",
+          "section": "Publication date",
+          "source_published_at": "2026-09-01",
+          "consulted_at": "2026-11-02",
+          "review_status": "PENDING_HUMAN_REVIEW"
+        }
+      },
+      {
+        "id": "guided-vision-outubro",
+        "text": "anunciou o lançamento da Visão Guiada em 1º de outubro",
+        "status": "PENDING",
+        "pending": true,
+        "heuristic": false,
+        "evidence_ids": [
+          "s3"
+        ],
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes",
+        "source_excerpt_for_review": {
+          "source_id": "s3",
+          "excerpt": "Today, we’re launching Guided Vision in Gemini Live",
+          "section": "Guided Vision in Gemini Live: built for accessibility",
+          "source_published_at": "2026-10-01",
+          "consulted_at": "2026-11-02",
+          "review_status": "PENDING_HUMAN_REVIEW"
+        }
+      },
+      {
+        "id": "find-hub-android-16",
+        "text": "A documentação consultada exige Android 16",
+        "status": "PENDING",
+        "pending": true,
+        "heuristic": false,
+        "evidence_ids": [
+          "s2"
+        ],
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes",
+        "source_excerpt_for_review": {
+          "source_id": "s2",
+          "excerpt": "Requires Android 16.",
+          "section": "Footnote 11 (Find Hub)",
+          "source_published_at": null,
+          "consulted_at": "2026-11-02",
+          "review_status": "PENDING_HUMAN_REVIEW"
+        }
+      },
+      {
+        "id": "motion-assist-android-17",
+        "text": "O anúncio exige Android 17",
+        "status": "PENDING",
+        "pending": true,
+        "heuristic": false,
+        "evidence_ids": [
+          "s1"
+        ],
+        "note": "Vinculo preliminar. Revisao humana e comprovacao de trecho pendentes",
+        "source_excerpt_for_review": {
+          "source_id": "s1",
+          "excerpt": "Try it during your next ride on phones using Android 17.",
+          "section": "Help reduce motion sickness during your ride",
+          "source_published_at": "2026-09-01",
+          "consulted_at": "2026-11-02",
+          "review_status": "PENDING_HUMAN_REVIEW"
+        }
+      }
+    ]
+  }
+}
