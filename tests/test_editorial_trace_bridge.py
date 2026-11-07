@@ -32,6 +32,15 @@ class EditorialTraceTests(unittest.TestCase):
                        post_id=9769, wp_readback=True)
         self.assertEqual(q["events"][-1]["status"], "PASS")
 
+    def test_safe_cli_summary_exposes_run_without_article_text(self):
+        from pipeline_rss import resumo_seguro_cli
+        trace = make_trace("https://example.org/source", "UNPUBLISHED_PRIVATE_ARTICLE")
+        result = resumo_seguro_cli("tecnoblog", {
+            "acao": "pacote_editorial_criado", "editorial_trace": trace})
+        self.assertEqual(result["trace_run_id"], trace["run_id"])
+        self.assertEqual(result["trace_statuses"]["style_review"], "NOT_RUN")
+        self.assertNotIn("UNPUBLISHED_PRIVATE_ARTICLE", str(result))
+
     def test_telemetry_only_accepts_confirmed_wordpress_readback(self):
         from pipeline_rss import confirmar_readback_trilha
         verified = {"acao": "publicado_rascunho", "status": "draft",
