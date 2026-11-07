@@ -45,6 +45,16 @@ class TestNotaEditorial(unittest.TestCase):
         self.assertEqual(dados["atualidade"], 1)
         self.assertEqual(dados["evergreen"], 2)
 
+    def test_data_rss_rfc822_nao_virar_desconhecida(self):
+        iso = sugerir_criterios(
+            {"titulo": "Novo Android", "published": "2026-11-06"},
+            referencia=date(2026, 11, 7))
+        rfc = sugerir_criterios(
+            {"titulo": "Novo Android", "published": "Fri, 06 Nov 2026 16:20:00 +0000"},
+            referencia=date(2026, 11, 7))
+        self.assertEqual(iso["atualidade"], 9)
+        self.assertEqual(rfc["atualidade"], iso["atualidade"])
+
     def test_data_futura_nao_significa_noticia_recente(self):
         dados = sugerir_criterios(
             {"titulo": "Novo Android anunciado", "published": "2027-01-01"},
