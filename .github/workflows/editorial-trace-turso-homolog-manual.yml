@@ -27,8 +27,20 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install only HTTP client
-        run: python -m pip install 'requests==2.34.2'
+      - name: Install actual RSS dependencies
+        run: python -m pip install -r requirements/rss.txt
+      - name: Run trace + canonical publisher regressions before any Turso write
+        env:
+          GROQ_API_KEY: ''
+          TURSO_AUTH_TOKEN: ''
+          WP_APP_PASSWORD: ''
+          CONEXO_RSS_DRAFT: '0'
+          CONEXO_RSS_DRAFT_STAGING: '0'
+        run: |
+          python -m unittest discover -s tests -p 'test_editorial_trace_bridge.py' -v
+          python -m unittest discover -s tests -p 'test_editorial_trace_turso.py' -v
+          python -m unittest discover -s tests -p 'test_groq_trace_fingerprint.py' -v
+          python -m unittest discover -s tests -p 'test_editorial_trace_release.py' -v
       - name: Authorized Turso homolog metadata write and readback
         env:
           TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
