@@ -29,7 +29,19 @@ A revisão humana de fontes, alegações, links pertinentes, aparência e uso de
 
 - [x] Contrato e validadores fail-closed no MKT-RSS.
 - [x] Testes unitários adicionados (resultados da execução ainda por conferir).
-- [ ] Execução de suíte e correção de falhas.
-- [ ] Adapter invocável pelo executor real autenticado e armazenamento privado do parecer.
-- [ ] Piloto fim a fim do rascunho #9768 com readback e versionamento.
+- [x] Suíte em runner cloud: 643 testes principais e 52 adicionais aprovados (run 42393309902).
+- [x] Adapter WP REST autenticado implementado, com cache de parecer em SQLite privado e submissão explícita ao Gate; integração da credencial no executor hospedado real ainda pendente.
+- [ ] Piloto fim a fim do rascunho #9768 via adapter cloud (somente leitura WordPress MCP já comprovada, mas o módulo novo ainda não foi invocado contra a produção).
 - [ ] Gate Editorial em execução impedindo toda rota de publicação sem evidência e aprovação.
+
+## Executor cloud sem Python local
+
+Com credenciais WordPress guardadas exclusivamente no secret store da execução confiável (nunca em GitHub público, logs, prompts ou PR), usar:
+
+```bash
+python -m mkt_flow_p0.wp_quality_executor --post-id 9768 --evidence-file /secure/9768.json --db /secure/conexo-quality.sqlite
+```
+
+Variáveis `CONEXO_WP_URL`, `CONEXO_WP_USER`, `CONEXO_WP_APP_PASSWORD` vêm do runtime autorizado. O relatório é gravado em arquivo com permissão 0600; em runner efêmero, **não equivale a armazenamento durável entre jobs**. Para uma aprovação APTO, o `--submit-quality` enviado com a identidade WordPress de um revisor independente persiste o relatório em `wp_options` privado, desde que o Gate novo esteja instalado. A submissão **não** chama publicar nem agendar. Um gate inativo ou uma credencial ausente não são contornados.
+
+No site de produção, o conector WordPress listou `Conexo Editorial Gate` como **inactive** na leitura de 07/11/2026; não presumir proteção ativa pelo status do CI. Testes completos de gate na [PR #62](https://github.com/rmsports33/-site-conexotech/pull/62), CI WordPress+MySQL: [run 42393624254](https://github.com/rmsports33/-site-conexotech/actions/runs/42393624254), 53 testes PHP + 32 verificações WP, sem deploy.
