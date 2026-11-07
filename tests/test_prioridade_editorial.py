@@ -55,6 +55,14 @@ class TestNotaEditorial(unittest.TestCase):
         r = avaliar_pauta({"titulo": "[TESTE NAO PUBLICAR] pauta sintética"})
         self.assertEqual(r["nota"], 1)
 
+    def test_sigla_ia_sem_outros_termos(self):
+        valores = sugerir_criterios({"titulo": "IA generativa muda o mercado"})
+        self.assertEqual(valores["afinidade"], 9)
+
+    def test_loteria_fora_do_escopo(self):
+        relatorio = avaliar_pauta({"titulo": "Resultado da Mega-Sena 3071"})
+        self.assertEqual(relatorio["nota"], 1)
+
     def test_criterios_humanos_sem_confundir_audiencia(self):
         r = avaliar_pauta({"titulo": "Qual TV comprar?"}, criterios={k: 8 for k in PESOS})
         self.assertEqual(r["nota"], 8)
