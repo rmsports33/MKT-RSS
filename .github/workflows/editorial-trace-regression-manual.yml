@@ -17,10 +17,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     steps:
-      - name: Authenticated checkout of selected branch
+      - name: Checkout authenticated MKT-RSS trace implementation
         uses: actions/checkout@v4
         with:
+          ref: feat/editorial-trace-bridge-20261107
           persist-credentials: false
+      - name: Assert MKT-RSS trace test files exist
+        run: |
+          set -eu
+          test -f mkt_flow_p0/editorial_trace.py
+          test -f tests/test_editorial_trace_bridge.py
+          test -f tests/test_editorial_trace_turso.py
+          test -f tests/test_groq_trace_fingerprint.py
+          git log -1 --format='MKT-RSS trace commit: %H'
       - name: Python 3.12
         uses: actions/setup-python@v5
         with:
