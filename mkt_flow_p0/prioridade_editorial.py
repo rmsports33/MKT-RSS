@@ -101,8 +101,8 @@ def sugerir_criterios(item, *, referencia=None):
     texto = _normal(titulo + " " + resumo)
     assunto = _normal(titulo)
     if any(x in assunto for x in FORA_DE_ESCOPO):
-        afinidade = 2
-    elif any(x in texto for x in TEMAS):
+        return {eixo: 1 for eixo in PESOS}
+    elif any(x in texto for x in TEMAS) or re.search(r"\b(?:ia|llm)\b", texto):
         afinidade = 9
     else:
         afinidade = 5
