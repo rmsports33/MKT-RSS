@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 from mkt_flow_p0 import cloud_db
+from mkt_flow_p0.prioridade_editorial import avaliar_pauta
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "mkt_flow_p0.db"
 STATES = frozenset(("DESCOBERTA", "SELECIONADA", "EM_PRODUCAO", "EM_REVISAO",
@@ -50,14 +51,8 @@ def _url(raw):
 
 
 def _score(item):
-    """Heurística determinística 0..100; não certifica fatos nem substitui o editor."""
-    title = _normalize(item.get("titulo", ""))
-    keywords = ("android", "google", "samsung", "iphone", "smartphone", "celular",
-                "notebook", "processador", "intel", "amd", "apple", "seguranca",
-                "inteligencia artificial", "ia", "windows", "tecnologia")
-    matches = sum(1 for k in keywords if k in title)
-    return min(100, 30 + min(matches, 3)*15 + (10 if item.get("published") else 0)
-               + (5 if len(title) >= 40 else 0))
+    """Mantém contrato legível 0..100, mas usa agora cinco eixos (1..10)."""
+    return avaliar_pauta(item)["pontuacao"]
 
 
 def _exec(sql, args=(), db_path=None):
@@ -72,6 +67,10 @@ def _exec(sql, args=(), db_path=None):
         cur = con.execute(sql, args)
         return cur.fetchall() if cur.description else [], cur.rowcount
 
+
+NOTAS_SCHEMA = """CREATE TABLE IF NOT EXISTS rss_notas_editoriais (
+ pauta_id TEXT PRIMARY KEY, nota INTEGER NOT NULL CHECK(nota BETWEEN 1 AND 10),
+ justificativa TEXT NOT NULL, revisada_em TEXT NOT NULL)"""
 
 MUTEX_SCHEMA = """CREATE TABLE IF NOT EXISTS rss_queue_mutex (
  name TEXT PRIMARY KEY, owner TEXT NOT NULL, expires_at INTEGER NOT NULL)"""
@@ -101,6 +100,7 @@ def _release_writer(owner, db_path=None):
 
 def init_queue(db_path=None):
     _exec(SCHEMA, db_path=db_path)
+    _exec(NOTAS_SCHEMA, db_path=db_path)
     _exec("CREATE INDEX IF NOT EXISTS idx_rss_pautas_estado ON rss_pautas(estado, pontuacao)",
           db_path=db_path)
 
@@ -142,7 +142,8 @@ def _registrar_serializado(item, url, title, norm, db_path):
          (item.get("resumo") or "")[:500], "DESCOBERTA", _score(item), "", now, now),
         db_path)
     return {"id": uid, "novo": affected > 0, "estado": "DESCOBERTA",
-            "pontuacao": _score(item)}
+            "pontuacao": _score(item), "nota": _score(item) // 10,
+            "origem_nota": "HEURISTICA_PROVISORIA"}
 
 
 def mudar_estado(pauta_id, novo_estado, motivo="", db_path=None):
@@ -164,12 +165,64 @@ def mudar_estado(pauta_id, novo_estado, motivo="", db_path=None):
     return {"id": pauta_id, "estado": novo_estado}
 
 
+def atribuir_nota(pauta_id, nota, justificativa, db_path=None):
+    """Correção humana auditável. Nunca muda estado nem libera publicação."""
+    if type(nota) is not int or not 1 <= nota <= 10:
+        raise ValueError("Nota deve ser inteira entre 1 e 10")
+    if not isinstance(justificativa, str) or len(justificativa.strip()) < 10:
+        raise ValueError("Justificativa editorial insuficiente")
+    init_queue(db_path)
+    owner = _reserve_writer(db_path)
+    try:
+        rows, _ = _exec("SELECT id FROM rss_pautas WHERE id=?", (pauta_id,), db_path)
+        if not rows:
+            raise KeyError("Pauta inexistente")
+        _exec("""INSERT INTO rss_notas_editoriais
+                (pauta_id, nota, justificativa, revisada_em)
+                VALUES (?,?,?,?)
+                ON CONFLICT(pauta_id) DO UPDATE SET
+                nota=excluded.nota, justificativa=excluded.justificativa,
+                revisada_em=excluded.revisada_em""",
+              (pauta_id, nota, justificativa.strip()[:500], _now()), db_path)
+        return {"id": pauta_id, "nota": nota, "origem_nota": "REVISAO_EDITORIAL"}
+    finally:
+        _release_writer(owner, db_path)
+
+
+def reavaliar_descobertas(limite=100, db_path=None):
+    """Migração explícita e idempotente da heurística antiga, sem mexer em status.
+
+    A nota humana, se existente, tem precedência na listagem.
+    """
+    limite = max(1, min(int(limite), 100))
+    init_queue(db_path)
+    owner = _reserve_writer(db_path)
+    try:
+        rows, _ = _exec("""SELECT id, titulo, resumo, publicada_em FROM rss_pautas
+                        WHERE estado='DESCOBERTA' ORDER BY created_at DESC LIMIT ?""",
+                        (limite,), db_path)
+        for pauta_id, titulo, resumo, publicada in rows:
+            pontuacao = _score({"titulo": titulo, "resumo": resumo,
+                               "published": publicada})
+            _exec("UPDATE rss_pautas SET pontuacao=?, updated_at=? WHERE id=? AND estado='DESCOBERTA'",
+                  (pontuacao, _now(), pauta_id), db_path)
+        return {"reavaliadas": len(rows), "modelo": "nota-editorial/1",
+                "wordpress_alterado": False}
+    finally:
+        _release_writer(owner, db_path)
+
+
 def listar(estado="DESCOBERTA", limite=20, db_path=None):
+    """Prioriza nota humana quando houver; mantém pontuação legada 0..100."""
     if estado not in STATES:
         raise ValueError("Estado inválido")
     init_queue(db_path)
-    rows, _ = _exec("""SELECT id, fonte, url, titulo, estado, pontuacao
-        FROM rss_pautas WHERE estado=? ORDER BY pontuacao DESC, created_at DESC LIMIT ?""",
+    rows, _ = _exec("""SELECT p.id, p.fonte, p.url, p.titulo, p.estado,
+        p.pontuacao, COALESCE(n.nota, MAX(1, MIN(10, CAST((p.pontuacao + 5)/10 AS INTEGER)))) AS nota,
+        CASE WHEN n.nota IS NULL THEN 'HEURISTICA_PROVISORIA'
+             ELSE 'REVISAO_EDITORIAL' END AS origem_nota
+        FROM rss_pautas p LEFT JOIN rss_notas_editoriais n ON n.pauta_id=p.id
+        WHERE p.estado=? ORDER BY nota DESC, p.created_at DESC LIMIT ?""",
         (estado, max(1, min(int(limite), 100))), db_path)
-    return [dict(zip(("id", "fonte", "url", "titulo", "estado", "pontuacao"), row))
-            for row in rows]
+    return [dict(zip(("id", "fonte", "url", "titulo", "estado", "pontuacao",
+                      "nota", "origem_nota"), row)) for row in rows]
