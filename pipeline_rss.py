@@ -45,6 +45,18 @@ def init_db():
     con.close()
 
 
+def confirmar_readback_trilha(resultado: dict) -> bool:
+    """A telemetry PASS requires the actual successful draft readback result."""
+    return (
+        isinstance(resultado, dict)
+        and resultado.get("acao") == "publicado_rascunho"
+        and resultado.get("status") == "draft"
+        and type(resultado.get("post_id")) is int
+        and resultado["post_id"] > 0
+        and not resultado.get("erro")
+    )
+
+
 def classificar_resultado_wp(resultado: dict) -> str:
     """Only a confirmed WordPress draft counts as successful delivery."""
     if (isinstance(resultado, dict) and not resultado.get("erro")
@@ -318,11 +330,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         staged_trace = make_trace(
             url_fonte, texto_final, generated=rw, readiness=qualidade_editorial,
             post_id=staged.get("post_id") if type(staged.get("post_id")) is int else None,
-            wp_readback=(staged.get("acao") == "publicado_rascunho" and
-                         staged.get("status") == "draft" and
-                         type(staged.get("post_id")) is int and
-                         staged.get("post_id") > 0 and
-                         not staged.get("erro")))
+            wp_readback=confirmar_readback_trilha(staged))
         return {**staged,
                 "editorial_trace": staged_trace,
                 "qualidade_editorial": qualidade_editorial,
