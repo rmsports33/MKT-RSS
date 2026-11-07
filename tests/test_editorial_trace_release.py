@@ -83,9 +83,27 @@ class TraceReleaseTests(unittest.TestCase):
         get.assert_not_called()
         post.assert_not_called()
 
-    def test_private_draft_path_remains_unaffected_by_trace_preflight(self):
-        # A trace is a publication precondition only, never a new draft gate.
-        self.assertNotIn("draft", ("publish", "schedule"))
+    def test_private_draft_path_does_not_require_release_trace(self):
+        class CanonicalValidator:
+            HUMAN_PENDING = "human_pending"
+            def evaluate(self, *args, **kwargs):
+                return [], []
+        class Core:
+            def validator(self):
+                return CanonicalValidator()
+        with patch.dict("os.environ", {
+            "CONEXO_REQUIRE_TRACE_FOR_PUBLICATION": "1",
+            "CONEXO_EDITORIAL_GATE_KEY": "",
+        }):
+            with patch.object(editorial_transport, "load_core", return_value=Core()):
+                result = editorial_transport.publish_package(
+                    package(), core_root=".", actor_id=4,
+                    wp_url="https://conexotech.com.br",
+                    wp_user="test", wp_password="test",
+                    intent="draft", trace_run_id=None)
+        self.assertEqual(result["erro"], "fluxo editorial bloqueado")
+        self.assertNotIn("trace_run_id_missing", result["reason"])
+        self.assertIn("chave do executor ausente", result["reason"])
 
 
 if __name__ == "__main__":
