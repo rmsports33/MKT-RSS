@@ -445,11 +445,15 @@ def main():
                     help="Gerar apenas pacote para revisão; nunca escrever no WordPress")
     ap.add_argument("--editorial-package", type=Path, help="Pacote canônico já apurado/revisado; sem geração automática")
     ap.add_argument("--core-root", type=Path)
+    ap.add_argument("--trace-db", type=Path,
+                    help="SQLite do traço central; exige --core-root com biblioteca Conexo OS")
     ap.add_argument("--actor-id", type=int)
     ap.add_argument("--intent", choices=("stage", "draft", "publish", "schedule"), default="stage")
     ap.add_argument("--publication-reference", help="Referência real da ordem específica de publicar/agendar")
     ap.add_argument("--operation-nonce", help="Retoma somente consulta da operação anterior; nunca repete escrita")
     args = ap.parse_args()
+    if args.trace_db and not args.core_root:
+        ap.error("--trace-db requer --core-root; sem ele só o sidecar é gravado")
     if args.handoff_only:
         if (args.editorial_package or args.queue_only or args.dry_run
                 or args.handoff_dir is None):
@@ -557,6 +561,26 @@ def main():
                     if args.handoff_only:
                         r["acao"] = "falha"
                         r["motivo"] = "erro_persistencia_trilha"
+                        r["escreveu"] = False
+            if args.trace_db and isinstance(r.get("editorial_trace"), dict):
+                try:
+                    # The import happens in this cloud executor, not on the user's PC.
+                    core_path = str(args.core_root.resolve())
+                    if core_path not in sys.path:
+                        sys.path.insert(0, core_path)
+                    from editorial.trace_store import TraceStore
+                    from editorial.trace_ingest import ingest_envelope
+                    report = ingest_envelope(TraceStore(args.trace_db),
+                                             r["editorial_trace"])
+                    r["central_trace_synced"] = (
+                        report["run_id"] == r["editorial_trace"]["run_id"])
+                except (ImportError, OSError, ValueError, sqlite3.Error) as exc:
+                    logger.error("Trilha central indisponivel: %s", type(exc).__name__)
+                    r["central_trace_synced"] = False
+                    r["trace_error"] = "central_trace_ingestion_failed"
+                    if args.handoff_only:
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_ingestao_trilha"
                         r["escreveu"] = False
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
