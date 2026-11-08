@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 import unittest
 
-from mkt_flow_p0.wp_quality_executor import WPReadError, review_once
+from mkt_flow_p0.wp_quality_executor import WPReadError, review_once, _private_db
 from mkt_flow_p0.revisor_qualidade_unico import _sha
 
 
@@ -58,6 +58,16 @@ class TestCloudAdapter(unittest.TestCase):
             import sqlite3
             with sqlite3.connect(str(Path(root) / "private.db")) as db:
                 self.assertEqual(db.execute("select count(*) from quality_reviews").fetchone()[0], 1)
+
+    def test_sqlite_symlink_is_rejected_without_touching_target(self):
+        with tempfile.TemporaryDirectory() as root:
+            target = Path(root) / "real.sqlite"
+            target.write_bytes(b"preserve-this")
+            link = Path(root) / "private.sqlite"
+            link.symlink_to(target)
+            with self.assertRaisesRegex(ValueError, "Symlink DB forbidden"):
+                _private_db(str(link))
+            self.assertEqual(target.read_bytes(), b"preserve-this")
 
     def test_concurrent_edit_fails_before_save(self):
         with tempfile.TemporaryDirectory() as root:
