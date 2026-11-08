@@ -43,7 +43,7 @@ def _get_json(session, url, auth, timeout):
 def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                        trace_run_id, intent="publish", publication_reference=None,
                        post_date_gmt=None, trace_packet=None, timeout=15,
-                       session=requests, require_signed_seo=False):
+                       session=requests, require_signed_seo=False, owner_release=False):
     """One attempt, never automatically retry uncertain WordPress/Turso writes."""
     if not isinstance(wp_url, str) or wp_url.rstrip("/") != SITE:
         raise BrokerBlocked("WP_ORIGIN_NOT_ALLOWED")
@@ -67,11 +67,22 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
 
     # Retain the canonical validator from Conexo OS. Local PASS is not a
     # publication approval; the WP Gate independently checks review+quality.
-    core = load_core(core_root)
-    validator = core.validator()
-    problems, blocks = validator.evaluate(package, Path(core_root), for_staging=False)
-    if problems or blocks:
-        raise BrokerBlocked("CANONICAL_GATE_BLOCKED")
+    if owner_release:
+        # Explicit proprietor mode uses the version-bound approval served by
+        # the SAME WordPress Gate, never caller-supplied human PASS fields.
+        trusted = _get_json(session, f"{SITE}/wp-json/conexo/v1/editorial/owner-release/{post_id}",
+                            (wp_user, wp_password), timeout)
+        if (trusted != package or trusted.get("schema") != "conexo-owner-release/1"
+                or payload.get("owner_id") != 3 or payload.get("review_mode") != "owner"
+                or payload.get("approval_reference") != publication_reference
+                or require_signed_seo is not True or intent != "publish"):
+            raise BrokerBlocked("OWNER_VERSION_NOT_AUTHENTICATED")
+    else:
+        core = load_core(core_root)
+        validator = core.validator()
+        problems, blocks = validator.evaluate(package, Path(core_root), for_staging=False)
+        if problems or blocks:
+            raise BrokerBlocked("CANONICAL_GATE_BLOCKED")
 
     if trace_packet is not None:
         if (not isinstance(trace_packet, dict) or
@@ -168,7 +179,7 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                     "post_id": post_id, "nonce": result.get("nonce"),
                     "publicacao_seo_concluidos": False, "retry_automatic": False}
     out = {"verified": True, "post_id": post_id, "intent": intent,
-            "trace_run_id": trace_run_id, "retry_automatic": False}
+            "version_sha256": version, "trace_run_id": trace_run_id, "retry_automatic": False}
     if require_signed_seo:
         out["publicacao_seo_concluidos"] = True
     return out
