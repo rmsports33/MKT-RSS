@@ -1,0 +1,31 @@
+name: MKT release readiness - no article writes
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: mkt-release-readiness
+  cancel-in-progress: false
+jobs:
+  readiness:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.34.2
+      - name: Check allowlist, snapshot, SEO state and historical Turso proof
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: python -m tools.mkt_release_readiness
