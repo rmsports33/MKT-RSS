@@ -48,7 +48,7 @@ def test_wp_gate_publish_bloqueia():
     r = publicar_no_wordpress("T", "<p>x</p>", "FAIL", "https://w", "u", "p", status_desejado="publish")
     assert "erro" in r
 
-def test_wp_garantir_tag_cria():
+def test_wp_garantir_tag_cria_com_permissao_wordpress():
     get_vazio = MagicMock()
     get_vazio.status_code = 200
     get_vazio.json.return_value = []
@@ -56,9 +56,11 @@ def test_wp_garantir_tag_cria():
     criado.status_code = 201
     criado.json.return_value = {"id": 9}
     with patch("mkt_flow_p0.wp_publisher.requests.get", return_value=get_vazio), \
-         patch("mkt_flow_p0.wp_publisher.requests.post", return_value=criado):
+         patch("mkt_flow_p0.wp_publisher.requests.post", return_value=criado) as post:
         from mkt_flow_p0.wp_publisher import garantir_tag
         assert garantir_tag("https://w", "u", "p", "Novo") == 9
+        assert post.call_args.kwargs["json"] == {"name": "Novo"}
+
 
 def test_seo_templates():
     t = template_por_categoria("eletronicos", "Fone JBL", "299.90")

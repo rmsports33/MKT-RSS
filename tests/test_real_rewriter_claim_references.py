@@ -100,3 +100,30 @@ def test_snapshot_preserved_but_translation_not_automatically_certified(monkeypa
     assert coverage["veredito"] == "REVISAO_SEMANTICA_PENDENTE"
     assert coverage["certificacao_factual"] is False
     assert coverage["autoriza_wordpress"] is False
+
+
+def test_provider_error_is_redacted_from_return_and_public_logs(monkeypatch, caplog):
+    secret = "SECRET_KEY_SHOULD_NOT_LEAK_IN_ANY_OUTPUT"
+    class FailingCompletions:
+        def create(self, **kwargs):
+            raise RuntimeError("Groq gateway rejected Authorization Bearer " + secret)
+    client = SimpleNamespace(chat=SimpleNamespace(completions=FailingCompletions()))
+    monkeypatch.setattr(rewriter, "_get_client", lambda: (client, ""))
+    with caplog.at_level("WARNING"):
+        result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110))
+    assert "erro" in result
+    assert secret not in str(result)
+    assert secret not in caplog.text
+    assert "provider_error" in result["erro"]
+
+
+def test_malformed_provider_json_never_leaks_response_body(monkeypatch):
+    secret = "SECRET_JSON_IN_MODEL_BODY"
+    payload = SimpleNamespace(choices=[SimpleNamespace(
+        message=SimpleNamespace(content='not valid JSON ' + secret))], usage=None)
+    client = SimpleNamespace(chat=SimpleNamespace(
+        completions=SimpleNamespace(create=lambda **kwargs: payload)))
+    monkeypatch.setattr(rewriter, "_get_client", lambda: (client, ""))
+    result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110))
+    assert "erro" in result
+    assert secret not in str(result)
