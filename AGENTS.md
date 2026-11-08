@@ -34,3 +34,11 @@ A divisão Work (operação) / Codex Cloud (engenharia) é temporária para desb
 - SEM_ALERTAS não comprova factualidade. Preservar o bloqueio de escrita quando o gate factual não estiver integrado.
 - Trabalhar em branch isolada, validar proporcionalmente e preservar mudanças preexistentes. Merge, deploy, publicação e custos dependem do escopo autorizado.
 - Drive V3 continua oficial; memória não concede autorização. Não ativar publicação ou agendamentos ao aplicar estas diretrizes.
+
+## Precedencia expressa do proprietario - 08/11/2026
+
+O usuario autorizou "Autorizar aprovacao pelo proprietario" para resolver a publicacao do artigo #9768 sem trocar sua autoria nem criar terceiro usuario. RC5 permite o aceite humano explicito do proprietario verificado ID3, vinculado ao snapshot, SEO e evidencias de qualidade. O publicador tecnico MKT-RSS ID4 permanece impedido de aprovar e continua sendo o unico publicador desse fluxo.
+
+Esse modo se registra como review_mode=owner e nao representa revisao independente por outra pessoa. Nao fabricar conferencia visual, fatos, aceite ou assinatura. A tela administrativa exige verificacao humana; texto alterado invalida a aprovacao. HMAC privada, Turso, leitura de confirmacao, reserva por versao e SEO assinado continuam obrigatorios no publicador MKT-RSS do modo owner. A politica anterior de impedir autor=aprovador continua para o modo independent; a excecao autorizada e restrita ao proprietario e exige papel administrativo vigente.
+
+MKT-RSS e o motor prioritario e o publicador; ChatGPT e apoio opcional. Fluxo e evidencias: docs/OWNER_APPROVAL_20261108.md. Nunca transformar um teste verde em aprovacao editorial ou desativar o Gate para publicar.
