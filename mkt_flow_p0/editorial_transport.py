@@ -99,6 +99,23 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             raise ValueError("site/credenciais inválidos")
         if intent not in {"stage", "draft", "publish", "schedule"} or type(actor_id) is not int or actor_id <= 0:
             raise ValueError("intenção/ator inválidos")
+        # Explicit server-side broker mode, never an automatic fallback.
+        # HMAC stays inside WP Vault; Turso trace/readback and the same
+        # canonical independent quality+approval Gate remain mandatory.
+        mode = os.environ.get("CONEXO_EDITORIAL_TRANSPORT", "")
+        if mode not in ("", "signed", "wp_broker"):
+            raise ValueError("transporte editorial nao homologado")
+        if mode == "wp_broker" and intent in {"publish", "schedule"}:
+            from mkt_flow_p0.editorial_broker_transport import publish_via_broker
+            return publish_via_broker(
+                package, core_root=core_root, wp_url=wp_url,
+                wp_user=wp_user, wp_password=wp_password,
+                trace_run_id=trace_run_id, intent=intent,
+                publication_reference=publication_reference,
+                post_date_gmt=package.get("payload", {}).get("wordpress", {}).get("post_date_gmt")
+                    if intent == "schedule" else None,
+                timeout=timeout,
+            )
         core = load_core(core_root)
         v = core.validator()
         errors, blockers = v.evaluate(package, Path(core_root), for_staging=intent == "stage")
