@@ -106,6 +106,12 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         if mode not in ("", "signed", "wp_broker"):
             raise ValueError("transporte editorial nao homologado")
         if mode == "wp_broker" and intent in {"publish", "schedule"}:
+            # RC2 broker does not return the original SEO signing receipt;
+            # never silently bypass mandatory SEO-finalize in strict mode.
+            if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":
+                raise ValueError("SEO assinado obrigatório ainda não integrado ao broker")
+            if not isinstance(package, dict) or not isinstance(package.get("payload"), dict):
+                raise ValueError("pacote editorial ausente")
             from mkt_flow_p0.editorial_broker_transport import publish_via_broker
             return publish_via_broker(
                 package, core_root=core_root, wp_url=wp_url,
