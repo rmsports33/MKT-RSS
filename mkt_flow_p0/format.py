@@ -9,14 +9,12 @@ Puro (sem rede/LLM) e 100% testável offline.
 import html
 import re
 import unicodedata
+from urllib.parse import urlsplit
 
 
 def sanitizar_url(url: str) -> str:
     """Remove controles, soft-hyphen (U+00AD) e espaços da URL.
     NOTA: os literais invisíveis abaixo são U+00AD de propósito (ver teste)."""
-    SOFT = chr(0xAD)  # soft-hyphen: invisível, quebra URLs copiadas de portais
-    u = "".join(c for c in (url or "") if unicodedata.category(c) != "Cc" and c != SOFT)
-    return u.replace(SOFT, "").strip()
     SOFT = chr(0xAD)  # soft-hyphen: invisível, quebra URLs copiadas de portais
     u = "".join(c for c in (url or "") if unicodedata.category(c) != "Cc" and c != SOFT)
     return u.replace(SOFT, "").strip()
@@ -38,9 +36,25 @@ def _inline(texto: str) -> str:
     t = re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", t)
     t = re.sub(r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)", r"<em>\1</em>", t)
     t = re.sub(r"`(.+?)`", r"<code>\1</code>", t)
-    # Links Markdown [texto](url) com URL sanitizada
+    # URLs are captured after HTML escaping; unescape once before validating
+    # the scheme, then HTML-escape exactly once for the href attribute.
     def _link(m):
-        return f'<a href="{html.escape(sanitizar_url(m.group(2)), quote=True)}" target="_blank" rel="noopener">{m.group(1)}</a>'
+        label = m.group(1)  # already HTML-escaped
+        url = html.unescape(sanitizar_url(m.group(2)))
+        if (not url or any(ch.isspace() or ord(ch) < 32 for ch in url)
+                or any(ch in '<>"\'' for ch in url)):
+            return label
+        try:
+            parsed = urlsplit(url)
+            if (parsed.scheme != "https" or not parsed.hostname
+                    or not parsed.hostname.count(".")
+                    or parsed.username or parsed.password
+                    or parsed.port not in (None, 443)):
+                return label
+        except ValueError:
+            return label
+        return (f'<a href="{html.escape(url, quote=True)}" target="_blank" '
+                f'rel="noopener noreferrer">{label}</a>')
     return re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _link, t)
 
 

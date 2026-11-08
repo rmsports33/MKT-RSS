@@ -1,6 +1,6 @@
 """
 mkt_flow_p0.wp_publisher — Publicação WordPress via REST API
-Gateado por status_validacao==PASS para publish; draft sempre permitido.
+Publicação de artigos exige gate assinado. Páginas de apoio podem ser rascunhos autenticados.
 """
 import base64
 import logging
@@ -18,6 +18,8 @@ def _get_ou_criar_termo(wp_url: str, user: str, app_password: str, tipo: str, no
 
     tipo: "categories" | "tags". Falha de rede → None (publica sem taxonomia).
     """
+    if tipo not in {"categories", "tags"} or not wp_url or not user or not app_password:
+        return None
     nome = (nome or "").strip()
     if not nome:
         return None
@@ -46,171 +48,95 @@ def garantir_tag(wp_url: str, user: str, app_password: str, nome: str, timeout: 
     return _get_ou_criar_termo((wp_url or "").rstrip("/"), user, app_password, "tags", nome, timeout)
 
 
-def _aplicar_rank_math(wp_url: str, user: str, app_password: str, post_id, rank_math: dict, timeout: int = 10) -> dict:
-    """2º passo: grava title/description/focus no Rank Math. Falha → só aviso (post já existe)."""
-    meta = {}
-    if rank_math.get("title"):
-        meta["rank_math_title"] = str(rank_math["title"])[:60]
-    if rank_math.get("description"):
-        meta["rank_math_description"] = str(rank_math["description"])[:160]
-    if rank_math.get("focus"):
-        meta["rank_math_focusKeyword"] = str(rank_math["focus"])
-    if not meta:
-        return {}
-    try:
-        r = requests.post(f"{wp_url}/wp-json/wp/v2/posts/{post_id}",
-                          headers={"Authorization": _auth_header(user, app_password),
-                                   "Content-Type": "application/json", "User-Agent": "MKT-Flow-P0/3.6"},
-                          json={"meta": meta}, timeout=timeout)
-        if r.status_code in (200, 201):
-            return {"meta_ok": True}
-        return {"meta_aviso": f"Rank Math recusou ({r.status_code}) — meta vai só no HTML"}
-    except Exception as e:
-        return {"meta_aviso": f"Rank Math falhou: {str(e)[:100]} — meta vai só no HTML"}
-
+def _aplicar_rank_math(wp_url: str, user: str, app_password: str, post_id,
+                      rank_math: dict, timeout: int = 10) -> dict:
+    """Meta de SEO só pelo contrato assinado na operação do gate."""
+    return {"meta_aviso": "escrita SEO direta bloqueada: usar gate editorial assinado"}
 
 def publicar_no_wordpress(
-    titulo: str,
-    conteudo_html: str,
-    status_validacao: str,
-    wp_url: str,
-    wp_user: str,
-    wp_app_password: str,
-    status_desejado: str = "draft",
-    categoria_ids=None,
-    tag_ids=None,
-    imagem_url: str = "",
-    timeout: int = 10,
-    slug: str = "",
-    rank_math: dict = None,
-) -> dict:
+    titulo, conteudo_html, status_validacao, wp_url, wp_user, wp_app_password,
+    status_desejado="draft", categoria_ids=None, tag_ids=None, imagem_url="",
+    timeout=10, slug="", rank_math=None, revisao_factual=None, *, pacote_editorial=None,
+    core_root=None, actor_id=None, publication_reference=None, trace_run_id=None,
+):
+    """Compatibilidade de chamada, sem compatibilidade de bypass.
+
+    PASS isolado nunca autoriza rede. Texto/metadados precisam coincidir com o
+    pacote revisto. Imagem já deve estar identificada por media_id no pacote;
+    upload/tag/SEO posterior não pode alterar silenciosamente a versão aprovada.
     """
-    Publica no WP. status_desejado: draft | publish
-    Se status_validacao != PASS e status_desejado == publish -> BLOQUEIA e força draft.
-    slug vai no campo slug; rank_math={title,description,focus} em 2º passo
-    (falha do meta nunca apaga o post — vira aviso).
-    Retorna {"post_id":..., "link":..., "status":"draft|publish"} ou {"erro":...}
-    """
-    wp_url = (wp_url or "").rstrip("/")
-    if not wp_url or not wp_user or not wp_app_password:
-        return {"erro": "WP_URL/WP_USER/WP_APP_PASSWORD ausentes no .env"}
-
-    # Gate de compliance
-    status_desejado = (status_desejado or "draft").lower()
-    if status_desejado == "publish" and status_validacao != "PASS":
-        return {
-            "erro": f"Publicação bloqueada: status_validacao={status_validacao} — só PASS permite publish. Use draft.",
-            "status_validacao": status_validacao,
-        }
-
-    # Se UNKNOWN/FAIL mas pediram publish, força draft
-    status_final = "publish" if (status_desejado == "publish" and status_validacao == "PASS") else "draft"
-
-    headers = {
-        "Authorization": _auth_header(wp_user, wp_app_password),
-        "Content-Type": "application/json",
-        "User-Agent": "MKT-Flow-P0/3.6",
-    }
-
-    # Upload de imagem destacada se houver
-    featured_media = None
-    if imagem_url and imagem_url.startswith("http"):
-        try:
-            img_resp = requests.get(imagem_url, timeout=timeout, headers={"User-Agent": "Mozilla/5.0"})
-            img_resp.raise_for_status()
-            # WP media endpoint
-            media_headers = {
-                "Authorization": _auth_header(wp_user, wp_app_password),
-                "Content-Disposition": 'attachment; filename="featured.jpg"',
-                "Content-Type": img_resp.headers.get("Content-Type", "image/jpeg"),
-            }
-            media_resp = requests.post(
-                f"{wp_url}/wp-json/wp/v2/media",
-                headers=media_headers,
-                data=img_resp.content,
-                timeout=timeout,
-            )
-            if media_resp.status_code in (200, 201):
-                featured_media = media_resp.json().get("id")
-            else:
-                logger.warning(f"WP media falhou {media_resp.status_code}: {media_resp.text[:200]}")
-        except Exception as e:
-            logger.warning(f"WP imagem falhou: {e}")
-
-    payload = {
-        "title": titulo,
-        "content": conteudo_html,
-        "status": status_final,
-    }
-    if categoria_ids:
-        payload["categories"] = categoria_ids
-    if tag_ids:
-        payload["tags"] = tag_ids
-    if featured_media:
-        payload["featured_media"] = featured_media
-    if slug:
-        payload["slug"] = slug
-
-    try:
-        resp = requests.post(
-            f"{wp_url}/wp-json/wp/v2/posts",
-            headers=headers,
-            json=payload,
-            timeout=timeout,
-        )
-        if resp.status_code in (200, 201):
-            data = resp.json()
-            out = {
-                "post_id": data.get("id"),
-                "link": data.get("link"),
-                "status": data.get("status"),
-                "status_validacao": status_validacao,
-            }
-            if rank_math:
-                out.update(_aplicar_rank_math(wp_url, wp_user, wp_app_password,
-                                              data.get("id"), rank_math, timeout))
-            return out
-        return {"erro": f"WP {resp.status_code}: {resp.text[:300]}"}
-    except requests.Timeout:
-        return {"erro": f"WP timeout após {timeout}s"}
-    except Exception as e:
-        return {"erro": f"Falha WP: {str(e)[:200]}"}
+    if status_desejado not in {"draft", "publish"}:
+        return {"erro": "status_desejado invalido; usar fluxo editorial explícito"}
+    if not isinstance(pacote_editorial, dict) or not core_root:
+        return {"erro": "escrita bloqueada: pacote editorial canônico obrigatório"}
+    payload = pacote_editorial.get("payload", {})
+    if not isinstance(payload, dict):
+        return {"erro": "payload editorial inválido"}
+    wp = payload.get("wordpress", {})
+    if not isinstance(wp, dict):
+        return {"erro": "mapeamento WordPress inválido"}
+    if (titulo != payload.get("title") or conteudo_html != payload.get("content")
+            or (slug and slug != payload.get("slug"))
+            or (categoria_ids is not None and categoria_ids != wp.get("categories"))
+            or tag_ids or imagem_url or rank_math):
+        return {"erro": "escrita bloqueada: conteúdo/metadados divergem da revisão"}
+    from mkt_flow_p0.editorial_transport import publish_package
+    return publish_package(pacote_editorial, core_root=core_root, wp_url=wp_url,
+        wp_user=wp_user, wp_password=wp_app_password, actor_id=actor_id,
+        intent=status_desejado, publication_reference=publication_reference,
+        trace_run_id=trace_run_id, timeout=timeout)
 
 
 def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_user: str,
                     wp_app_password: str, timeout: int = 10) -> dict:
-    """Cria ou atualiza 1 página pelo slug (idempotente — ex.: sitemap editorial).
+    """Cria somente rascunho ou atualiza página ainda não publicada pelo slug.
 
     Sem gate de afiliado: páginas de índice não divulgam produto.
     Retorna {"page_id":..., "link":..., "atualizada":bool} ou {"erro":...}.
     """
     wp_url = (wp_url or "").rstrip("/")
+    slug = (slug or "").strip()
     if not wp_url or not wp_user or not wp_app_password:
         return {"erro": "WP_URL/WP_USER/WP_APP_PASSWORD ausentes no .env"}
+    if not slug:
+        return {"erro": "slug obrigatorio para impedir paginas duplicadas"}
     headers = {"Authorization": _auth_header(wp_user, wp_app_password),
                "Content-Type": "application/json", "User-Agent": "MKT-Flow-P0/3.6"}
     try:
         busca = requests.get(f"{wp_url}/wp-json/wp/v2/pages",
-                             headers=headers, params={"slug": slug}, timeout=timeout)
-        existente = (busca.json() or [None])[0] if busca.status_code == 200 else None
+                             headers=headers, params={"slug": slug, "status": "any", "context": "edit"}, timeout=timeout)
+        if busca.status_code != 200:
+            return {"erro": "Falha na consulta de páginas: WordPress recusou o preflight"}
+        paginas = busca.json()
+        if not isinstance(paginas, list):
+            return {"erro": "preflight de paginas retornou formato invalido"}
+        if len(paginas) > 1:
+            return {"erro": "slug ambiguo: existem multiplas paginas; revisao manual necessaria"}
+        if paginas and not isinstance(paginas[0], dict):
+            return {"erro": "preflight de paginas retornou entrada invalida"}
+        existente = paginas[0] if paginas else None
     except Exception as e:
         return {"erro": f"Falha ao buscar página: {str(e)[:120]}"}
+    if existente and existente.get("status") not in {"draft"}:
+        return {"erro": "página publicada ou pendente não pode ser alterada pelo helper de rascunho"}
     try:
         if existente and existente.get("id"):
             resp = requests.post(f"{wp_url}/wp-json/wp/v2/pages/{existente['id']}",
                                  headers=headers,
-                                 json={"title": titulo, "content": conteudo_html, "slug": slug},
+                                 json={"title": titulo, "content": conteudo_html, "slug": slug, "status": "draft"},
                                  timeout=timeout)
             atualizada = True
         else:
             resp = requests.post(f"{wp_url}/wp-json/wp/v2/pages",
                                  headers=headers,
                                  json={"title": titulo, "content": conteudo_html, "slug": slug,
-                                       "status": "publish"},
+                                       "status": "draft"},
                                  timeout=timeout)
             atualizada = False
         if resp.status_code in (200, 201):
             data = resp.json()
+            if data.get("status") != "draft":
+                return {"erro": "resposta não confirmou draft; inspecionar", "page_id": data.get("id")}
             return {"page_id": data.get("id"), "link": data.get("link"), "atualizada": atualizada}
         return {"erro": f"WP {resp.status_code}: {resp.text[:200]}"}
     except requests.Timeout:
@@ -220,9 +146,8 @@ def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_
 
 
 # --- M04.17C: escrita de COMPARATIVO via MCP -------------------------------
-# O caminho de NOTÍCIAS (publicar_no_wordpress) continua exatamente como
-# estava: POST /wp-json/wp/v2/posts, type post, gate status_validacao==PASS.
-# Nada abaixo altera esse caminho.
+# NOTÍCIAS usam apenas o fluxo editorial assinado. Escritas CPT legadas não
+# podem contornar esse controle: o transporte MCP direto é somente leitura.
 #
 # Por que o comparativo NÃO pode ir pelo REST: o CPT `comparativo` é
 # registrado com show_in_rest=true, mas SEM `meta` — ou seja, os campos
@@ -250,6 +175,10 @@ def executar_ferramenta_mcp(wp_url: str, wp_user: str, wp_app_password: str,
     Retorna {"ok": True, "result": {...}} ou {"erro": "..."}. Nunca levanta:
     quem chama é um pipeline, e exceção aqui vira queda no meio do fluxo.
     """
+    read_tools = {"ping", "site_info", "get_ficha", "validate_article", "get_best_price",
+                  "suggest_internal_links", "seo_audit", "generate_schema", "list_drafts", "cxaf_schema"}
+    if tool not in read_tools:
+        return {"erro": "MCP direto de escrita bloqueado; usar fluxo editorial assinado"}
     wp_url = (wp_url or "").rstrip("/")
     if not wp_url or not wp_user or not wp_app_password:
         return {"erro": "WP_URL/WP_USER/WP_APP_PASSWORD ausentes no .env"}

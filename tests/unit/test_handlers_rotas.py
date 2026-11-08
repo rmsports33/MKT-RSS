@@ -103,6 +103,8 @@ def test_patterns_nao_se_sobrepoem():
 
 
 def test_linkflow_registra_o_padrao_lk():
+    if not getattr(L, "_TEM_PTB", False):
+        pytest.skip("python-telegram-bot é opcional: sem PTB não há handlers a registrar")
     padroes = [_padrao(h) for h in L.link_handlers()]
     assert PAT_LINK in padroes, padroes
     cmds = [_comandos(h) for h in L.link_handlers()]

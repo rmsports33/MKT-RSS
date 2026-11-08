@@ -1,5 +1,11 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
+## Precedencia do usuario — 08/11/2026
+
+MKT-RSS e o motor completo e unico publicador do fluxo RSS. ChatGPT e apoio opcional: nao exigir conversa, sessao Work ou servico Conexo OS em execucao para operar. O validador Conexo OS fixado por hash continua dependencia de codigo, nao outro publicador. Uma identidade WordPress de editor de servico MKT-RSS basta; revisao e aprovacao humanas continuam independentes e vinculadas a versao. Contrato preparado: `docs/MKT_PRIMARY_PUBLISHER_20261108.md`. Instalacao/configuracao real e aprovacao de artigo sao etapas distintas da integracao de codigo.
+
+`--handoff-only --handoff-dir` bloqueia escrita remota mesmo com flags de rascunho ativas. Pacotes mantem revisao humana pendente; `--research-context` nao aprova conteudo. Preservar pesquisa gratuita de imagens, proveniencia e validacao de direitos; imagem extraida do RSS nao autoriza reutilizacao.
+
 ## Decisões vigentes e precedência — 05–06/11/2026
 
 - **MKT-RSS é motor editorial completo**, não mero alimentador RSS: preservar coleta, filtros, pesquisa/insumos de fontes complementares, redação Groq Free ou outro provedor autorizado, DNA ConexoTech, SEO, mídias com direitos verificados, pacote com hash, links relacionados e criação de rascunhos privados. ChatGPT-first é o colaborador de apuração/revisão, não o substituto obrigatório do MKT-RSS. O WordPress REST/MCP também pode operar diretamente uma pauta sem exigir que Python esteja ativo.
