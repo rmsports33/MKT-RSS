@@ -74,9 +74,13 @@ class WPClient:
 
 
 def _private_db(db_path):
-    path = Path(db_path).expanduser().resolve()
+    raw = Path(db_path).expanduser()
+    # Do not resolve the target before testing: resolve() follows symlinks.
+    if raw.is_symlink():
+        raise ValueError("Symlink DB forbidden")
+    path = raw.absolute()
     path.parent.mkdir(parents=True, exist_ok=True)
-    if path.exists() and path.is_symlink():
+    if path.is_symlink():
         raise ValueError("Symlink DB forbidden")
     conn = sqlite3.connect(str(path))
     try:
