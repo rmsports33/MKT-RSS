@@ -39,6 +39,8 @@ def _ensure_env():
 
 
 def _modelo() -> str:
+    if os.getenv("REWRITER_PROVIDER", "groq").strip().lower() == "openai_compatible":
+        return os.getenv("OPENAI_COMPATIBLE_MODEL", "").strip()
     return os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
 
 
@@ -73,6 +75,37 @@ SYSTEM_PROMPT = (
 
 def _get_client():
     _ensure_env()
+    provider = os.getenv("REWRITER_PROVIDER", "groq").strip().lower()
+    if provider == "openai_compatible":
+        # Opt-in explicito: sem chamadas ou custos involuntarios.
+        if os.getenv("REWRITER_ALLOW_EXTERNAL_API") != "1":
+            return None, "API externa desautorizada: configure REWRITER_ALLOW_EXTERNAL_API=1 apos verificar o plano gratuito"
+        from urllib.parse import urlparse
+        base_url = os.getenv("OPENAI_COMPATIBLE_BASE_URL", "").strip().rstrip("/")
+        model = os.getenv("OPENAI_COMPATIBLE_MODEL", "").strip()
+        key = os.getenv("OPENAI_COMPATIBLE_API_KEY", "").strip()
+        allowed = {h.strip().lower() for h in os.getenv("REWRITER_ALLOWED_HOSTS", "").split(",") if h.strip()}
+        uri = urlparse(base_url)
+        if (uri.scheme != "https" or not uri.hostname or uri.username or uri.password
+                or uri.query or uri.fragment or uri.hostname.lower() not in allowed):
+            return None, "Endpoint HTTPS nao permitido; configure base URL e REWRITER_ALLOWED_HOSTS explicitamente"
+        if not model or not key:
+            return None, "Modelo ou chave do provedor compativel ausente"
+        # OpenRouter: protecao contra modelos tarifados por engano.
+        if uri.hostname.lower() == "openrouter.ai":
+            if uri.path.rstrip("/") != "/api/v1":
+                return None, "OpenRouter exige endpoint /api/v1"
+            if model != "openrouter/free" and not model.endswith(":free"):
+                return None, "Modelo OpenRouter nao gratuito bloqueado: use openrouter/free ou ID :free"
+        try:
+            from openai import OpenAI
+            return OpenAI(api_key=key, base_url=base_url, max_retries=0), ""
+        except ImportError:
+            return None, "openai nao instalado"
+        except Exception as exc:
+            return None, f"Falha ao inicializar provedor compativel: {str(exc)[:120]}"
+    if provider != "groq":
+        return None, f"Provedor nao suportado: {provider}"
     try:
         from groq import Groq
     except ImportError:
@@ -196,11 +229,11 @@ def reescrever_materia(
     except Exception as e:
         msg = str(e)
         if "401" in msg or "invalid_api_key" in msg.lower():
-            return {"erro": "GROQ_API_KEY inválida — gere outra em console.groq.com"}
+            return {"erro": "Credencial invalida do provedor de IA configurado"}
         if "429" in msg or "rate" in msg.lower():
             return {"erro": "Limite Groq atingido (429) — aguarde 1-2 min e tente de novo (tier grátis)."}
-        logger.warning(f"rewriter groq falhou: {msg[:200]}")
-        return {"erro": f"Falha Groq: {msg[:150]}"}
+        logger.warning("rewriter provedor falhou: %s", msg[:200])
+        return {"erro": f"Falha provedor IA: {msg[:150]}"}
 
     try:
         raw = resp.choices[0].message.content or ""
