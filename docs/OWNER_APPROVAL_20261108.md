@@ -15,6 +15,6 @@ O cliente autentica ID4, le somente a versao exata aprovada e registra trilha de
 
 O mesmo broker revalida pacote privado, snapshot, aprovacao, SEO e permissao; assina dentro do WordPress, publica uma vez e finaliza SEO. A reserva por versao impede repeticao automatica. A aprovacao expira funcionalmente quando o snapshot muda; o post publicado nao volta como liberavel.
 
-87 testes Python relacionados passaram. Contraparte WordPress passou65 verificacoes descartaveis, incluindo owner=autor, servico impedido de aprovar, ausencia de aceite/evidencia, previas, autoria preservada, pacote privado, publicacao+SEO, reserva e versao alterada. Nao sao publicacoes reais.
+87 testes Python relacionados passaram. Contraparte WordPress passou66 verificacoes descartaveis, incluindo owner=autor, servico impedido de aprovar, ausencia de aceite/evidencia, previas, autoria preservada, pacote privado, publicacao+SEO, reserva, versao alterada e slug duplicada. Nao sao publicacoes reais.
 
 Limite operacional: conector GitHub nao oferece workflow_dispatch e ferramentas desta sessao nao controlam o navegador WordPress autenticado do usuario. O aceite humano e o disparo manual precisam ocorrer nas interfaces acima; nao fabricar registros para compensar isso. Nenhuma materia foi publicada na preparacao.
