@@ -106,6 +106,8 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         if mode not in ("", "signed", "wp_broker"):
             raise ValueError("transporte editorial nao homologado")
         if mode == "wp_broker" and intent in {"publish", "schedule"}:
+            if operation_nonce is not None:
+                raise ValueError("broker exige reconciliacao remota; retomada nao pode repetir escrita")
             # RC2 broker does not return the original SEO signing receipt;
             # never silently bypass mandatory SEO-finalize in strict mode.
             if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":

@@ -57,7 +57,7 @@ def publicar_no_wordpress(
     titulo, conteudo_html, status_validacao, wp_url, wp_user, wp_app_password,
     status_desejado="draft", categoria_ids=None, tag_ids=None, imagem_url="",
     timeout=10, slug="", rank_math=None, revisao_factual=None, *, pacote_editorial=None,
-    core_root=None, actor_id=None, publication_reference=None,
+    core_root=None, actor_id=None, publication_reference=None, trace_run_id=None,
 ):
     """Compatibilidade de chamada, sem compatibilidade de bypass.
 
@@ -84,7 +84,7 @@ def publicar_no_wordpress(
     return publish_package(pacote_editorial, core_root=core_root, wp_url=wp_url,
         wp_user=wp_user, wp_password=wp_app_password, actor_id=actor_id,
         intent=status_desejado, publication_reference=publication_reference,
-        timeout=timeout)
+        trace_run_id=trace_run_id, timeout=timeout)
 
 
 def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_user: str,

@@ -90,6 +90,7 @@ class BrokerTests(unittest.TestCase):
         self.assertTrue(http.posts[0][0].endswith("/conexo/v1/editorial/broker/write"))
         self.assertNotIn("signature", http.posts[0][1]["json"])
         self.assertNotIn("receipt", http.posts[0][1]["json"])
+        self.assertEqual(http.posts[0][1]["json"]["executor"], "mkt_rss")
         self.assertEqual(len(http.gets), 2)
 
     def test_turso_not_verified_no_wp_requests(self):
@@ -150,6 +151,30 @@ class BrokerTests(unittest.TestCase):
             hashlib.sha256(CONTENT.encode()).hexdigest(),
             hashlib.sha256(PACKAGE["payload"]["content"].encode()).hexdigest()
         )
+
+    def test_broker_resume_never_repeats_write(self):
+        from mkt_flow_p0.editorial_transport import publish_package
+        with patch.dict("os.environ", {"CONEXO_EDITORIAL_TRANSPORT": "wp_broker"}), \
+             patch("mkt_flow_p0.editorial_broker_transport.publish_via_broker") as broker:
+            result = publish_package(
+                PACKAGE, core_root="/unused", actor_id=7,
+                wp_url="https://conexotech.com.br", wp_user="svc", wp_password="test",
+                intent="publish", operation_nonce="a" * 32)
+        self.assertIn("reconciliacao", result["reason"])
+        broker.assert_not_called()
+
+    def test_existing_publisher_forwards_turso_trace(self):
+        from mkt_flow_p0.wp_publisher import publicar_no_wordpress
+        package = {"payload": {"title": "Title", "content": CONTENT}}
+        with patch("mkt_flow_p0.editorial_transport.publish_package",
+                   return_value={"verified": True}) as publish:
+            result = publicar_no_wordpress(
+                "Title", CONTENT, "PASS", "https://conexotech.com.br", "svc", "test",
+                status_desejado="publish", pacote_editorial=package,
+                core_root="/unused", actor_id=7, trace_run_id=RUN,
+                publication_reference="HUMAN-REFERENCE")
+        self.assertTrue(result["verified"])
+        self.assertEqual(publish.call_args.kwargs["trace_run_id"], RUN)
 
 
 if __name__ == "__main__":
