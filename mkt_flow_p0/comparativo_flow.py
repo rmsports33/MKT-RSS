@@ -38,9 +38,9 @@ bloqueio acontece ANTES de qualquer requisição ao WordPress.
 O QUE ESTE MÓDULO NÃO FAZ
 --------------------------
 Não publica nada sozinho, não ativa flag nenhuma, não chama o LLM e não
-coleta preço. A ORIGEM do preço é responsabilidade da coleta — e hoje ela
-não existe: nem o MKT-RSS nem o redator capturam preço junto com o link do
-marketplace e a data de captura (ver `auditar_precos`).
+coleta preço. A ORIGEM do preço é responsabilidade da coleta. O redator
+pode solicitar explicitamente o cliente mínimo Mercado Livre e repassar o price_history retornado. Este módulo continua sem coletar
+preços; recebe evidências prontas e não inicia HTTP no dry-run.
 """
 import argparse
 import json

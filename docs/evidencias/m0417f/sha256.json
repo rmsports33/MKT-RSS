@@ -1,0 +1,10 @@
+{
+  "mkt_flow_p0/price_api_clients.py": "e22cba04d5178bc8ac4ac6467fd07c43e20471b7efc7b079699634510d53c2ff",
+  "mkt_flow_p0/price_collector.py": "9770ef915301f0f35fce0217e5e1af354bc422b723bcc970012a4f09e1597dca",
+  "mkt_flow_p0/comparativo_flow.py": "cacab456d810eee26374f673933c9317f95ae12e4d827abf159394d8efdfd4c5",
+  "redator-artigo-blogs/src/generator/render.py": "4a3fb89462b009a48158f6afda63d9a4417c6d1267dea7e533ac7867de2533c9",
+  "tests/unit/test_price_api_clients_p0.py": "3bd75d9fa69e67408172adc6cb556b6922caee42c02daf821b0fcda1984d9950",
+  "tests/unit/test_price_collector_p0.py": "83c84bcac2182877cb6aecf91d5e4dbe6243f222688e5a8e52da24e4aebb220d",
+  "tools/pytest_offline_guard.py": "974ced0c8392cbb9b2de5a5790b24d9b25fb9944bc11298f5ce46fd787458cd4",
+  "tools/dry_run_preco_m0417f.py": "5ce7211975df676173cda5dfec618c261f3e21abea9660f3bddee40472f3954f"
+}

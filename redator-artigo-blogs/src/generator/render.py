@@ -494,18 +494,33 @@ def _video_da_ficha(modelos: list) -> dict:
 
 def gerar_comparativo(modelos: list, categoria: str = "celular", price_history: dict = None,
                       chamar_llm=None, unknown_fields: list = None, video: dict = None,
-                      forcar: bool = False) -> dict:
+                      forcar: bool = False, coletar_precos: bool = False,
+                      cliente_precos=None) -> dict:
     """Orquestra: prompt -> LLM (injetável p/ testes) -> travas -> página + auditoria.
 
     modelos: [{nome, specs:{...}, fonte, data_lancamento?}]. chamar_llm(system, user_payload) -> str.
     data_lancamento (AAAA-MM) vai ao payload p/ a regra de recência do prompt.
     video: dict do bloco de review em vídeo (ver montar_bloco_video); quando None,
     é montado automaticamente dos campos youtube_* da ficha (ver _video_da_ficha).
+    coletar_precos=True é opt-in de leitura HTTP (ML), sem persistência;
+    cliente_precos permite simulação offline. Coleta incompleta bloqueia antes
+    do LLM. O resultado devolve price_history para processar_comparativo.
     Nunca inventa: sem specs, seções saem com '— não informado'.
     Gate: spec fora da ficha (chip/GPU/padrão) BLOQUEIA a saída, salvo forcar=True
     (override explícito humano, registrado na auditoria).
     """
     from .prompt import montar_system_prompt
+    if coletar_precos:
+        if price_history is not None:
+            return {"erro": "price_history e coleta automatica sao mutuamente exclusivos"}
+        from mkt_flow_p0.price_collector import gerar_price_history_para_modelos
+        try:
+            price_history = gerar_price_history_para_modelos(modelos, client=cliente_precos)
+        except ValueError:
+            return {"erro": "BLOQUEADO: identificacao de produtos invalida"}
+        nomes = [m.get("nome", "").strip() for m in modelos if isinstance(m, dict)]
+        if not nomes or any(not price_history.get(nome) for nome in nomes):
+            return {"erro": "BLOQUEADO: coleta de precos incompleta"}
     specs_pass = {m.get("nome", ""): dict(m.get("specs") or {}) for m in modelos}
     fontes = sorted({m.get("fonte", "") for m in modelos if m.get("fonte")})
     datas_lancamento = {m.get("nome", ""): m.get("data_lancamento", "") for m in modelos
@@ -549,6 +564,7 @@ def gerar_comparativo(modelos: list, categoria: str = "celular", price_history: 
     html_pag = montar_pagina(titulo, f"Comparativo {nomes}: ficha técnica, prós e contras verificados e veredito para {categoria}.",
                              modelos, categoria, secoes, price_history, video=video)
     return {"titulo": titulo, "html": html_pag, "provedor": provedor,
+            "price_history": price_history or {},
             "suspeitas_hallucination": suspeitas,
             "auditoria": {"specs_usadas": list(uniao_specs), "fontes": fontes,
                           "unknown_fields": unknown_fields or [],
