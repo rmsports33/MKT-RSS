@@ -5,7 +5,7 @@ import os
 from unittest.mock import MagicMock, patch
 import pytest
 
-from tools.publish_owner_approved import owner_trace, release
+from tools.publish_owner_approved import owner_trace, release, verify_public_seo
 from mkt_flow_p0.editorial_broker_transport import publish_via_broker, BrokerBlocked
 from mkt_flow_p0.editorial_trace_gate import REQUIRED
 
@@ -75,7 +75,8 @@ def test_wrong_expected_version_never_publishes():
 
 def test_execute_uses_existing_broker_strict_seo_and_human_evidence_trace():
     with patch.dict(os.environ,ENV), patch('tools.publish_owner_approved.publish_via_broker',return_value={'verified':True}) as publish:
-        out=release(9768,VERSION,True,session=http(packet()),identity=lambda _: 'PASS')
+        with patch('tools.publish_owner_approved.verify_public_seo',return_value=True):
+            out=release(9768,VERSION,True,session=http(packet()),identity=lambda _: 'PASS')
     assert out['verified'] is True
     assert publish.call_args.kwargs['owner_release'] is True
     assert publish.call_args.kwargs['require_signed_seo'] is True
@@ -100,3 +101,25 @@ def test_caller_packet_cannot_override_authoritative_owner_approval():
                 publication_reference=p['payload']['approval_reference'],session=s,
                 require_signed_seo=True,owner_release=True)
     save.assert_not_called(); s.post.assert_not_called(); core.assert_not_called()
+
+
+def test_public_html_has_one_exact_title_description_and_canonical_without_auth():
+    p=packet()['payload']; web=MagicMock()
+    html='<html><head><title>Reviewed SEO</title><meta name="description" content="Reviewed description."><link rel="canonical" href="https://conexotech.com.br/private-title/"></head></html>'
+    web.get.return_value=MagicMock(status_code=200,content=html.encode(),text=html)
+    assert verify_public_seo(p,VERSION,http=web) is True
+    assert 'auth' not in web.get.call_args.kwargs
+    assert 'Authorization' not in web.get.call_args.kwargs['headers']
+    assert web.get.call_args.kwargs['allow_redirects'] is False
+    duplicate=html.replace('</head>','<title>Duplicate</title></head>')
+    web.get.return_value=MagicMock(status_code=200,content=duplicate.encode(),text=duplicate)
+    assert verify_public_seo(p,VERSION,http=web) is False
+
+
+def test_public_seo_failure_never_repeats_publication():
+    with patch.dict(os.environ,ENV), patch('tools.publish_owner_approved.publish_via_broker',return_value={'verified':True,'post_id':9768}) as publish, \
+         patch('tools.publish_owner_approved.verify_public_seo',return_value=False):
+        out=release(9768,VERSION,True,session=http(packet()),identity=lambda _: 'PASS')
+    publish.assert_called_once()
+    assert out['post_id']==9768 and out['retry_automatic'] is False
+    assert out['erro']=='PUBLICATION_CONFIRMED_PUBLIC_SEO_INSPECTION_PENDING'

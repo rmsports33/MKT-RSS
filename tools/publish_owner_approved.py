@@ -9,12 +9,55 @@ import json
 import os
 import re
 import uuid
+from html.parser import HTMLParser
 
 from tools.wp_identity_preflight import check_identity
 from mkt_flow_p0.editorial_transport import SITE
 from mkt_flow_p0.editorial_broker_transport import _get_json, publish_via_broker, BrokerBlocked
 from mkt_flow_p0.editorial_trace_gate import REQUIRED
 import requests
+
+
+class PublicSEO(HTMLParser):
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.titles, self.descriptions, self.canonicals = [], [], []
+        self.in_title = False
+
+    def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
+        if tag == 'title':
+            self.titles.append(''); self.in_title = True
+        if tag == 'meta' and a.get('name','').lower() == 'description':
+            self.descriptions.append(a.get('content',''))
+        if tag == 'link' and 'canonical' in a.get('rel','').lower().split():
+            self.canonicals.append(a.get('href',''))
+
+    def handle_endtag(self, tag):
+        if tag == 'title': self.in_title = False
+
+    def handle_data(self, data):
+        if self.in_title: self.titles[-1] += data
+
+
+def verify_public_seo(payload, version, *, http=requests):
+    seo = payload.get('seo', {})
+    slug = payload.get('slug')
+    if not isinstance(slug,str) or not re.fullmatch(r'[a-z0-9]+(?:-[a-z0-9]+)*',slug):
+        return False
+    canonical = SITE + '/' + slug + '/'
+    if seo.get('canonical') != canonical: return False
+    try:
+        # New unauthenticated request: no Application Password or article text.
+        reply = http.get(canonical + '?conexo_verify=' + version[:16], timeout=20,
+                         allow_redirects=False, headers={'User-Agent':'MKT-RSS-Public-SEO-Verify/1'})
+        if reply.status_code != 200 or len(reply.content) > 2 * 1024 * 1024: return False
+        page = PublicSEO(); page.feed(reply.text)
+        return (len(page.titles)==1 and page.titles[0].strip()==seo.get('title')
+                and page.descriptions==[seo.get('description')]
+                and page.canonicals==[canonical])
+    except (requests.RequestException, ValueError):
+        return False
 
 
 def owner_trace(packet):
@@ -67,10 +110,15 @@ def release(post_id, version, execute=False, *, session=requests, identity=check
     trace = owner_trace(packet)
     if not execute:
         return {'validated':True,'post_id':post_id,'version_sha256':version,'write':False}
-    return publish_via_broker(packet, core_root='.', wp_url=SITE, wp_user=auth[0], wp_password=auth[1],
+    result = publish_via_broker(packet, core_root='.', wp_url=SITE, wp_user=auth[0], wp_password=auth[1],
         trace_run_id=trace['run_id'], trace_packet=trace, intent='publish',
         publication_reference=payload['approval_reference'], session=session,
         require_signed_seo=True, owner_release=True)
+    if 'erro' not in result:
+        result['seo_public_verified'] = verify_public_seo(payload,version)
+        if not result['seo_public_verified']:
+            result.update(erro='PUBLICATION_CONFIRMED_PUBLIC_SEO_INSPECTION_PENDING', retry_automatic=False)
+    return result
 
 
 def main():
