@@ -1,0 +1,51 @@
+name: ChatGPT-first offline article artifact
+# Artefato opcional: CI pytest valida o renderizador a cada mudanca.
+# Gerar ZIP sob demanda evita execucoes repetidas por commit.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: editorial-artifact-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  render-android-drop:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Render original copy offline
+        shell: bash
+        run: |
+          python -m mkt_flow_p0.editorial_core_offline \
+            --metadata tests/fixtures/chatgpt_first/android_drop_9711.json \
+            --markdown tests/fixtures/chatgpt_first/android_drop_9711.md \
+            --output-dir editorial-artifact
+          python - <<'PY'
+          from pathlib import Path
+          import json
+          out = Path("editorial-artifact")
+          files = list(out.iterdir())
+          assert len(files) == 3, files
+          preview = next(out.glob("*.html"))
+          body = next(out.glob("*.wordpress-body.html"))
+          preview = out / "android-drop-como-conferir-recursos.html"
+          assert "<table>" in preview.read_text(encoding="utf-8")
+          assert "<table>" in body.read_text(encoding="utf-8")
+          report = json.loads(next(out.glob("*.report.json")).read_text(encoding="utf-8"))
+          assert report["wordpress_written"] is False
+          assert report["aprovacao_publicacao"] is False
+          print("ARTIFACT_OK", report["article_id"], report["content_sha256"])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chatgpt-first-android-drop-9711
+          path: editorial-artifact/
+          retention-days: 7
+          if-no-files-found: error
