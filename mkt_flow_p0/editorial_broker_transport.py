@@ -8,6 +8,7 @@ The authorized Turso trace must exist and read back BEFORE WordPress POST.
 import hashlib
 import re
 import requests
+from pathlib import Path
 
 from mkt_flow_p0.editorial_transport import SITE, load_core
 from mkt_flow_p0.editorial_trace_gate import require_release_trace
@@ -67,7 +68,7 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
     # publication approval; the WP Gate independently checks review+quality.
     core = load_core(core_root)
     validator = core.validator()
-    problems, blocks = validator.evaluate(package, core_root, for_staging=False)
+    problems, blocks = validator.evaluate(package, Path(core_root), for_staging=False)
     if problems or blocks:
         raise BrokerBlocked("CANONICAL_GATE_BLOCKED")
 
