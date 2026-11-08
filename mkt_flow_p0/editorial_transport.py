@@ -108,10 +108,6 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         if mode == "wp_broker" and intent in {"publish", "schedule"}:
             if operation_nonce is not None:
                 raise ValueError("broker exige reconciliacao remota; retomada nao pode repetir escrita")
-            # RC2 broker does not return the original SEO signing receipt;
-            # never silently bypass mandatory SEO-finalize in strict mode.
-            if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":
-                raise ValueError("SEO assinado obrigatório ainda não integrado ao broker")
             if not isinstance(package, dict) or not isinstance(package.get("payload"), dict):
                 raise ValueError("pacote editorial ausente")
             from mkt_flow_p0.editorial_broker_transport import publish_via_broker
@@ -123,6 +119,7 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                 post_date_gmt=package.get("payload", {}).get("wordpress", {}).get("post_date_gmt")
                     if intent == "schedule" else None,
                 timeout=timeout,
+                require_signed_seo=intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1",
             )
         core = load_core(core_root)
         v = core.validator()

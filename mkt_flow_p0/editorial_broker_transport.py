@@ -6,6 +6,7 @@ and invokes the canonical Gate, which enforces independent human approval.
 The authorized Turso trace must exist and read back BEFORE WordPress POST.
 """
 import hashlib
+import json
 import re
 import requests
 from pathlib import Path
@@ -42,7 +43,7 @@ def _get_json(session, url, auth, timeout):
 def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                        trace_run_id, intent="publish", publication_reference=None,
                        post_date_gmt=None, trace_packet=None, timeout=15,
-                       session=requests):
+                       session=requests, require_signed_seo=False):
     """One attempt, never automatically retry uncertain WordPress/Turso writes."""
     if not isinstance(wp_url, str) or wp_url.rstrip("/") != SITE:
         raise BrokerBlocked("WP_ORIGIN_NOT_ALLOWED")
@@ -88,6 +89,20 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
         raise BrokerBlocked("TRACE_TURSO_RELEASE_NOT_VERIFIED") from None
 
     auth = (wp_user, wp_password)
+    seo_hash = None
+    if require_signed_seo:
+        seo = payload.get("seo")
+        fields = ("provider", "canonical", "title", "description")
+        if (not isinstance(seo, dict) or any(not isinstance(seo.get(k), str) or not seo[k].strip() for k in fields)
+                or seo["provider"] != "native"):
+            raise BrokerBlocked("BROKER_REVIEWED_SEO_MISSING")
+        seo_hash = hashlib.sha256(json.dumps(
+            {k: seo[k] for k in fields}, sort_keys=True, ensure_ascii=False,
+            separators=(",", ":")).encode("utf-8")).hexdigest()
+        ready = _get_json(session, f"{SITE}/wp-json/conexo/v1/editorial/seo-readiness", auth, timeout)
+        if (ready.get("schema") != "conexo-seo-readiness/1" or any(ready.get(k) is not True for k in (
+                "broker_signed_seo_supported", "editorial_gate_ready", "seo_signing_ready", "seo_public_output_ready"))):
+            raise BrokerBlocked("BROKER_SIGNED_SEO_NOT_READY")
     snap = _get_json(session, f"{SITE}/wp-json/conexo/v1/editorial/snapshot/{post_id}",
                      auth, timeout)
     current = snap.get("snapshot")
@@ -106,6 +121,10 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
         "expected_sha256": sha, "version_sha256": version,
         "publication_reference": publication_reference,
     }
+    if require_signed_seo:
+        if intent != "publish":
+            raise BrokerBlocked("BROKER_SIGNED_SEO_INTENT_DENIED")
+        expected.update(require_signed_seo=True, seo_sha256=seo_hash)
     if intent == "schedule":
         if not isinstance(post_date_gmt, str) or not re.fullmatch(
                 r"\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}", post_date_gmt):
@@ -139,5 +158,17 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
     if not isinstance(observed, dict) or observed.get("ID") != post_id or (
             observed.get("post_status") != _ALLOWED[intent]):
         raise BrokerBlocked("BROKER_REMOTE_STATUS_MISMATCH")
-    return {"verified": True, "post_id": post_id, "intent": intent,
+    if require_signed_seo:
+        if observed != result.get("snapshot"):
+            raise BrokerBlocked("BROKER_REMOTE_SNAPSHOT_MISMATCH_NO_RETRY")
+        if (result.get("publicacao_seo_concluidos") is not True
+                or not isinstance(result.get("seo_private_delivery"), dict)
+                or result["seo_private_delivery"].get("status") != "verified"):
+            return {"erro": "publicacao confirmada; SEO pendente de inspecao",
+                    "post_id": post_id, "nonce": result.get("nonce"),
+                    "publicacao_seo_concluidos": False, "retry_automatic": False}
+    out = {"verified": True, "post_id": post_id, "intent": intent,
             "trace_run_id": trace_run_id, "retry_automatic": False}
+    if require_signed_seo:
+        out["publicacao_seo_concluidos"] = True
+    return out

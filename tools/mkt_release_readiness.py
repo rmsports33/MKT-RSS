@@ -58,8 +58,11 @@ def probe(environ, *, session=requests, identity_check=check_identity,
     status, body = call("GET", "/wp-json/conexo/v1/editorial/seo-readiness")
     valid = status == 200 and body and body.get("schema") == "conexo-seo-readiness/1"
     report["seo_readiness_read"] = "PASS" if valid else "BLOCKED"
+    report["signed_seo_broker_supported"] = bool(valid and body.get("broker_signed_seo_supported") is True)
     for flag in ("editorial_gate_ready", "seo_signing_ready", "seo_public_output_ready"):
         report[flag] = body.get(flag) is True if valid else False
+    report["strict_seo_ready"] = all(report.get(key) is True for key in (
+        "signed_seo_broker_supported", "editorial_gate_ready", "seo_signing_ready", "seo_public_output_ready"))
 
     # Read only the previously homologated synthetic row. Never fabricate a
     # release trace, PASS stage, human decision, or article-specific approval.
@@ -87,7 +90,7 @@ def main():
         with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
             out.write("MKT-RSS technical preflight; no article writes or approval.\n\n```json\n" + text + "\n```\n")
     checks = ("identity", "broker_allowlist", "candidate_snapshot", "seo_readiness_read", "turso_homolog_read")
-    return 0 if all(report.get(key) == "PASS" for key in checks) else 1
+    return 0 if all(report.get(key) == "PASS" for key in checks) and report.get("strict_seo_ready") is True else 1
 
 
 if __name__ == "__main__":
