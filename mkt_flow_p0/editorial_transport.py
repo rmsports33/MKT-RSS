@@ -86,7 +86,8 @@ def _finalize_seo_after_publish(package, result, *, envelope, wp_auth, timeout):
 
 def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                     actor_id, intent="stage", publication_reference=None,
-                    timeout=15, operation_nonce=None, seo_publication_signature=None):
+                    timeout=15, operation_nonce=None, seo_publication_signature=None,
+                    trace_run_id=None):
     """Não gera texto nem atesta fatos. Encaminha versão realmente revisada.
 
     Prévia stage permanece draft e não conta como entrega. Timeout nunca
@@ -98,6 +99,31 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             raise ValueError("site/credenciais inválidos")
         if intent not in {"stage", "draft", "publish", "schedule"} or type(actor_id) is not int or actor_id <= 0:
             raise ValueError("intenção/ator inválidos")
+        # Explicit server-side broker mode, never an automatic fallback.
+        # HMAC stays inside WP Vault; Turso trace/readback and the same
+        # canonical independent quality+approval Gate remain mandatory.
+        mode = os.environ.get("CONEXO_EDITORIAL_TRANSPORT", "")
+        if mode not in ("", "signed", "wp_broker"):
+            raise ValueError("transporte editorial nao homologado")
+        if mode == "wp_broker" and intent in {"publish", "schedule"}:
+            if operation_nonce is not None:
+                raise ValueError("broker exige reconciliacao remota; retomada nao pode repetir escrita")
+            # RC2 broker does not return the original SEO signing receipt;
+            # never silently bypass mandatory SEO-finalize in strict mode.
+            if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":
+                raise ValueError("SEO assinado obrigatório ainda não integrado ao broker")
+            if not isinstance(package, dict) or not isinstance(package.get("payload"), dict):
+                raise ValueError("pacote editorial ausente")
+            from mkt_flow_p0.editorial_broker_transport import publish_via_broker
+            return publish_via_broker(
+                package, core_root=core_root, wp_url=wp_url,
+                wp_user=wp_user, wp_password=wp_password,
+                trace_run_id=trace_run_id, intent=intent,
+                publication_reference=publication_reference,
+                post_date_gmt=package.get("payload", {}).get("wordpress", {}).get("post_date_gmt")
+                    if intent == "schedule" else None,
+                timeout=timeout,
+            )
         core = load_core(core_root)
         v = core.validator()
         errors, blockers = v.evaluate(package, Path(core_root), for_staging=intent == "stage")
@@ -105,6 +131,12 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             blockers = [b for b in blockers if b != v.HUMAN_PENDING]
         if errors or blockers:
             raise ValueError("gate editorial bloqueou: " + "; ".join(errors + blockers))
+        # Opt-in trusted provenance preflight: does not replace the canonical
+        # gate/receipt, and never blocks private stage/draft creation.
+        if intent in ("publish", "schedule") and os.environ.get(
+                "CONEXO_REQUIRE_TRACE_FOR_PUBLICATION") == "1":
+            from mkt_flow_p0.editorial_trace_gate import require_release_trace
+            require_release_trace(package, trace_run_id)
         # Strict mode becomes mandatory only after the executor and SEO Gate
         # have been provisioned. Check before any publication-side network call.
         if intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1":
