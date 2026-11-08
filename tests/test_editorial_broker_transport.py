@@ -64,6 +64,28 @@ class Core:
         return Validator()
 
 
+class StrictHTTP(FakeHTTP):
+    def __init__(self, ready=True, finalized=True):
+        super().__init__()
+        self.ready, self.finalized = ready, finalized
+
+    def get(self, url, **kwargs):
+        if url.endswith('/seo-readiness'):
+            self.gets.append(url)
+            return Resp(200, {'schema': 'conexo-seo-readiness/1',
+                **{k: self.ready for k in ('broker_signed_seo_supported', 'editorial_gate_ready',
+                                         'seo_signing_ready', 'seo_public_output_ready')}})
+        return super().get(url, **kwargs)
+
+    def post(self, url, **kwargs):
+        self.posts.append((url, kwargs))
+        return Resp(200, {'post_id': POST_ID, 'intent': 'publish', 'version_sha256': VERSION,
+            'status': 'publish', 'nonce': 'c' * 32,
+            'snapshot': {'ID': POST_ID, 'post_status': 'publish', 'post_content': self.body},
+            'publicacao_seo_concluidos': self.finalized,
+            'seo_private_delivery': {'status': 'verified' if self.finalized else 'pending_inspection'}})
+
+
 def run(http, **kwargs):
     return publish_via_broker(
         PACKAGE, core_root="/tmp/synthetic-conexo",
@@ -76,6 +98,52 @@ def run(http, **kwargs):
 
 
 class BrokerTests(unittest.TestCase):
+    def strict_run(self, http):
+        seo = {'provider': 'native', 'canonical': 'https://conexotech.com.br/revisado/',
+               'title': 'SEO revisto', 'description': 'Descricao revista.'}
+        p = {**PACKAGE, 'payload': {**PACKAGE['payload'], 'seo': seo}}
+        with patch('mkt_flow_p0.editorial_broker_transport.load_core', return_value=Core), \
+             patch('mkt_flow_p0.editorial_broker_transport.require_release_trace'):
+            return publish_via_broker(p, core_root='/unused', wp_url='https://conexotech.com.br',
+                wp_user='svc', wp_password='test', trace_run_id=RUN, intent='publish',
+                publication_reference='HUMAN-APPROVAL-SYNTHETIC', session=http, require_signed_seo=True)
+
+    def test_strict_broker_checks_readiness_and_finishes_without_external_key(self):
+        http = StrictHTTP()
+        out = self.strict_run(http)
+        self.assertTrue(out['publicacao_seo_concluidos'])
+        sent = http.posts[0][1]['json']
+        self.assertIs(sent['require_signed_seo'], True)
+        self.assertEqual(len(sent['seo_sha256']), 64)
+        self.assertNotIn('seo', sent)
+        self.assertNotIn('signature', sent)
+        self.assertEqual(len(http.posts), 1)
+
+    def test_strict_broker_unready_never_publishes(self):
+        http = StrictHTTP(ready=False)
+        with self.assertRaisesRegex(BrokerBlocked, 'BROKER_SIGNED_SEO_NOT_READY'):
+            self.strict_run(http)
+        self.assertEqual(http.posts, [])
+
+    def test_seo_failure_after_publication_returns_identity_without_retry(self):
+        http = StrictHTTP(finalized=False)
+        out = self.strict_run(http)
+        self.assertIn('erro', out)
+        self.assertEqual(out['post_id'], POST_ID)
+        self.assertEqual(out['nonce'], 'c' * 32)
+        self.assertIs(out['retry_automatic'], False)
+        self.assertEqual(len(http.posts), 1)
+
+    def test_transport_forwards_strict_mode_to_broker_without_signing_key(self):
+        from mkt_flow_p0.editorial_transport import publish_package
+        with patch.dict('os.environ', {'CONEXO_EDITORIAL_TRANSPORT': 'wp_broker',
+                                      'CONEXO_REQUIRE_SIGNED_SEO': '1', 'CONEXO_EDITORIAL_GATE_KEY': ''}), \
+             patch('mkt_flow_p0.editorial_broker_transport.publish_via_broker', return_value={'verified': True}) as broker:
+            out = publish_package(PACKAGE, core_root='/unused', actor_id=4,
+                wp_url='https://conexotech.com.br', wp_user='svc', wp_password='test', intent='publish')
+        self.assertTrue(out['verified'])
+        self.assertIs(broker.call_args.kwargs['require_signed_seo'], True)
+
     def test_success_only_broker_after_turso(self):
         http = FakeHTTP()
         calls = []
