@@ -43,6 +43,39 @@ def test_create_private_draft_and_confirm_content_readback():
         assert call.kwargs["params"]["context"] == "edit"
 
 
+def test_explicit_author_and_seo_excerpt_sent_and_read_back():
+    client = Mock()
+    post = {**readback(), 'author': 3, 'excerpt': {'raw': 'Descricao SEO revisavel.'}}
+    client.get.side_effect = [response(200, []), response(200, []), response(200, post)]
+    client.post.return_value = response(201, {'id': 9752, 'status': 'draft'})
+    result = mod.stage_rss_draft(**BASE, request_client=client,
+                               author_id=3, excerpt='Descricao SEO revisavel.')
+    assert result['acao'] == 'publicado_rascunho'
+    sent = client.post.call_args.kwargs['json']
+    assert sent['author'] == 3 and sent['excerpt'] == 'Descricao SEO revisavel.'
+
+
+def test_mismatched_author_or_excerpt_is_not_success():
+    for author, excerpt in [(4, 'Descricao SEO revisavel.'), (3, 'Outra descricao')]:
+        client = Mock()
+        post = {**readback(), 'author': author, 'excerpt': {'raw': excerpt}}
+        client.get.side_effect = [response(200, []), response(200, []), response(200, post)]
+        client.post.return_value = response(201, {'id': 9752, 'status': 'draft'})
+        result = mod.stage_rss_draft(**BASE, request_client=client,
+                                   author_id=3, excerpt='Descricao SEO revisavel.')
+        assert result['acao'] == 'falha' and result['retry_automatic'] is False
+        assert client.post.call_count == 1
+
+
+def test_invalid_metadata_is_rejected_before_network():
+    for metadata in [{'author_id': True}, {'author_id': 0}, {'excerpt': ''}, {'excerpt': {}}]:
+        client = Mock()
+        result = mod.stage_rss_draft(**BASE, request_client=client, **metadata)
+        assert result['acao'] == 'bloqueado'
+        client.get.assert_not_called()
+        client.post.assert_not_called()
+
+
 def test_existing_matching_draft_is_reused_without_updating():
     client = Mock()
     post = readback()
