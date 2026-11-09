@@ -11,6 +11,8 @@ import json
 import logging
 import os
 from pathlib import Path
+import re
+import unicodedata
 import uuid
 
 SITE = 'https://conexotech.com.br'
@@ -23,6 +25,22 @@ class ProductionBlocked(Exception):
 
 def digest(text):
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
+
+
+def missing_source_anchors(text, anchors):
+    """Normalize layout whitespace without changing any source number/value."""
+    def normal(value):
+        value = unicodedata.normalize('NFKC', value).casefold()
+        value = re.sub(r'\s+', ' ', value).strip()
+        return re.sub(r'\$\s+(?=\d)', '$', value)
+    body = normal(text)
+    missing = []
+    for anchor in anchors:
+        value = normal(anchor)
+        boundary = r'(?!\d|[.,]\d)' if value and value[-1].isdigit() else ''
+        if not re.search(re.escape(value) + boundary, body):
+            missing.append(anchor)
+    return missing
 
 
 def load_brief(path):
@@ -66,7 +84,7 @@ class ObservedModules:
         event['status'] = 'RETURNED'
         if isinstance(result, dict):
             for key in ('veredito', 'status', 'motivos', 'pendencias', 'palavras', 'nota', 'qualidade_ok',
-                        'faixa', 'modelo', 'prompt_sha256', 'uso_tokens'):
+                        'faixa', 'modelo', 'prompt_sha256', 'uso_tokens', 'origem'):
                 if key in result:
                     event[key if key != 'status' else 'result_status'] = result[key]
             if 'erro' in result:
@@ -141,11 +159,30 @@ def produce(brief, output_dir, *, execute_draft=False):
         captures = {}
         originals = [{'url': brief['source_url'], 'name': brief['source_name']}] + brief['sources']
         for source in originals:
-            extracted = observed.call('source_extraction', extrair_conteudo, source['url'], min_palavras=100)
+            report['source_in_progress'] = source['url']
+            extracted = observed.call('source_extraction', extrair_conteudo, source['url'],
+                                       min_palavras=100,
+                                       preservar_documento=source['url'] != brief['source_url'])
+            observed.events[-1]['source_url'] = source['url']
             if extracted.get('erro') or not extracted.get('qualidade_ok'):
                 raise ProductionBlocked('FULL_SOURCE_UNAVAILABLE')
             body = extracted['texto']
-            if any(anchor.casefold() not in body.casefold() for anchor in source.get('anchors', [])):
+            missing = missing_source_anchors(body, source.get('anchors', []))
+            if missing and source['url'] == 'https://www.1x.tech/order':
+                # Price cards on this public product page require JavaScript.
+                # Re-read the live page; never insert briefing prices into it.
+                extracted = observed.call('rendered_source_extraction', extrair_conteudo,
+                                           source['url'], min_palavras=100, renderizar=True,
+                                           timeout=35)
+                observed.events[-1]['source_url'] = source['url']
+                if extracted.get('erro') or not extracted.get('qualidade_ok'):
+                    raise ProductionBlocked('RENDERED_SOURCE_UNAVAILABLE')
+                body = extracted['texto']
+                missing = missing_source_anchors(body, source.get('anchors', []))
+            report.setdefault('source_checks', []).append({
+                'url': source['url'], 'extraction_mode': extracted.get('origem'),
+                'content_sha256': digest(body), 'missing_anchors': missing})
+            if missing:
                 raise ProductionBlocked('SOURCE_CHANGED_REQUIRES_RESEARCH')
             capture = observed.call('source_capture', criar_captura_completa,
                                     source['url'], body, titulo=extracted.get('titulo') or source['name'])
