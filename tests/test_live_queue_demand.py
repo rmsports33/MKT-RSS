@@ -142,6 +142,16 @@ class LiveQueueDemandTests(unittest.TestCase):
              patch('mkt_flow_p0.demand_evidence_turso.get',side_effect=get):
             result=probe.measure()
         self.assertEqual(fetch.call_count,1);self.assertEqual(trends.call_count,1)
+        candidate['topic_proposal']['source_refusal']={'reason':'SOURCE_HTTP_403','run':'prior-run'}
+        saved.clear()
+        with patch.dict(os.environ,dict(HOMOLOG_ENV,CANDIDATE_JSON=json.dumps(candidate))), \
+             patch('mkt_flow_p0.public_source_context.verify_context',side_effect=AssertionError('Previously refused source must NOT be retried')) as prior_fetch, \
+             patch('mkt_flow_p0.research_signals.trends',return_value={'status':'SNAPSHOT_NAO_VALIDADO','raw':source()}) as independent_trends, \
+             patch('mkt_flow_p0.demand_evidence_turso.save',side_effect=save), \
+             patch('mkt_flow_p0.demand_evidence_turso.get',side_effect=get):
+            result=probe.measure()
+        self.assertEqual(prior_fetch.call_count,0);self.assertEqual(independent_trends.call_count,1)
+        self.assertFalse(result['source_context']['access_retried'])
         self.assertEqual(result['source_context']['reason'],'SOURCE_HTTP_403')
         self.assertFalse(result['source_context']['factuality_verified'])
         self.assertTrue(result['exact_readback']);self.assertFalse(result['queue_changed'])
