@@ -1,0 +1,93 @@
+import hashlib
+import os
+from pathlib import Path
+import sqlite3
+import unittest
+from unittest.mock import patch
+from mkt_flow_p0.live_queue_demand import choose_existing, readonly_execute, connection_context, ENTITY
+
+ENV={'TURSO_DATABASE_URL':'libsql://daily-fixture.turso.io','TURSO_AUTH_TOKEN':'fixture'}
+NOW='2026-11-09T18:00:00Z'
+
+
+class LiveQueueDemandTests(unittest.TestCase):
+    def setUp(self):
+        self.env=patch.dict(os.environ,ENV);self.env.start();self.addCleanup(self.env.stop)
+        self.db=sqlite3.connect(':memory:');self.addCleanup(self.db.close)
+        self.db.execute('CREATE TABLE rss_pautas(id TEXT,url TEXT,titulo TEXT,publicada_em TEXT,estado TEXT,fonte TEXT,created_at TEXT)')
+        self.calls=[]
+
+    def row(self,title='Galaxy S26 Ultra tem novidades',published='2026-11-09T12:00:00Z',state='DESCOBERTA',url='https://tecnoblog.net/noticias/galaxy-s26-ultra/'):
+        uid=hashlib.sha256(url.encode()).hexdigest()[:32]
+        self.db.execute('INSERT INTO rss_pautas VALUES (?,?,?,?,?,?,?)',(uid,url,title,published,state,'tecnoblog',published))
+        return uid
+
+    def execute(self,sql,args=()):
+        self.assertTrue(sql.startswith('SELECT '));self.assertNotIn(';',sql);self.calls.append(sql)
+        return {'rows':[list(row) for row in self.db.execute(sql,args).fetchall()]}
+
+    def test_same_actual_config_and_existing_identity_without_queue_write(self):
+        uid=self.row();before=self.db.total_changes
+        result=choose_existing(execute=self.execute,now=NOW)
+        self.assertEqual(result['pauta_id'],uid)
+        self.assertEqual(result['query'],'Galaxy S26 Ultra')
+        self.assertTrue(result['queue_reference_verified'])
+        self.assertFalse(result['queue_changed'])
+        self.assertEqual(result['human_query_review'],'PENDING')
+        self.assertEqual(result['commercial_status'],'UNKNOWN')
+        self.assertNotIn('titulo',result);self.assertNotIn('fixture',str(result))
+        self.assertEqual(self.db.total_changes,before)
+        self.assertEqual(len(self.calls),2)
+
+    def test_old_future_and_ambiguous_products_do_not_get_researched(self):
+        for title,published in [('Galaxy S10','2026-10-01T12:00:00Z'),
+                                ('iPhone 20','2026-11-10T12:00:00Z'),
+                                ('Galaxy S26 ou iPhone 18','2026-11-09T12:00:00Z')]:
+            with self.subTest(title=title):
+                self.db.execute('DELETE FROM rss_pautas');self.row(title,published)
+                self.assertEqual(choose_existing(execute=self.execute,now=NOW)['status'],'BLOCKED')
+
+    def test_empty_queue_and_terminal_rows_are_not_inserted_or_promoted(self):
+        for state in ('REJEITADA','CONCLUIDA','BLOQUEADA','EM_PRODUCAO'):
+            self.row(state=state)
+        before=self.db.total_changes
+        result=choose_existing(execute=self.execute,now=NOW)
+        self.assertEqual(result['reason'],'NO_RECENT_UNAMBIGUOUS_ENTITY_IN_DAILY_QUEUE')
+        self.assertEqual(result['rows_examined'],0)
+        self.assertEqual(self.db.total_changes,before)
+
+    def test_no_private_credentials_url_or_fallback(self):
+        for raw in ('','libsql://user:pass@daily-fixture.turso.io','http://daily-fixture.turso.io',
+                    'libsql://daily-fixture.turso.io:443','libsql://127.0.0.1','libsql://daily-fixture.turso.io/path'):
+            with patch.dict(os.environ,{'TURSO_DATABASE_URL':raw}):
+                with self.assertRaisesRegex(ValueError,'DAILY_CLOUD_CONNECTION_UNAVAILABLE'):
+                    choose_existing(execute=lambda *a:self.fail('Unexpected DB call'),now=NOW)
+        for sql in ('CREATE TABLE anything(id TEXT)','SELECT 1; DELETE FROM rss_pautas'):
+            with self.assertRaises(ValueError):readonly_execute(sql)
+
+    def test_wrong_url_or_id_does_not_become_verified(self):
+        self.row();self.db.execute("UPDATE rss_pautas SET url='https://other.example/article'")
+        self.assertEqual(choose_existing(execute=self.execute,now=NOW)['status'],'BLOCKED')
+        self.db.execute("UPDATE rss_pautas SET url='https://tecnoblog.net/different/'")
+        self.assertEqual(choose_existing(execute=self.execute,now=NOW)['status'],'BLOCKED')
+
+    def test_literal_entity_variants_are_preserved_without_old_seed_list(self):
+        for title,expected in [('Galaxy S26+ chegou','Galaxy S26+'),('Galaxy S26 Ultra','Galaxy S26 Ultra'),
+                               ('iPhone 18 Pro Max','iPhone 18 Pro Max'),('Pixel 11 Pro XL','Pixel 11 Pro XL')]:
+            self.assertEqual(ENTITY.search(title).group(0),expected)
+        self.assertIsNone(ENTITY.search('iPhone 180'))
+
+    def test_workflow_reads_actual_secrets_and_writes_only_homolog(self):
+        workflow=(Path(__file__).resolve().parents[1]/'.github/workflows/live-queue-demand.yml').read_text()
+        select,measure=workflow.split('  measure:')
+        self.assertNotIn('environment:',select)
+        self.assertIn('secrets.TURSO_DATABASE_URL',select)
+        self.assertIn('github.event.sender.login == github.repository_owner',select)
+        self.assertIn('github.event.repository.private == false',select)
+        self.assertIn('environment: rss-homolog',measure)
+        self.assertIn('TURSO_DATABASE_URL: libsql://mkt-rss-homolog-',measure)
+        for forbidden in ('schedule:','upload-artifact','cache:','WP_APP_PASSWORD','GROQ_API_KEY'):
+            self.assertNotIn(forbidden,workflow)
+
+
+if __name__=='__main__':unittest.main()
