@@ -7,7 +7,7 @@ on:
         required: true
         type: string
       free_usage_reviewed:
-        description: 'Account included usage and paid-usage block verified for this run'
+        description: 'Confirm public repository, standard Ubuntu runner, no artifact/cache or paid services'
         required: true
         type: boolean
         default: false
@@ -18,7 +18,8 @@ concurrency:
   cancel-in-progress: false
 jobs:
   screen:
-    if: inputs.free_usage_reviewed && vars.CONEXO_FREE_AUTOMATION_READY == 'true'
+    # Public standard runner compute is free. Private copies must not run this job.
+    if: inputs.free_usage_reviewed && github.event.repository.private == false
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:

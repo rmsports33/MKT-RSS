@@ -36,10 +36,11 @@ Uma exceção editorial exige outro enquadramento e revisão, não desligar o fi
 O botão Actions > Opportunity screening aceita caminho de arquivo já gravado
 no repositório. Em repo público, nunca colocar rascunhos privados, dados pessoais
 ou credenciais nesse arquivo. O workflow não exporta banco nem conteúdo: apenas
-contadores. Antes de usar, verificar faturamento/franquia real e bloqueio de uso
-pago; definir CONEXO_FREE_AUTOMATION_READY=true somente após essa verificação.
-Não assume uma quantidade fixa de minutos grátis. Sem comprovação, cron novo
-permanece bloqueado. Não há serviço residente nem Codespace obrigatório.
+contadores. O job exige repositório público, runner Ubuntu padrão e confirmação
+manual, sem artifacts/cache ou serviços pagos. A computação nesse caso é gratuita
+segundo https://docs.github.com/en/billing/concepts/product-billing/github-actions.
+Cópias privadas ficam impedidas de executar esse job. Não há serviço residente
+nem Codespace obrigatório. O cron existente não depende de variável nova.
 
 Em ambiente cloud temporário, via terminal do navegador:
 
@@ -61,9 +62,11 @@ CSV/JSON manual preserva operação sem esse provedor. API oficial de Trends
 ## Fila, persistência e recuperação
 
 `fila_pautas.listar` acrescenta opportunity sem promover estado. RSS registra
-apenas publicações datadas nas últimas 168h. Na nuvem, daily exige credenciais
-Turso e CONEXO_REQUIRE_CLOUD_PERSISTENCE=1 antes da coleta. Não criar SQLite
-efêmero no runner nem anexar banco editorial em artifact público.
+apenas publicações datadas nas últimas 168h. O chamador pode exigir credenciais
+Turso com CONEXO_REQUIRE_CLOUD_PERSISTENCE=1 antes da coleta. O daily preexistente
+foi preservado integralmente para não alterar sua ativação/persistência sem
+homologação. Seu upload legado de DB e possível fila efêmera permanecem uma
+pendência operacional, não uma correção entregue nesta integração.
 
 `queue_recovery.py export origem.db snapshot-novo.db` cria snapshot SQLite e
 manifesto SHA256. `restore snapshot.db destino-novo.db --manifest snapshot.db.json`

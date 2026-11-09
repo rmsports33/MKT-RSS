@@ -4,8 +4,8 @@ name: RSS diario - fila editorial sem IA nem WordPress
 # Producao supervisionada permanece no workflow manual rss-homolog-manual.yml.
 on:
   schedule:
-    # 12:17 UTC = 09:17 BRT; agenda best effort, sem garantia de horario.
-    - cron: "17 12 * * *"
+    # 12:00 UTC = 09:00 BRT. Mínimo do Actions: 5 min; atraso de 5-15 min é normal.
+    - cron: "0 12 * * *"
   workflow_dispatch: # botão "Run workflow" para teste manual
     inputs:
       limit:
@@ -16,27 +16,12 @@ on:
 permissions:
   contents: read # este job não commita nada
 
-concurrency:
-  group: editorial-rss-discovery
-  cancel-in-progress: false
-
 jobs:
   rss:
-    # Explicit account-level free-usage review is required, not an assumed quota.
-    if: vars.CONEXO_FREE_AUTOMATION_READY == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-
-      - name: Exigir persistencia fora do runner antes da coleta
-        env:
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-        run: |
-          test -n "$TURSO_DATABASE_URL" && test -n "$TURSO_AUTH_TOKEN" || {
-            echo 'BLOCKED: persistencia cloud ausente; nao criar fila efemera'; exit 2;
-          }
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -55,7 +40,6 @@ jobs:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           INPUT_LIMIT: ${{ inputs.limit }}
-          CONEXO_REQUIRE_CLOUD_PERSISTENCE: '1'
         run: |
           LIMIT="${INPUT_LIMIT:-2}"
           case "$LIMIT" in
@@ -64,6 +48,11 @@ jobs:
           esac
           python pipeline_rss.py --queue-only --fonte tecnoblog --limit "$LIMIT"
 
-      - name: Registrar resultado sem expor banco editorial
+      - name: Anexar DB do dia (auditoria)
         if: success()
-        run: echo 'Coleta concluida no armazenamento configurado; sem LLM e sem WP.' >> "$GITHUB_STEP_SUMMARY"
+        uses: actions/upload-artifact@v4
+        with:
+          name: rss-runs-${{ github.run_number }}
+          path: mkt_flow_p0.db
+          retention-days: 1
+          if-no-files-found: ignore
