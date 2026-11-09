@@ -61,15 +61,23 @@ def read():
             'query_review_status': result['query_review_status'], 'queue_row_verified': False}
 
 
+def bind():
+    from mkt_flow_p0.demand_queue_binding import check_binding
+    result = store.get(os.getenv('EVIDENCE_DIGEST', ''))
+    if not result.get('ok'):
+        raise ValueError(result['reason'])
+    return dict(check_binding(result['bundle']), scope='existing-homolog-only')
+
+
 def main():
-    parser = argparse.ArgumentParser();parser.add_argument('mode', choices=('write', 'read'))
+    parser = argparse.ArgumentParser();parser.add_argument('mode', choices=('write', 'read', 'bind'))
     args = parser.parse_args()
     try:
         guard()
-        result = write() if args.mode == 'write' else read()
+        result = bind() if args.mode == 'bind' else (write() if args.mode == 'write' else read())
         result.update(publication_authorized=False, queue_changed=False)
         print(json.dumps(result, sort_keys=True))
-        return 0
+        return 2 if result.get('status') == 'BLOCKED' else 0
     except Exception as exc:
         # Never log remote messages, article titles, queries, series or secrets.
         reason = str(exc) if isinstance(exc, ValueError) and re.fullmatch('[A-Z0-9_]+', str(exc)) else type(exc).__name__

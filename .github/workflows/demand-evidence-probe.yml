@@ -55,3 +55,28 @@ jobs:
           EXPECTED_PAUTA_ID: ${{ needs.store.outputs.pauta_id }}
           EXPECTED_URL_DIGEST: ${{ needs.store.outputs.url_digest }}
         run: python3 scripts/cloud_demand_evidence_probe.py read
+
+  binding:
+    if: >-
+      github.repository == 'rmsports33/MKT-RSS' && github.event.repository.private == false &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.issue.title == '[demand-evidence] verificar vinculo existente'
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Readonly binding regressions
+        env:
+          PYTHONPATH: tests
+        run: python3 -S -m unittest test_demand_queue_binding -v
+      - run: python3 -m pip install requests==2.34.2
+      - name: Existing private evidence and queue read only; no new Trends call
+        env:
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          CONEXO_DEMAND_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          EVIDENCE_DIGEST: f911230deb3bd7159bb1486f6b006a1e5192c02d5dd9a26a6ca53bbe4f809da8
+        run: python3 scripts/cloud_demand_evidence_probe.py bind
