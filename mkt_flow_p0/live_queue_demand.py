@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 from mkt_flow_p0.opportunities import recent, instant
 
 # Entity shapes, not a dated list of products or a demand/ranking heuristic.
-ENTITY = re.compile(r'\b(?:Galaxy\s+(?:[SAMF]\d{1,3}(?:\s*(?:Ultra|Plus|FE|\+))?|Z\s*(?:Flip|Fold)\s*\d{1,2})|iPhone\s+(?:\d{1,2}(?:\s*(?:Pro\s+Max|Pro|Plus|Air|e))?|Air)|Pixel\s+\d{1,2}(?:\s*(?:Pro\s+XL|Pro|Fold|a))?|Nintendo\s+Switch(?:\s+\d)?|PlayStation\s+\d)(?![\w+])', re.I)
+ENTITY = re.compile(r'\b(?:Galaxy\s+(?:[SAMF]\d{1,3}(?:\s*(?:Ultra|Plus|FE|\+))?|Z\s*(?:Flip|Fold)\s*\d{1,2})|iPhone\s+(?:\d{1,2}(?:\s*(?:Pro\s+Max|Pro|Plus|Air|e))?|Air)|Pixel\s+\d{1,2}(?:\s*(?:Pro\s+XL|Pro|Fold|a))?|Nintendo\s+Switch(?:\s+\d)?|PlayStation\s+\d|WhatsApp(?:\s+Web)?|ChatGPT|Gemini|Claude|Android(?:\s+\d{1,2})?|Windows(?:\s+1[01])?|Google\s+(?:Maps|Fotos|Drive|Chrome|Play)|Chrome|YouTube|Instagram|TikTok|Pix|Netflix|Spotify|Copilot|Nubank|Mercado\s+Pago)(?![\w+])', re.I)
 
 
 def connection_context():
@@ -50,6 +50,7 @@ def choose_existing(*, execute=None, now=None):
         raise ValueError('DAILY_QUEUE_READ_FAILED')
     rows = result.get('rows') or []
     excluded = {'stale_or_missing_date': 0, 'invalid_identity': 0, 'ambiguous_or_missing_entity': 0}
+    references = []
     for row in rows:
         if (not isinstance(row, (list, tuple)) or len(row) != 5
                 or any(not isinstance(v, str) for v in row)):
@@ -71,6 +72,7 @@ def choose_existing(*, execute=None, now=None):
         if not recent(published, now, 168):
             excluded['stale_or_missing_date'] += 1
             continue
+        references.append({'pauta_id': uid, 'source_url': url, 'published_at': published})
         matches = list(dict.fromkeys(m.group(0) for m in ENTITY.finditer(title)))
         if len(matches) != 1:
             excluded['ambiguous_or_missing_entity'] += 1
@@ -84,4 +86,5 @@ def choose_existing(*, execute=None, now=None):
                 'connection': context, 'rows_examined': len(rows), 'excluded': excluded}
     return {'status': 'BLOCKED', 'reason': 'NO_RECENT_UNAMBIGUOUS_ENTITY_IN_DAILY_QUEUE',
             'connection': context, 'rows_examined': len(rows), 'excluded': excluded,
+            'source_references': references[:5],
             'queue_changed': False, 'publication_authorized': False}
