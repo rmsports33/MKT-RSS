@@ -43,6 +43,13 @@ class ImageProtocolTests(unittest.TestCase):
                 manifest['assets'][name]={'path':path.name,'sha256':item['sha256'],'width':item['width'],'height':item['height']}
                 with Image.open(path) as image:self.assertEqual(image.size,(item['width'],item['height']))
             validate_prepared_manifest(manifest,base_dir=root)
+            from mkt_flow_p0.editorial_import import processar_artigo_importado
+            from test_imported_editorial_flow import payload
+            value=payload();result_flow=processar_artigo_importado(value,root/'article',image_manifest=manifest,image_base=root)
+            preview=Path(result_flow['preview_path']).read_text()
+            self.assertIn('<picture>',preview);self.assertIn('assets/cover-mobile.jpg',preview)
+            self.assertNotEqual(result_flow['version_sha256'],'')
+            self.assertNotEqual(result_flow['image_research'],'NOT_RUN')
             manifest['visual_review']='PENDING'
             with self.assertRaises(ValueError):validate_prepared_manifest(manifest,base_dir=root)
             manifest['visual_review']='ASSISTED_VISUAL_CHECK_COMPLETED';(root/'desktop.jpg').write_bytes(b'tampered')
