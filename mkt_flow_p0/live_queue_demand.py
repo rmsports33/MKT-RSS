@@ -16,6 +16,8 @@ TOPIC_PROPOSALS = {
     'https://tecnoblog.net/noticias/iphone-tem-lista-secreta-com-mais-de-100-mil-palavras-que-evita-sugerir': {
         'query': 'teclado do iPhone', 'content_intent': 'evergreen_keyboard_guide',
         'required_source_terms': ['iphone', 'teclado'],
+        'source_refusal': {'reason': 'SOURCE_HTTP_403',
+                           'run': 'https://github.com/rmsports33/MKT-RSS/actions/runs/42668962753'},
     }
 }
 
