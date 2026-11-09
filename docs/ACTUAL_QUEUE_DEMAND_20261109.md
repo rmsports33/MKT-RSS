@@ -59,3 +59,25 @@ sem produto explícito: exigir consulta editorial identificada para esses casos.
 origem real da configuração, somente SELECT, IDs/URLs, expiração, entidade ambígua,
 variante Plus/Pro Max, estados terminais e fronteira entre banco diário/homolog.
 Prova externa deve ser registrada separadamente; daily.yml continua idêntico.
+
+## Ajuste orientado pelas fontes existentes
+
+Leitura real no daily encontrou quatro pautas recentes e íntegras. Cobertura de
+serviços foi acrescentada; o resultado continuou sem entidade inequívoca, então
+foram conferidas as referências das fontes publicadas, sem alterar a fila.
+
+Proposta assistida explícita para a linha já existente de ID
+45ab798001543004f3a8e5ae0be5b7d9, sobre sugestões de palavras no iPhone:
+consulta `teclado do iPhone`, intenção de pesquisa para possível guia duradouro.
+Não reutilizar notícia de 06/11 como notícia recém-publicada, nem repetir a
+alegação numérica do título sem apuração. A proposta é configuração editorial
+rastreável ligada à URL exata; não uma aprovação humana ou ranking automático.
+
+Antes do Trends, o executor consulta robots.txt da fonte e a página HTTPS
+permitida, sem redirects, timeout 8s e 1MiB por resposta. Confere canonical e
+presença dos termos iphone/teclado dentro de article, ignorando script/style.
+Bloqueio de robots/rede/canonical/contexto interrompe, sem contorno. Isso demonstra
+contexto lexical da fonte, não factualidade, revisão visual ou experiência própria.
+Receipt preserva hash da resposta e flags, não texto copiado do artigo.
+
+56 testes direcionados passaram após esta adequação (36 com -S e 20 regressões).

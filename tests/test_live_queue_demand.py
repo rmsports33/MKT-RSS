@@ -72,6 +72,17 @@ class LiveQueueDemandTests(unittest.TestCase):
         self.assertEqual(result['source_references'][0]['source_url'],'https://tecnoblog.net/noticias/galaxy-s26-ultra/')
         self.assertNotIn('Assunto',str(result))
 
+    def test_existing_iphone_source_gets_explicit_evergreen_proposal_without_fake_approval(self):
+        from mkt_flow_p0.live_queue_demand import TOPIC_PROPOSALS
+        url=next(iter(TOPIC_PROPOSALS))
+        uid=self.row(title='iPhone tem lista de palavras',url=url)
+        result=choose_existing(execute=self.execute,now=NOW)
+        self.assertEqual(result['pauta_id'],uid)
+        self.assertEqual(result['query'],'teclado do iPhone')
+        self.assertEqual(result['topic_proposal']['content_intent'],'evergreen_keyboard_guide')
+        self.assertEqual(result['human_query_review'],'PENDING')
+        self.assertFalse(result['publication_authorized'])
+
     def test_wrong_url_or_id_does_not_become_verified(self):
         self.row();self.db.execute("UPDATE rss_pautas SET url='https://other.example/article'")
         self.assertEqual(choose_existing(execute=self.execute,now=NOW)['status'],'BLOCKED')

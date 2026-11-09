@@ -47,6 +47,10 @@ def measure():
     if candidate['connection']['host_sha256'] == hashlib.sha256(HOST.encode()).hexdigest():
         raise ValueError('EVIDENCE_TARGET_EQUALS_DAILY_DATABASE')
     query = candidate['query']
+    source_context = None
+    if candidate.get('topic_proposal'):
+        from mkt_flow_p0.public_source_context import verify_context
+        source_context = verify_context(candidate['pauta_url'], candidate['topic_proposal']['required_source_terms'])
     response = trends([query])
     if response['status'] != 'SNAPSHOT_NAO_VALIDADO':
         raise ValueError('TRENDS_' + response['status'])
@@ -67,7 +71,9 @@ def measure():
             'series_points': len(bundle['payload']['source']['interest_over_time']),
             'assessment': bundle['payload']['normalized']['assessment'],
             'exact_readback': True, 'human_query_review': 'PENDING',
-            'commercial_status': 'UNKNOWN', 'queue_changed': False}
+            'commercial_status': 'UNKNOWN', 'queue_changed': False,
+            'content_intent': (candidate.get('topic_proposal') or {}).get('content_intent'),
+            'source_context': source_context}
 
 
 def main():
