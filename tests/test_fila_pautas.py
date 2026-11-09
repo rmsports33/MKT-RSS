@@ -19,6 +19,13 @@ class TestFilaPautas(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
+    def test_publication_date_is_not_evidence_of_event_date(self):
+        self.a['published'] = '2026-11-09T12:00:00Z'
+        fila.registrar(self.a, self.db)
+        opportunity = fila.listar(db_path=self.db)[0]['opportunity']
+        self.assertIn('FATO_FORA_DOS_7_DIAS_OU_SEM_DATA', opportunity['reasons'])
+        self.assertFalse(opportunity['publication_authorized'])
+
     def test_idempotencia_url_canonica(self):
         first = fila.registrar(self.a, self.db)
         second = fila.registrar({**self.a, "link": "https://example.org/android"}, self.db)

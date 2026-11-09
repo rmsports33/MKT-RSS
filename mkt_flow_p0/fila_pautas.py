@@ -234,7 +234,7 @@ def listar(estado="DESCOBERTA", limite=20, db_path=None):
         try:
             item["opportunity"] = evaluate({"title": item["titulo"], "url": item["url"],
                 "kind": "noticia", "published_at": item["publicada_em"],
-                "event_at": item["publicada_em"], "observed_at": item["created_at"]})
+                "observed_at": item["created_at"]})
         except ValueError:
             item["opportunity"] = {"status": "REVISAO_PENDENTE",
                 "reasons": ["METADADOS_INCOMPLETOS"], "publication_authorized": False}
