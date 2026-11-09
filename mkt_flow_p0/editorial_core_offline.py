@@ -143,7 +143,13 @@ def gerar_corpo_wordpress(article, markdown):
     erros = validar_pacote(article, markdown)
     if erros:
         raise ValueError("; ".join(erros))
-    body = _renderizar_markdown_editorial(markdown)
+    # Imported documents often include their display title. WordPress/theme and
+    # preview already render it; remove only an identical leading H1 at render.
+    lines = markdown.splitlines()
+    first = next((i for i, line in enumerate(lines) if line.strip()), None)
+    if first is not None and lines[first].strip() == "# " + article["title"].strip():
+        lines.pop(first)
+    body = _renderizar_markdown_editorial("\n".join(lines))
     fontes = "\n".join(
         '<li><a rel="noopener noreferrer" href="' + html.escape(s["url"], quote=True) +
         '">' + html.escape(s.get("name") or s["url"]) + '</a></li>' for s in article["sources"]

@@ -82,8 +82,7 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
     seo = meta.get("seo", {})
     desc = seo.get("description", "") if isinstance(seo, dict) else ""
     pendencias = []
-    if palavras < limite:
-        pendencias.append("texto_abaixo_da_referencia_do_genero")
+    avisos = ["texto_abaixo_da_referencia_do_genero"] if palavras < limite else []
     if genero != "nota_breve" and len(fontes) - fontes_rss_pendentes < 2:
         pendencias.append("pesquisa_multifonte_pendente")
     if fontes_rss_pendentes:
@@ -99,7 +98,7 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
         pendencias.append("descricao_seo_revisar")
     return {
         "status": "PRONTO_PARA_REVISAO_HUMANA" if not pendencias else "ENRIQUECIMENTO_PENDENTE",
-        "pendencias": pendencias,
+        "pendencias": pendencias, "avisos": avisos,
         "genero": genero, "palavras": palavras, "referencia_palavras": limite,
         "fontes": len(fontes), "fontes_rss_pendentes": fontes_rss_pendentes,
         "links_internos": len(links.paths),

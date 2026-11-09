@@ -35,7 +35,7 @@ jobs:
       - name: Test portable core and recovery without AI or dependencies
         env:
           PYTHONPATH: tests
-        run: python3 -S -m unittest test_opportunities.OpportunitiesTests test_research_recovery.QueueRecoveryTests -v
+        run: python3 -S -m unittest test_opportunities.OpportunitiesTests test_research_recovery.QueueRecoveryTests test_imported_editorial_flow -v
   screen:
     # Public standard runner compute is free. Private copies must not run this job.
     if: inputs.free_usage_reviewed && github.event.repository.private == false
