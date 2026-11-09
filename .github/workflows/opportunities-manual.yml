@@ -1,0 +1,34 @@
+name: Opportunity screening - offline and manual
+on:
+  workflow_dispatch:
+    inputs:
+      input_file:
+        description: 'JSON/CSV reviewed input path inside this checkout; no secrets or private drafts'
+        required: true
+        type: string
+      free_usage_reviewed:
+        description: 'Account included usage and paid-usage block verified for this run'
+        required: true
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: editorial-opportunities-manual
+  cancel-in-progress: false
+jobs:
+  screen:
+    if: inputs.free_usage_reviewed && vars.CONEXO_FREE_AUTOMATION_READY == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Screen without AI, network, database or WordPress
+        env:
+          INPUT_FILE: ${{ inputs.input_file }}
+        run: python scripts/screen_opportunities_cloud.py
