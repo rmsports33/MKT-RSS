@@ -1,0 +1,29 @@
+name: Demand BR seven days - one readonly comparison
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+concurrency:
+  group: demand-cloud-probe
+  cancel-in-progress: false
+jobs:
+  demand:
+    if: >-
+      github.repository == 'rmsports33/MKT-RSS' && github.event.repository.private == false &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.issue.title == '[demand-probe] validar Trends BR 7 dias'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Offline normalization regressions
+        env:
+          PYTHONPATH: tests
+        run: python3 -S -m unittest test_demand_normalization -v
+      - name: Install reviewed optional HTTP adapter; no browser download
+        run: python3 -m pip install trendspyg==1.9.0 requests==2.34.2 feedparser==6.0.14
+      - name: One comparison; stop on refusal; no browser, retry, queue or WordPress
+        run: python3 scripts/cloud_demand_probe.py

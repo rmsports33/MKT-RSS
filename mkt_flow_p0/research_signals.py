@@ -24,8 +24,12 @@ def trends(terms, *, provider=None):
                     "observed_at": observed, "geo": "BR", "search_volume": None}
         provider = download_google_trends_comparison if len(terms) > 1 else download_google_trends_explore
     try:
-        raw = provider(terms if len(terms) > 1 else terms[0],
-                       geo="BR", timeframe="now 7-d", engine="http")
+        options = {"geo": "BR", "timeframe": "now 7-d", "engine": "http",
+                   "include_geo": False, "max_retries": 1, "cache": False,
+                   "archive": False, "cookies": False}
+        if len(terms) == 1:
+            options["include_related"] = False
+        raw = provider(terms if len(terms) > 1 else terms[0], **options)
         return {"source": "trends", "status": "SNAPSHOT_NAO_VALIDADO", "geo": "BR",
                 "observed_at": observed, "terms": terms, "raw": raw, "search_volume": None}
     except Exception as exc:
