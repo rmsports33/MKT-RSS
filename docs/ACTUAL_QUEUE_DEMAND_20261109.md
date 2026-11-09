@@ -81,3 +81,19 @@ contexto lexical da fonte, não factualidade, revisão visual ou experiência pr
 Receipt preserva hash da resposta e flags, não texto copiado do artigo.
 
 56 testes direcionados passaram após esta adequação (36 com -S e 20 regressões).
+
+## Bloqueio real da fonte e independência da pesquisa
+
+A execução confirmou o vínculo exato da pauta na fila diária e propôs o termo,
+mas a fonte retornou SOURCE_HTTP_403 antes de qualquer Trends/gravação. Não houve
+retry, troca de user-agent, proxy, navegador ou tentativa de contorno.
+
+Correção: o bloqueio interrompe acesso à FONTE e fica explícito no receipt como
+source_context.status=BLOCKED/factuality_verified=false. A pesquisa independente
+da consulta no Trends pode continuar; não depende de copiar o artigo ou certificar
+os fatos dele. Publicação e revisão humana permanecem pendentes. Não repetir fonte
+bloqueada durante essa continuação nem tratar índice positivo como apuração.
+
+Teste adicional confirma exatamente uma tentativa da fonte e uma consulta Trends,
+readback privado sem alterar fila, com recusa preservada. Não implica que a fonte
+foi lida ou que sua afirmação numérica foi validada.

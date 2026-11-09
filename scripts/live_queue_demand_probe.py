@@ -50,7 +50,14 @@ def measure():
     source_context = None
     if candidate.get('topic_proposal'):
         from mkt_flow_p0.public_source_context import verify_context
-        source_context = verify_context(candidate['pauta_url'], candidate['topic_proposal']['required_source_terms'])
+        try:
+            source_context = dict(verify_context(candidate['pauta_url'], candidate['topic_proposal']['required_source_terms']), status='CONTEXT_OBSERVED_NOT_FACTUAL_APPROVAL')
+        except Exception as exc:
+            # Stop source access. Independent keyword research can continue, but
+            # never converts a refused source into approval or retries it.
+            reason=str(exc) if isinstance(exc,ValueError) and re.fullmatch('[A-Z0-9_]+',str(exc)) else type(exc).__name__
+            source_context = {'status':'BLOCKED','reason':reason,'factuality_verified':False}
+
     response = trends([query])
     if response['status'] != 'SNAPSHOT_NAO_VALIDADO':
         raise ValueError('TRENDS_' + response['status'])

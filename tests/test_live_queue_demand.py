@@ -117,6 +117,36 @@ class LiveQueueDemandTests(unittest.TestCase):
             os.environ['CANDIDATE_JSON']=json.dumps(candidate)
             with self.assertRaisesRegex(ValueError,'QUEUE_REFERENCE_EXPIRED'):probe.measure()
 
+    def test_refused_source_is_not_retried_or_approved_and_demand_is_independent(self):
+        import importlib.util
+        import json
+        from datetime import datetime,timezone
+        from test_demand_evidence import ENV as HOMOLOG_ENV
+        from test_demand_normalization import source
+        spec=importlib.util.spec_from_file_location('live_probe',Path(__file__).resolve().parents[1]/'scripts/live_queue_demand_probe.py')
+        probe=importlib.util.module_from_spec(spec);spec.loader.exec_module(probe)
+        now=datetime.now(timezone.utc).isoformat()
+        candidate={'schema':'conexo-live-queue-research-candidate/1','pauta_id':'fixture-id',
+                   'pauta_url':'https://tecnoblog.net/noticias/source','query':'A',
+                   'queue_reference_verified':True,'queue_changed':False,
+                   'queue_checked_at':now,'published_at':now,
+                   'connection':{'host_sha256':'different-daily-db'},
+                   'topic_proposal':{'required_source_terms':['iphone','teclado'],'content_intent':'guide'}}
+        saved=[]
+        def save(bundle):saved.append(bundle);return {'ok':True}
+        def get(digest):return {'ok':True,'bundle':saved[0]}
+        with patch.dict(os.environ,dict(HOMOLOG_ENV,CANDIDATE_JSON=json.dumps(candidate))), \
+             patch('mkt_flow_p0.public_source_context.verify_context',side_effect=ValueError('SOURCE_HTTP_403')) as fetch, \
+             patch('mkt_flow_p0.research_signals.trends',return_value={'status':'SNAPSHOT_NAO_VALIDADO','raw':source()}) as trends, \
+             patch('mkt_flow_p0.demand_evidence_turso.save',side_effect=save), \
+             patch('mkt_flow_p0.demand_evidence_turso.get',side_effect=get):
+            result=probe.measure()
+        self.assertEqual(fetch.call_count,1);self.assertEqual(trends.call_count,1)
+        self.assertEqual(result['source_context']['reason'],'SOURCE_HTTP_403')
+        self.assertFalse(result['source_context']['factuality_verified'])
+        self.assertTrue(result['exact_readback']);self.assertFalse(result['queue_changed'])
+        self.assertEqual(result['human_query_review'],'PENDING')
+
     def test_workflow_reads_actual_secrets_and_writes_only_homolog(self):
         workflow=(Path(__file__).resolve().parents[1]/'.github/workflows/live-queue-demand.yml').read_text()
         select,measure=workflow.split('  measure:')
