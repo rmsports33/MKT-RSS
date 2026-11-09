@@ -42,6 +42,13 @@ segundo https://docs.github.com/en/billing/concepts/product-billing/github-actio
 Cópias privadas ficam impedidas de executar esse job. Não há serviço residente
 nem Codespace obrigatório. O cron existente não depende de variável nova.
 
+Alternativa pelo celular: o proprietário abre uma Issue com título exato
+`[cloud-check] validar nucleo offline`. Isso executa somente os testes sintéticos
+do núcleo e da recuperação, no Ubuntu padrão público, por até dois minutos.
+Sem dependências, credenciais, IA, banco real, artifacts ou cache. O resultado
+fica no log do Actions; uma Issue de outro autor não aciona o job. Não coleta
+demanda nem publica conteúdo. O job manual de seleção continua separado.
+
 Em ambiente cloud temporário, via terminal do navegador:
 
 ```bash

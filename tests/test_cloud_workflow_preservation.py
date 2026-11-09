@@ -21,6 +21,13 @@ class CloudWorkflowPreservationTests(unittest.TestCase):
         self.assertNotIn("upload-artifact", workflow)
         self.assertNotIn("cache:", workflow)
 
+    def test_issue_verification_requires_owner_and_exact_command(self):
+        workflow = (ROOT / ".github/workflows/opportunities-manual.yml").read_text()
+        self.assertIn("github.event.sender.login == github.repository_owner", workflow)
+        self.assertIn("github.event.issue.title == '[cloud-check] validar nucleo offline'", workflow)
+        self.assertIn("python3 -S -m unittest", workflow)
+        self.assertNotIn("secrets.", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()

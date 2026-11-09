@@ -1,5 +1,7 @@
 name: Opportunity screening - offline and manual
 on:
+  issues:
+    types: [opened]
   workflow_dispatch:
     inputs:
       input_file:
@@ -17,6 +19,23 @@ concurrency:
   group: editorial-opportunities-manual
   cancel-in-progress: false
 jobs:
+  verify:
+    # Browser/mobile fallback when the operator has no workflow-dispatch client.
+    # Only the repository owner can request this bounded offline verification.
+    if: >-
+      github.event_name == 'issues' && github.event.repository.private == false &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.issue.title == '[cloud-check] validar nucleo offline'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Test portable core and recovery without AI or dependencies
+        env:
+          PYTHONPATH: tests
+        run: python3 -S -m unittest test_opportunities.OpportunitiesTests test_research_recovery.QueueRecoveryTests -v
   screen:
     # Public standard runner compute is free. Private copies must not run this job.
     if: inputs.free_usage_reviewed && github.event.repository.private == false
