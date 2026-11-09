@@ -43,7 +43,7 @@ def importar_artigo_para_handoff(payload, output_dir):
             "wordpress_written": False, "provider_called": False}
 
 
-def processar_artigo_importado(payload, output_dir, *, genero="guia", image_manifest=None, image_base=None, offline=True):
+def processar_artigo_importado(payload, output_dir, *, genero="guia", image_manifest=None, image_base=None, offline=True, image_fit_review=None):
     """Run existing editorial modules on finished text, WITHOUT any provider/WP.
 
     Keep the low-level importer compatible, but the operational CLI returns a
@@ -61,7 +61,7 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
     if errors:
         raise ValueError("; ".join(errors))
     from mkt_flow_p0.image_protocol import plan_image, validate_prepared_manifest
-    image_plan = plan_image(payload['article']['titulo_seo'], offline=offline)
+    image_plan = plan_image(payload['article']['titulo_seo'], offline=offline, content_fit=image_fit_review)
     if image_manifest is not None:
         if image_base is None:raise ValueError('IMAGE_BASE_REQUIRED')
         resource = validate_prepared_manifest(image_manifest, base_dir=image_base)
@@ -70,8 +70,8 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         resource['visual_review'] = image_manifest['visual_review']
         from mkt_flow_p0.editorial_identity import atualizar_handoff_revisao
         handoff = atualizar_handoff_revisao(handoff,handoff['markdown'],image_resource=resource)
-        image_plan = {'status':'PREPARED_LICENSED_IMAGE_INSTALLED','resource':resource,
-                      'network_called':False,'ai_called':False,'wordpress_written':False}
+        image_plan = {'status':'PREPARED_GENERATED_IMAGE_INSTALLED' if resource.get('source_type') == 'ai_generated' else 'PREPARED_LICENSED_IMAGE_INSTALLED','resource':resource,
+                      'network_called':False,'ai_called':resource.get('source_type') == 'ai_generated','wordpress_written':False}
     root = Path(output_dir)
     root.mkdir(parents=True, exist_ok=False, mode=0o700)
     # No overwrite/reused acceptance; each run has an exclusive private directory.
@@ -114,7 +114,8 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         "modules_executed":["editorial_import","editorial_identity","editorial_core_offline",
             "format","seo","seo_contract_native","editorial_readiness",
             "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol"],
-        "image_research":image_plan, "related_links":"NOT_VERIFIED",
+        "image_research":image_plan, "image_generation_request":image_plan.get('generation_request'),
+        "image_ai_used":bool(image_plan.get('ai_called')), "related_links":"NOT_VERIFIED",
         "provider_called":False,"network_called":image_plan.get("network_called",False),"wordpress_written":False,
         "publication_authorized":False,"human_acceptance":"PENDING"}
     (root / "pipeline-report.json").write_text(json.dumps(result,ensure_ascii=False,indent=2), encoding="utf-8")
@@ -137,6 +138,7 @@ def main():
     parser.add_argument("--import-article", type=Path, required=True)
     parser.add_argument("--handoff-dir", type=Path, required=True)
     parser.add_argument("--image-manifest", type=Path)
+    parser.add_argument("--image-fit-review", choices=("PASS", "INCONGRUENT"), help="Resultado da revisão visual/editorial da candidata gratuita")
     parser.add_argument("--offline",action="store_true",help="Sem pesquisa de imagem na rede; protocolo ainda avalia catálogo/pendências")
     args = parser.parse_args()
     if args.import_article.stat().st_size > 1024 * 1024:
@@ -144,7 +146,7 @@ def main():
     payload = json.loads(args.import_article.read_text(encoding="utf-8"))
     image = json.loads(args.image_manifest.read_text(encoding='utf-8')) if args.image_manifest else None
     report = processar_artigo_importado(payload, args.handoff_dir,
-        image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,offline=args.offline)
+        image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,offline=args.offline,image_fit_review=args.image_fit_review)
     print(json.dumps(resumo_execucao(report), ensure_ascii=False, sort_keys=True))
     return 0
 
