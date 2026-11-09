@@ -37,7 +37,7 @@ class ImageProtocolTests(unittest.TestCase):
         raw=io.BytesIO();Image.new('RGB',(1800,1000),'navy').save(raw,format='JPEG')
         result=prepare_assets(resource,raw.getvalue())
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);manifest={'resource':resource,'assets':{},'visual_review':'ASSISTED_VISUAL_CHECK_COMPLETED'}
+            root=Path(folder);manifest={'resource':resource,'assets':{},'visual_review':'ASSISTED_VISUAL_CHECK_COMPLETED','content_fit_review':'PASS'}
             for name,item in result['assets'].items():
                 path=root/(name+'.jpg');path.write_bytes(item['bytes'])
                 manifest['assets'][name]={'path':path.name,'sha256':item['sha256'],'width':item['width'],'height':item['height']}
