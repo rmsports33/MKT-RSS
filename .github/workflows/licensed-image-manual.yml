@@ -1,0 +1,24 @@
+name: Licensed image preparation - no AI or WordPress
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+concurrency:
+  group: licensed-image-preparation
+  cancel-in-progress: false
+jobs:
+  prepare:
+    if: >-
+      github.repository == 'rmsports33/MKT-RSS' && github.event.repository.private == false &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.issue.title == '[image-protocol] preparar imagem licenciada'
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install requests==2.34.2 Pillow==12.3.0
+      - name: Prepare fixed reviewed CC0 source only
+        run: python3 scripts/prepare_licensed_image_probe.py

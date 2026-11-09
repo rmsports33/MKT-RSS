@@ -26,7 +26,7 @@ class ImportedEditorialFlowTests(unittest.TestCase):
     def test_real_modules_generate_preview_body_seo_and_pending_diagnostics_without_network(self):
         with tempfile.TemporaryDirectory() as folder, patch('socket.create_connection',side_effect=AssertionError('Unexpected network')):
             result=processar_artigo_importado(payload(),Path(folder)/'version')
-            self.assertEqual(set(result['modules_executed']),{'editorial_import','editorial_identity','editorial_core_offline','format','seo','seo_contract_native','editorial_readiness','gate_editorial_pos_ia','adaptador_contrato_editorial','editorial_trace'})
+            self.assertEqual(set(result['modules_executed']),{'editorial_import','editorial_identity','editorial_core_offline','format','seo','seo_contract_native','editorial_readiness','gate_editorial_pos_ia','adaptador_contrato_editorial','editorial_trace','image_protocol'})
             self.assertIn('<table>',Path(result['wordpress_body_path']).read_text())
             self.assertIn('noindex,nofollow',Path(result['preview_path']).read_text())
             self.assertFalse(result['wordpress_written']);self.assertFalse(result['provider_called'])
@@ -43,7 +43,7 @@ class ImportedEditorialFlowTests(unittest.TestCase):
             p=Path(folder);(p/'input.json').write_text(json.dumps(payload()))
             env=dict(os.environ,GROQ_API_KEY='',WP_APP_PASSWORD='',WP_URL='',WP_USER='')
             run=subprocess.run([sys.executable,'-S',str(ROOT/'pipeline_rss.py'),'--import-article',str(p/'input.json'),
-                '--handoff-only','--handoff-dir',str(p/'out'),'--genero','guia'],cwd=folder,env=env,text=True,capture_output=True,check=True)
+                '--handoff-only','--handoff-dir',str(p/'out'),'--genero','guia','--offline'],cwd=folder,env=env,text=True,capture_output=True,check=True)
             summary=json.loads(run.stdout)
             self.assertFalse(summary['provider_called']);self.assertFalse(summary['wordpress_written'])
             self.assertNotIn(payload()['article']['texto_markdown'][:50],run.stdout)

@@ -43,7 +43,7 @@ def importar_artigo_para_handoff(payload, output_dir):
             "wordpress_written": False, "provider_called": False}
 
 
-def processar_artigo_importado(payload, output_dir, *, genero="guia"):
+def processar_artigo_importado(payload, output_dir, *, genero="guia", image_manifest=None, image_base=None, offline=True):
     """Run existing editorial modules on finished text, WITHOUT any provider/WP.
 
     Keep the low-level importer compatible, but the operational CLI returns a
@@ -60,11 +60,30 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia"):
     errors = validar_pacote(handoff["metadata"], handoff["markdown"])
     if errors:
         raise ValueError("; ".join(errors))
+    from mkt_flow_p0.image_protocol import plan_image, validate_prepared_manifest
+    image_plan = plan_image(payload['article']['titulo_seo'], offline=offline)
+    if image_manifest is not None:
+        if image_base is None:raise ValueError('IMAGE_BASE_REQUIRED')
+        resource = validate_prepared_manifest(image_manifest, base_dir=image_base)
+        resource['preview_assets'] = {name:'assets/cover-'+name+'.jpg' for name in ('desktop','mobile')}
+        resource['asset_sha256'] = {name:image_manifest['assets'][name]['sha256'] for name in ('desktop','mobile')}
+        resource['visual_review'] = image_manifest['visual_review']
+        from mkt_flow_p0.editorial_identity import atualizar_handoff_revisao
+        handoff = atualizar_handoff_revisao(handoff,handoff['markdown'],image_resource=resource)
+        image_plan = {'status':'PREPARED_LICENSED_IMAGE_INSTALLED','resource':resource,
+                      'network_called':False,'ai_called':False,'wordpress_written':False}
     root = Path(output_dir)
     root.mkdir(parents=True, exist_ok=False, mode=0o700)
     # No overwrite/reused acceptance; each run has an exclusive private directory.
-    imported = importar_artigo_para_handoff(payload, root)
-    saved = json.loads(Path(imported["handoff_path"]).read_text(encoding="utf-8"))
+    handoff_path = salvar_handoff_chatgpt(handoff,root)
+    imported = {**validar_handoff_chatgpt(handoff),'handoff_path':handoff_path,'wordpress_written':False,'provider_called':False}
+    saved = json.loads(Path(handoff_path).read_text(encoding="utf-8"))
+    if image_manifest is not None:
+        import shutil
+        (root/'assets').mkdir(mode=0o700)
+        for name in ('desktop','mobile'):
+            shutil.copyfile(Path(image_base)/image_manifest['assets'][name]['path'],root/'assets'/('cover-'+name+'.jpg'))
+            os.chmod(root/'assets'/('cover-'+name+'.jpg'),0o600)
     metadata_path, markdown_path = root / "article.metadata.json", root / "article.md"
     metadata_path.write_text(json.dumps(saved["metadata"], ensure_ascii=False, indent=2), encoding="utf-8")
     markdown_path.write_text(saved["markdown"], encoding="utf-8")
@@ -94,9 +113,9 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia"):
         "claims_traceability":rendered["rastreabilidade_claims"],
         "modules_executed":["editorial_import","editorial_identity","editorial_core_offline",
             "format","seo","seo_contract_native","editorial_readiness",
-            "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace"],
-        "image_research":"NOT_RUN", "related_links":"NOT_VERIFIED",
-        "provider_called":False,"network_called":False,"wordpress_written":False,
+            "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol"],
+        "image_research":image_plan, "related_links":"NOT_VERIFIED",
+        "provider_called":False,"network_called":image_plan.get("network_called",False),"wordpress_written":False,
         "publication_authorized":False,"human_acceptance":"PENDING"}
     (root / "pipeline-report.json").write_text(json.dumps(result,ensure_ascii=False,indent=2), encoding="utf-8")
     # All generated artifacts are private even with a permissive process umask.
@@ -117,11 +136,15 @@ def main():
     parser = argparse.ArgumentParser(description="Importar artigo para revisao MKT-RSS")
     parser.add_argument("--import-article", type=Path, required=True)
     parser.add_argument("--handoff-dir", type=Path, required=True)
+    parser.add_argument("--image-manifest", type=Path)
+    parser.add_argument("--offline",action="store_true",help="Sem pesquisa de imagem na rede; protocolo ainda avalia catálogo/pendências")
     args = parser.parse_args()
     if args.import_article.stat().st_size > 1024 * 1024:
         parser.error("arquivo excede 1 MiB")
     payload = json.loads(args.import_article.read_text(encoding="utf-8"))
-    report = processar_artigo_importado(payload, args.handoff_dir)
+    image = json.loads(args.image_manifest.read_text(encoding='utf-8')) if args.image_manifest else None
+    report = processar_artigo_importado(payload, args.handoff_dir,
+        image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,offline=args.offline)
     print(json.dumps(resumo_execucao(report), ensure_ascii=False, sort_keys=True))
     return 0
 
