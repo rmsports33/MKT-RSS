@@ -1,0 +1,25 @@
+[
+  {
+    "id": "commons-iphone-keyboard-karl432",
+    "match_all": [
+      "iphone",
+      "teclado"
+    ],
+    "query": "iPhone on-screen keyboard",
+    "source_page": "https://commons.wikimedia.org/wiki/File:Smartphone_mit_aktivierter_Bildschirmtastatur.jpg",
+    "source_revision": "https://commons.wikimedia.org/w/index.php?title=File:Smartphone_mit_aktivierter_Bildschirmtastatur.jpg&oldid=696104301",
+    "image_url": "https://upload.wikimedia.org/wikipedia/commons/7/74/Smartphone_mit_aktivierter_Bildschirmtastatur.jpg",
+    "author": "Karl432",
+    "license": "CC0-1.0",
+    "license_url": "https://creativecommons.org/publicdomain/zero/1.0/",
+    "checked_at": "2026-11-09T18:59:48.218131+00:00",
+    "rights_review": "DOCUMENTED_SOURCE_CHECK",
+    "review_mode": "assisted_documentary_check_not_human_signature",
+    "original_width": 3784,
+    "original_height": 1966,
+    "alt": "iPhone com teclado virtual aberto na tela",
+    "caption": "Imagem ilustrativa de um iPhone com teclado na tela; não representa a versão do iOS do leitor.",
+    "credit": "Karl432 / Wikimedia Commons — CC0 1.0",
+    "visual_review": "PENDING"
+  }
+]

@@ -94,6 +94,14 @@ def validar_pacote(article, markdown):
         _escape_links(markdown)
     except ValueError as exc:
         erros.append(str(exc))
+    if article.get('image_resource') is not None:
+        try:
+            from mkt_flow_p0.image_protocol import validate_resource
+            resource=validate_resource(article['image_resource'])
+            for path in resource['preview_assets'].values():
+                if not re.fullmatch(r'assets/cover-(desktop|mobile)\.jpg',path):raise ValueError('IMAGE_PATH_INVALID')
+            if resource.get('visual_review')!='ASSISTED_VISUAL_CHECK_COMPLETED':raise ValueError('IMAGE_VISUAL_PENDING')
+        except (ValueError,KeyError,TypeError):erros.append('Imagem sem licença/visual/paths validados')
     return erros
 
 
@@ -159,6 +167,10 @@ def gerar_corpo_wordpress(article, markdown):
         '">' + html.escape(r.get("title") or r["url"]) + '</a></li>' for r in article.get("related_articles", [])
     )
     items = [body, "<h2>Fontes</h2><ul>" + fontes + "</ul>"]
+    if article.get('image_resource'):
+        from mkt_flow_p0.image_protocol import image_figure
+        resource=article['image_resource'];assets=resource['preview_assets']
+        items.insert(0,image_figure(resource,assets['desktop'],assets['mobile']))
     if related:
         items.append("<h2>Leia também</h2><ul>" + related + "</ul>")
     return "\n".join(items)
@@ -191,7 +203,7 @@ def processar(metadata_file, markdown_file, output_dir, editorial_package_file=N
     rendered = gerar_html(article, markdown)
     wordpress_body = gerar_corpo_wordpress(article, markdown)
     seo_preflight = validar_artigo_wordpress(article["title"], wordpress_body,
-                                           tem_capa=bool(article.get("featured_image")))
+                                           tem_capa=bool(article.get("featured_image") or article.get("image_resource")))
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     path = output / (article["seo"]["slug"] + ".html")

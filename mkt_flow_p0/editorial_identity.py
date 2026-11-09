@@ -208,7 +208,7 @@ def validar_handoff_chatgpt(handoff):
 
 
 def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None,
-                             featured_media_id=None, media_rights_confirmed=False):
+                             featured_media_id=None, media_rights_confirmed=False, image_resource=None):
     """Create a new version for the EXACT Markdown rendered in WordPress.
 
     Prevents old content hash/approval being reused when attribution or
@@ -237,6 +237,9 @@ def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None,
             "wordpress_media_id": featured_media_id, "human_rights_confirmed": True}
     elif media_rights_confirmed:
         raise ValueError("confirmação de direitos sem mídia")
+    if image_resource is not None:
+        from mkt_flow_p0.image_protocol import validate_resource
+        result["metadata"]["image_resource"] = validate_resource(image_resource)
     result["markdown"] = markdown_final
     payload = {"metadata": result["metadata"], "markdown": markdown_final}
     result["version_sha256"] = hashlib.sha256(json.dumps(

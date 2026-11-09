@@ -83,8 +83,27 @@ def buscar_fallback(consulta: str, timeout: int = 10) -> dict:
         pass
     key = (os.getenv("UNSPLASH_ACCESS_KEY") or "").strip()
     if not key:
-        return {"erro": "Busca de banco gratuito não configurada",
-                "proxima_etapa": "PESQUISA_BANCO_PENDENTE"}
+        # Wikimedia Commons is free/public: no API key or AI provider required.
+        try:
+            response = requests.get("https://commons.wikimedia.org/w/api.php", params={
+                "action":"query","format":"json","generator":"search","gsrnamespace":6,
+                "gsrsearch":consulta+" filetype:bitmap","gsrlimit":5,"prop":"imageinfo",
+                "iiprop":"url|size|extmetadata"}, timeout=timeout,
+                headers={"User-Agent":"ConexoTech-image-research/1"}, allow_redirects=False)
+            if response.status_code != 200:
+                return {"erro":"Pesquisa Wikimedia indisponivel","proxima_etapa":"PESQUISA_BANCO_PENDENTE"}
+            candidates=[]
+            for page in (response.json().get('query',{}).get('pages',{}).values()):
+                info=(page.get('imageinfo') or [{}])[0];meta=info.get('extmetadata',{})
+                if info.get('width',0)<1440 or info.get('height',0)<810:continue
+                candidates.append({"url":info.get('url'),"pagina_origem":info.get('descriptionurl'),
+                    "autor":(meta.get('Artist') or {}).get('value',''),
+                    "licenca":(meta.get('LicenseShortName') or {}).get('value',''),
+                    "licenca_url":(meta.get('LicenseUrl') or {}).get('value',''),
+                    "origem":"wikimedia_commons","revisao_direitos":"PENDENTE","revisao_visual":"PENDENTE"})
+            return {"candidatos":candidates,"proxima_etapa":"REVISAO_HUMANA_DE_MIDIA" if candidates else "PESQUISA_BANCO_PENDENTE"}
+        except Exception:
+            return {"erro":"Pesquisa Wikimedia indisponivel","proxima_etapa":"PESQUISA_BANCO_PENDENTE"}
     try:
         r = requests.get("https://api.unsplash.com/search/photos",
                          params={"query": consulta, "per_page": 5, "orientation": "landscape"},

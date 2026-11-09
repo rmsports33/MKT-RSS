@@ -227,8 +227,9 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     # A pesquisa gratuita é opt-in, sem upload nem escrita WordPress.
     plano_imagem = {"status": "PESQUISA_NAO_EXECUTADA",
                     "proxima_etapa": "BUSCAR_BANCO_GRATUITO"}
-    if not handoff_only and os.getenv("CONEXO_RSS_PREVIEW_SOURCE_IMAGE") == "1":
-        plano_imagem = preparar_capa(consulta_fallback=rw["titulo_seo"], timeout=10)
+    # Handoff-only blocks WP writes, not free image research. Protocol always runs.
+    from mkt_flow_p0.image_protocol import plan_image
+    plano_imagem = plan_image(rw['titulo_seo'],offline=False)
     # Qualquer candidata permanece pendente de licença/atribuição e de
     # revisão 1440px desktop / 390px celular. Não altera hash do artigo.
     # Diagnostico de prontidao nao bloqueia o armazenamento de rascunhos;
@@ -453,6 +454,8 @@ def main():
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--import-article", type=Path,
                     help="Texto pronto de editor/provedor: módulos editoriais sem IA, RSS ou WordPress")
+    ap.add_argument("--image-manifest",type=Path,help="Imagem licenciada preparada; cópia local/preview sem upload")
+    ap.add_argument("--offline",action="store_true",help="Sem pesquisa de imagem na rede; protocolo mantém pendências explícitas")
     ap.add_argument("--genero", choices=("noticia","guia","review","comparativo","analise","nota_breve"), default="guia")
     ap.add_argument("--queue-only", action="store_true", help="Coletar apenas pautas na fila, sem IA ou WordPress")
     ap.add_argument("--research-context", type=Path,
@@ -491,7 +494,12 @@ def main():
                 data = stream.read(1024 * 1024 + 1)
             if len(data) > 1024 * 1024:
                 raise ValueError("entrada excede 1 MiB")
-            result = processar_artigo_importado(json.loads(data), args.handoff_dir, genero=args.genero)
+            image = None
+            if args.image_manifest:
+                if args.image_manifest.stat().st_size>512*1024:raise ValueError('IMAGE_MANIFEST_TOO_LARGE')
+                image=json.loads(args.image_manifest.read_text(encoding='utf-8'))
+            result = processar_artigo_importado(json.loads(data), args.handoff_dir, genero=args.genero,
+                image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,offline=args.offline)
         except (ValueError, OSError, TypeError, KeyError) as exc:
             print(json.dumps({"status":"BLOCKED","error_type":type(exc).__name__}))
             return 1
