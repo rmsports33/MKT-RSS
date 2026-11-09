@@ -1,4 +1,4 @@
-"""Always-evaluated image protocol; no AI dependency or automatic WP writes."""
+"""Image selection and preparation; poor-fit candidates route to an AI generation request."""
 import copy
 import hashlib
 import html
@@ -13,9 +13,18 @@ LICENSES = {'CC0-1.0': 'https://creativecommons.org/publicdomain/zero/1.0/',
 
 
 def validate_resource(resource):
-    if not isinstance(resource, dict):raise ValueError('IMAGE_RESOURCE_INVALID')
+    if not isinstance(resource, dict):
+        raise ValueError('IMAGE_RESOURCE_INVALID')
+    if resource.get('source_type') == 'ai_generated':
+        for key in ('id', 'generated_by', 'generated_at', 'prompt', 'alt', 'caption', 'credit'):
+            if not isinstance(resource.get(key), str) or not resource[key].strip():
+                raise ValueError('IMAGE_PROVENANCE_INCOMPLETE')
+        if resource.get('content_fit_review') != 'PASS':
+            raise ValueError('IMAGE_CONTENT_FIT_NOT_APPROVED')
+        return copy.deepcopy(resource)
     for key in ('id','source_page','image_url','author','license','license_url','checked_at','alt','caption','credit'):
-        if not isinstance(resource.get(key),str) or not resource[key].strip():raise ValueError('IMAGE_PROVENANCE_INCOMPLETE')
+        if not isinstance(resource.get(key),str) or not resource[key].strip():
+            raise ValueError('IMAGE_PROVENANCE_INCOMPLETE')
     if (resource['license'] not in LICENSES or resource['license_url'] != LICENSES[resource['license']]
             or resource.get('rights_review') != 'DOCUMENTED_SOURCE_CHECK'):
         raise ValueError('IMAGE_LICENSE_NOT_DOCUMENTED')
@@ -26,15 +35,45 @@ def validate_resource(resource):
     return copy.deepcopy(resource)
 
 
-def plan_image(title, *, offline=True):
-    """Protocol runs even offline/handoff-only; missing assets remain explicit."""
+def _generation_request(title, reason, candidate=None):
+    """Return an explicit request for the available image-generation tool."""
+    return {
+        'status':'AI_GENERATION_REQUIRED',
+        'next_step':'GENERATE_RELEVANT_IMAGE',
+        'reason':reason,
+        'rejected_candidate':candidate,
+        'generation_request':{
+            'schema':'conexo-image-generation-request/1',
+            'article_title':title,
+            'prompt':('Create a relevant editorial image for the article "'+title+'". '
+                      'Match the article language, device context, and subject. '
+                      'Do not use a merely keyword-matched but visually misleading image. '
+                      'Avoid logos, fake screenshots, and unsupported UI details.'),
+            'constraints':['relevant_to_article','no_misleading_interface','no_logos'],
+        },
+        'network_called':False,'ai_called':False,'wordpress_written':False,
+    }
+
+
+def plan_image(title, *, offline=True, content_fit=None):
+    """Check free/licensed sources first; an incongruent candidate requires AI generation.
+
+    A keyword match is only a candidate. The caller must pass content_fit='PASS'
+    after visual/editorial review before accepting it. Pass 'INCONGRUENT' to
+    route directly to the generation tool. The module emits a request because
+    GitHub Actions cannot invoke ChatGPT's built-in image generator.
+    """
     catalog=json.loads(CATALOG.read_text(encoding='utf-8'))
     for entry in catalog:
         if all(term.casefold() in title.casefold() for term in entry.get('match_all',[])):
             resource=validate_resource(entry)
-            return {'status':'CANDIDATE_LICENSE_DOCUMENTED','resource':resource,
-                    'next_step':'PREPARE_AND_REVIEW_1440_390','network_called':False,
-                    'ai_called':False,'wordpress_written':False}
+            if content_fit == 'INCONGRUENT':
+                return _generation_request(title,'FREE_CANDIDATE_NOT_CONGRUENT',resource['id'])
+            return {'status':'CANDIDATE_LICENSE_DOCUMENTED',
+                    'resource':resource,
+                    'content_fit_review':'PASS' if content_fit == 'PASS' else 'PENDING',
+                    'next_step':'PREPARE_IMAGE' if content_fit == 'PASS' else 'REVIEW_CONTENT_FIT',
+                    'network_called':False,'ai_called':False,'wordpress_written':False}
     if offline:
         return {'status':'RESEARCH_REQUIRED_OFFLINE','next_step':'FREE_STOCK_RESEARCH',
                 'network_called':False,'ai_called':False,'wordpress_written':False}
@@ -44,12 +83,20 @@ def plan_image(title, *, offline=True):
     except ImportError:
         return {'status':'RESEARCH_DEPENDENCY_UNAVAILABLE','next_step':'INSTALL_FREE_REQUESTS_OR_SUPPLY_LICENSED_MANIFEST',
                 'network_called':False,'ai_called':False,'wordpress_written':False}
-    return {'status':'CANDIDATES_REQUIRE_LICENSE_REVIEW' if found.get('candidatos') else 'FREE_RESEARCH_UNAVAILABLE',
-            'research':found,'network_called':True,'ai_called':False,'wordpress_written':False}
+    candidates=found.get('candidatos') or []
+    if content_fit == 'INCONGRUENT':
+        return _generation_request(title,'FREE_CANDIDATES_NOT_CONGRUENT',
+                                   [item.get('pagina_origem') or item.get('pagina_origem') for item in candidates])
+    if candidates:
+        return {'status':'CANDIDATES_REQUIRE_CONTENT_FIT_REVIEW',
+                'research':found,'content_fit_review':'PENDING',
+                'next_step':'REVIEW_CONTENT_FIT','network_called':True,
+                'ai_called':False,'wordpress_written':False}
+    return _generation_request(title,'NO_SUITABLE_FREE_CANDIDATE')
 
 
 def prepare_assets(resource, image_bytes):
-    """Use the existing Pillow cover pipeline. No fictitious UI/screenshots."""
+    """Use the existing Pillow cover pipeline for licensed or generated artwork."""
     from mkt_flow_p0.image_handler import processar_capa
     from PIL import Image
     import io
@@ -69,6 +116,7 @@ def prepare_assets(resource, image_bytes):
 def validate_prepared_manifest(manifest, *, base_dir):
     resource=validate_resource(manifest['resource'])
     if manifest.get('visual_review')!='ASSISTED_VISUAL_CHECK_COMPLETED':raise ValueError('IMAGE_VISUAL_REVIEW_PENDING')
+    if manifest.get('content_fit_review')!='PASS':raise ValueError('IMAGE_CONTENT_FIT_NOT_APPROVED')
     base=Path(base_dir).resolve()
     for name in ('desktop','mobile'):
         item=manifest['assets'][name];p=(base/item['path']).resolve()
@@ -86,4 +134,9 @@ def image_figure(resource, desktop, mobile=None):
     src=e(desktop);alt=e(resource['alt'])
     picture=('<picture>'+('<source media="(max-width: 600px)" srcset="'+e(mobile)+'">' if mobile else '')+
              '<img src="'+src+'" alt="'+alt+'" width="1440" height="810" style="max-width:100%;height:auto" decoding="async"></picture>')
-    return '<figure>'+picture+'<figcaption>'+e(resource['caption'])+' Foto: <a href="'+e(resource['source_page'])+'">'+e(resource['author'])+'</a> / Wikimedia Commons. <a href="'+e(resource['license_url'])+'">'+e(resource['license'])+'</a>.</figcaption></figure>'
+    if resource.get('source_type') == 'ai_generated':
+        attribution=e(resource['credit'])
+    else:
+        attribution=('Foto: <a href="'+e(resource['source_page'])+'">'+e(resource['author'])+
+                     '</a> / Wikimedia Commons. <a href="'+e(resource['license_url'])+'">'+e(resource['license'])+'</a>.')
+    return '<figure>'+picture+'<figcaption>'+e(resource['caption'])+' '+attribution+'</figcaption></figure>'
