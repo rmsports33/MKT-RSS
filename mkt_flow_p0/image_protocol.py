@@ -63,6 +63,8 @@ def plan_image(title, *, offline=True, content_fit=None):
     route directly to the generation tool. The module emits a request because
     GitHub Actions cannot invoke ChatGPT's built-in image generator.
     """
+    if content_fit not in (None, 'PASS', 'INCONGRUENT'):
+        raise ValueError('IMAGE_CONTENT_FIT_INVALID')
     catalog=json.loads(CATALOG.read_text(encoding='utf-8'))
     for entry in catalog:
         if all(term.casefold() in title.casefold() for term in entry.get('match_all',[])):
@@ -86,7 +88,7 @@ def plan_image(title, *, offline=True, content_fit=None):
     candidates=found.get('candidatos') or []
     if content_fit == 'INCONGRUENT':
         return _generation_request(title,'FREE_CANDIDATES_NOT_CONGRUENT',
-                                   [item.get('pagina_origem') or item.get('pagina_origem') for item in candidates])
+                                   [item.get('pagina_origem') or item.get('page_url') or item.get('url') for item in candidates])
     if candidates:
         return {'status':'CANDIDATES_REQUIRE_CONTENT_FIT_REVIEW',
                 'research':found,'content_fit_review':'PENDING',
