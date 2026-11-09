@@ -25,7 +25,9 @@ class ResearchTests(unittest.TestCase):
             calls.append((args, kwargs))
             return {"interest_over_time": []}
         r = trends(["A", "B"], provider=provider)
-        self.assertEqual(calls[0][1], {"geo": "BR", "timeframe": "now 7-d", "engine": "http"})
+        self.assertEqual(calls[0][1], {"geo": "BR", "timeframe": "now 7-d", "engine": "http",
+                         "include_geo": False, "max_retries": 1, "cache": False,
+                         "archive": False, "cookies": False})
         self.assertEqual(r["status"], "SNAPSHOT_NAO_VALIDADO")
 
     def test_autocomplete_empty_has_no_synthetic_demand(self):
