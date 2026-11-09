@@ -5,6 +5,7 @@ import pytest
 
 from tools.produce_bank_article import (
     HOMOLOG, ObservedModules, ProductionBlocked, load_brief, produce, require_credentials,
+    missing_source_anchors,
 )
 
 BRIEF = Path(__file__).resolve().parents[1] / 'docs/briefs/CT-006.json'
@@ -92,7 +93,8 @@ def test_exception_details_do_not_leak_to_public_report():
     assert observed.events[0]['status'] == 'FAILED'
 
 
-def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp_path):
+@pytest.mark.parametrize('order_mode', ['server', 'rendered', 'unavailable'])
+def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp_path, order_mode):
     from mkt_flow_p0 import (extractor, research_candidates, keyword_research, rewriter,
         related_posts, image_handler, wp_draft_staging, editorial_trace_turso)
     from mkt_flow_p0.editorial_identity import criar_handoff_chatgpt
@@ -109,8 +111,14 @@ def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp
         def json(self):
             return []
     monkeypatch.setattr(requests, 'get', lambda *a, **kw: Response())
-    monkeypatch.setattr(extractor, 'extrair_conteudo', lambda *a, **kw:
-        {'texto': body, 'titulo': 'Fonte real simulada somente neste teste', 'qualidade_ok': True})
+    def extract(url, **kwargs):
+        text = body
+        if url.endswith('/order') and order_mode != 'server':
+            if not kwargs.get('renderizar') or order_mode == 'unavailable':
+                text = body.replace('$499', '').replace('$20,000', '')
+        return {'texto': text, 'titulo': 'Fonte simulada somente neste teste', 'qualidade_ok': True,
+                'origem': 'playwright_documento' if kwargs.get('renderizar') else 'html_documento'}
+    monkeypatch.setattr(extractor, 'extrair_conteudo', extract)
     monkeypatch.setattr(research_candidates, 'descobrir_fontes_candidatas', lambda *a, **kw: {'sources': []})
     monkeypatch.setattr(keyword_research, 'sugerir_keywords_review', lambda *a, **kw: ['robô NEO'])
     generated = {'titulo_seo': brief['title'], 'texto_markdown': '## Texto\n' + private * 300,
@@ -121,7 +129,11 @@ def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp
         url_fonte=brief['source_url'], fonte_nome=brief['source_name'],
         contexto_complementar={'sources': [{k: source[k] for k in ('name', 'url', 'facts')}
                                           for source in brief['sources']]})
-    monkeypatch.setattr(rewriter, 'reescrever_materia', lambda *a, **kw: generated)
+    generations = []
+    def generate(*args, **kwargs):
+        generations.append(True)
+        return generated
+    monkeypatch.setattr(rewriter, 'reescrever_materia', generate)
     monkeypatch.setattr(related_posts, 'buscar_relacionados_wordpress', lambda *a, **kw: [])
     monkeypatch.setattr(image_handler, 'baixar_imagem', lambda *a, **kw: {'bytes': b'test image'})
     monkeypatch.setattr(image_handler, 'processar_capa', lambda *a, **kw:
@@ -134,7 +146,17 @@ def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp
         return {'ok': True}
     monkeypatch.setattr(editorial_trace_turso, 'save_turso_trace', save)
     monkeypatch.setattr(editorial_trace_turso, 'get_turso_trace', lambda *a: {'ok': True, 'trace': stored})
+    if order_mode == 'unavailable':
+        with pytest.raises(ProductionBlocked, match='SOURCE_CHANGED_REQUIRES_RESEARCH'):
+            produce(brief, tmp_path, execute_draft=True)
+        report = json.loads((tmp_path / 'module-report.json').read_text())
+        assert report['source_checks'][-1]['url'] == 'https://www.1x.tech/order'
+        assert report['source_checks'][-1]['missing_anchors'] == ['$499', '$20,000']
+        assert report['post_id'] is None and not generations and not stored
+        return
     report = produce(brief, tmp_path, execute_draft=True)
+    assert bool(order_mode == 'rendered') == any(
+        event['stage'] == 'rendered_source_extraction' for event in report['modules'])
     assert report['post_id'] == 12345
     assert report['publication_authorized'] is False
     assert report['human_review'] == 'PENDING'
@@ -147,3 +169,10 @@ def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp
     assert any(event.get('veredito') == 'BLOQUEADO' for event in report['modules'])
     assert len(stored['events']) <= 64
     assert any(event.get('model_id') == 'TEST_MODEL' for event in stored['events'])
+
+
+def test_source_anchors_accept_layout_whitespace_but_never_changed_values():
+    assert missing_source_anchors('US$\u00a0499 / mês; $ 20,000; $200. Reserva.',
+                                  ['$499', '$20,000', '$200']) == []
+    assert missing_source_anchors('$4990 $20,000.50 $2000',
+                                  ['$499', '$20,000', '$200']) == ['$499', '$20,000', '$200']
