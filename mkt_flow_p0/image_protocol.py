@@ -89,6 +89,11 @@ def plan_image(title, *, offline=True, content_fit=None):
     if content_fit == 'INCONGRUENT':
         return _generation_request(title,'FREE_CANDIDATES_NOT_CONGRUENT',
                                    [item.get('pagina_origem') or item.get('page_url') or item.get('url') for item in candidates])
+    if candidates and content_fit == 'PASS':
+        return {'status':'CANDIDATES_REQUIRE_LICENSE_REVIEW',
+                'research':found,'content_fit_review':'PASS',
+                'next_step':'VALIDATE_LICENSE_AND_PREPARE','network_called':True,
+                'ai_called':False,'wordpress_written':False}
     if candidates:
         return {'status':'CANDIDATES_REQUIRE_CONTENT_FIT_REVIEW',
                 'research':found,'content_fit_review':'PENDING',
