@@ -65,6 +65,13 @@ class LiveQueueDemandTests(unittest.TestCase):
         for sql in ('CREATE TABLE anything(id TEXT)','SELECT 1; DELETE FROM rss_pautas'):
             with self.assertRaises(ValueError):readonly_execute(sql)
 
+    def test_unrecognized_topic_exposes_only_already_published_source_reference(self):
+        self.row(title='Assunto sem entidade reconhecida')
+        result=choose_existing(execute=self.execute,now=NOW)
+        self.assertEqual(result['status'],'BLOCKED')
+        self.assertEqual(result['source_references'][0]['source_url'],'https://tecnoblog.net/noticias/galaxy-s26-ultra/')
+        self.assertNotIn('Assunto',str(result))
+
     def test_wrong_url_or_id_does_not_become_verified(self):
         self.row();self.db.execute("UPDATE rss_pautas SET url='https://other.example/article'")
         self.assertEqual(choose_existing(execute=self.execute,now=NOW)['status'],'BLOCKED')
@@ -73,7 +80,10 @@ class LiveQueueDemandTests(unittest.TestCase):
 
     def test_literal_entity_variants_are_preserved_without_old_seed_list(self):
         for title,expected in [('Galaxy S26+ chegou','Galaxy S26+'),('Galaxy S26 Ultra','Galaxy S26 Ultra'),
-                               ('iPhone 18 Pro Max','iPhone 18 Pro Max'),('Pixel 11 Pro XL','Pixel 11 Pro XL')]:
+                               ('iPhone 18 Pro Max','iPhone 18 Pro Max'),('Pixel 11 Pro XL','Pixel 11 Pro XL'),
+                               ('WhatsApp Web recebe novidade','WhatsApp Web'),
+                               ('Google Fotos atualiza ferramenta','Google Fotos'),
+                               ('Gemini muda aplicativo','Gemini')]:
             self.assertEqual(ENTITY.search(title).group(0),expected)
         self.assertIsNone(ENTITY.search('iPhone 180'))
 
