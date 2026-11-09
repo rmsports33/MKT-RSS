@@ -65,7 +65,7 @@ class ObservedModules:
             raise ProductionBlocked('MODULE_EXECUTION_FAILED') from None
         event['status'] = 'RETURNED'
         if isinstance(result, dict):
-            for key in ('veredito', 'status', 'motivos', 'pendencias', 'palavras', 'nota',
+            for key in ('veredito', 'status', 'motivos', 'pendencias', 'palavras', 'nota', 'qualidade_ok',
                         'faixa', 'modelo', 'prompt_sha256', 'uso_tokens'):
                 if key in result:
                     event[key if key != 'status' else 'result_status'] = result[key]
@@ -79,7 +79,7 @@ def produce(brief, output_dir, *, execute_draft=False):
     if execute_draft:
         require_credentials()
     from mkt_flow_p0.prioridade_editorial import avaliar_pauta
-    from mkt_flow_p0.content_filter import filtrar_por_tema, filtrar_item_rss, filtrar_conteudo
+    from mkt_flow_p0.content_filter import filtrar_por_tema, filtrar_item_rss, filtrar_conteudo, gate_publicacao
     from mkt_flow_p0.extractor import extrair_conteudo
     from mkt_flow_p0.captura_completa import criar_captura_completa
     from mkt_flow_p0.research_candidates import descobrir_fontes_candidatas
@@ -98,13 +98,19 @@ def produce(brief, output_dir, *, execute_draft=False):
     from mkt_flow_p0.editorial_trace_turso import save_turso_trace, get_turso_trace
     from mkt_flow_p0.wp_draft_staging import stage_rss_draft
     from tools.wp_identity_preflight import check_identity
+    from mkt_flow_p0.seo import validar_seo_qualidade
 
     output = Path(output_dir)
     output.mkdir(parents=True, exist_ok=True)
     observed = ObservedModules()
     report = {'schema': 'conexo-bank-production-report/1', 'bank_id': brief['id'],
               'run_id': str(uuid.uuid4()), 'post_id': None, 'publication_authorized': False,
-              'human_review': 'PENDING', 'modules': observed.events}
+              'human_review': 'PENDING', 'modules': observed.events,
+              'not_applicable': {
+                  'feed_collection': 'Existing topic read from the official Drive bank; RSS is used for supplementary discovery only.',
+                  'video_review': 'Selected evidence consists of text pages; no video observation is claimed.',
+                  'image_generation': 'An existing free stock candidate was identified.',
+                  'publication_and_signed_seo': 'This request creates a draft; human approval and publication are separate.'}}
     try:
         if execute_draft:
             if observed.call('publisher_identity', check_identity, os.environ) != 'PASS':
@@ -153,6 +159,9 @@ def produce(brief, output_dir, *, execute_draft=False):
         report['keywords_note'] = 'Autocomplete may use built-in seeds; no search volume was measured.'
         context = {'sources': [{k: source[k] for k in ('name', 'url', 'facts')} for source in brief['sources']]}
         original = captures[brief['source_url']]['texto']
+        observed.call('added_value_gate', gate_publicacao,
+                       brief['title'], '\n\n'.join(capture['texto'] for capture in captures.values()),
+                       [source['url'] for source in originals])
         source_verdict = observed.call('extracted_content_filter', filtrar_conteudo,
                                        brief['title'], original)
         if source_verdict.get('veredito') == 'BLOQUEADO':
@@ -176,6 +185,17 @@ def produce(brief, output_dir, *, execute_draft=False):
                                 generated['editorial_handoff'], markdown, related_articles=related)
         observed.call('package_integrity', validar_handoff_chatgpt, handoff)
         html = observed.call('html_format', markdown_para_html, markdown)
+        report['wordpress_content_sha256'] = digest(html)
+        # Preview checks use the actual deterministic draft slug, not a made-up
+        # public URL or a claim that native signed SEO has already been deployed.
+        from html import escape
+        from mkt_flow_p0.wp_draft_staging import _slug
+        canonical = SITE + '/' + _slug(generated['titulo_seo'], brief['source_url']) + '/'
+        seo_preview = ('<html><head><title>' + escape(generated['titulo_seo']) + '</title>'
+                       '<meta name="description" content="' + escape(generated['meta_description'], quote=True)
+                       + '"><link rel="canonical" href="' + canonical + '"></head><body>' + html + '</body></html>')
+        observed.call('seo_preview_quality', validar_seo_qualidade, seo_preview)
+        report['seo_preview_canonical'] = canonical
         (output / 'private-handoff.json').write_text(json.dumps(handoff, ensure_ascii=False), encoding='utf-8')
         (output / 'private-sources.json').write_text(json.dumps(captures, ensure_ascii=False), encoding='utf-8')
         # An actual licensed-stock candidate is processed, but no human media
