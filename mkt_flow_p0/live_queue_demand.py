@@ -10,6 +10,16 @@ from mkt_flow_p0.opportunities import recent, instant
 ENTITY = re.compile(r'\b(?:Galaxy\s+(?:[SAMF]\d{1,3}(?:\s*(?:Ultra|Plus|FE|\+))?|Z\s*(?:Flip|Fold)\s*\d{1,2})|iPhone\s+(?:\d{1,2}(?:\s*(?:Pro\s+Max|Pro|Plus|Air|e))?|Air)|Pixel\s+\d{1,2}(?:\s*(?:Pro\s+XL|Pro|Fold|a))?|Nintendo\s+Switch(?:\s+\d)?|PlayStation\s+\d|WhatsApp(?:\s+Web)?|ChatGPT|Gemini|Claude|Android(?:\s+\d{1,2})?|Windows(?:\s+1[01])?|Google\s+(?:Maps|Fotos|Drive|Chrome|Play)|Chrome|YouTube|Instagram|TikTok|Pix|Netflix|Spotify|Copilot|Nubank|Mercado\s+Pago)(?![\w+])', re.I)
 
 
+# Explicit assisted proposal for a source confirmed in the actual queue.
+# Human acceptance remains pending; this does not synthesize a news event date.
+TOPIC_PROPOSALS = {
+    'https://tecnoblog.net/noticias/iphone-tem-lista-secreta-com-mais-de-100-mil-palavras-que-evita-sugerir': {
+        'query': 'teclado do iPhone', 'content_intent': 'evergreen_keyboard_guide',
+        'required_source_terms': ['iphone', 'teclado'],
+    }
+}
+
+
 def connection_context():
     raw = os.getenv('TURSO_DATABASE_URL', '').strip()
     try:
@@ -74,13 +84,15 @@ def choose_existing(*, execute=None, now=None):
             continue
         references.append({'pauta_id': uid, 'source_url': url, 'published_at': published})
         matches = list(dict.fromkeys(m.group(0) for m in ENTITY.finditer(title)))
-        if len(matches) != 1:
+        proposal = TOPIC_PROPOSALS.get(url)
+        if len(matches) != 1 and proposal is None:
             excluded['ambiguous_or_missing_entity'] += 1
             continue
         return {'schema': 'conexo-live-queue-research-candidate/1', 'pauta_id': uid,
-                'pauta_url': url, 'query': matches[0], 'published_at': published,
+                'pauta_url': url, 'query': proposal['query'] if proposal else matches[0], 'published_at': published,
+                'topic_proposal': proposal,
                 'queue_checked_at': now.isoformat(), 'queue_reference_verified': True,
-                'query_origin': 'exact_entity_substring_in_queue_title',
+                'query_origin': 'explicit_assisted_topic_proposal' if proposal else 'exact_entity_substring_in_queue_title',
                 'human_query_review': 'PENDING', 'commercial_status': 'UNKNOWN',
                 'publication_authorized': False, 'queue_changed': False,
                 'connection': context, 'rows_examined': len(rows), 'excluded': excluded}
