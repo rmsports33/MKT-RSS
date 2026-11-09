@@ -51,9 +51,17 @@ def _associacoes(texto):
     return resultado
 
 
+def _texto_sem_identificadores_de_formatacao(texto):
+    # Markdown list markers and numeric URL IDs are presentation/references,
+    # not quantities asserted in prose. Numeric link LABELS remain checkable.
+    texto = re.sub(r"!?\[([^\]]+)\]\([^)]+\)", r"\1", texto or "")
+    texto = re.sub(r"https?://[^\s<>)]+", "", texto)
+    return re.sub(r"(?m)^\s*\d+[.)]\s+", "", texto)
+
+
 def validar_saida(texto_fonte, texto_gerado):
-    fonte = _datas(_normalizar(texto_fonte))
-    gerado = _datas(_normalizar(texto_gerado))
+    fonte = _datas(_normalizar(_texto_sem_identificadores_de_formatacao(texto_fonte)))
+    gerado = _datas(_normalizar(_texto_sem_identificadores_de_formatacao(texto_gerado)))
     motivos = []
 
     # Atribuição inequívoca a terceiros pode conter citação em primeira pessoa.

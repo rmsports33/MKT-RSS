@@ -451,6 +451,9 @@ def main():
     ap.add_argument("--limit", type=int, default=2)
     ap.add_argument("--fonte", default="")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--import-article", type=Path,
+                    help="Texto pronto de editor/provedor: módulos editoriais sem IA, RSS ou WordPress")
+    ap.add_argument("--genero", choices=("noticia","guia","review","comparativo","analise","nota_breve"), default="guia")
     ap.add_argument("--queue-only", action="store_true", help="Coletar apenas pautas na fila, sem IA ou WordPress")
     ap.add_argument("--research-context", type=Path,
                     help="JSON com source_url + sources complementares para UMA pauta correspondente")
@@ -474,6 +477,27 @@ def main():
     ap.add_argument("--operation-nonce", help="Retoma somente consulta da operação anterior; nunca repete escrita")
     ap.add_argument("--trace-run-id", help="Execução no Turso homologada para preflight de publicação assinada")
     args = ap.parse_args()
+    if args.import_article:
+        if (not args.handoff_only or args.handoff_dir is None or args.fonte
+                or args.editorial_package or args.queue_only or args.dry_run
+                or args.research_context or args.featured_media_id is not None or args.confirm_media_rights
+                or args.trace_db or args.trace_turso or args.core_root or args.actor_id
+                or args.intent != "stage" or args.publication_reference or args.operation_nonce
+                or args.trace_run_id):
+            ap.error("import-article exige handoff-only/handoff-dir; nao combina com RSS, escrita ou publicacao")
+        from mkt_flow_p0.editorial_import import processar_artigo_importado, resumo_execucao
+        try:
+            with args.import_article.open("rb") as stream:
+                data = stream.read(1024 * 1024 + 1)
+            if len(data) > 1024 * 1024:
+                raise ValueError("entrada excede 1 MiB")
+            result = processar_artigo_importado(json.loads(data), args.handoff_dir, genero=args.genero)
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            print(json.dumps({"status":"BLOCKED","error_type":type(exc).__name__}))
+            return 1
+        # Public consoles receive receipts, never unreviewed drafts/claims.
+        print(json.dumps(resumo_execucao(result),ensure_ascii=False))
+        return 0
     if args.trace_db and not args.core_root:
         ap.error("--trace-db requer --core-root; sem ele só o sidecar é gravado")
     if args.handoff_only:
