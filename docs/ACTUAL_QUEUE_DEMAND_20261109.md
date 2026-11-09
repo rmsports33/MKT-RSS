@@ -55,7 +55,7 @@ Se não houver linha recente com entidade única, informar o motivo; não criar
 pauta artificial nem escolher produto antigo. Esse modo não cobre ainda notícias
 sem produto explícito: exigir consulta editorial identificada para esses casos.
 
-50 testes direcionados passaram: 30 com -S e 20 regressões. Sete novos verificam
+51 testes direcionados passaram: 31 com -S e 20 regressões. Oito novos verificam
 origem real da configuração, somente SELECT, IDs/URLs, expiração, entidade ambígua,
 variante Plus/Pro Max, estados terminais e fronteira entre banco diário/homolog.
 Prova externa deve ser registrada separadamente; daily.yml continua idêntico.

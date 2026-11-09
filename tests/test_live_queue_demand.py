@@ -77,6 +77,25 @@ class LiveQueueDemandTests(unittest.TestCase):
             self.assertEqual(ENTITY.search(title).group(0),expected)
         self.assertIsNone(ENTITY.search('iPhone 180'))
 
+    def test_evidence_write_target_must_differ_and_selection_must_not_expire(self):
+        import importlib.util
+        import json
+        from datetime import datetime, timezone
+        from test_demand_evidence import HOST, ENV as HOMOLOG_ENV
+        spec=importlib.util.spec_from_file_location('live_probe',Path(__file__).resolve().parents[1]/'scripts/live_queue_demand_probe.py')
+        probe=importlib.util.module_from_spec(spec);spec.loader.exec_module(probe)
+        now=datetime.now(timezone.utc).isoformat()
+        candidate={'schema':'conexo-live-queue-research-candidate/1',
+                   'queue_reference_verified':True,'queue_changed':False,
+                   'queue_checked_at':now,'published_at':now,
+                   'connection':{'host_sha256':hashlib.sha256(HOST.encode()).hexdigest()}}
+        with patch.dict(os.environ,dict(HOMOLOG_ENV,CANDIDATE_JSON=json.dumps(candidate))), \
+             patch('mkt_flow_p0.research_signals.trends',side_effect=AssertionError('Network must not be called')):
+            with self.assertRaisesRegex(ValueError,'EVIDENCE_TARGET_EQUALS_DAILY_DATABASE'):probe.measure()
+            candidate['queue_checked_at']='2000-01-01T00:00:00Z'
+            os.environ['CANDIDATE_JSON']=json.dumps(candidate)
+            with self.assertRaisesRegex(ValueError,'QUEUE_REFERENCE_EXPIRED'):probe.measure()
+
     def test_workflow_reads_actual_secrets_and_writes_only_homolog(self):
         workflow=(Path(__file__).resolve().parents[1]/'.github/workflows/live-queue-demand.yml').read_text()
         select,measure=workflow.split('  measure:')
