@@ -42,6 +42,10 @@ def normalizar_aplicacao_voz(value):
     """
     if value is None:
         return {"status": "NOT_APPLIED", "method": "prewritten_text_import"}
+    if (isinstance(value, dict) and set(value) == {"status", "method"}
+            and value.get("status") == "NOT_APPLIED"
+            and value.get("method") == "prewritten_text_import"):
+        return dict(value)
     required = {"status", "method", "dna_prompt_sha256", "prompt_sha256"}
     if not isinstance(value, dict) or set(value) != required:
         raise ValueError("prova de aplicação da voz inválida")
