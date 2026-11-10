@@ -31,6 +31,39 @@ DNA_EDITORIAL_PROMPT = (
     "texto_markdown e, quando possível, referencias_traducao."
 )
 
+DNA_PROMPT_SHA256 = hashlib.sha256(DNA_EDITORIAL_PROMPT.encode("utf-8")).hexdigest()
+
+
+def normalizar_aplicacao_voz(value):
+    """Registra evidência de aplicação do DNA sem confundir metadados com estilo.
+
+    Texto pronto importado sem prova recebe NOT_APPLIED. O caminho de geração
+    só pode marcar PROMPT_APPLIED quando inclui hashes do DNA e da chamada.
+    """
+    if value is None:
+        return {"status": "NOT_APPLIED", "method": "prewritten_text_import"}
+    if (isinstance(value, dict) and set(value) == {"status", "method"}
+            and value.get("status") == "NOT_APPLIED"
+            and value.get("method") == "prewritten_text_import"):
+        return dict(value)
+    required = {"status", "method", "dna_prompt_sha256", "prompt_sha256"}
+    if not isinstance(value, dict) or set(value) != required:
+        raise ValueError("prova de aplicação da voz inválida")
+    if (value["status"] != "PROMPT_APPLIED"
+            or value["method"] != "mkt_flow_p0.rewriter.system_prompt"
+            or value["dna_prompt_sha256"] != DNA_PROMPT_SHA256
+            or not isinstance(value["prompt_sha256"], str)
+            or not re.fullmatch(r"[0-9a-f]{64}", value["prompt_sha256"])):
+        raise ValueError("prova de aplicação da voz incompatível")
+    return dict(value)
+
+
+def verificar_aplicacao_voz(metadata):
+    """Devolve estado da aplicação do DNA; ausência nunca vira aprovação."""
+    if not isinstance(metadata, dict):
+        return {"status": "NOT_APPLIED", "method": "missing_metadata"}
+    return normalizar_aplicacao_voz(metadata.get("editorial_voice_application"))
+
 
 def _url_valida(value):
     if not isinstance(value, str) or not value or len(value) > 2048:
@@ -80,12 +113,14 @@ def normalizar_fontes_complementares(contexto):
     return normalized
 
 
-def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_complementar=None):
+def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_complementar=None,
+                          voice_application=None):
     """Entrega metadata+Markdown compatíveis com editorial_core_offline.
 
     Não altera o conteúdo, não promove stage e não aproveita aceite prévio.
     """
     fontes_extra = normalizar_fontes_complementares(contexto_complementar)
+    voice_application = normalizar_aplicacao_voz(voice_application)
     if not isinstance(resultado, dict) or not _url_valida(url_fonte):
         raise ValueError("resultado ou fonte original inválidos")
     title, markdown = resultado.get("titulo_seo"), resultado.get("texto_markdown")
@@ -118,6 +153,7 @@ def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_compl
             "brand": "ConexoTech", "voice": "Conexo Insight",
             "human_editor": "Reinaldo Mendes", "dna_reference": DNA_REFERENCE
         },
+        "editorial_voice_application": voice_application,
         "origin": {"system": "MKT-RSS", "source_url": url_fonte},
     }
     digest = hashlib.sha256(json.dumps(
@@ -161,6 +197,10 @@ def validar_handoff_chatgpt(handoff):
             or not isinstance(seo.get("slug"), str)
             or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", seo["slug"])):
         raise ValueError("identidade, SEO ou origem inválida")
+    try:
+        normalizar_aplicacao_voz(m.get("editorial_voice_application"))
+    except (TypeError, ValueError):
+        raise ValueError("aplicação do DNA editorial inválida") from None
     sources, claims = m.get("sources"), m.get("claims")
     if not isinstance(sources, list) or not sources or not isinstance(claims, list):
         raise ValueError("fontes/alegações ausentes")

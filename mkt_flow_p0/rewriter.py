@@ -14,7 +14,7 @@ import os
 import re
 from pathlib import Path
 
-from mkt_flow_p0.editorial_identity import (DNA_EDITORIAL_PROMPT,
+from mkt_flow_p0.editorial_identity import (DNA_EDITORIAL_PROMPT, DNA_PROMPT_SHA256,
     normalizar_fontes_complementares, criar_handoff_chatgpt)
 
 logger = logging.getLogger("rewriter")
@@ -271,7 +271,13 @@ def reescrever_materia(
                 {"titulo_seo": titulo_seo, "texto_markdown": texto,
                  "slug": slug, "meta_description": meta},
                 url_fonte=url_fonte, fonte_nome=fonte_nome,
-                contexto_complementar=contexto_complementar)
+                contexto_complementar=contexto_complementar,
+                voice_application={
+                    "status": "PROMPT_APPLIED",
+                    "method": "mkt_flow_p0.rewriter.system_prompt",
+                    "dna_prompt_sha256": DNA_PROMPT_SHA256,
+                    "prompt_sha256": prompt_sha256,
+                })
         except ValueError as exc:
             # Um erro no intercâmbio consultivo não pode apagar artigo gerado.
             logger.warning("Handoff ChatGPT indisponível: validação do pacote falhou")

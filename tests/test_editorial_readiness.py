@@ -4,7 +4,7 @@ Sem acesso a rede, imagem ou WordPress. O fluxo de rascunho permanece viavel.
 """
 import copy
 
-from mkt_flow_p0.editorial_identity import criar_handoff_chatgpt
+from mkt_flow_p0.editorial_identity import criar_handoff_chatgpt, DNA_PROMPT_SHA256
 from mkt_flow_p0.editorial_readiness import avaliar_prontidao_editorial
 
 
@@ -31,7 +31,13 @@ def packet(extended=False):
             "meta_description": DESCRIPTION,
             "slug": "android-assistentes-funcoes", "texto_markdown": text}
     return criar_handoff_chatgpt(data, url_fonte=SOURCE, fonte_nome="Noticiario",
-                                 contexto_complementar=EXTRA if extended else None)
+                                 contexto_complementar=EXTRA if extended else None,
+                                 voice_application={
+                                     "status": "PROMPT_APPLIED",
+                                     "method": "mkt_flow_p0.rewriter.system_prompt",
+                                     "dna_prompt_sha256": DNA_PROMPT_SHA256,
+                                     "prompt_sha256": "a" * 64,
+                                 })
 
 
 def test_short_single_source_draft_is_flagged_not_published():
