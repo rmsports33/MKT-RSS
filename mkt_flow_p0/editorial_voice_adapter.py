@@ -111,7 +111,7 @@ def writing_voice_guidance(brief):
         + "Não faça uma seção por movimento obrigatório, não fabrique contraste "
         + "nem varie frases artificialmente. Preserve limites, exceções e "
         + "a correspondência entre afirmação e fonte; quando faltar prova, marque pendência. "
-        + "Corte paráfrases e fechamentos decorativos sem cortar raciocínio. "
+        + "Antes de recomendar uma ação, confira se ela resolve o sintoma sem desativar ""justamente a função que o leitor quer preservar. ""Não introduza preços, capacidades, percentuais ou causalidades sem lastro explícito. ""Corte paráfrases e fechamentos decorativos sem cortar raciocínio. "
         + "O DNA ConexoTech e a revisão humana por versão continuam prevalecendo.\n"
     )
 
