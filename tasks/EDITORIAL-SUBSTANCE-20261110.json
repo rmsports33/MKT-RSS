@@ -172,7 +172,7 @@
     "Imagem do handoff Groq histórico não foi associada a qualquer mídia com licença e revisão visual. A imagem ChatGPT/WP #9799 só pertence ao guia #9798; proveniência e adequação visual têm evidências, mas o atestado final do titular segue pendente.",
     "Avaliação cega independente por gênero e aceite humano por versão não ocorreram; o segundo parecer sobre WP #9798 é assistido e não cego, portanto não prova qualidade acima da média nem libera publicação."
   ],
-  "next_action": "Recuperar a chave RSA privada de local seguro ou uma cópia privada do handoff/texto, sem enviá-la ao GitHub público. Verificar manualmente URL e conteúdo da segunda fonte, associar imagem autorizada ao artigo específico e executar comparação cega independente. Não fazer novas chamadas Groq, alterar WordPress ou publicar sem autorização editorial separada.",
+  "next_action": "Não repetir Groq para salvar o handoff antigo: mantê-lo como evidência cifrada histórica, não publicável e não bloqueante para novos pilotos. Usar rascunho WordPress #9798 como guia piloto distinto; checar fonte oficial, origem e direitos da mídia #9799 (aguarda confirmação do titular) e obter aceite humano independente da versão. Para notícias, iniciar piloto com fontes independentes verificadas; publicação sempre continua bloqueada até o aceite.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -225,7 +225,11 @@
     "wp9798_image_visual_fit": "PASS_GENERIC_NON-IOS_ILLUSTRATION",
     "wp9798_image_rights": "OWNER_CONFIRMATION_PENDING",
     "blind_external_comparison": "NOT_COMPLETED",
-    "publication_authorized": false
+    "publication_authorized": false,
+    "historical_handoff_disposition": "ARCHIVED_ENCRYPTED_NONPUBLISHABLE_NONBLOCKING_FOR_NEW_EDITORIAL_PILOTS",
+    "historical_reprocessing": "NOT_AUTHORIZED_OR_REQUIRED",
+    "editorial_production_state": "NOT_HOMOLOGATED",
+    "new_pilot_safety": "PENDING_HUMAN_SOURCE_IMAGE_AND_INDEPENDENT_QUALITY_ACCEPTANCE"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
