@@ -37,8 +37,9 @@ DNA_PROMPT_SHA256 = hashlib.sha256(DNA_EDITORIAL_PROMPT.encode("utf-8")).hexdige
 def normalizar_aplicacao_voz(value):
     """Validate provenance that the editorial DNA was applied.
 
-    Imported text without proof stays NOT_APPLIED. Native and external provider
-    adapters must record the canonical DNA hash and the exact submitted prompt hash.
+    Imported text without proof stays NOT_APPLIED. Native/external providers
+    record the canonical DNA and submitted prompt hashes. Human adaptations
+    bind the attestation to the exact Markdown version.
     """
     if value is None:
         return {"status": "NOT_APPLIED", "method": "prewritten_text_import"}
@@ -48,12 +49,25 @@ def normalizar_aplicacao_voz(value):
         return dict(value)
     native = {"status", "method", "dna_prompt_sha256", "prompt_sha256"}
     external = native | {"provider_id"}
+    human = {"status", "method", "dna_prompt_sha256", "content_sha256", "editor"}
     if not isinstance(value, dict):
         raise ValueError("prova de aplicação da voz inválida")
     is_native = set(value) == native
     is_external = set(value) == external
-    if not (is_native or is_external):
+    is_human = set(value) == human
+    if not (is_native or is_external or is_human):
         raise ValueError("prova de aplicação da voz inválida")
+    if value.get("dna_prompt_sha256") != DNA_PROMPT_SHA256:
+        raise ValueError("prova de aplicação da voz incompatível")
+    if is_human:
+        if (value.get("status") != "HUMAN_ADAPTED"
+                or value.get("method") != "human_editorial_check"
+                or not isinstance(value.get("content_sha256"), str)
+                or not re.fullmatch(r"[0-9a-f]{64}", value["content_sha256"])
+                or not isinstance(value.get("editor"), str)
+                or not re.fullmatch(r"[^\r\n]{3,80}", value["editor"].strip())):
+            raise ValueError("atestado humano de adaptação inválido")
+        return dict(value)
     if value.get("status") != "PROMPT_APPLIED":
         raise ValueError("prova de aplicação da voz incompatível")
     valid_method = (
@@ -61,7 +75,6 @@ def normalizar_aplicacao_voz(value):
         or (is_external and value.get("method") == "external_provider.system_prompt")
     )
     if (not valid_method
-            or value.get("dna_prompt_sha256") != DNA_PROMPT_SHA256
             or not isinstance(value.get("prompt_sha256"), str)
             or not re.fullmatch(r"[0-9a-f]{64}", value["prompt_sha256"])):
         raise ValueError("prova de aplicação da voz incompatível")
@@ -212,9 +225,13 @@ def validar_handoff_chatgpt(handoff):
             or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", seo["slug"])):
         raise ValueError("identidade, SEO ou origem inválida")
     try:
-        normalizar_aplicacao_voz(m.get("editorial_voice_application"))
+        voice_application = normalizar_aplicacao_voz(m.get("editorial_voice_application"))
     except (TypeError, ValueError):
         raise ValueError("aplicação do DNA editorial inválida") from None
+    if voice_application.get("status") == "HUMAN_ADAPTED":
+        actual_content_sha = hashlib.sha256(markdown.encode("utf-8")).hexdigest()
+        if not hmac.compare_digest(voice_application["content_sha256"], actual_content_sha):
+            raise ValueError("atestado humano não corresponde ao texto desta versão")
     sources, claims = m.get("sources"), m.get("claims")
     if not isinstance(sources, list) or not sources or not isinstance(claims, list):
         raise ValueError("fontes/alegações ausentes")
