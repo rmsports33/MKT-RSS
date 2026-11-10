@@ -36,7 +36,10 @@ def brief_hash(brief):
     return content_hash(json.dumps(normalize_brief(brief), ensure_ascii=False, sort_keys=True))
 
 
-def writing_instruction(brief):
+def writing_instruction(brief, *, voice_variant="mda"):
+    """MDA default; explicit control restores the prior prompt for offline A/B."""
+    if voice_variant not in ("control", "mda"):
+        raise ValueError("variante editorial inválida")
     from mkt_flow_p0.editorial_voice_adapter import writing_voice_guidance
     brief = normalize_brief(brief)
     return (
@@ -49,7 +52,7 @@ def writing_instruction(brief):
         "Voz independente significa julgamento fundamentado, nunca bordões ou opinião inventada. "
         "Não invente experiência própria, contexto brasileiro, preços ou defeitos para dar personalidade. "
         "Se faltarem dados para a contribuição pedida, explicite a lacuna; não preencha com volume.\n"
-        + writing_voice_guidance(brief)
+        + (writing_voice_guidance(brief) if voice_variant == "mda" else "")
     )
 
 

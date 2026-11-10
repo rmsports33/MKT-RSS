@@ -48,3 +48,7 @@ Para um A/B válido:
 **Técnico:** suíte CI verde, seleção de lentes para todos os gêneros, rejeição de campos e instruções arbitrárias, hash do briefing preservado, DNA intacto, cobertura do montar_prompt, triagem não aprovadora e ausência de rede/chamadas extras.
 
 **Editorial:** aguardando comparação A/B de artigos completos por revisor independente. Nenhuma nota criada por IA substitui esse aceite. Não declare qualidade acima da média, deploy WP, publicação nem ganho comprovado antes das evidências.
+
+## Etapa seguinte: protocolo controlado
+
+O PR #87 instrumenta apenas o contraste de prompts controle/MDA, hashes e embalagem cega dos artigos completos, sem rodar novos modelos. Corpus real de quatro pautas foi preparado em armazenamento privado; ainda não há par de artigos experimentais gerados com parâmetros idênticos nem avaliação independente. Referência: [EDITORIAL_MDA_AB_CONTROLLED_20261110.md](EDITORIAL_MDA_AB_CONTROLLED_20261110.md).

@@ -18,7 +18,7 @@ voz editorial humana. Testes positivos e negativos cobrem esse cenário.
    resultado da etapa, versão/hash, estado de briefing, redação/crítica e erros.
    Um PR integrado não é evidência de que a execução aconteceu. Não copiar
    texto editorial não revisado nem segredos para repositório público.
-2. Selecionar **três pautas de gêneros diferentes** (notícia, guia e
+2. Selecionar **três ou mais pautas de gêneros diferentes** (notícia, guia e
    análise/comparativo) com fontes conferidas. Preservar os mesmos insumos e
    as mesmas condições para a versão de referência e a versão corrigida.
 3. Entregar ao revisor humano as versões A/B em ordem aleatória, sem indicar
@@ -37,8 +37,7 @@ voz editorial humana. Testes positivos e negativos cobrem esse cenário.
 ## Lacunas que ainda precisam de evidências
 
 - Não foi comprovada nesta alteração uma comparação A/B cega real.
-- Não foi comprovada aqui execução autenticada ou resultado do Action de
-  handoff único do PR #79; consultar job, logs saneados e manifesto.
+- A execução real Groq #42809666543 foi confirmada posteriormente: handoff técnico criado, mas crítica substantiva e prontidão editorial PENDENTES. Não usá-la como aprovação de qualidade.
 - Não foi comprovado que três gêneros atingem o padrão final em produção.
 - Não ativar staging, cron, execução repetitiva paga, WordPress nem publicação
   para conseguir essa evidência.
@@ -46,3 +45,7 @@ voz editorial humana. Testes positivos e negativos cobrem esse cenário.
 ## Complemento MDA AUTO: voz e progressão (10/11/2026)
 
 O adaptador de lente editorial por gênero não constitui nova persona ou autor. A crítica existente deve procurar se cada bloco acrescenta informação, distingue fontes e consequências, preserva contradições sustentadas e evita conclusão decorativa. Sinais de conectivos mecânicos são triagem superficial, não avaliação semântica automática. Comparar A/B entre a versão sem adaptador e a versão com adaptador sobre **insumos e tokens equivalentes**, incluindo notícia, guia, análise e comparativo quando disponíveis. Registrar evidências humanas e possíveis regressões factuais; sem isso, a melhoria é engenharia integrada, não homologação de qualidade editorial. Documento técnico: [EDITORIAL_MDA_ADAPTIVE_VOICE_20261110.md](EDITORIAL_MDA_ADAPTIVE_VOICE_20261110.md).
+
+## Protocolo A/B controlado MDA (10/11/2026)
+
+A comparação entre revisões históricas do guia #9798 NÃO prova efeito da camada MDA. O controle explícito voice_variant=control e o tratamento voice_variant=mda compartilham os mesmos insumos e parâmetros, diferenciando-se apenas pela orientação de voz. O piloto usa quatro corpus privados completos e scripts locais de preparação/cegamento sem API. Textos reais A/B ainda não foram gerados e o parecer humano continua pendente. Detalhes em [EDITORIAL_MDA_AB_CONTROLLED_20261110.md](EDITORIAL_MDA_AB_CONTROLLED_20261110.md).
