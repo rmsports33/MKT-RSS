@@ -1,7 +1,7 @@
 """Import a researched article into the existing MKT-RSS editorial handoff.
 
-No RSS fetching, LLM calls, WordPress writes or publication. The original RSS
-pipeline remains the complete authoring engine when its runtime is available.
+Offline imports never call a provider. Online imports automatically develop and
+critique pending prose with the existing provider. Neither path writes WordPress.
 """
 import argparse
 import json
@@ -17,7 +17,7 @@ from mkt_flow_p0.editorial_identity import (
 def _preparar_handoff(payload):
     """Validate an editor/provider input without side effects."""
     required_payload = {"source_url", "source_name", "article", "research"}
-    optional_payload = {"editorial_voice_application"}
+    optional_payload = {"editorial_voice_application", "editorial_brief", "editorial_substance_review"}
     if (not isinstance(payload, dict)
             or not required_payload.issubset(payload)
             or set(payload) - required_payload - optional_payload):
@@ -35,7 +35,9 @@ def _preparar_handoff(payload):
     handoff = criar_handoff_chatgpt(
         article, url_fonte=payload["source_url"],
         fonte_nome=source_name, contexto_complementar=payload["research"],
-        voice_application=payload.get("editorial_voice_application"))
+        voice_application=payload.get("editorial_voice_application"),
+        editorial_brief=payload.get("editorial_brief"),
+        editorial_review=payload.get("editorial_substance_review"))
     return handoff
 
 
@@ -47,11 +49,12 @@ def importar_artigo_para_handoff(payload, output_dir):
             "wordpress_written": False, "provider_called": False}
 
 
-def processar_artigo_importado(payload, output_dir, *, genero="guia", image_manifest=None, image_base=None, offline=True, image_fit_review=None):
-    """Run existing editorial modules on finished text, WITHOUT any provider/WP.
+def processar_artigo_importado(payload, output_dir, *, genero="guia", image_manifest=None, image_base=None, offline=True, image_fit_review=None, development_receipt=None,
+                                featured_media_id=None, media_rights_confirmed=False,
+                                verified_related_urls=None, force_development=False):
+    """Always run editorial triage; online mode develops pending prose automatically.
 
-    Keep the low-level importer compatible, but the operational CLI returns a
-    rendered, diagnosed package rather than calling a Markdown file completed.
+    Offline mode preserves text and reports pending work. No WordPress writes.
     """
     from mkt_flow_p0.editorial_core_offline import processar, validar_pacote
     from mkt_flow_p0.editorial_readiness import avaliar_prontidao_editorial
@@ -59,12 +62,35 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
     from mkt_flow_p0.editorial_trace import make_trace, save_trace
     from mkt_flow_p0.adaptador_contrato_editorial import avaliar_snapshot_editorial
 
+    # Reject invalid destinations/inputs before network or provider usage.
+    if Path(output_dir).exists():
+        raise FileExistsError("diretório de saída já existe")
+    if offline and force_development:
+        raise ValueError("adaptação online incompatível com offline")
     # Validate/renderability before creating an output directory or handoff.
     handoff = _preparar_handoff(payload)
     errors = validar_pacote(handoff["metadata"], handoff["markdown"])
     if errors:
         raise ValueError("; ".join(errors))
     from mkt_flow_p0.image_protocol import plan_image, validate_prepared_manifest
+    if image_manifest is not None:
+        if image_base is None:
+            raise ValueError("IMAGE_BASE_REQUIRED")
+        validate_prepared_manifest(image_manifest, base_dir=image_base)
+    from mkt_flow_p0.editorial_substance import assess_substance
+    current_assessment = assess_substance(handoff["markdown"],payload.get("editorial_brief"),
+                                         payload.get("editorial_substance_review"))
+    if payload.get("editorial_brief") is not None and payload["editorial_brief"]["genre"] != genero:
+        raise ValueError("gênero do briefing diverge do processamento")
+    voice_applied = handoff["metadata"]["editorial_voice_application"]["status"] != "NOT_APPLIED"
+    if not offline and development_receipt is None and (force_development or
+            current_assessment["status"] != "PASS" or not voice_applied):
+        from mkt_flow_p0.editorial_development import adapt_imported_article
+        payload, development_receipt = adapt_imported_article(payload, genre=genero)
+        handoff = _preparar_handoff(payload)
+        errors = validar_pacote(handoff["metadata"], handoff["markdown"])
+        if errors:
+            raise ValueError("; ".join(errors))
     image_plan = plan_image(payload['article']['titulo_seo'], offline=offline, content_fit=image_fit_review)
     if image_manifest is not None:
         if image_base is None:raise ValueError('IMAGE_BASE_REQUIRED')
@@ -76,6 +102,10 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         handoff = atualizar_handoff_revisao(handoff,handoff['markdown'],image_resource=resource)
         image_plan = {'status':'PREPARED_GENERATED_IMAGE_INSTALLED' if resource.get('source_type') == 'ai_generated' else 'PREPARED_LICENSED_IMAGE_INSTALLED','resource':resource,
                       'network_called':False,'ai_called':resource.get('source_type') == 'ai_generated','wordpress_written':False}
+    if featured_media_id is not None:
+        from mkt_flow_p0.editorial_identity import atualizar_handoff_revisao
+        handoff = atualizar_handoff_revisao(handoff, handoff["markdown"],
+            featured_media_id=featured_media_id, media_rights_confirmed=media_rights_confirmed)
     root = Path(output_dir)
     root.mkdir(parents=True, exist_ok=False, mode=0o700)
     # No overwrite/reused acceptance; each run has an exclusive private directory.
@@ -93,14 +123,16 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
     markdown_path.write_text(saved["markdown"], encoding="utf-8")
     rendered = processar(metadata_path, markdown_path, root)
     body = Path(rendered["wordpress_body"]).read_text(encoding="utf-8")
-    readiness = avaliar_prontidao_editorial(saved, html=body, genero=genero)
+    readiness = avaliar_prontidao_editorial(saved, html=body, genero=genero,
+        featured_media_id=featured_media_id, direitos_imagem_confirmados=media_rights_confirmed,
+        verified_related_urls=verified_related_urls)
     source_text = "\n".join(fact for source in payload["research"]["sources"] for fact in source["facts"])
     alerts = validar_saida(source_text, saved["markdown"])
     adapter_check = avaliar_snapshot_editorial(saved["metadata"].get("contrato_editorial"))
     trace = make_trace(payload["source_url"], saved["markdown"])
     # An import is not a response generated by Groq, nor human factual approval.
     trace["events"][0] = {"stage": "authoring", "module_id": "mkt-rss.editorial-import",
-        "module_version": "import-flow/1", "status": "IMPORTED_NO_PROVIDER",
+        "module_version": "import-flow/2", "status": "DEVELOPED_WITH_PROVIDER" if development_receipt else "IMPORTED_NO_PROVIDER",
         "evidence_ref": "content-sha256:" + trace["content_sha256"]}
     trace["events"].append({"stage":"package_validation", "module_id":"mkt-rss.editorial-identity",
         "module_version":"import-flow/1", "status":"PASS"})
@@ -117,20 +149,29 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         "claims_traceability":rendered["rastreabilidade_claims"],
         "modules_executed":["editorial_import","editorial_identity","editorial_core_offline",
             "format","seo","seo_contract_native","editorial_readiness",
-            "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol"],
+            "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol","editorial_substance"],
         "module_manifest":[
-            {"id":module_id,"execution":"EXECUTED"}
+            {"id":module_id,"execution":"EXECUTED", "outcome": (
+                readiness["status"] if module_id == "editorial_readiness" else
+                readiness["avaliacao_substantiva"]["status"] if module_id == "editorial_substance" else
+                adapter_check["veredito"] if module_id == "adaptador_contrato_editorial" else
+                alerts["veredito"] if module_id == "gate_editorial_pos_ia" else
+                image_plan["status"] if module_id == "image_protocol" else "DIAGNOSTIC_ONLY")}
             for module_id in ["editorial_import","editorial_identity","editorial_core_offline",
                 "format","seo","seo_contract_native","editorial_readiness",
-                "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol"]
+                "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol","editorial_substance"]
         ],
         "completion_status":readiness["status"],
+        "editorial_development": development_receipt or {"execution":"NOT_RUN", "reason":"prewritten_import_preserves_text",
+            "next_action":"adapt_imported_article with an authorized provider, or supply a text-bound substantive review"},
         "article_complete_for_human_review":readiness["status"] == "PRONTO_PARA_REVISAO_HUMANA",
         "editorial_voice_application":readiness.get("persona_editorial", {"status":"NOT_APPLIED"}),
+        "substantive_review":readiness.get("avaliacao_substantiva"),
         "voice_quality_review":readiness.get("revisao_de_voz", "PENDENTE_AVALIACAO_HUMANA"),
         "image_research":image_plan, "image_generation_request":image_plan.get('generation_request'),
-        "image_ai_used":bool(image_plan.get('ai_called')), "related_links":"NOT_VERIFIED",
-        "provider_called":False,"network_called":image_plan.get("network_called",False),"wordpress_written":False,
+        "image_ai_used":bool(image_plan.get('ai_called')),
+        "related_links":"VERIFIED_BY_CALLER" if verified_related_urls else "NOT_VERIFIED",
+        "provider_called":bool(development_receipt),"network_called":bool(development_receipt) or image_plan.get("network_called",False),"wordpress_written":False,
         "publication_authorized":False,"human_acceptance":"PENDING"}
     (root / "pipeline-report.json").write_text(json.dumps(result,ensure_ascii=False,indent=2), encoding="utf-8")
     # All generated artifacts are private even with a permissive process umask.

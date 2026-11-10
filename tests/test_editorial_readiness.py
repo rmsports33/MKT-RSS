@@ -44,18 +44,19 @@ def test_short_single_source_draft_is_flagged_not_published():
     r = avaliar_prontidao_editorial(packet(), html="<h2>Resumo</h2>")
     assert r["status"] == "ENRIQUECIMENTO_PENDENTE"
     assert "pesquisa_multifonte_pendente" in r["pendencias"]
-    assert "tres_links_internos_pendentes" in r["pendencias"]
+    assert "sem_links_internos_relacionados" in r["avisos"]
     assert "imagem_destacada_com_direitos_pendente" in r["pendencias"]
     assert r["pronto_para_publicar"] is False
 
 
-def test_full_pack_is_ready_only_for_human_review():
+def test_metadata_complete_repetitive_pack_is_not_editorially_ready():
     r = avaliar_prontidao_editorial(packet(True), html=HTML,
                                     featured_media_id=9714,
                                     direitos_imagem_confirmados=True,
                                     verified_related_urls=VERIFIED)
-    assert r["status"] == "PRONTO_PARA_REVISAO_HUMANA"
-    assert r["pendencias"] == []
+    assert r["status"] == "ENRIQUECIMENTO_PENDENTE"
+    assert "repeticao_substantiva" in r["pendencias"]
+    assert "briefing_editorial_ausente_ou_invalido" in r["pendencias"]
     assert r["links_internos"] == 3
     assert r["fontes"] == 2
     assert r["pronto_para_publicar"] is False
@@ -76,7 +77,7 @@ def test_external_and_fabricated_links_do_not_count():
                                     direitos_imagem_confirmados=True,
                                     verified_related_urls=VERIFIED)
     assert r["links_internos"] == 0
-    assert "tres_links_internos_pendentes" in r["pendencias"]
+    assert "sem_links_internos_relacionados" in r["avisos"]
 
 
 def test_tampered_handoff_cannot_pass_quality_gate():
@@ -134,7 +135,7 @@ def test_fake_internal_links_are_not_equivalent_to_published_posts():
         featured_media_id=9714, direitos_imagem_confirmados=True)
     assert report["links_internos"] == 3
     assert report["links_internos_verificados"] == 0
-    assert "tres_links_internos_pendentes" in report["pendencias"]
+    assert "links_internos_nao_verificados" in report["pendencias"]
     assert report["status"] == "ENRIQUECIMENTO_PENDENTE"
 
 
@@ -144,4 +145,4 @@ def test_verified_whitelist_does_not_count_links_absent_from_content():
         featured_media_id=9714, direitos_imagem_confirmados=True,
         verified_related_urls=VERIFIED)
     assert report["links_internos_verificados"] == 0
-    assert "tres_links_internos_pendentes" in report["pendencias"]
+    assert "sem_links_internos_relacionados" in report["avisos"]

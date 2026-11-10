@@ -83,10 +83,10 @@ jobs:
     environment: rss-homolog
     timeout-minutes: 9
     steps:
-      - name: Checkout exact editorial build (not master)
+      - name: Checkout immutable editorial build for this run
         uses: actions/checkout@v4
         with:
-          ref: 897c38e1fffde6b94608e1f90bd04601b39d6ec8
+          ref: ${{ github.sha }}
           persist-credentials: false
 
       - name: Python 3.11

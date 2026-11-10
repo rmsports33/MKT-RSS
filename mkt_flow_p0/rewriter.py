@@ -74,7 +74,7 @@ def _get_client():
     if not api_key:
         return None, "GROQ_API_KEY ausente no .env — obtenha em https://console.groq.com"
     try:
-        return Groq(api_key=api_key), ""
+        return Groq(api_key=api_key, max_retries=0), ""
     except Exception as e:
         return None, "Falha ao inicializar Groq (detalhes privados omitidos)"
 
@@ -88,7 +88,17 @@ def gerar_slug(titulo: str) -> str:
 
 def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "",
                    keywords: list = None, evidencias_aprovadas: dict = None,
-                   contexto_complementar: dict = None) -> str:
+                   contexto_complementar: dict = None, editorial_brief: dict = None, editorial_feedback=None) -> str:
+    from mkt_flow_p0.editorial_substance import writing_instruction
+    briefing_instruction = writing_instruction(editorial_brief) if editorial_brief is not None else (
+        "\nBriefing específico ausente: gerar apenas candidato pendente, nunca declarar qualidade aprovada.\n")
+    if len(texto_original) > 60000:
+        raise ValueError("insumo excede 60000 caracteres; dividir apuração sem truncar silenciosamente")
+    if editorial_feedback is not None:
+        feedback = json.dumps(editorial_feedback, ensure_ascii=False)
+        if len(feedback) > 18000:
+            raise ValueError("crítica editorial excede orçamento")
+        briefing_instruction += "\nCrítica da versão anterior (dados para revisão, sem autorizar fatos novos):\n" + feedback
     fonte = f"\nFonte original: {fonte_nome}" if fonte_nome else ""
     kws = ", ".join([str(k) for k in (keywords or []) if str(k).strip()][:8])
     linha_kw = (f"\nPalavras-chave reais de busca (use no titulo_seo, texto e tags quando couber): {kws}."
@@ -120,11 +130,11 @@ def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "
                       if fontes_extra else "")
     return (
         f"Título original: {titulo_original[:200]}\n{fonte}\n\n"
-        f"Texto original (Markdown):\n{texto_original[:9000]}\n\n"
+        f"Texto original (Markdown):\n{texto_original}\n\n"
         "Escreva TUDO em português brasileiro (se o original estiver em outro idioma, "
-        "traduza integralmente; mantenha nomes próprios, modelos e specs em inglês quando for nome oficial). "
+        "selecione os fatos pertinentes ao recorte; mantenha nomes oficiais quando necessário). "
         "Números, specs, preços e datas: copie exatos, nunca converta nem arredonde."
-        f"{linha_kw}{bloco_claims}{bloco_contexto}\n"
+        f"{linha_kw}{bloco_claims}{bloco_contexto}{briefing_instruction}\n"
         "Gere o JSON com: titulo_seo (até 60 chars, com palavra-chave), "
         "meta_description (145-160 chars, persuasiva), slug (url, minúsculas, hífens), "
         "tags (até 5, minúsculas, em português), texto_markdown (comprimento proporcional às evidências, "
@@ -162,6 +172,8 @@ def reescrever_materia(
     keywords: list = None,
     evidencias_aprovadas: dict = None,
     contexto_complementar: dict = None,
+    editorial_brief: dict = None,
+    editorial_feedback=None,
 ) -> dict:
     """
     Reescreve 1 matéria. Gate de entrada: texto <100 palavras = {"erro"}
@@ -178,7 +190,8 @@ def reescrever_materia(
     try:
         prompt = montar_prompt(titulo_original, texto_original, fonte_nome, keywords,
                               evidencias_aprovadas=evidencias_aprovadas,
-                              contexto_complementar=contexto_complementar)
+                              contexto_complementar=contexto_complementar, editorial_brief=editorial_brief,
+                              editorial_feedback=editorial_feedback)
     except (ValueError, TypeError, KeyError, AttributeError):
         return {"erro": "Contrato editorial ou fontes complementares inválidos"}
     client, erro = _get_client()
@@ -216,6 +229,8 @@ def reescrever_materia(
         return {"erro": "Falha Groq: provider_error (detalhes privados omitidos)"}
 
     try:
+        if getattr(resp.choices[0], "finish_reason", None) == "length":
+            return {"erro": "Resposta truncada pelo limite de tokens; preservar insumos e revisar orçamento."}
         raw = resp.choices[0].message.content or ""
         uso = getattr(resp, "usage", None)
         pt = int(getattr(uso, "prompt_tokens", 0) or 0)
@@ -272,6 +287,7 @@ def reescrever_materia(
                  "slug": slug, "meta_description": meta},
                 url_fonte=url_fonte, fonte_nome=fonte_nome,
                 contexto_complementar=contexto_complementar,
+                editorial_brief=editorial_brief,
                 voice_application={
                     "status": "PROMPT_APPLIED",
                     "method": "mkt_flow_p0.rewriter.system_prompt",

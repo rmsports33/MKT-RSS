@@ -1,5 +1,27 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
+## Desenvolvimento substantivo — precedência 10/11/2026
+
+- Online, importar artigo pendente inclui planejamento, adaptação e crítica pelo
+  provedor existente automaticamente. `--adapt-editorial` força nova adaptação;
+  não é requisito de execução dos módulos. `--offline` preserva o insumo e registra
+  as pendências; não inventa redação, voz aplicada ou aprovação.
+- RSS prepara briefing quando necessário e critica o texto final, incluindo
+  atribuição e links, com até duas redações. Falha de provedor permanece pendente.
+- Briefing define leitor, necessidade, recorte, contribuição e limites. Avaliação
+  substantiva exige justificativa e trechos literais vinculados ao texto e briefing;
+  PROMPT_APPLIED isolado não aprova qualidade. Crítica pode usar o mesmo modelo:
+  declarar revisão assistida, nunca independência ou aceite humano inexistentes.
+- Adaptação feita por Codex/ChatGPT pode usar ASSISTED_ADAPTED com hash do conteúdo;
+  nunca usar HUMAN_ADAPTED para personificar o proprietário nem alegar chamada de
+  system prompt externo que não ocorreu. Edição invalida a avaliação textual.
+- Aplicar até três links internos realmente relacionados; não completar quota com
+  links irrelevantes. Links internos presentes sem verificação continuam pendentes.
+- No workflow manual, github.sha fixa o código da própria execução e evita rodar
+  um snapshot antigo depois de corrigir o motor. Não ativa cron nem publicação.
+- Critério técnico não certifica fatos nem padrão acima da média. Artigo final e
+  recibo da versão continuam necessários para revisão do proprietário.
+
 ## Gate editorial obrigatorio — 10/11/2026
 
 - Toda rota de geração/importação passa pelo mesmo módulo de prontidão. Aplicar a identidade não pode ser inferido do nome da marca nos metadados.

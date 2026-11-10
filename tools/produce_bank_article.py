@@ -103,6 +103,8 @@ def produce(brief, output_dir, *, execute_draft=False):
     from mkt_flow_p0.research_candidates import descobrir_fontes_candidatas
     from mkt_flow_p0.keyword_research import sugerir_keywords_review
     from mkt_flow_p0.rewriter import reescrever_materia, adicionar_atribuicao
+    from mkt_flow_p0.editorial_development import plan_brief_with_provider, review_with_provider
+    from mkt_flow_p0.editorial_identity import vincular_avaliacao_substantiva
     from mkt_flow_p0.related_posts import buscar_relacionados_wordpress, anexar_relacionados
     from mkt_flow_p0.image_handler import baixar_imagem, processar_capa
     from mkt_flow_p0.editorial_identity import atualizar_handoff_revisao, validar_handoff_chatgpt
@@ -203,9 +205,11 @@ def produce(brief, output_dir, *, execute_draft=False):
                                        brief['title'], original)
         if source_verdict.get('veredito') == 'BLOQUEADO':
             raise ProductionBlocked('EXTRACTED_SOURCE_FILTER_BLOCKED')
+        editorial_brief = observed.call('editorial_planning', plan_brief_with_provider,
+            brief['title'], original, genre=brief['genre'], research=context)
         generated = observed.call('generation', reescrever_materia, brief['title'], original,
                                   fonte_nome=brief['source_name'], url_fonte=brief['source_url'],
-                                  keywords=keywords, contexto_complementar=context, max_tokens=5000,
+                                  keywords=keywords, contexto_complementar=context, editorial_brief=editorial_brief, max_tokens=5000,
                                   timeout=90, temperature=0.3)
         if generated.get('erro'):
             raise ProductionBlocked('GENERATION_NOT_CONFIRMED')
@@ -221,6 +225,9 @@ def produce(brief, output_dir, *, execute_draft=False):
         handoff = observed.call('versioned_package', atualizar_handoff_revisao,
                                 generated['editorial_handoff'], markdown, related_articles=related)
         observed.call('package_integrity', validar_handoff_chatgpt, handoff)
+        critique = observed.call('substantive_critique', review_with_provider, markdown, editorial_brief)
+        handoff = observed.call('versioned_critique', vincular_avaliacao_substantiva,
+                                handoff, editorial_brief, critique)
         html = observed.call('html_format', markdown_para_html, markdown)
         report['wordpress_content_sha256'] = digest(html)
         # Preview checks use the actual deterministic draft slug, not a made-up
