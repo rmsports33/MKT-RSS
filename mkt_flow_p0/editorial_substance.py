@@ -11,9 +11,9 @@ GENRES = {"noticia", "guia", "analise", "comparativo", "review", "nota_breve"}
 CRITERIA = ("reader_need", "editorial_angle", "decision_support", "voice", "source_limits")
 RUBRIC = {
     "reader_need": "O início atende um problema concreto do leitor definido no briefing.",
-    "editorial_angle": "O texto desenvolve o recorte proposto, além de ordenar ou traduzir fontes.",
-    "decision_support": "Há interpretação fundamentada, cenário ou comparação que ajuda a decidir; sem teste inventado.",
-    "voice": "Há hierarquia e julgamento explicado, linguagem natural e precisa; sem slogans ou persona encenada.",
+    "editorial_angle": "Há progressão com movimentos úteis e recorte próprio, não sequência de fontes ou seções sem função.",
+    "decision_support": "Interpreta evidências, distingue cenários e tensões reais, preserva limites e auxilia a decidir; sem extrapolar.",
+    "voice": "A voz decorre de escolhas fundamentadas e ritmo proporcional à ideia, sem persona encenada ou fechos decorativos.",
     "source_limits": "O texto distingue documentação, inferência e experiência; explicita limites relevantes.",
 }
 
@@ -37,6 +37,7 @@ def brief_hash(brief):
 
 
 def writing_instruction(brief):
+    from mkt_flow_p0.editorial_voice_adapter import writing_voice_guidance
     brief = normalize_brief(brief)
     return (
         "\nBRIEFING EDITORIAL (restrições de fatos prevalecem):\n"
@@ -48,6 +49,7 @@ def writing_instruction(brief):
         "Voz independente significa julgamento fundamentado, nunca bordões ou opinião inventada. "
         "Não invente experiência própria, contexto brasileiro, preços ou defeitos para dar personalidade. "
         "Se faltarem dados para a contribuição pedida, explicite a lacuna; não preencha com volume.\n"
+        + writing_voice_guidance(brief)
     )
 
 
