@@ -1,0 +1,48 @@
+name: Editorial handoff live - one authorized run
+
+on:
+  push:
+    branches: [homolog/editorial-handoff-20261110-a1]
+    paths: [.github/workflows/editorial-handoff-once.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: editorial-handoff-live-once-20261110-a1
+  cancel-in-progress: false
+
+jobs:
+  handoff:
+    if: ${{ github.event.created && github.actor == 'rmsports33' && github.repository == 'rmsports33/MKT-RSS' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install existing RSS dependencies and evidence encryption
+        run: python -m pip install -q -r requirements/rss.txt 'cryptography>=45,<47'
+      - name: Produce one handoff with owner-confirmed free quota
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+          QUOTA_CONFIRMATION: QUOTA_GRATUITA
+          CONEXO_RSS_DRAFT: '0'
+          CONEXO_RSS_DRAFT_STAGING: '0'
+          CONEXO_RSS_RESEARCH_FEEDS: '1'
+          CONEXO_RSS_RELATED_LINKS: '1'
+        run: python -m scripts.handoff_live_once
+      - name: Retain redacted receipt and encrypted private evidence only
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: editorial-handoff-live-${{ github.run_id }}
+          path: work/handoff-live/public/
+          if-no-files-found: error
+          retention-days: 1
