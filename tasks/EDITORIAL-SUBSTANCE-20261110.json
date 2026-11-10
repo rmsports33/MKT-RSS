@@ -9,7 +9,7 @@
   "owner": "Codex nesta sessão",
   "coordinator": "sessão atual",
   "reviewer": "revisão técnica assistida pela mesma sessão, sem independência",
-  "status": "ENGINEERING_INTEGRATED_PENDING_LIVE_QUALITY_ACCEPTANCE",
+  "status": "ENGINEERING_INTEGRATED_PENDING_INDEPENDENT_QUALITY_ACCEPTANCE",
   "scope": [
     "Rastrear as rotas atuais de importação, redação, identidade e prontidão",
     "Implementar briefing, adaptação e crítica vinculada ao texto, preservando controles existentes",
@@ -106,15 +106,40 @@
         "imagem_destacada_com_direitos_pendente"
       ],
       "notes": "Run #2 master success; gen #1 branch blocked/failure by environment protection. Does NOT demonstrate above-average editorial quality."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/82",
+      "result": "MERGED",
+      "sha": "0fe882bc375883a83023023f84ce38fd1255afd0",
+      "scope": "Fail-closed exact handoff version; sanitized review stage CLI"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/83",
+      "result": "MERGED",
+      "sha": "102dd8fa2b65d111a71ccfffc3236181fd6d8cd4",
+      "scope": "Sanitized provider error class: auth/rate-limit/timeout/JSON/truncation/criteria"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42894155738",
+      "result": "PASS",
+      "passed": 1088,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/blob/master/docs/EDITORIAL_9798_SECOND_REVIEW_20261110.md",
+      "result": "NONBLIND_REAL_PILOT",
+      "notes": "9798 revisions 9802/9803 compared; cannot transfer results to encrypted Groq handoff"
     }
   ],
   "blockers": [
-    "Crítica substantiva não vinculada ao handoff real: diagnóstico por etapa implementado nesta branch, mas causa operacional exata da execução histórica não é recuperável do recibo simplificado.",
-    "Uma das duas fontes é candidata RSS sem verificação; pesquisa multifonte válida não foi comprovada.",
-    "Imagem destacada e direitos de reutilização pendentes.",
-    "Comparação A/B cega entre três gêneros e aceite humano, com rastreabilidade factual antes de publicação."
+    "O executor de 2026-11-10 descartou a causa interna da crítica em exceção genérica. Chave privada RSA não localizada; even after decryption the original provider subcause may be absent from logs.",
+    "Fonte complementar do handoff #42809666543 é candidata RSS não verificada; identidade/URL permanecem cifradas.",
+    "Nenhuma imagem identificada/licenciada/aprovada para o handoff histórico; mídia WP #9799 refere-se apenas ao guia #9798 e tem proveniência IA, ainda sem atestado de titularidade.",
+    "Avaliação independente cega do handoff Groq e comparação por gêneros ainda não realizadas; segundo parecer não cego do WP #9798 não comprova acima da média."
   ],
-  "next_action": "Após CI/merge do diagnóstico por etapa, usar execução futura autorizada para obter o estágio da falha; não repetir Groq ou publicar apenas porque Action ficou verde. Revisar fonte secundária e direitos de imagem separadamente.",
+  "next_action": "Recuperar a chave RSA privada fora do GitHub pelo titular, ou recuperar o texto original do handoff por via privada; auditar URL e evidências da fonte candidata e selecionar imagem congruente com direitos provados. Só declarar aceite editorial após julgamento cego humano de artigos completos; não repetir chamada paga nem publicar automaticamente.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -138,7 +163,21 @@
     "last_groq_handoff_run_id": 42809666543,
     "last_groq_handoff_quality": "ENRIQUECIMENTO_PENDENTE",
     "substantive_review": "ABSENT_OR_INVALID_IN_LIVE_RECEIPT",
-    "blind_human_quality_approval": false
+    "blind_human_quality_approval": false,
+    "historical_groq_run_id": 42809666543,
+    "historical_handoff": "CREATED",
+    "historical_review": "MISSING_OR_INVALID",
+    "historical_provider_error_detail": "NOT_RECORDED_BY_OLD_REVIEWER",
+    "encrypted_artifact_sha256": "2cb75fed2dca23462cc3fcd5ca763d96b6981f6141f8437907574002bc073b17",
+    "encrypted_artifact_integrity": "VERIFIED",
+    "private_decryption_key": "NOT_LOCATED",
+    "secondary_rss_source": "UNKNOWN_IDENTITY_UNVERIFIED",
+    "historical_article_image_rights": "PENDING_NO_APPROVED_MEDIA_EVIDENCE",
+    "independent_review": "NOT_PERFORMED_ON_HISTORICAL_GROQ_ARTICLE",
+    "separate_wordpress_pilot_review": "NONBLIND_SECOND_REVIEW_9798",
+    "pilot_wp_media_9799": "AI_PROVENANCE_DOCUMENTED_OWNERSHIP_NOT_ATTESTED",
+    "review_error_reason_codes": "INTEGRATED_CI_VERIFIED",
+    "review_diagnostics_commit": "102dd8fa2b65d111a71ccfffc3236181fd6d8cd4"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations."
 }
