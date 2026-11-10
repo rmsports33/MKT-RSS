@@ -234,17 +234,32 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             except ValueError:
                 pass  # Nunca reparar hash de um pacote inválido.
         review = None
+        review_diagnostic = "NOT_RUN_NO_BRIEF" if brief is None else "NOT_RUN_NO_VALID_HANDOFF"
         if brief is not None and isinstance(rw.get("editorial_handoff"), dict):
             from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt, vincular_avaliacao_substantiva
+            review_stage = "validate_handoff"
             try:
                 validar_handoff_chatgpt(rw["editorial_handoff"])
+                review_stage = "provider_review"
                 review = review_with_provider(texto_final, brief)
+                review_stage = "attach_review"
                 rw["editorial_handoff"] = vincular_avaliacao_substantiva(
                     rw["editorial_handoff"], brief, review)
+                review_diagnostic = "REVIEW_ATTACHED"
             except ValueError:
-                logger.warning("Revisão substantiva pendente; nenhuma aprovação inferida")
+                review_diagnostic = {
+                    "validate_handoff": "HANDOFF_INVALID",
+                    "provider_review": "PROVIDER_REVIEW_FAILED",
+                    "attach_review": "REVIEW_ATTACHMENT_FAILED",
+                }[review_stage]
+                # Never mark a detached/invalid critique as successful.
+                review = None
+                logger.warning("Revisão substantiva pendente; etapa=%s", review_diagnostic)
         assessment = assess_substance(texto_final, brief, review)
-        editorial_attempts.append({"attempt":attempt+1,"assessment":assessment})
+        if review_diagnostic == "REVIEW_ATTACHED" and not assessment["review_valid"]:
+            review_diagnostic = "REVIEW_CONTENT_INVALID"
+        editorial_attempts.append({"attempt":attempt+1, "assessment":assessment,
+                                   "review_diagnostic":review_diagnostic})
         if assessment["status"] == "PASS" or not assessment["review_valid"]:
             break
         feedback = review["criteria"]
