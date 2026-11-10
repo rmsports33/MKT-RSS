@@ -2,7 +2,7 @@ name: Editorial handoff live - one authorized run
 
 on:
   push:
-    branches: [homolog/editorial-handoff-20261110-a1]
+    branches: [master]
     paths: [.github/workflows/editorial-handoff-once.yml]
 
 permissions:
@@ -14,7 +14,8 @@ concurrency:
 
 jobs:
   handoff:
-    if: ${{ github.event.created && github.actor == 'rmsports33' && github.repository == 'rmsports33/MKT-RSS' }}
+    if: >-
+      ${{ github.ref == 'refs/heads/master' && github.actor == 'rmsports33' && github.repository == 'rmsports33/MKT-RSS' && startsWith(github.event.head_commit.message, 'homolog: execute confirmed Groq handoff 20261110-a1') }}
     runs-on: ubuntu-latest
     environment: rss-homolog
     timeout-minutes: 10
