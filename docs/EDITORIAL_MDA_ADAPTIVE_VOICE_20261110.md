@@ -1,6 +1,6 @@
 # MDA AUTO → Voz Editorial Adaptativa ConexoTech (piloto controlado)
 
-**Data:** 2026-11-10. **Estado:** implementação técnica do adaptador, sujeita a CI e a teste editorial cego; não é comprovação de qualidade acima da média e não habilita publicação.
+**Data:** 2026-11-10. **Estado:** implementação técnica integrada à master pelo PR #86 após CI verde (1.104 testes + 52 do redator, validação editorial verde). Comparação A/B cega de artigos completos permanece pendente; a integração não certifica qualidade acima da média nem habilita publicação.
 
 ## Fontes verificadas do projeto
 
