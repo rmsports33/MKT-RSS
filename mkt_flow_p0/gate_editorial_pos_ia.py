@@ -8,7 +8,7 @@ import unicodedata
 MESES = {"janeiro": 1, "fevereiro": 2, "marco": 3, "abril": 4, "maio": 5,
          "junho": 6, "julho": 7, "agosto": 8, "setembro": 9,
          "outubro": 10, "novembro": 11, "dezembro": 12}
-NUMERO = re.compile(r"(?<!\w)(?:r\$\s*|us\$\s*|\$\s*)?\d+(?:[.,]\d+)*(?:\s*(?:reais|%|gb|tb|hz|mah))?(?!\w)", re.I)
+NUMERO = re.compile(r"(?<!\w)(?:r\$\s*|us\$\s*|\$\s*)?\d+(?:[.,]\d+|[ \u00a0\u202f]\d{3}(?!\d))*(?:\s*(?:reais|%|gb|tb|hz|mah|k))?(?!\w)", re.I)
 PRODUTO = re.compile(r"\b(?:modelo|produto)\s+[a-z0-9]+\b", re.I)
 PRECO = re.compile(r"(?<!\w)(?:r\$\s*\d[\d.,]*|\d[\d.,]*\s+reais)\b", re.I)
 
@@ -36,6 +36,9 @@ def _numeros(texto):
             valor = re.sub(r"^(?:r\$\s*)|(?:\s+reais)$", "", valor).strip()
             saida.add("brl:" + valor)
         else:
+            # Equivalent Brazilian thousands and unit spacing do not assert a new number.
+            valor = re.sub(r"(?<=\d)\s+(?=\d{3}(?:\D|$))", ".", valor)
+            valor = re.sub(r"\s+(?=%|gb|tb|hz|mah|k\b)", "", valor)
             saida.add(re.sub(r"\s+", " ", valor))
     return saida
 
@@ -56,7 +59,7 @@ def _texto_sem_identificadores_de_formatacao(texto):
     # not quantities asserted in prose. Numeric link LABELS remain checkable.
     texto = re.sub(r"!?\[([^\]]+)\]\([^)]+\)", r"\1", texto or "")
     texto = re.sub(r"https?://[^\s<>)]+", "", texto)
-    return re.sub(r"(?m)^\s*\d+[.)]\s+", "", texto)
+    return re.sub(r"(?m)^(\s*(?:#{1,6}\s*)?)\d+[.)]\s+", r"\1", texto)
 
 
 def validar_saida(texto_fonte, texto_gerado):
