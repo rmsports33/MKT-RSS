@@ -8,7 +8,7 @@ import pytest
 from mkt_flow_p0.editorial_substance import writing_instruction, brief_hash
 from mkt_flow_p0.editorial_voice_adapter import writing_voice_guidance
 from mkt_flow_p0.rewriter import montar_prompt
-from scripts.prepare_mda_ab import build_pair, prepare_case
+from scripts.prepare_mda_ab import build_pair, prepare_case, prepare_batch
 from scripts.seal_mda_ab_review import seal_pair
 
 
@@ -145,3 +145,39 @@ def test_generation_model_is_not_claimed_verified_by_local_seal(tmp_path):
                        tmp_path / "blind", tmp_path / "key", coin=0)
     assert result["model_execution_verified"] is False
     assert result["publication_authorized"] is False
+
+
+
+def test_prepare_four_case_batch_without_provider_calls_or_public_manuscripts(tmp_path, monkeypatch):
+    import mkt_flow_p0.rewriter as rewriter
+    monkeypatch.setattr(rewriter, "_get_client", lambda: (_ for _ in ()).throw(
+        AssertionError("Groq must not be contacted by offline preparation")))
+    cases = []
+    for genre, identifier in (
+        ("guia", "guia-9798"), ("noticia", "noticia-9635"),
+        ("analise", "analise-9687"), ("comparativo", "comparativo-9681")
+    ):
+        item = case()
+        item["case_id"] = identifier
+        item["editorial_brief"] = {**BRIEF, "genre": genre}
+        cases.append(item)
+    batch = {"schema": "conexo-mda-ab-batch/1", "cases": cases}
+    out = tmp_path / "private"
+    result = prepare_batch(batch, out)
+    assert result["count"] == 4
+    assert result["provider_called"] is False
+    assert result["quality_improvement_demonstrated"] is False
+    assert result["publication_authorized"] is False
+    assert [x["genre"] for x in result["cases"]] == [
+        "guia", "noticia", "analise", "comparativo"
+    ]
+    for item in cases:
+        path = out / item["case_id"]
+        assert (path / "control.prompt.txt").exists()
+        assert (path / "mda.prompt.txt").exists()
+        assert (path / "manifest.private.json").exists()
+        assert path.stat().st_mode & 0o077 == 0
+    duplicate = {"schema": "conexo-mda-ab-batch/1", "cases": [cases[0], cases[0]]}
+    with pytest.raises(ValueError, match="duplicado"):
+        prepare_batch(duplicate, tmp_path / "should-not-exist")
+    assert not (tmp_path / "should-not-exist").exists()
