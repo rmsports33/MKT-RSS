@@ -84,7 +84,7 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
     desc = seo.get("description", "") if isinstance(seo, dict) else ""
     pendencias = []
     avisos = ["texto_abaixo_da_referencia_do_genero"] if palavras < limite else []
-    if voice_application["status"] != "PROMPT_APPLIED":
+    if voice_application["status"] not in {"PROMPT_APPLIED", "HUMAN_ADAPTED"}:
         pendencias.append("persona_editorial_nao_aplicada")
     if genero != "nota_breve" and len(fontes) - fontes_rss_pendentes < 2:
         pendencias.append("pesquisa_multifonte_pendente")

@@ -3,7 +3,7 @@
 ## Gate editorial obrigatorio — 10/11/2026
 
 - Toda rota de geração/importação passa pelo mesmo módulo de prontidão. Aplicar a identidade não pode ser inferido do nome da marca nos metadados.
-- O gerador MKT-RSS registra hashes do DNA e do prompt. Texto pronto importado sem essa evidência recebe `persona_editorial_nao_aplicada` e não pode ser declarado completo para revisão.
+- O gerador MKT-RSS registra hashes do DNA e do prompt. Importações aceitam prova verificável de outro provedor ou atestado humano vinculado ao hash do Markdown; sem prova, recebem `persona_editorial_nao_aplicada` e não podem ser declaradas completas para revisão.
 - Toda execução produz lista de módulos, manifesto por versão e status de conclusão. `EXECUTED` não significa `PASS`; mudanças no conteúdo invalidam o recibo anterior.
 - Apresentar ao proprietário o artigo completo e o manifesto correspondente; nunca perguntar se os módulos devem ser usados. A revisão humana do conteúdo e a autorização de publicação continuam separadas.
 - Detalhes: `docs/EDITORIAL_ORCHESTRATION_GATE_20261110.md`.
