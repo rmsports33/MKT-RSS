@@ -100,7 +100,8 @@ class ImportedEditorialFlowTests(unittest.TestCase):
         result=avaliar_prontidao_editorial(handoff,html=html,genero='guia',featured_media_id=1,direitos_imagem_confirmados=True,verified_related_urls=links)
         self.assertNotIn('texto_abaixo_da_referencia_do_genero',result['pendencias'])
         self.assertIn('texto_abaixo_da_referencia_do_genero',result['avisos'])
-        self.assertEqual(result['status'],'PRONTO_PARA_REVISAO_HUMANA')
+        self.assertEqual(result['status'],'ENRIQUECIMENTO_PENDENTE')
+        self.assertIn('persona_editorial_nao_aplicada',result['readiness']['pendencias'])
         self.assertFalse(result['pronto_para_publicar'])
 
 
