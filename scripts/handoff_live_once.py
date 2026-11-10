@@ -86,7 +86,9 @@ def main():
             "brief_present":isinstance(metadata.get("editorial_brief"),dict),
             "voice_application":metadata.get("editorial_voice_application",{}).get("status"),
             "substantive_scores":{k:v.get("score") for k,v in review.get("criteria",{}).items()},
-            "review_method":review.get("method")})
+            "review_method":review.get("method"),
+            "review_diagnostics":item.get("review_diagnostics",[]),
+            "review_attempt_count":item.get("review_attempt_count")})
         code=0
     except Exception as exc:
         report.update(outcome="BLOCKED", error_type=type(exc).__name__)
