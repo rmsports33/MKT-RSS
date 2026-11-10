@@ -203,6 +203,30 @@
       "reference": "PRIVATE_GOOGLE_DRIVE_REVIEW_PACKET",
       "result": "MDA_REVIEW_CHECKLIST_INSERTED",
       "notes": "No reviewer score/identity or manuscript content copied to public GitHub."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/87",
+      "result": "MERGED",
+      "sha": "8f07c10759beab529084a6faa750a857e295149d",
+      "scope": "Controlled control/MDA prompt split; blind packet tooling; zero provider calls."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42913503567",
+      "result": "PASS",
+      "passed": 1111,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42913505576",
+      "result": "PASS",
+      "scope": "Conexo OS editorial validation for PR87"
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/mda_ab_prompts_privados_20261110.zip",
+      "result": "OFFLINE_PREFLIGHT_EXECUTED",
+      "scope": "4 real cases, 8 confidential prompts, verified GitHub code hashes; publication not authorized"
     }
   ],
   "blockers": [
@@ -213,7 +237,7 @@
     "Não há execução autenticada atual MKT-RSS → WordPress com handoff da mesma versão homologada; rascunho lido/editado não prova e2e.",
     "A execução histórica Groq #42809666543 continua cifrada e não recuperável sem chave privada; fica isolada e não impede novos pilotos."
   ],
-  "next_action": "A engenharia de voz adaptativa MDA está integrada com CI completo; para declarar melhora real fazer A/B de artigos completos com fontes equivalentes, comparar cinco critérios com revisor humano independente e checar regressões factuais. Preservar fontes, direitos da imagem, Gate WordPress, aprovação por versão e bloqueio de publicação. Não executar Groq, gastar créditos, cron ou alterar WP apenas para marcar qualidade.",
+  "next_action": "A instrumentação A/B MDA está integrada e os oito prompts reais foram preparados offline, com evidência privada. Pendência inequívoca: gerar dois textos COMPLETOS por pauta usando mesmo modelo/temperatura/orçamento com autorização de uso de créditos, preservar recibos da geração, criar pacote cego e obter avaliação independente com revisão factual. Não declarar melhoria editorial nem publicar enquanto inexistentes artigos controlados e parecer; direitos de imagem e Gate WP permanecem pendentes.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -308,7 +332,24 @@
     "mda_private_blind_review_packet": "MDA_RUBRIC_APPENDED",
     "mda_a_b_full_article_comparison": "PENDING_NOT_GENERATED",
     "mda_independent_human_quality_acceptance": "PENDING",
-    "mda_real_publish_gate_validation": "NOT_CHANGED_OR_PROVEN"
+    "mda_real_publish_gate_validation": "NOT_CHANGED_OR_PROVEN",
+    "mda_ab_code": "INTEGRATED_MASTER_PR87",
+    "mda_ab_merge_sha": "8f07c10759beab529084a6faa750a857e295149d",
+    "mda_ab_offline_preflight": "FOUR_REAL_CASES_EIGHT_PROMPTS_SHA_VERIFIED",
+    "mda_ab_full_text_corpus": "PRIVATE_DRIVE_VALID_JSON_FOUR_CASES",
+    "mda_ab_private_prompt_archive": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_mda_ab_prompts_privados_20261110.zip",
+    "mda_ab_private_preflight_receipt": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_mda_ab_preflight_resumo_20261110.json",
+    "mda_ab_cases": [
+      "guia-9798",
+      "noticia-9635",
+      "analise-9687",
+      "comparativo-9681"
+    ],
+    "mda_ab_outputs_generated": 0,
+    "mda_ab_real_provider_calls": 0,
+    "mda_ab_external_independent_acceptance": "PENDING_NO_ARTICLE_PAIR",
+    "mda_ab_quality_improvement_demonstrated": false,
+    "mda_ab_wordpress_written": false
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
