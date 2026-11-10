@@ -174,6 +174,11 @@
       "reference": "PRIVATE_GOOGLE_DRIVE_REVIEW_PACKET",
       "result": "PRIVATE_BLINDED_FULL_TEXT_PACKET",
       "notes": "Caderno integral A–E em pasta privada do Google Drive, chave separada; nenhum link privado exposto em repositório público."
+    },
+    {
+      "reference": "WordPress plugin inventory (authenticated read only, 2026-11-10)",
+      "result": "CONTROLLED_EDITORIAL_GATE_AND_HMAC_VAULT_ACTIVE",
+      "details": "Gate 0.1.0-rc5; Vault 0.1.0; separate MU-plugin Gate inactive; live 403 not tested."
     }
   ],
   "blockers": [
@@ -184,7 +189,7 @@
     "Não há execução autenticada atual MKT-RSS → WordPress com handoff da mesma versão homologada; rascunho lido/editado não prova e2e.",
     "A execução histórica Groq #42809666543 continua cifrada e não recuperável sem chave privada; fica isolada e não impede novos pilotos."
   ],
-  "next_action": "Coletar notas de revisor externo usando caderno privado completo e sem compartilhar chave de versões; depois verificar imagens/direitos, homologar gate real com tentativa de publicação isolada e bloqueada, validar visual 390/1440 e somente então declarar pronto. Não contratar serviços, não reintroduzir staging, não publicar sem aceite.",
+  "next_action": "Solicitar a revisor independente o parecer assinado sobre os manuscritos integrais A–E (sem enviar chave); depois comprovar direitos das capas e realizar teste de bloqueio 403 em ambiente WordPress isolado com a MESMA versão 0.1.0-rc5 antes de qualquer tentativa em produção. Não publicar.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -234,7 +239,7 @@
     "legacy_source_verification": "PENDING",
     "legacy_image": "NO_LINKED_CONFIRMED_RIGHTS",
     "wp9798_image_provenance": "LIBRARY_GENERATED_IMAGE_DIMENSIONS_SIZE_MATCH_MEDIA_9799_HASH_NOT_COMPARED",
-    "wp9798_image_visual_fit": "PASS_GENERIC_NON-IOS_ILLUSTRATION",
+    "wp9798_image_visual_fit": "GENERIC_KEYBOARD_APPROPRIATE_NOT_REAL_IOS",
     "wp9798_image_rights": "OWNER_CONFIRMATION_PENDING",
     "blind_external_comparison": "NOT_COMPLETED",
     "publication_authorized": false,
@@ -259,7 +264,13 @@
     "end_to_end_mkt_rss_to_wp": "NOT_PROVEN",
     "wordpress_publications_from_pilot": 0,
     "production_posts_modified_only_drafts": true,
-    "publicly_approved": false
+    "publicly_approved": false,
+    "controlled_gate_wordpress_active": "YES_0.1.0-rc5_CONFIRMED_PLUGIN_LIST",
+    "hmac_vault_wordpress_active": "YES_0.1.0",
+    "mu_plugin_old_gate_inactive": "YES_SEPARATE_INSTALL",
+    "real_publish_blocking_test": "NOT_RUN_PRODUCTION_PUBLICATION_RISK",
+    "wp9798_image_local_sha256": "3db33303f9e6dd5d418da7792b9ff81750bc41001bddfc349158c52e5d7b3de1",
+    "wp9798_image_bytes_equal_to_wordpress": "NOT_PROVEN_REMOTE_HASH_UNAVAILABLE"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
