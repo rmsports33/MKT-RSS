@@ -225,7 +225,13 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             if relacionados:
                 texto_final = anexar_relacionados(texto_final, relacionados)
         if isinstance(rw.get("editorial_handoff"), dict):
-            from mkt_flow_p0.editorial_identity import atualizar_handoff_revisao
+            from mkt_flow_p0.editorial_identity import (
+                atualizar_handoff_revisao, validar_handoff_chatgpt)
+            try:
+                validar_handoff_chatgpt(rw["editorial_handoff"])
+            except ValueError:
+                return {"acao": "falha", "motivo": "handoff_editorial_invalido",
+                        "url": url_fonte, "escreveu": False}
             try:
                 rw["editorial_handoff"] = atualizar_handoff_revisao(
                     rw["editorial_handoff"], texto_final, related_articles=relacionados,
