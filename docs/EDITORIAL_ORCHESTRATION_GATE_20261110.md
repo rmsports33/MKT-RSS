@@ -11,6 +11,8 @@ Toda entrada editorial usa a prontidão comum do MKT-RSS: geração RSS, artigo 
 - O caminho de geração MKT-RSS grava `editorial_voice_application.status=PROMPT_APPLIED`, o hash do DNA editorial e o hash da chamada completa enviada ao provedor.
 - O importador de texto pronto, que não chama provedor, registra `NOT_APPLIED` por padrão. A prontidão inclui `persona_editorial_nao_aplicada` até que uma etapa de adaptação com evidência seja concluída.
 - `PROMPT_APPLIED` prova que a instrução de DNA integrou a geração. Não certifica qualidade literária, factualidade ou aprovação humana; a revisão de voz continua registrada separadamente.
+- Importações podem trazer prova de outro provedor (`external_provider.system_prompt`, provedor e hashes) ou adaptação humana (`HUMAN_ADAPTED`, editor, hash do DNA e hash do Markdown exato). O importador valida o formato e vincula o atestado humano à versão; não fabrica essa prova.
+- Provedores externos só devem enviar `PROMPT_APPLIED` depois de incluir o DNA canônico na chamada. Sem prova, o padrão continua `NOT_APPLIED`.
 
 ## Manifesto e versão
 
