@@ -51,6 +51,27 @@ def writing_instruction(brief):
     )
 
 
+def _near_duplicate_repetition(paragraphs):
+    """Flag large amounts of lightly reworded padding, not shared short phrases."""
+    fingerprints = []
+    for paragraph in paragraphs:
+        words = re.findall(r"\\w+", paragraph.casefold())
+        if len(words) < 25:
+            continue
+        grams = {tuple(words[i:i + 4]) for i in range(len(words) - 3)}
+        fingerprints.append(grams)
+    if len(fingerprints) < 4:
+        return False
+    unique = []
+    repeated = 0
+    for grams in fingerprints:
+        if any(len(grams & earlier) / len(grams | earlier) >= .72 for earlier in unique):
+            repeated += 1
+        else:
+            unique.append(grams)
+    return repeated >= 2 and repeated * 3 >= len(fingerprints)
+
+
 def assess_substance(markdown, brief=None, review=None):
     """Review is a supplied assessment, never proof of semantic truth or identity."""
     pending = []
@@ -63,7 +84,8 @@ def assess_substance(markdown, brief=None, review=None):
                   for p in markdown.split("\n\n") if len(p.split()) > 12]
     sentences = [s.strip().casefold() for s in re.split(r"[.!?]\s+", markdown) if len(s.split()) > 6]
     if ((len(paragraphs) > 2 and len(set(paragraphs)) / len(paragraphs) < .7)
-            or (len(sentences) > 5 and len(set(sentences)) / len(sentences) < .5)):
+            or (len(sentences) > 5 and len(set(sentences)) / len(sentences) < .5)
+            or _near_duplicate_repetition(paragraphs)):
         pending.append("repeticao_substantiva")
     valid = isinstance(review, dict) and normalized is not None
     valid = valid and review.get("content_sha256") == content_hash(markdown)
