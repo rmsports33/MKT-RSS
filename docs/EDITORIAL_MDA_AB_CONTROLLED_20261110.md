@@ -1,6 +1,6 @@
 # Marco MDA AUTO — A/B controlado de qualidade editorial
 
-**Status em 10/11/2026:** ferramentas integradas à master pelo PR #87; pré-execução OFFLINE efetiva dos quatro casos concluída com o código idêntico ao GitHub (hash de blob conferido), gerando oito prompts privados. CI: 1.111 testes do núcleo, 11 subtestes e 52 testes do redator aprovados; validação editorial verde. **Nenhum artigo A/B foi gerado pelo provedor e nenhum parecer independente foi recebido.**
+**Status atualizado em 10/11/2026:** experimento A/B real concluído pelo Groq Free (PR #88, workflow #42917583190), com **8 artigos completos em 4 pares**, evidência cifrada e nenhum write/publicação WordPress. Os artigos originais foram preservados na Biblioteca privada e organizados em caderno cego; a segunda análise assistida identificou falhas factuais e **não demonstrou melhora editorial universal**. A instrumentação do Gate e da voz foi corrigida no PR #89. **Ainda falta parecer humano independente, direitos de imagem, checagem factual final e prova real de publicação bloqueada pelo Gate.**
 
 ## Por que o caderno anterior não bastava
 
@@ -74,4 +74,24 @@ Após a integração do PR #87 (merge `8f07c10759beab529084a6faa750a857e295149d`
 | analise-9687 | análise | snapshot do rascunho #9687 | prompt controle/MDA verificado |
 | comparativo-9681 | comparativo | snapshot do rascunho #9681 | prompt controle/MDA verificado |
 
-A origem factual continua pendente de revisão independente, e os artigos resultantes ainda **não existem**. Não confundir os oito *prompts* com oito *artigos*. O marco de qualidade será concluído apenas após geração autorizada, preservação de recibos, cegamento dos textos finais, parecer humano independente e comparação factual. Os documentos temporários usados apenas para transportar cópias de código foram apagados do Google Drive.
+A origem factual continua pendente de revisão independente. **Atualização:** os oito artigos A/B foram gerados posteriormente pelo run #42917583190 e permanecem privados. O marco de qualidade dependerá de parecer humano independente, checagem factual e comparação dos resultados, não apenas da geração. Os documentos temporários usados apenas para transportar cópias de código foram apagados do Google Drive.
+
+
+## Prova real da geração e revisão assistida — 10/11/2026
+
+**PR #88 integrado:** https://github.com/rmsports33/MKT-RSS/pull/88. **Workflow real:** https://github.com/rmsports33/MKT-RSS/actions/runs/42917583190. Recibo público: `COMPLETE_GENERATION_REVIEW_PENDING`, 4 pares, 8 chamadas ao Groq `openai/gpt-oss-120b`, 0 escritas WordPress, 0 publicações, evidências AES-GCM/RSA-OAEP cifradas. As quatro pautas originais continuam como rascunhos. Os artigos, prompts e textos-fonte estão no armazenamento privado `/ConexoOS/AuditoriaEditorial/MDA_AB_20261110/`, com chave A/B **separada** do material do revisor; não publicar o corpus no GitHub.
+
+**Pré-avaliação do GPT-6 (NÃO humana e não totalmente cega)**, com critérios leitor/recorte/contribuição/voz/fontes, escala 0–4:
+
+| Gênero | Controle (soma/20) | MDA (soma/20) | Evidência limitadora |
+|---|---:|---:|---|
+| Guia iPhone | 17 | 14 | MDA introduziu contradição sintoma→ajuste, com risco de orientar desligamento de recurso desejado |
+| SpaceSail | 12 | 16 | MDA apresentou mais clareza; controle acrescentou preço internacional sem lastro para Brasil; verificar certificado e disponibilidade |
+| IA nos jogos | 11 | 12 | Ambos especulam causalidade sem base adequada; controle reintroduziu percentual inconsistente |
+| Galaxy A36/A16 | 14 | 16 | MDA mais prudente; controle sugeriu gravação 4K no A16, recurso incompatível com especificação oficial |
+
+**Conclusão técnica limitada:** zero dos quatro pares satisfizeram integralmente a exigência prévia de melhorar **ao mesmo tempo** voz e contribuição sem regressão factual. Esse resultado é exploratório, sujeito à revisão humana independente, e não prova nem refuta sozinho a eficácia futura do adaptador. Não ajustar notas por saber qual braço era MDA. Não selecionar apenas os resultados favoráveis.
+
+**Gate pós-IA existente aplicado sobre todos os oito artigos:** alertas numéricos frequentemente incluem falsos positivos por títulos numerados ou apresentação de milhares/unidades; `SEM_ALERTAS` não detecta contradição semântica. O PR #89 (https://github.com/rmsports33/MKT-RSS/pull/89) corrigiu a normalização de quantidades e a redação das instruções MDA sem reexecutar Groq. CI: **1.123 testes do núcleo aprovados, 1 ignorado, 11 subtestes e 52 testes do redator aprovados**; validação editorial Conexo OS aprovada.
+
+**Aceite editorial NÃO declarado:** o pacote com os oito textos integrais já foi montado para um avaliador humano externo, com a identidade dos braços em chave privada à parte. Faltam parecer cego assinado, fontes conferidas por versão, correção de fatos nas cópias de trabalho, imagens licenciadas e prova do Gate WordPress no caminho real. O status de publicação permanece `BLOQUEADO`.
