@@ -9,7 +9,7 @@
   "owner": "Codex nesta sessão",
   "coordinator": "sessão atual",
   "reviewer": "revisão técnica assistida pela mesma sessão, sem independência",
-  "status": "ENGINEERING_INTEGRATED_PENDING_INDEPENDENT_QUALITY_ACCEPTANCE",
+  "status": "ENGINEERING_FIXES_INTEGRATED_HISTORICAL_EVIDENCE_AND_BLIND_ACCEPTANCE_PENDING",
   "scope": [
     "Rastrear as rotas atuais de importação, redação, identidade e prontidão",
     "Implementar briefing, adaptação e crítica vinculada ao texto, preservando controles existentes",
@@ -131,15 +131,48 @@
       "reference": "https://github.com/rmsports33/MKT-RSS/blob/master/docs/EDITORIAL_9798_SECOND_REVIEW_20261110.md",
       "result": "NONBLIND_REAL_PILOT",
       "notes": "9798 revisions 9802/9803 compared; cannot transfer results to encrypted Groq handoff"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/84",
+      "result": "MERGED",
+      "sha": "1d470be7af60cb3662b8656fb9f9ed2fb05b982d",
+      "scope": "Distinguishes technical handoff from substantively ready-to-review; audits ciphertext integrity offline without private key."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42896831570",
+      "result": "PASS",
+      "passed": 1092,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/85",
+      "result": "MERGED",
+      "sha": "5c2ecfb51dca3d3e0d05fc1e3f9011a97a4968d6",
+      "scope": "Prevent multiple URLs of one outlet from passing multifonte."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42897889314",
+      "result": "PASS",
+      "passed": 1093,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "private ChatGPT Library ConexoOS/AuditoriaEditorial",
+      "result": "SAFE_EVIDENCE_REPORTS_SAVED",
+      "note": "No private editorial plaintext or keys published. Encrypted ZIP is also present in Library root."
     }
   ],
   "blockers": [
-    "O executor de 2026-11-10 descartou a causa interna da crítica em exceção genérica. Chave privada RSA não localizada; even after decryption the original provider subcause may be absent from logs.",
-    "Fonte complementar do handoff #42809666543 é candidata RSS não verificada; identidade/URL permanecem cifradas.",
-    "Nenhuma imagem identificada/licenciada/aprovada para o handoff histórico; mídia WP #9799 refere-se apenas ao guia #9798 e tem proveniência IA, ainda sem atestado de titularidade.",
-    "Avaliação independente cega do handoff Groq e comparação por gêneros ainda não realizadas; segundo parecer não cego do WP #9798 não comprova acima da média."
+    "A execução Groq histórica #42809666543 preservou o artigo apenas cifrado e o código antigo perdeu o subtipo da exceção; não há chave RSA privada localizada nos conectores ou arquivos acessíveis. O diagnóstico exato retrospectivo não é comprovável.",
+    "A fonte complementar histórica continua não identificável sem o plaintext ou outra cópia privada do handoff. As fontes RSS candidatas não satisfazem a verificação multifonte.",
+    "Imagem do handoff Groq histórico não foi associada a qualquer mídia com licença e revisão visual. A imagem ChatGPT/WP #9799 só pertence ao guia #9798; proveniência e adequação visual têm evidências, mas o atestado final do titular segue pendente.",
+    "Avaliação cega independente por gênero e aceite humano por versão não ocorreram; o segundo parecer sobre WP #9798 é assistido e não cego, portanto não prova qualidade acima da média nem libera publicação."
   ],
-  "next_action": "Recuperar a chave RSA privada fora do GitHub pelo titular, ou recuperar o texto original do handoff por via privada; auditar URL e evidências da fonte candidata e selecionar imagem congruente com direitos provados. Só declarar aceite editorial após julgamento cego humano de artigos completos; não repetir chamada paga nem publicar automaticamente.",
+  "next_action": "Recuperar a chave RSA privada de local seguro ou uma cópia privada do handoff/texto, sem enviá-la ao GitHub público. Verificar manualmente URL e conteúdo da segunda fonte, associar imagem autorizada ao artigo específico e executar comparação cega independente. Não fazer novas chamadas Groq, alterar WordPress ou publicar sem autorização editorial separada.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -177,7 +210,23 @@
     "separate_wordpress_pilot_review": "NONBLIND_SECOND_REVIEW_9798",
     "pilot_wp_media_9799": "AI_PROVENANCE_DOCUMENTED_OWNERSHIP_NOT_ATTESTED",
     "review_error_reason_codes": "INTEGRATED_CI_VERIFIED",
-    "review_diagnostics_commit": "102dd8fa2b65d111a71ccfffc3236181fd6d8cd4"
+    "review_diagnostics_commit": "102dd8fa2b65d111a71ccfffc3236181fd6d8cd4",
+    "review_diagnostics_and_allowlisted_provider_faults": "INTEGRATED",
+    "one_shot_handoff_quality_gate": "INTEGRATED_PR84",
+    "offline_encrypted_audit": "TESTED_PR84",
+    "public_run_success_no_longer_implies_quality": "FIXED_FOR_FUTURE_ONE_SHOTS",
+    "independent_publisher_domain_coverage": "INTEGRATED_PR85",
+    "legacy_artifact_integrity": "PASS",
+    "legacy_artifact_sha256": "2cb75fed2dca23462cc3fcd5ca763d96b6981f6141f8437907574002bc073b17",
+    "legacy_source_candidate": "UNIDENTIFIED_ENCRYPTED",
+    "legacy_source_verification": "PENDING",
+    "legacy_image": "NO_LINKED_CONFIRMED_RIGHTS",
+    "wp9798_image_provenance": "LIBRARY_GENERATED_IMAGE_DIMENSIONS_SIZE_MATCH_MEDIA_9799_HASH_NOT_COMPARED",
+    "wp9798_image_visual_fit": "PASS_GENERIC_NON-IOS_ILLUSTRATION",
+    "wp9798_image_rights": "OWNER_CONFIRMATION_PENDING",
+    "blind_external_comparison": "NOT_COMPLETED",
+    "publication_authorized": false
   },
-  "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations."
+  "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
+  "checked_at": "2026-11-10"
 }
