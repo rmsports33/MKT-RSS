@@ -232,7 +232,13 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
                     featured_media_id=featured_media_id,
                     media_rights_confirmed=media_rights_confirmed)
             except ValueError:
-                pass  # Nunca reparar hash de um pacote inválido.
+                # Never retain the original handoff after the final Markdown changed.
+                # Otherwise a successful artifact could refer to a different article.
+                return {"acao": "falha", "motivo": "handoff_version_update_failed",
+                        "url": url_fonte, "escreveu": False}
+            if rw["editorial_handoff"]["markdown"] != texto_final:
+                return {"acao": "falha", "motivo": "handoff_content_mismatch",
+                        "url": url_fonte, "escreveu": False}
         review = None
         review_diagnostic = "NOT_RUN_NO_BRIEF" if brief is None else "NOT_RUN_NO_VALID_HANDOFF"
         if brief is not None and isinstance(rw.get("editorial_handoff"), dict):
@@ -458,6 +464,23 @@ def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
         output["quality_status"] = quality.get("status")
         output["quality_pending"] = quality.get("pendencias", [])[:12]
         output["quality_words"] = quality.get("palavras")
+        development = quality.get("desenvolvimento")
+        if isinstance(development, dict):
+            attempts = development.get("attempts")
+            if isinstance(attempts, list):
+                safe_codes = {
+                    "NOT_RUN_NO_BRIEF", "NOT_RUN_NO_VALID_HANDOFF",
+                    "HANDOFF_INVALID", "PROVIDER_REVIEW_FAILED",
+                    "REVIEW_ATTACHMENT_FAILED", "REVIEW_CONTENT_INVALID",
+                    "REVIEW_ATTACHED",
+                }
+                output["review_attempt_count"] = len(attempts)
+                output["review_diagnostics"] = [
+                    item.get("review_diagnostic")
+                    if isinstance(item, dict) and item.get("review_diagnostic") in safe_codes
+                    else "UNKNOWN"
+                    for item in attempts[:2]
+                ]
     # Identifiers only: never log unpublished content or credentials.
     trace = resultado.get("editorial_trace")
     if isinstance(trace, dict):
