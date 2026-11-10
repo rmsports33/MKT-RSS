@@ -1,0 +1,59 @@
+# Marco MDA AUTO — A/B controlado de qualidade editorial
+
+**Status em 10/11/2026:** fase de preparação instrumental e corpus privado estruturado. Este PR não gerou artigo, não fez chamadas Groq/WordPress e não recebeu parecer independente. CI verde autoriza considerar o experimento preparado, não declarar melhora da voz editorial.
+
+## Por que o caderno anterior não bastava
+
+As versões A/B antigas do guia #9798 eram revisões de datas e condições distintas, criadas antes do adaptador MDA. Servem para comparar edição, mas **não isolam o efeito do MDA**. Não usar essa comparação antiga como resultado do novo módulo.
+
+## Experimento reproduzível
+
+O único tratamento muda um sufixo da instrução de voz dentro do prompt do MKT-RSS; sem novos agentes ou jornalistas fictícios.
+
+- Controle: montar_prompt(..., voice_variant="control") — usa briefing e DNA existentes sem apêndice MDA.
+- Tratamento: montar_prompt(..., voice_variant="mda") — acrescenta exclusivamente writing_voice_guidance(brief); MDA continua sendo o padrão da produção após PR #86.
+- Variáveis comuns: mesmo título, artigo-fonte completo, links/documentos citados, briefing de seis campos, modelo, temperatura, limite de saída, contexto, data da coleta e regras factuais. Diferença nos insumos invalida a comparação.
+- Fonte: os rascunhos WordPress são material de entrada privado, não fatos automaticamente comprovados. A leitura de uma URL não comprova que a afirmação apareça nela.
+- Custo: preparar e embalar pares não chama IA; gerar os dois artigos reais exige chamadas autorizadas e pode consumir créditos. Este PR não aciona geração.
+
+## Componentes reutilizáveis, sem executor paralelo
+
+1. scripts/prepare_mda_ab.py prepara prompts completos offline, para caso único (schema conexo-mda-ab-source/1) ou lote de até 8 casos (schema conexo-mda-ab-batch/1). Compara caractere por caractere que a única diferença é a orientação MDA. Grava hashes SHA-256, parâmetros e arquivos privados. Nunca versionar as pastas de saída.
+2. scripts/seal_mda_ab_review.py recebe dois artigos realmente gerados, prepara pacote cego de textos integrais, sorteia A/B, mantém chave em pasta privada separada. A ferramenta NÃO atesta a origem dos artigos, que requer recibos autênticos de execução.
+3. tests/test_mda_controlled_ab.py testa paridade de entradas, contrato/hash, privacidade, rejeição de dados inválidos, ausência de chamada de provedor e proibição de aprovação automática.
+4. O corpus real está guardado em documento privado do Google Drive, fora do GitHub público. São quatro entradas completas: guia #9798, notícia #9635, análise #9687 e comparativo #9681. Os posts originais não são alterados.
+
+### Comando offline com corpus privado
+
+Exportar o JSON privado para arquivo fora do repositório e executar:
+
+    python -m scripts.prepare_mda_ab --input /private/mda_cases.json --out /private/mda_ab_prompts
+
+São produzidas quatro subpastas com control.prompt.txt, mda.prompt.txt e manifest.private.json. Mesmo com o preflight, generated_articles_present continua false.
+
+Somente **após geração real de dois artigos completos com mesmo modelo e parâmetros**:
+
+    python -m scripts.seal_mda_ab_review --manifest /private/mda_ab_prompts/guia-9798/manifest.private.json --control-article /private/outputs/guia-control.md --mda-article /private/outputs/guia-mda.md --blind-dir /private/avaliador/guia --private-key-dir /private/chaves/guia
+
+Não compartilhar a chave com o avaliador. Erro ou resposta truncada mantém o caso pendente.
+
+## Protocolo de aceitação cega por gênero
+
+Manter os cinco critérios vigentes: necessidade do leitor, recorte, contribuição, voz e limites das fontes (0–4). Exigir trechos e justificativas. Verificar função dos parágrafos, progressão, contradição real e fechamento, sem premiar volume ou artificialidade.
+
+Critério para demonstrar ganho: contribuição e voz melhores no MDA em cada gênero avaliado, sem novas falhas factuais. Registrar também empates e regressões, sem omitir resultados negativos. O avaliador deve ser humano, independente e não conhecer a identidade das variantes. Avaliação assistida por IA não substitui parecer externo.
+
+Direitos de imagem, verificação factual, Gate Editorial WordPress e aprovação da versão continuam separados. Não publicar automaticamente.
+
+## Estado deste marco
+
+- [x] Controle e MDA diferem apenas por uma orientação.
+- [x] Mesmo insumo e parâmetros declarados para cada par.
+- [x] Lote privado de quatro gêneros completo e estruturado.
+- [x] Instrumentação de sorteio A/B e chave separada.
+- [ ] Duas gerações completas reais por gênero em provedor autorizado.
+- [ ] Recibos de execução e versões cifradas/privadas.
+- [ ] Avaliação humana externa, cega e justificada.
+- [ ] Apuração factual das duas versões e aceitação por gênero.
+
+**Conclusão:** o experimento foi preparado tecnicamente; melhoria editorial ainda não foi comprovada.
