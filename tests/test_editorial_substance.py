@@ -264,6 +264,7 @@ def test_rss_automatically_plans_critiques_revises_and_binds_final_text(monkeypa
     assert handoff["metadata"]["editorial_substance_review"]["content_sha256"]==content_hash(handoff["markdown"])
     assert "Crítica da versão anterior" in calls[3]["messages"][1]["content"]
     assert handoff["metadata"]["review"]=={"approved":False}
+    assert result["qualidade_editorial"]["desenvolvimento"]["attempts"][-1]["review_diagnostic"]=="REVIEW_ATTACHED"
 
 
 def test_runtime_does_not_keep_using_obsolete_editorial_build():
@@ -284,3 +285,61 @@ def test_no_artificial_internal_link_quota_or_unverified_links():
     assert one["status"]=="PRONTO_PARA_REVISAO_HUMANA"
     fake=avaliar_prontidao_editorial(h,html='<h2>A</h2><h2>B</h2><a href="https://conexotech.com.br/inventado/">Link</a>',**kwargs)
     assert "links_internos_nao_verificados" in fake["pendencias"]
+
+
+@pytest.mark.parametrize("failure_stage,expected", [
+    ("provider", "PROVIDER_REVIEW_FAILED"),
+    ("attachment", "REVIEW_ATTACHMENT_FAILED"),
+])
+def test_rss_review_failure_diagnostic_is_redacted_and_never_passes(monkeypatch, failure_stage, expected):
+    from types import SimpleNamespace
+    import pipeline_rss
+    from mkt_flow_p0 import (
+        rewriter, extractor, content_filter, seo, image_protocol,
+        editorial_development, editorial_identity,
+    )
+
+    def create(**kwargs):
+        return SimpleNamespace(
+            choices=[SimpleNamespace(
+                finish_reason="stop",
+                message=SimpleNamespace(content=json.dumps(payload()["article"])),
+            )],
+            usage=None,
+        )
+    client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr(rewriter, "_get_client", lambda: (client, ""))
+    monkeypatch.setattr(extractor, "extrair_conteudo", lambda *args: {
+        "titulo": "Teclado do iPhone", "texto": TEXT,
+        "qualidade_ok": True, "palavras": len(TEXT.split()),
+    })
+    for name in ("filtrar_por_tema", "filtrar_item_rss", "filtrar_conteudo"):
+        monkeypatch.setattr(content_filter, name, lambda *a, **kw: {"veredito": "APROVADO"})
+    monkeypatch.setattr(seo, "enriquecer_com_keywords", lambda *a, **kw: [])
+    monkeypatch.setattr(image_protocol, "plan_image", lambda *a, **kw: {"status": "PENDING"})
+    monkeypatch.delenv("CONEXO_RSS_RELATED_LINKS", raising=False)
+    monkeypatch.delenv("GATE_PUBLICACAO_ENABLED", raising=False)
+
+    def fail(*a, **kw):
+        raise ValueError("private provider or editorial response detail must not leak")
+    if failure_stage == "provider":
+        monkeypatch.setattr(editorial_development, "review_with_provider", fail)
+    else:
+        monkeypatch.setattr(editorial_development, "review_with_provider",
+                            lambda article, brief: review(article))
+        monkeypatch.setattr(editorial_identity, "vincular_avaliacao_substantiva", fail)
+
+    item={"titulo":"Teclado do iPhone", "fonte":"Apple",
+          "resumo":"Configuração do teclado", "link":payload()["source_url"],
+          "genero":"guia", "editorial_brief":BRIEF}
+    result=pipeline_rss.processar_item(
+        item, handoff_only=True, contexto_complementar=payload()["research"])
+    assert result["acao"] == "pacote_editorial_criado"
+    assert result["escreveu"] is False
+    assert result["qualidade_editorial"]["desenvolvimento"]["outcome"] == "PENDING"
+    attempts=result["qualidade_editorial"]["desenvolvimento"]["attempts"]
+    assert len(attempts)==1
+    assert attempts[0]["review_diagnostic"]==expected
+    assert not attempts[0]["assessment"]["review_valid"]
+    assert "editorial_substance_review" not in result["editorial_handoff"]["metadata"]
+    assert "private provider or editorial response detail" not in json.dumps(result)

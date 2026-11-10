@@ -88,14 +88,33 @@
       "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42880541044",
       "result": "PASS",
       "scope": "Conexo OS editorial validation"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42809666543",
+      "result": "HANDOFF_CREATED_BUT_QUALITY_PENDING",
+      "wordpress_written": false,
+      "words": 823,
+      "source_count": 2,
+      "claims_pending": 1,
+      "voice_application": "PROMPT_APPLIED",
+      "review_method": null,
+      "quality_status": "ENRIQUECIMENTO_PENDENTE",
+      "quality_pending": [
+        "avaliacao_substantiva_ausente_invalida_ou_desatualizada",
+        "pesquisa_multifonte_pendente",
+        "fontes_rss_candidatas_sem_verificacao",
+        "imagem_destacada_com_direitos_pendente"
+      ],
+      "notes": "Run #2 master success; gen #1 branch blocked/failure by environment protection. Does NOT demonstrate above-average editorial quality."
     }
   ],
   "blockers": [
-    "Verificar resultado real do workflow único do PR #79 (job, manifesto, falha ou sucesso). Nenhuma execução real adicional é inferida ou acionada.",
-    "Comparação A/B cega em notícia, guia e análise/comparativo com mesmos insumos e aceite editorial humano; não há evidência de padrão acima da média.",
-    "Revisões factuais, direitos de imagem e aprovação vinculada à versão continuam independentes antes de qualquer publicação."
+    "Crítica substantiva não vinculada ao handoff real: diagnóstico por etapa implementado nesta branch, mas causa operacional exata da execução histórica não é recuperável do recibo simplificado.",
+    "Uma das duas fontes é candidata RSS sem verificação; pesquisa multifonte válida não foi comprovada.",
+    "Imagem destacada e direitos de reutilização pendentes.",
+    "Comparação A/B cega entre três gêneros e aceite humano, com rastreabilidade factual antes de publicação."
   ],
-  "next_action": "Verificar a execução existente em GitHub Actions para .github/workflows/editorial-handoff-once.yml e seus artefatos saneados; só então fazer avaliação cega conforme docs/EDITORIAL_QUALITY_ACCEPTANCE.md. Não iniciar execução paga nem publicação por conta deste checkpoint.",
+  "next_action": "Após CI/merge do diagnóstico por etapa, usar execução futura autorizada para obter o estágio da falha; não repetir Groq ou publicar apenas porque Action ficou verde. Revisar fonte secundária e direitos de imagem separadamente.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -111,11 +130,15 @@
     "checked_at": "2026-11-10",
     "editorial_development": "INTEGRATED",
     "near_duplicate_quality_gate": "INTEGRATED_AND_CI_VERIFIED",
-    "groq_authenticated_handoff": "RUN_RESULT_NOT_VERIFIED_IN_THIS_SESSION",
+    "groq_authenticated_handoff": "CONFIRMED_ONE_LIVE_HANDOFF",
     "independent_blind_article_comparison": "PENDING",
     "above_average_quality_demonstrated": false,
     "wordpress_publication_authorized": false,
-    "editorial_quality_merge_sha": "efd41456c19530fb9f8f548d67b55f318a76bac7"
+    "editorial_quality_merge_sha": "efd41456c19530fb9f8f548d67b55f318a76bac7",
+    "last_groq_handoff_run_id": 42809666543,
+    "last_groq_handoff_quality": "ENRIQUECIMENTO_PENDENTE",
+    "substantive_review": "ABSENT_OR_INVALID_IN_LIVE_RECEIPT",
+    "blind_human_quality_approval": false
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations."
 }
