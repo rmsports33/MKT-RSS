@@ -1,6 +1,6 @@
 # Marco MDA AUTO — A/B controlado de qualidade editorial
 
-**Status em 10/11/2026:** fase de preparação instrumental e corpus privado estruturado. Este PR não gerou artigo, não fez chamadas Groq/WordPress e não recebeu parecer independente. CI verde autoriza considerar o experimento preparado, não declarar melhora da voz editorial.
+**Status em 10/11/2026:** ferramentas integradas à master pelo PR #87; pré-execução OFFLINE efetiva dos quatro casos concluída com o código idêntico ao GitHub (hash de blob conferido), gerando oito prompts privados. CI: 1.111 testes do núcleo, 11 subtestes e 52 testes do redator aprovados; validação editorial verde. **Nenhum artigo A/B foi gerado pelo provedor e nenhum parecer independente foi recebido.**
 
 ## Por que o caderno anterior não bastava
 
@@ -57,3 +57,21 @@ Direitos de imagem, verificação factual, Gate Editorial WordPress e aprovaçã
 - [ ] Apuração factual das duas versões e aceitação por gênero.
 
 **Conclusão:** o experimento foi preparado tecnicamente; melhoria editorial ainda não foi comprovada.
+
+
+## Evidência da execução offline em quatro casos
+
+Após a integração do PR #87 (merge `8f07c10759beab529084a6faa750a857e295149d`), foi executado, com código restaurado de arquivos GitHub verificados por SHA de blob, o preparo real sobre o corpus privado exportado do Google Drive. **Resultado de `scripts.prepare_mda_ab`: 4 casos, 8 prompts, exit code 0; nenhuma chamada Groq/WordPress.** O preparador conferiu que em cada par a orientação MDA era a única diferença do prompt completo. Códigos, textos e hashes estão armazenados **somente em área privada** da Biblioteca ChatGPT:
+
+- `/ConexoOS/AuditoriaEditorial/mda_ab_prompts_privados_20261110.zip` (prompts e manifestos privados).
+- `/ConexoOS/AuditoriaEditorial/mda_ab_preflight_resumo_20261110.json` (apenas hashes/estados).
+- Corpus de entrada estruturado em documento privado no Google Drive, nunca no repositório público.
+
+| Caso | Gênero | Fonte completa | Contraste MDA |
+|---|---|---|---|
+| guia-9798 | guia | snapshot do rascunho #9798 | prompt controle/MDA verificado |
+| noticia-9635 | notícia | snapshot do rascunho #9635 | prompt controle/MDA verificado |
+| analise-9687 | análise | snapshot do rascunho #9687 | prompt controle/MDA verificado |
+| comparativo-9681 | comparativo | snapshot do rascunho #9681 | prompt controle/MDA verificado |
+
+A origem factual continua pendente de revisão independente, e os artigos resultantes ainda **não existem**. Não confundir os oito *prompts* com oito *artigos*. O marco de qualidade será concluído apenas após geração autorizada, preservação de recibos, cegamento dos textos finais, parecer humano independente e comparação factual. Os documentos temporários usados apenas para transportar cópias de código foram apagados do Google Drive.
