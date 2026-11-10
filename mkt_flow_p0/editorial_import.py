@@ -16,9 +16,12 @@ from mkt_flow_p0.editorial_identity import (
 
 def _preparar_handoff(payload):
     """Validate an editor/provider input without side effects."""
-    if not isinstance(payload, dict) or set(payload) != {
-            "source_url", "source_name", "article", "research"}:
-        raise ValueError("pacote exige source_url, source_name, article e research")
+    required_payload = {"source_url", "source_name", "article", "research"}
+    optional_payload = {"editorial_voice_application"}
+    if (not isinstance(payload, dict)
+            or not required_payload.issubset(payload)
+            or set(payload) - required_payload - optional_payload):
+        raise ValueError("pacote exige source_url, source_name, article e research; a prova de voz é opcional")
     source_name = payload["source_name"]
     if not isinstance(source_name, str) or not source_name.strip() or len(source_name) > 120:
         raise ValueError("nome da fonte original invalido")
@@ -31,7 +34,8 @@ def _preparar_handoff(payload):
         raise ValueError("artigo precisa de ao menos 200 palavras")
     handoff = criar_handoff_chatgpt(
         article, url_fonte=payload["source_url"],
-        fonte_nome=source_name, contexto_complementar=payload["research"])
+        fonte_nome=source_name, contexto_complementar=payload["research"],
+        voice_application=payload.get("editorial_voice_application"))
     return handoff
 
 
