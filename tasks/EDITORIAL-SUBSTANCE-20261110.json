@@ -109,13 +109,13 @@
   "authorization_basis": "Autorização explícita em 2026-11-10 para corrigir e integrar engenharia no GitHub. Não autoriza gasto novo nem publicação sem gate e aprovação humana.",
   "current_state": {
     "checked_at": "2026-11-10",
-    "master_sha": "efd41456c19530fb9f8f548d67b55f318a76bac7",
     "editorial_development": "INTEGRATED",
     "near_duplicate_quality_gate": "INTEGRATED_AND_CI_VERIFIED",
     "groq_authenticated_handoff": "RUN_RESULT_NOT_VERIFIED_IN_THIS_SESSION",
     "independent_blind_article_comparison": "PENDING",
     "above_average_quality_demonstrated": false,
-    "wordpress_publication_authorized": false
+    "wordpress_publication_authorized": false,
+    "editorial_quality_merge_sha": "efd41456c19530fb9f8f548d67b55f318a76bac7"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations."
 }
