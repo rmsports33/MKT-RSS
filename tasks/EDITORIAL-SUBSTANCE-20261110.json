@@ -261,6 +261,11 @@
       "skipped": 1,
       "subtests_passed": 11,
       "redactor_tests_passed": 52
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261110/mda_4_versoes_trabalho_corrigidas.zip",
+      "result": "PRIVATE_WORKING_COPIES_PREPARED",
+      "notes": "Four MDA revisions addressing confirmed logic, source attribution and causal overreach; original eight A/B articles untouched; not human-approved."
     }
   ],
   "blockers": [
@@ -272,7 +277,7 @@
     "Execução autenticada de ponta a ponta MKT-RSS → WordPress com mesma versão editorial homologada ainda não demonstrada.",
     "Handoff Groq histórico #42809666543 continua cifrado e isolado, não bloqueia o piloto novo."
   ],
-  "next_action": "Solicitar a um revisor HUMANO independente (sem compartilhar chave A/B) o parecer sobre os oito textos integrais do caderno privado; revisar fatos e corrigir em novas cópias sem alterar o experimento congelado. Revalidar pós-IA com Gate corrigido, obter/licenciar capas, confirmar bloqueio WP Gate por versão de maneira segura; só então permitir aprovação editorial e eventual publicação separada. Não repetir Groq só para ocultar resultado negativo.",
+  "next_action": "A geração real A/B e o diagnóstico estão concluídos; quatro versões MDA corrigidas existem APENAS como cópias privadas de trabalho, não aprovadas. Entregar exclusivamente o caderno cego ORIGINAL a um revisor humano independente (nunca a chave), obter parecer com justificativas, apurar fontes/alegações, revisar cópias finais por versão, confirmar imagens/licenças e Gate real antes de qualquer publicação WordPress. Não reexecutar Groq ou esconder resultados negativos.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -424,7 +429,12 @@
     "mda_ab_factual_approval": false,
     "mda_ab_gate_numeric_correction": "INTEGRATED_PR89",
     "mda_ab_gate_numeric_tests": "7_LOCAL_PASS_AND_FULL_CI_PASS",
-    "mda_ab_real_publish_gate_validation": "NOT_PERFORMED"
+    "mda_ab_real_publish_gate_validation": "NOT_PERFORMED",
+    "mda_post_audit_working_copies": "FOUR_PRIVATE_REVISIONS_CREATED_NO_WORDPRESS_WRITES",
+    "mda_ab_originals_frozen_unchanged": true,
+    "mda_working_copy_human_acceptance": "PENDING",
+    "mda_working_copy_factual_acceptance": "PENDING",
+    "mda_working_copy_archive": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_MDA_AB_20261110_mda_4_versoes_trabalho_corrigidas.zip"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
