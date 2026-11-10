@@ -9,7 +9,7 @@
   "owner": "Codex nesta sessão",
   "coordinator": "sessão atual",
   "reviewer": "revisão técnica assistida pela mesma sessão, sem independência",
-  "status": "FOUR_GENRE_PILOT_PREPARED_EXTERNAL_ACCEPTANCE_AND_GATE_PROOF_PENDING",
+  "status": "MDA_AB_GENERATED_UNDER_REVIEW_NO_HUMAN_PUBLICATION_APPROVAL",
   "scope": [
     "Rastrear as rotas atuais de importação, redação, identidade e prontidão",
     "Implementar briefing, adaptação e crítica vinculada ao texto, preservando controles existentes",
@@ -227,17 +227,52 @@
       "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/mda_ab_prompts_privados_20261110.zip",
       "result": "OFFLINE_PREFLIGHT_EXECUTED",
       "scope": "4 real cases, 8 confidential prompts, verified GitHub code hashes; publication not authorized"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/88",
+      "result": "MERGED",
+      "sha": "a5903eb696b18416900c1b6466992d1c1dcc1362",
+      "scope": "Single authorized live Free-tier MDA A/B, 8 completions and encrypted result; no WP writes"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42917583190",
+      "result": "COMPLETE_GENERATION_REVIEW_PENDING",
+      "completed_pairs": 4,
+      "provider_calls": 8,
+      "wordpress_writes": 0,
+      "encrypted": true,
+      "publication_authorized": false
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261110",
+      "result": "PRIVATE_EVIDENCE_PRESERVED",
+      "notes": "Eight full articles, blinded packet, separate private mapping, assisted diagnostic and numerical gate report."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/89",
+      "result": "MERGED",
+      "sha": "63fb9212ea3b164b73b8a1be7e04b4879b074e24",
+      "scope": "Numeric formatting/heading false positives reduced; unsupported 4K now detectable, MDA symptom-action consistency guidance."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42921471897",
+      "result": "PASS",
+      "tests_passed": 1123,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
     }
   ],
   "blockers": [
-    "Parecer independente e cego dos artigos completos A–E não recebido; não declarar qualidade acima da média.",
-    "Direitos: #9635 e #9687 tiveram imagens sem proveniência removidas da associação; #9681 sem capa; #9798 imagem IA com proveniência declarada, aguardando verificação definitiva e conferência visual.",
-    "Homologação factual por versão pendente nas alegações de mercado, na identificação regulatória do fabricante e em originalidade do comparativo.",
-    "Conferência visual 390/1440 px e bloqueio WordPress real pelo Gate Editorial Único ainda não testados nesta sessão.",
-    "Não há execução autenticada atual MKT-RSS → WordPress com handoff da mesma versão homologada; rascunho lido/editado não prova e2e.",
-    "A execução histórica Groq #42809666543 continua cifrada e não recuperável sem chave privada; fica isolada e não impede novos pilotos."
+    "Parecer humano externo independente, cego, com justificativas e revisão factual por versão dos oito artigos ainda não recebido.",
+    "Pré-avaliação assistida do MDA não demonstrou ganho simultâneo de contribuição/voz nos quatro gêneros; guia MDA tem contradição de procedimento; outros textos incluem preço, percentual ou capacidade de vídeo sem lastro.",
+    "Quatro rascunhos WordPress originais preservados sem publicação; quaisquer artigos derivados precisam de revisão e aprovação vinculada à versão final, não apenas de geração Groq.",
+    "Direitos e adequação visual de imagens continuam pendentes conforme piloto WP; mídias sem proveniência não foram reanexadas.",
+    "Gate controlado WordPress 0.1.0-rc5 permanece ativo, mas bloqueio real de publicação sem aprovação não foi comprovado nesta execução.",
+    "Execução autenticada de ponta a ponta MKT-RSS → WordPress com mesma versão editorial homologada ainda não demonstrada.",
+    "Handoff Groq histórico #42809666543 continua cifrado e isolado, não bloqueia o piloto novo."
   ],
-  "next_action": "A instrumentação A/B MDA está integrada e os oito prompts reais foram preparados offline, com evidência privada. Pendência inequívoca: gerar dois textos COMPLETOS por pauta usando mesmo modelo/temperatura/orçamento com autorização de uso de créditos, preservar recibos da geração, criar pacote cego e obter avaliação independente com revisão factual. Não declarar melhoria editorial nem publicar enquanto inexistentes artigos controlados e parecer; direitos de imagem e Gate WP permanecem pendentes.",
+  "next_action": "Solicitar a um revisor HUMANO independente (sem compartilhar chave A/B) o parecer sobre os oito textos integrais do caderno privado; revisar fatos e corrigir em novas cópias sem alterar o experimento congelado. Revalidar pós-IA com Gate corrigido, obter/licenciar capas, confirmar bloqueio WP Gate por versão de maneira segura; só então permitir aprovação editorial e eventual publicação separada. Não repetir Groq só para ocultar resultado negativo.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -345,11 +380,51 @@
       "analise-9687",
       "comparativo-9681"
     ],
-    "mda_ab_outputs_generated": 0,
-    "mda_ab_real_provider_calls": 0,
+    "mda_ab_outputs_generated": 8,
+    "mda_ab_real_provider_calls": 8,
     "mda_ab_external_independent_acceptance": "PENDING_NO_ARTICLE_PAIR",
     "mda_ab_quality_improvement_demonstrated": false,
-    "mda_ab_wordpress_written": false
+    "mda_ab_wordpress_written": false,
+    "mda_ab_live_generation": "COMPLETED_RUN_42917583190",
+    "mda_ab_live_model": "openai/gpt-oss-120b",
+    "mda_ab_workflow_status": "success",
+    "mda_ab_run_sha": "a5903eb696b18416900c1b6466992d1c1dcc1362",
+    "mda_ab_completed_pairs": 4,
+    "mda_ab_wordpress_drafts_unchanged": true,
+    "mda_ab_ciphertext_saved": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_MDA_AB_20261110",
+    "mda_ab_blind_packet": "PRIVATE_DRIVE_8_COMPLETE_ARTICLES",
+    "mda_ab_blind_mapping": "PRIVATE_SEPARATE_NEVER_SEND_TO_REVIEWER",
+    "mda_ab_second_assisted_review": "COMPLETED_NONHUMAN_NOT_FULLY_BLIND",
+    "mda_ab_preliminary_scores": {
+      "guide": {
+        "control": 17,
+        "mda": 14
+      },
+      "news": {
+        "control": 12,
+        "mda": 16
+      },
+      "analysis": {
+        "control": 11,
+        "mda": 12
+      },
+      "comparison": {
+        "control": 14,
+        "mda": 16
+      }
+    },
+    "mda_ab_strict_successful_genres": 0,
+    "mda_ab_preliminary_factual_issues": [
+      "guide_MDA_illogical_action",
+      "SpaceSail_control_unverified_USD_110",
+      "games_causality_speculation_and_control_percent",
+      "Galaxy_control_incorrect_4K_A16"
+    ],
+    "mda_ab_independent_human_quality_acceptance": "PENDING",
+    "mda_ab_factual_approval": false,
+    "mda_ab_gate_numeric_correction": "INTEGRATED_PR89",
+    "mda_ab_gate_numeric_tests": "7_LOCAL_PASS_AND_FULL_CI_PASS",
+    "mda_ab_real_publish_gate_validation": "NOT_PERFORMED"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
