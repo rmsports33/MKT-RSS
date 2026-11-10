@@ -9,7 +9,7 @@
   "owner": "Codex nesta sessão",
   "coordinator": "sessão atual",
   "reviewer": "revisão técnica assistida pela mesma sessão, sem independência",
-  "status": "REVIEW",
+  "status": "ENGINEERING_INTEGRATED_PENDING_LIVE_QUALITY_ACCEPTANCE",
   "scope": [
     "Rastrear as rotas atuais de importação, redação, identidade e prontidão",
     "Implementar briefing, adaptação e crítica vinculada ao texto, preservando controles existentes",
@@ -26,8 +26,8 @@
     "Sem copiar segredos, gastos ou novos serviços; preservar coleta diária queue-only"
   ],
   "authorizations": {
-    "push": false,
-    "merge": false,
+    "push": true,
+    "merge": true,
     "deploy": false,
     "production": false,
     "publication": false,
@@ -57,11 +57,65 @@
       "featured_media_id": 9799,
       "exact_block_content": true,
       "publication_authorized": false
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/78",
+      "result": "INTEGRATED",
+      "sha": "b1549d7d6211926b2b3fe7c145ca5c7563324af4",
+      "scope": "Briefing/adaptação/crítica/validação de versão"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/79",
+      "result": "ONE_SHOT_WORKFLOW_CODE_INTEGRATED",
+      "sha": "bd5f013fff4ad01f4b5ba9d77a6a47aee12ef5fb",
+      "caution": "Integração do código não comprova execução real do Groq"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/80",
+      "result": "MERGED",
+      "sha": "efd41456c19530fb9f8f548d67b55f318a76bac7",
+      "scope": "Bloqueio de parágrafos quase duplicados e protocolo de aceite cego"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42880540204",
+      "result": "PASS",
+      "passed": 1081,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42880541044",
+      "result": "PASS",
+      "scope": "Conexo OS editorial validation"
     }
   ],
   "blockers": [
-    "Chamada real Groq indisponível neste executor; não há credencial configurada e não se inferiu quota gratuita"
+    "Verificar resultado real do workflow único do PR #79 (job, manifesto, falha ou sucesso). Nenhuma execução real adicional é inferida ou acionada.",
+    "Comparação A/B cega em notícia, guia e análise/comparativo com mesmos insumos e aceite editorial humano; não há evidência de padrão acima da média.",
+    "Revisões factuais, direitos de imagem e aprovação vinculada à versão continuam independentes antes de qualquer publicação."
   ],
-  "next_action": "Sincronizar código e PR, conferir CI, integrar a correção autorizada; manter avaliação humana do artigo e limite do teste Groq explícitos.",
-  "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo."
+  "next_action": "Verificar a execução existente em GitHub Actions para .github/workflows/editorial-handoff-once.yml e seus artefatos saneados; só então fazer avaliação cega conforme docs/EDITORIAL_QUALITY_ACCEPTANCE.md. Não iniciar execução paga nem publicação por conta deste checkpoint.",
+  "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
+  "initial_authorizations": {
+    "push": false,
+    "merge": false,
+    "deploy": false,
+    "production": false,
+    "publication": false,
+    "costs": false,
+    "credentials": false
+  },
+  "authorization_basis": "Autorização explícita em 2026-11-10 para corrigir e integrar engenharia no GitHub. Não autoriza gasto novo nem publicação sem gate e aprovação humana.",
+  "current_state": {
+    "checked_at": "2026-11-10",
+    "master_sha": "efd41456c19530fb9f8f548d67b55f318a76bac7",
+    "editorial_development": "INTEGRATED",
+    "near_duplicate_quality_gate": "INTEGRATED_AND_CI_VERIFIED",
+    "groq_authenticated_handoff": "RUN_RESULT_NOT_VERIFIED_IN_THIS_SESSION",
+    "independent_blind_article_comparison": "PENDING",
+    "above_average_quality_demonstrated": false,
+    "wordpress_publication_authorized": false
+  },
+  "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations."
 }
