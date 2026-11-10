@@ -51,7 +51,7 @@ def payload():
             "article":{"titulo_seo":"Como escolher o ajuste do teclado", "slug":"ajuste-teclado",
                        "meta_description":"Entenda qual comportamento do teclado incomoda antes de mudar controles e preserve funções úteis, com atenção aos limites da documentação.",
                        "texto_markdown":TEXT},
-            "research":{"sources":[{"name":"Documento complementar", "url":"https://example.org/other",
+            "research":{"sources":[{"name":"Documento complementar", "url":"https://independent.example.com/other",
                                      "facts":["As instruções dependem da versão do sistema e do idioma selecionado."]}]},
             "editorial_brief":copy.deepcopy(BRIEF), "editorial_substance_review":review(),
             "editorial_voice_application":{"status":"HUMAN_ADAPTED", "method":"human_editorial_check",
