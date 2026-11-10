@@ -192,7 +192,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         except (ValueError, TypeError, OSError) as exc:
             logger.warning("Pesquisa RSS auxiliar indisponivel: %s", str(exc)[:100])
             contexto_pesquisa = None
-    from mkt_flow_p0.editorial_development import plan_brief_with_provider, review_with_provider
+    from mkt_flow_p0.editorial_development import plan_brief_with_provider, review_with_provider, ReviewProviderFailure
     from mkt_flow_p0.editorial_substance import assess_substance
     brief = item.get("editorial_brief")
     planning = "SUPPLIED" if brief is not None else "PENDING"
@@ -247,6 +247,7 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
                         "url": url_fonte, "escreveu": False}
         review = None
         review_diagnostic = "NOT_RUN_NO_BRIEF" if brief is None else "NOT_RUN_NO_VALID_HANDOFF"
+        review_failure_code = None
         if brief is not None and isinstance(rw.get("editorial_handoff"), dict):
             from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt, vincular_avaliacao_substantiva
             review_stage = "validate_handoff"
@@ -258,7 +259,9 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
                 rw["editorial_handoff"] = vincular_avaliacao_substantiva(
                     rw["editorial_handoff"], brief, review)
                 review_diagnostic = "REVIEW_ATTACHED"
-            except ValueError:
+            except ValueError as exc:
+                if review_stage == "provider_review" and isinstance(exc, ReviewProviderFailure):
+                    review_failure_code = exc.code
                 review_diagnostic = {
                     "validate_handoff": "HANDOFF_INVALID",
                     "provider_review": "PROVIDER_REVIEW_FAILED",
@@ -271,7 +274,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         if review_diagnostic == "REVIEW_ATTACHED" and not assessment["review_valid"]:
             review_diagnostic = "REVIEW_CONTENT_INVALID"
         editorial_attempts.append({"attempt":attempt+1, "assessment":assessment,
-                                   "review_diagnostic":review_diagnostic})
+                                   "review_diagnostic":review_diagnostic,
+                                   "review_failure_code":review_failure_code})
         if assessment["status"] == "PASS" or not assessment["review_valid"]:
             break
         feedback = review["criteria"]
@@ -486,6 +490,18 @@ def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
                     item.get("review_diagnostic")
                     if isinstance(item, dict) and item.get("review_diagnostic") in safe_codes
                     else "UNKNOWN"
+                    for item in attempts[:2]
+                ]
+                safe_provider_codes = {
+                    "CLIENT_UNAVAILABLE", "PROVIDER_AUTH", "PROVIDER_RATE_LIMIT",
+                    "PROVIDER_REQUEST", "PROVIDER_TIMEOUT", "PROVIDER_EXCEPTION",
+                    "RESPONSE_TRUNCATED", "RESPONSE_INVALID_JSON",
+                    "RESPONSE_INVALID_CRITERIA",
+                }
+                output["review_failure_codes"] = [
+                    item.get("review_failure_code")
+                    if isinstance(item, dict) and item.get("review_failure_code") in safe_provider_codes
+                    else None
                     for item in attempts[:2]
                 ]
     # Identifiers only: never log unpublished content or credentials.
