@@ -55,7 +55,7 @@ def _near_duplicate_repetition(paragraphs):
     """Flag large amounts of lightly reworded padding, not shared short phrases."""
     fingerprints = []
     for paragraph in paragraphs:
-        words = re.findall(r"\\w+", paragraph.casefold())
+        words = re.findall(r"\w+", paragraph.casefold())
         if len(words) < 25:
             continue
         grams = {tuple(words[i:i + 4]) for i in range(len(words) - 3)}
