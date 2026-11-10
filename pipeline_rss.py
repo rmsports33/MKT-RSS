@@ -455,7 +455,8 @@ def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
     if isinstance(reason, str):
         # Do not print provider error bodies or HTTP secrets verbatim.
         allowed = ("GROQ_API_KEY ausente", "handoff_editorial_ausente",
-                   "handoff_editorial_invalido", "erro_persistencia_handoff")
+                   "handoff_editorial_invalido", "erro_persistencia_handoff",
+                   "handoff_version_update_failed", "handoff_content_mismatch")
         output["motivo"] = next((x for x in allowed if reason.startswith(x)), "falha_processamento")
     elif isinstance(reason, list):
         output["motivo"] = "revisao_necessaria"
