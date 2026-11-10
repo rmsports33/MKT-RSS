@@ -112,8 +112,18 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         "alert_scope":"operator_supplied_research_claims_not_full_source_or_factual_approval",
         "claims_traceability":rendered["rastreabilidade_claims"],
         "modules_executed":["editorial_import","editorial_identity","editorial_core_offline",
-            "format","seo","seo_contract_native","editorial_readiness",
+            "format","seo","seo_contract_native","editorial_readiness","editorial_voice_gate",
             "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol"],
+        "module_manifest":[
+            {"id":module_id,"execution":"EXECUTED"}
+            for module_id in ["editorial_import","editorial_identity","editorial_core_offline",
+                "format","seo","seo_contract_native","editorial_readiness","editorial_voice_gate",
+                "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol"]
+        ],
+        "completion_status":readiness["status"],
+        "article_complete_for_human_review":readiness["status"] == "PRONTO_PARA_REVISAO_HUMANA",
+        "editorial_voice_application":readiness.get("persona_editorial", {"status":"NOT_APPLIED"}),
+        "voice_quality_review":readiness.get("revisao_de_voz", "PENDENTE_AVALIACAO_HUMANA"),
         "image_research":image_plan, "image_generation_request":image_plan.get('generation_request'),
         "image_ai_used":bool(image_plan.get('ai_called')), "related_links":"NOT_VERIFIED",
         "provider_called":False,"network_called":image_plan.get("network_called",False),"wordpress_written":False,
@@ -127,9 +137,11 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
 
 def resumo_execucao(result):
     """Safe console receipt; full diagnostics stay in the private directory."""
-    return {k: result[k] for k in ("schema","version_sha256","content_sha256",
-        "modules_executed","provider_called","network_called","wordpress_written",
-        "publication_authorized","human_acceptance")}
+    keys = ("schema","version_sha256","content_sha256","modules_executed",
+        "module_manifest","completion_status","article_complete_for_human_review",
+        "editorial_voice_application","voice_quality_review","provider_called",
+        "network_called","wordpress_written","publication_authorized","human_acceptance")
+    return {k: result[k] for k in keys if k in result}
 
 
 def main():
