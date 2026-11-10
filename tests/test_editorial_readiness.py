@@ -146,3 +146,31 @@ def test_verified_whitelist_does_not_count_links_absent_from_content():
         verified_related_urls=VERIFIED)
     assert report["links_internos_verificados"] == 0
     assert "sem_links_internos_relacionados" in report["avisos"]
+
+
+def test_two_urls_from_one_publisher_do_not_satisfy_multifonte():
+    from mkt_flow_p0.editorial_readiness import _publisher_domain
+    assert _publisher_domain("https://support.apple.com/pt-br/104995") == "apple.com"
+    assert _publisher_domain("https://www.apple.com/br/ios/feature-availability/") == "apple.com"
+    assert _publisher_domain("https://noticias.exemplo.com.br/pauta") == "exemplo.com.br"
+    assert _publisher_domain("https://reportagem.exemplo.com.br/analise") == "exemplo.com.br"
+
+    data = {
+        "titulo_seo": "Configuração de teclado",
+        "meta_description": DESCRIPTION,
+        "slug": "configuracao-teclado",
+        "texto_markdown": packet(True)["markdown"],
+    }
+    sources = {"sources": [{
+        "name": "Apple — Suporte oficial",
+        "url": "https://support.apple.com/pt-br/104995",
+        "facts": ["A documentação oficial informa como ajustar a correção automática."],
+    }]}
+    handoff = criar_handoff_chatgpt(
+        data, url_fonte="https://www.apple.com/br/ios/feature-availability/",
+        fonte_nome="Apple — Disponibilidade", contexto_complementar=sources)
+    readiness = avaliar_prontidao_editorial(handoff, genero="guia")
+    assert readiness["fontes"] == 2
+    assert readiness["dominios_editoriais_distintos_identificados"] == 1
+    assert "pesquisa_multifonte_pendente" in readiness["pendencias"]
+    assert readiness["pronto_para_publicar"] is False

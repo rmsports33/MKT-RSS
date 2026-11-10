@@ -39,6 +39,31 @@ class _LinksInternos(HTMLParser):
             self.paths.add(parsed.path.rstrip("/"))
 
 
+def _publisher_domain(url):
+    """Conservative grouping: multiple URLs of one outlet are not multifonte."""
+    if not isinstance(url, str):
+        return None
+    try:
+        parsed = urlsplit(url)
+        host = (parsed.hostname or "").lower().rstrip(".").removeprefix("www.")
+        if parsed.scheme != "https" or not host or parsed.username or parsed.password:
+            return None
+        labels = host.split(".")
+        if len(labels) < 2:
+            return None
+        suffix2 = ".".join(labels[-2:])
+        common_second_level_suffixes = {
+            "com.br", "net.br", "org.br", "gov.br", "edu.br",
+            "co.uk", "org.uk", "ac.uk", "com.au", "org.au",
+            "com.mx", "com.ar", "co.jp", "co.kr", "co.nz",
+        }
+        if suffix2 in common_second_level_suffixes and len(labels) >= 3:
+            return ".".join(labels[-3:])
+        return suffix2
+    except ValueError:
+        return None
+
+
 def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
                                 featured_media_id=None, direitos_imagem_confirmados=False,
                                 verified_related_urls=None):
@@ -91,7 +116,17 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
     avisos = ["texto_abaixo_da_referencia_do_genero"] if palavras < limite else []
     if voice_application["status"] not in {"PROMPT_APPLIED", "HUMAN_ADAPTED", "ASSISTED_ADAPTED"}:
         pendencias.append("persona_editorial_nao_aplicada")
-    if genero != "nota_breve" and len(fontes) - fontes_rss_pendentes < 2:
+    # Two URLs from Apple or another publisher remain one editorial source.
+    # Domain diversity is a conservative discovery heuristic, not factual approval.
+    dominios_distintos = {
+        _publisher_domain(source.get("url"))
+        for source in fontes
+        if isinstance(source, dict)
+        and isinstance(source.get("name"), str)
+        and "(RSS pendente de apuração)" not in source["name"]
+    }
+    dominios_distintos.discard(None)
+    if genero != "nota_breve" and len(dominios_distintos) < 2:
         pendencias.append("pesquisa_multifonte_pendente")
     if fontes_rss_pendentes:
         pendencias.append("fontes_rss_candidatas_sem_verificacao")
@@ -117,6 +152,7 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
         "avaliacao_substantiva": substance,
         "genero": genero, "palavras": palavras, "referencia_palavras": limite,
         "fontes": len(fontes), "fontes_rss_pendentes": fontes_rss_pendentes,
+        "dominios_editoriais_distintos_identificados": len(dominios_distintos),
         "links_internos": len(links.paths),
         "links_internos_verificados": len(linked_verified),
         "subtitulos_h2": links.headings,
