@@ -42,3 +42,7 @@ voz editorial humana. Testes positivos e negativos cobrem esse cenário.
 - Não foi comprovado que três gêneros atingem o padrão final em produção.
 - Não ativar staging, cron, execução repetitiva paga, WordPress nem publicação
   para conseguir essa evidência.
+
+## Complemento MDA AUTO: voz e progressão (10/11/2026)
+
+O adaptador de lente editorial por gênero não constitui nova persona ou autor. A crítica existente deve procurar se cada bloco acrescenta informação, distingue fontes e consequências, preserva contradições sustentadas e evita conclusão decorativa. Sinais de conectivos mecânicos são triagem superficial, não avaliação semântica automática. Comparar A/B entre a versão sem adaptador e a versão com adaptador sobre **insumos e tokens equivalentes**, incluindo notícia, guia, análise e comparativo quando disponíveis. Registrar evidências humanas e possíveis regressões factuais; sem isso, a melhoria é engenharia integrada, não homologação de qualidade editorial. Documento técnico: [EDITORIAL_MDA_ADAPTIVE_VOICE_20261110.md](EDITORIAL_MDA_ADAPTIVE_VOICE_20261110.md).
