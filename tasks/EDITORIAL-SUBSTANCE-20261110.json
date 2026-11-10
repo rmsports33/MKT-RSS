@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "task_id": "EDITORIAL-SUBSTANCE-20261110",
+  "title": "Corrigir desenvolvimento e avaliação substantiva editorial",
+  "repository": "rmsports33/MKT-RSS",
+  "base_branch": "master",
+  "base_sha": "5741f4914fa00cc7e0e10a9755ab486f52538044",
+  "branch": "fix/editorial-substance-20261110",
+  "owner": "Codex nesta sessão",
+  "coordinator": "sessão atual",
+  "reviewer": "revisão técnica assistida pela mesma sessão, sem independência",
+  "status": "REVIEW",
+  "scope": [
+    "Rastrear as rotas atuais de importação, redação, identidade e prontidão",
+    "Implementar briefing, adaptação e crítica vinculada ao texto, preservando controles existentes",
+    "Eliminar dependência de flag para adaptação online e atualizar runtime manual obsoleto",
+    "Homologar importação com versão real do artigo e entregar reescrita em rascunho editável"
+  ],
+  "acceptance": [
+    "Texto repetitivo com metadados completos não fica pronto para revisão",
+    "Briefing e avaliação vinculados à versão, com limites de execução explícitos",
+    "Testes locais passam; qualidade real depende de homologação com provedor"
+  ],
+  "restrictions": [
+    "Sem publicação de artigo ou aceite humano automático",
+    "Sem copiar segredos, gastos ou novos serviços; preservar coleta diária queue-only"
+  ],
+  "authorizations": {
+    "push": false,
+    "merge": false,
+    "deploy": false,
+    "production": false,
+    "publication": false,
+    "costs": false,
+    "credentials": false
+  },
+  "evidence": [
+    {
+      "sha": "5741f4914fa00cc7e0e10a9755ab486f52538044",
+      "reference": "python -m pytest tests redator-artigo-blogs/tests -q; final local run",
+      "result": "PASSOU",
+      "passed": 1121,
+      "skipped": 11,
+      "subtests_passed": 11
+    },
+    {
+      "sha": "5741f4914fa00cc7e0e10a9755ab486f52538044",
+      "reference": "docs/EDITORIAL_SUBSTANCE_20261110.md",
+      "result": "ENGENHARIA_LOCAL_PREPARADA"
+    },
+    {
+      "sha": "5741f4914fa00cc7e0e10a9755ab486f52538044",
+      "reference": "WordPress #9798 readback nesta sessão",
+      "result": "PASSOU",
+      "status": "draft",
+      "author_id": 3,
+      "featured_media_id": 9799,
+      "exact_block_content": true,
+      "publication_authorized": false
+    }
+  ],
+  "blockers": [
+    "Chamada real Groq indisponível neste executor; não há credencial configurada e não se inferiu quota gratuita"
+  ],
+  "next_action": "Sincronizar código e PR, conferir CI, integrar a correção autorizada; manter avaliação humana do artigo e limite do teste Groq explícitos.",
+  "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo."
+}

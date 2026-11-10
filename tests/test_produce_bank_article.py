@@ -101,6 +101,13 @@ def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp
     import requests
     import tools.wp_identity_preflight as identity
     configure(monkeypatch)
+    from mkt_flow_p0 import editorial_development
+    from test_editorial_substance import BRIEF as fixture_brief
+    planned = dict(fixture_brief)
+    planned['genre'] = load_brief(BRIEF)['genre']
+    monkeypatch.setattr(editorial_development, 'plan_brief_with_provider', lambda *a, **kw: planned)
+    # The repeated fixture is a pending draft, never a substantive PASS.
+    monkeypatch.setattr(editorial_development, 'review_with_provider', lambda *a, **kw: None)
     brief = load_brief(BRIEF)
     private = 'PRIVATE ARTICLE BODY '
     body = ('Fonte completa para pesquisa. ' * 130

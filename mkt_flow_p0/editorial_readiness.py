@@ -82,9 +82,14 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
         and "(RSS pendente de apuração)" in s["name"])
     seo = meta.get("seo", {})
     desc = seo.get("description", "") if isinstance(seo, dict) else ""
-    pendencias = []
+    from mkt_flow_p0.editorial_substance import assess_substance
+    substance = assess_substance(markdown, meta.get("editorial_brief"),
+                                 meta.get("editorial_substance_review"))
+    pendencias = list(substance["pendencias"])
+    if isinstance(meta.get("editorial_brief"), dict) and meta["editorial_brief"].get("genre", genero) != genero:
+        pendencias.append("briefing_genero_divergente")
     avisos = ["texto_abaixo_da_referencia_do_genero"] if palavras < limite else []
-    if voice_application["status"] not in {"PROMPT_APPLIED", "HUMAN_ADAPTED"}:
+    if voice_application["status"] not in {"PROMPT_APPLIED", "HUMAN_ADAPTED", "ASSISTED_ADAPTED"}:
         pendencias.append("persona_editorial_nao_aplicada")
     if genero != "nota_breve" and len(fontes) - fontes_rss_pendentes < 2:
         pendencias.append("pesquisa_multifonte_pendente")
@@ -92,8 +97,13 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
         pendencias.append("fontes_rss_candidatas_sem_verificacao")
     if links.headings < 2 and genero != "nota_breve":
         pendencias.append("desenvolvimento_em_secoes_pendente")
-    if len(linked_verified) < 3 and genero != "nota_breve":
-        pendencias.append("tres_links_internos_pendentes")
+    # DNA vigente: até três links genuinamente relacionados, sem quota artificial.
+    if links.paths - trusted:
+        pendencias.append("links_internos_nao_verificados")
+    if len(links.paths) > 3:
+        pendencias.append("mais_de_tres_links_internos")
+    if not links.paths:
+        avisos.append("sem_links_internos_relacionados")
     if (type(featured_media_id) is not int or featured_media_id <= 0
             or direitos_imagem_confirmados is not True):
         pendencias.append("imagem_destacada_com_direitos_pendente")
@@ -104,6 +114,7 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
         "pendencias": pendencias, "avisos": avisos,
         "persona_editorial": voice_application,
         "revisao_de_voz": "PENDENTE_AVALIACAO_HUMANA",
+        "avaliacao_substantiva": substance,
         "genero": genero, "palavras": palavras, "referencia_palavras": limite,
         "fontes": len(fontes), "fontes_rss_pendentes": fontes_rss_pendentes,
         "links_internos": len(links.paths),

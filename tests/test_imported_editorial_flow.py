@@ -26,7 +26,7 @@ class ImportedEditorialFlowTests(unittest.TestCase):
     def test_real_modules_generate_preview_body_seo_and_pending_diagnostics_without_network(self):
         with tempfile.TemporaryDirectory() as folder, patch('socket.create_connection',side_effect=AssertionError('Unexpected network')):
             result=processar_artigo_importado(payload(),Path(folder)/'version')
-            self.assertEqual(set(result['modules_executed']),{'editorial_import','editorial_identity','editorial_core_offline','format','seo','seo_contract_native','editorial_readiness','gate_editorial_pos_ia','adaptador_contrato_editorial','editorial_trace','image_protocol'})
+            self.assertEqual(set(result['modules_executed']),{'editorial_import','editorial_identity','editorial_core_offline','format','seo','seo_contract_native','editorial_readiness','gate_editorial_pos_ia','adaptador_contrato_editorial','editorial_trace','image_protocol','editorial_substance'})
             self.assertIn('<table>',Path(result['wordpress_body_path']).read_text())
             self.assertIn('noindex,nofollow',Path(result['preview_path']).read_text())
             self.assertFalse(result['wordpress_written']);self.assertFalse(result['provider_called'])

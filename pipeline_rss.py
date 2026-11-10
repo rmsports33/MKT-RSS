@@ -192,35 +192,62 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         except (ValueError, TypeError, OSError) as exc:
             logger.warning("Pesquisa RSS auxiliar indisponivel: %s", str(exc)[:100])
             contexto_pesquisa = None
-    rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
-                            fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
-                            keywords=kws, evidencias_aprovadas=evidencias_aprovadas,
-                            contexto_complementar=contexto_pesquisa)
-    if "erro" in rw:
-        from mkt_flow_p0.editorial_trace import make_trace
-        trace = make_trace(url_fonte, "", error=rw["erro"])
-        return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte,
-                "editorial_trace": trace}
-
-    texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
-    relacionados = []
-    if os.getenv("CONEXO_RSS_RELATED_LINKS") == "1":
-        from mkt_flow_p0.related_posts import buscar_relacionados_wordpress, anexar_relacionados
-        relacionados = buscar_relacionados_wordpress(
-            rw["titulo_seo"], "https://conexotech.com.br")
-        if relacionados:
-            texto_final = anexar_relacionados(texto_final, relacionados)
-    # O pacote deve representar exatamente o Markdown convertido em HTML.
-    # Se o handoff anterior era invalido, NAO regenerar um hash para conserta-lo.
-    if isinstance(rw.get("editorial_handoff"), dict):
-        from mkt_flow_p0.editorial_identity import atualizar_handoff_revisao
+    from mkt_flow_p0.editorial_development import plan_brief_with_provider, review_with_provider
+    from mkt_flow_p0.editorial_substance import assess_substance
+    brief = item.get("editorial_brief")
+    planning = "SUPPLIED" if brief is not None else "PENDING"
+    if brief is None:
         try:
-            rw["editorial_handoff"] = atualizar_handoff_revisao(
-                rw["editorial_handoff"], texto_final, related_articles=relacionados,
-                featured_media_id=featured_media_id,
-                media_rights_confirmed=media_rights_confirmed)
+            brief = plan_brief_with_provider(ext.get("titulo") or item.get("titulo", ""),
+                ext["texto"], genre=item.get("genero", "noticia"), research=contexto_pesquisa)
+            planning = "PLANNED_WITH_PROVIDER"
         except ValueError:
-            pass  # O validador do fluxo bloqueia o handoff antigo ou invalido.
+            logger.warning("Briefing específico pendente; candidato não será declarado pronto")
+    editorial_attempts = []
+    feedback = None
+    relacionados = []
+    for attempt in range(2 if brief is not None else 1):
+        rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
+                                fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
+                                keywords=kws, evidencias_aprovadas=evidencias_aprovadas,
+                                contexto_complementar=contexto_pesquisa,
+                                editorial_brief=brief, editorial_feedback=feedback)
+        if "erro" in rw:
+            from mkt_flow_p0.editorial_trace import make_trace
+            trace = make_trace(url_fonte, "", error=rw["erro"])
+            return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte,
+                    "editorial_trace": trace}
+        texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
+        if os.getenv("CONEXO_RSS_RELATED_LINKS") == "1":
+            from mkt_flow_p0.related_posts import buscar_relacionados_wordpress, anexar_relacionados
+            if attempt == 0:
+                relacionados = buscar_relacionados_wordpress(rw["titulo_seo"], "https://conexotech.com.br")
+            if relacionados:
+                texto_final = anexar_relacionados(texto_final, relacionados)
+        if isinstance(rw.get("editorial_handoff"), dict):
+            from mkt_flow_p0.editorial_identity import atualizar_handoff_revisao
+            try:
+                rw["editorial_handoff"] = atualizar_handoff_revisao(
+                    rw["editorial_handoff"], texto_final, related_articles=relacionados,
+                    featured_media_id=featured_media_id,
+                    media_rights_confirmed=media_rights_confirmed)
+            except ValueError:
+                pass  # Nunca reparar hash de um pacote inválido.
+        review = None
+        if brief is not None and isinstance(rw.get("editorial_handoff"), dict):
+            from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt, vincular_avaliacao_substantiva
+            try:
+                validar_handoff_chatgpt(rw["editorial_handoff"])
+                review = review_with_provider(texto_final, brief)
+                rw["editorial_handoff"] = vincular_avaliacao_substantiva(
+                    rw["editorial_handoff"], brief, review)
+            except ValueError:
+                logger.warning("Revisão substantiva pendente; nenhuma aprovação inferida")
+        assessment = assess_substance(texto_final, brief, review)
+        editorial_attempts.append({"attempt":attempt+1,"assessment":assessment})
+        if assessment["status"] == "PASS" or not assessment["review_valid"]:
+            break
+        feedback = review["criteria"]
     html = markdown_para_html(texto_final)
 
     # Imagens externas e extraídas do RSS não são autorizadas automaticamente.
@@ -241,6 +268,9 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         featured_media_id=featured_media_id,
         direitos_imagem_confirmados=media_rights_confirmed,
         verified_related_urls=[x["url"] for x in relacionados])
+
+    qualidade_editorial["desenvolvimento"] = {"planning":planning,"attempts":editorial_attempts,
+        "outcome":assessment["status"],"human_acceptance":"PENDING"}
 
     # C19: nunca considerar a ausencia de alertas como aprovacao factual.
     # A integracao do contrato de evidencias permanece obrigatoria.
@@ -453,7 +483,9 @@ def main():
     ap.add_argument("--fonte", default="")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--import-article", type=Path,
-                    help="Texto pronto de editor/provedor: módulos editoriais sem IA, RSS ou WordPress")
+                    help="Artigo pesquisado: desenvolvimento editorial automático online; --offline preserva texto sem IA")
+    ap.add_argument("--adapt-editorial", action="store_true",
+                    help="Forçar nova adaptação mesmo com avaliação vigente; online já adapta artigos pendentes automaticamente")
     ap.add_argument("--image-manifest",type=Path,help="Imagem licenciada preparada; cópia local/preview sem upload")
     ap.add_argument("--offline",action="store_true",help="Sem pesquisa de imagem na rede; protocolo mantém pendências explícitas")
     ap.add_argument("--genero", choices=("noticia","guia","review","comparativo","analise","nota_breve"), default="guia")
@@ -488,6 +520,8 @@ def main():
                 or args.intent != "stage" or args.publication_reference or args.operation_nonce
                 or args.trace_run_id):
             ap.error("import-article exige handoff-only/handoff-dir; nao combina com RSS, escrita ou publicacao")
+        if args.adapt_editorial and args.offline:
+            ap.error("--adapt-editorial exige provedor/rede; incompatível com --offline")
         from mkt_flow_p0.editorial_import import processar_artigo_importado, resumo_execucao
         try:
             with args.import_article.open("rb") as stream:
@@ -498,14 +532,18 @@ def main():
             if args.image_manifest:
                 if args.image_manifest.stat().st_size>512*1024:raise ValueError('IMAGE_MANIFEST_TOO_LARGE')
                 image=json.loads(args.image_manifest.read_text(encoding='utf-8'))
-            result = processar_artigo_importado(json.loads(data), args.handoff_dir, genero=args.genero,
-                image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,offline=args.offline)
+            payload = json.loads(data)
+            result = processar_artigo_importado(payload, args.handoff_dir, genero=args.genero,
+                image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,offline=args.offline,
+                force_development=args.adapt_editorial)
         except (ValueError, OSError, TypeError, KeyError) as exc:
             print(json.dumps({"status":"BLOCKED","error_type":type(exc).__name__}))
             return 1
         # Public consoles receive receipts, never unreviewed drafts/claims.
         print(json.dumps(resumo_execucao(result),ensure_ascii=False))
         return 0
+    if args.adapt_editorial:
+        ap.error("--adapt-editorial exige --import-article")
     if args.trace_db and not args.core_root:
         ap.error("--trace-db requer --core-root; sem ele só o sidecar é gravado")
     if args.handoff_only:
@@ -530,11 +568,14 @@ def main():
             if args.research_context.stat().st_size > 512 * 1024:
                 raise ValueError("pesquisa complementar excede 512 KiB")
             loaded = json.loads(args.research_context.read_text(encoding="utf-8"))
-            if (not isinstance(loaded, dict) or set(loaded) != {"source_url", "sources"}
+            if (not isinstance(loaded, dict) or (not {"source_url", "sources"}.issubset(loaded) or set(loaded) - {"source_url", "sources", "editorial_brief"})
                     or not isinstance(loaded["source_url"], str)):
                 raise ValueError("formato exige source_url e sources")
             from mkt_flow_p0.editorial_identity import normalizar_fontes_complementares
             normalizar_fontes_complementares({"sources": loaded["sources"]})
+            if "editorial_brief" in loaded:
+                from mkt_flow_p0.editorial_substance import normalize_brief
+                loaded["editorial_brief"] = normalize_brief(loaded["editorial_brief"])
             contexto_pesquisa = loaded
         except (OSError, ValueError, TypeError) as exc:
             ap.error("pesquisa complementar inválida: " + str(exc))
@@ -588,6 +629,9 @@ def main():
                               else None)
             if enriquecimento is not None:
                 contexto_usado = True
+                if "editorial_brief" in contexto_pesquisa:
+                    item = dict(item, editorial_brief=contexto_pesquisa["editorial_brief"],
+                                genero=contexto_pesquisa["editorial_brief"]["genre"])
             r = processar_item(item, dry_run=args.dry_run,
                                contexto_complementar=enriquecimento,
                                handoff_only=args.handoff_only,

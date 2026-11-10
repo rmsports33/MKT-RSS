@@ -1,0 +1,17 @@
+{
+  "schema": "conexo-editorial-substance-real-case/1",
+  "post_id": 9798,
+  "status": "draft",
+  "author_id": 3,
+  "featured_media_id": 9799,
+  "content_exact_readback": true,
+  "wordpress_content_sha256": "dc3439afcb437b878d510fa2e229c09fbcf148ca660a993e1bead57a0f1db6f1",
+  "before_words": 933,
+  "after_words": 927,
+  "pipeline_modules_executed": 12,
+  "adaptation_provider": "Codex current session",
+  "review_method": "assisted_same_session_not_independent",
+  "groq_api_called": false,
+  "human_acceptance": "PENDING",
+  "publication_authorized": false
+}
