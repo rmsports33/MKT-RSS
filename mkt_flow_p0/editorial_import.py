@@ -112,12 +112,12 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         "alert_scope":"operator_supplied_research_claims_not_full_source_or_factual_approval",
         "claims_traceability":rendered["rastreabilidade_claims"],
         "modules_executed":["editorial_import","editorial_identity","editorial_core_offline",
-            "format","seo","seo_contract_native","editorial_readiness","editorial_voice_gate",
+            "format","seo","seo_contract_native","editorial_readiness",
             "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol"],
         "module_manifest":[
             {"id":module_id,"execution":"EXECUTED"}
             for module_id in ["editorial_import","editorial_identity","editorial_core_offline",
-                "format","seo","seo_contract_native","editorial_readiness","editorial_voice_gate",
+                "format","seo","seo_contract_native","editorial_readiness",
                 "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol"]
         ],
         "completion_status":readiness["status"],
