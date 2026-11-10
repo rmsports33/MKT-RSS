@@ -72,3 +72,10 @@ O usuario autorizou "Autorizar aprovacao pelo proprietario" para resolver a publ
 Esse modo se registra como review_mode=owner e nao representa revisao independente por outra pessoa. Nao fabricar conferencia visual, fatos, aceite ou assinatura. A tela administrativa exige verificacao humana; texto alterado invalida a aprovacao. HMAC privada, Turso, leitura de confirmacao, reserva por versao e SEO assinado continuam obrigatorios no publicador MKT-RSS do modo owner. A politica anterior de impedir autor=aprovador continua para o modo independent; a excecao autorizada e restrita ao proprietario e exige papel administrativo vigente.
 
 MKT-RSS e o motor prioritario e o publicador; ChatGPT e apoio opcional. Fluxo e evidencias: docs/OWNER_APPROVAL_20261108.md. Nunca transformar um teste verde em aprovacao editorial ou desativar o Gate para publicar.
+
+## Integração MDA AUTO — voz adaptativa, 10/11/2026
+
+- Reutilizar somente os princípios do acervo documental MDA AUTO: função do trecho, progressão, interpretação, contenção da evidência, voz decorrente do argumento, ritmo proporcional e revisão cirúrgica. O sistema acadêmico permanece separado; não criar executor ou personalidade fictícia.
+- O adaptador leve mkt_flow_p0/editorial_voice_adapter.py usa os seis campos existentes de briefing sem alterar contrato/hash ou o DNA ConexoTech. writing_instruction injeta uma lente por gênero na geração habitual; o revisor existente avalia progressão e qualidade sem nova chamada. Pode aumentar tokens no prompt já usado.
+- Sinais superficiais de estilo são apenas alertas de revisão: não concedem PASS, não certificam fatos e não autorizam publicar. Continuam obrigatórios direitos de imagens, fonte verificada, aprovação humana da versão e Gate Editorial.
+- Homologar qualquer ganho real por comparação A/B de artigos completos com fontes idênticas e avaliador humano cego; evitar declarar qualidade acima da média apenas por CI ou avaliação do próprio modelo. Detalhes: docs/EDITORIAL_MDA_ADAPTIVE_VOICE_20261110.md.
