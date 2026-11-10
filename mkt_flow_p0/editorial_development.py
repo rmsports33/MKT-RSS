@@ -44,6 +44,19 @@ def plan_brief_with_provider(title, source_text, *, genre="noticia", research=No
         raise ValueError("briefing automático indisponível; redação permanece pendente") from None
 
 
+class ReviewProviderFailure(ValueError):
+    """Sanitized reason only; never preserve provider response or request."""
+    ALLOWED = frozenset({
+        "CLIENT_UNAVAILABLE", "PROVIDER_AUTH", "PROVIDER_RATE_LIMIT",
+        "PROVIDER_REQUEST", "PROVIDER_TIMEOUT", "PROVIDER_EXCEPTION",
+        "RESPONSE_TRUNCATED", "RESPONSE_INVALID_JSON", "RESPONSE_INVALID_CRITERIA",
+    })
+
+    def __init__(self, code):
+        self.code = code if code in self.ALLOWED else "PROVIDER_EXCEPTION"
+        super().__init__(self.code)
+
+
 def review_with_provider(markdown, brief):
     """A separate assisted critique; never independent/human/factual approval."""
     brief = normalize_brief(brief)
@@ -51,7 +64,7 @@ def review_with_provider(markdown, brief):
         from mkt_flow_p0.rewriter import _get_client, _modelo, _parse_json_resposta
         client, error = _get_client()
         if error:
-            raise ValueError("provedor de revisão indisponível")
+            raise ReviewProviderFailure("CLIENT_UNAVAILABLE")
         response = client.chat.completions.create(
             model=_modelo(), temperature=0, max_tokens=2400, timeout=60,
             response_format={"type": "json_object"},
@@ -67,13 +80,36 @@ def review_with_provider(markdown, brief):
                 {"role": "user", "content": json.dumps({"brief": brief, "article": markdown}, ensure_ascii=False)},
             ])
         if getattr(response.choices[0], "finish_reason", None) == "length":
-            raise ValueError("revisão truncada")
-        result = _parse_json_resposta(response.choices[0].message.content)
-        return {"method": "assisted", "reviewer": "groq:" + _modelo(),
-                "content_sha256": content_hash(markdown), "brief_sha256": brief_hash(brief),
-                "criteria": result.get("criteria")}
-    except Exception:
-        raise ValueError("revisão assistida falhou; conteúdo permanece pendente") from None
+            raise ReviewProviderFailure("RESPONSE_TRUNCATED")
+        try:
+            result = _parse_json_resposta(response.choices[0].message.content)
+        except (ValueError, TypeError, KeyError):
+            raise ReviewProviderFailure("RESPONSE_INVALID_JSON") from None
+        if not isinstance(result, dict):
+            raise ReviewProviderFailure("RESPONSE_INVALID_JSON")
+        candidate = {"method": "assisted", "reviewer": "groq:" + _modelo(),
+                     "content_sha256": content_hash(markdown),
+                     "brief_sha256": brief_hash(brief),
+                     "criteria": result.get("criteria")}
+        if not assess_substance(markdown, brief, candidate)["review_valid"]:
+            raise ReviewProviderFailure("RESPONSE_INVALID_CRITERIA")
+        return candidate
+    except ReviewProviderFailure:
+        raise
+    except Exception as exc:
+        status = getattr(exc, "status_code", None)
+        if status in (401, 403):
+            code = "PROVIDER_AUTH"
+        elif status == 429:
+            code = "PROVIDER_RATE_LIMIT"
+        elif status in (400, 404, 422):
+            code = "PROVIDER_REQUEST"
+        elif isinstance(exc, TimeoutError) or type(exc).__name__ in {
+                "APITimeoutError", "ReadTimeout", "ConnectTimeout", "TimeoutException"}:
+            code = "PROVIDER_TIMEOUT"
+        else:
+            code = "PROVIDER_EXCEPTION"
+        raise ReviewProviderFailure(code) from None
 
 
 def adapt_imported_article(payload, *, writer=None, reviewer=None, planner=None, genre="guia", max_attempts=2):

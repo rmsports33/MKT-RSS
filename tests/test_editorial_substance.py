@@ -361,3 +361,60 @@ def test_rss_review_failure_diagnostic_is_redacted_and_never_passes(monkeypatch,
     safe_blocked = pipeline_rss.resumo_seguro_cli("apple-fixture", blocked)
     assert safe_blocked["motivo"] == "handoff_version_update_failed"
     assert "private article content" not in json.dumps(safe_blocked)
+
+
+@pytest.mark.parametrize("failure_kind,code", [
+    ("truncated", "RESPONSE_TRUNCATED"),
+    ("rate_limit", "PROVIDER_RATE_LIMIT"),
+    ("bad_json", "RESPONSE_INVALID_JSON"),
+    ("incomplete_criteria", "RESPONSE_INVALID_CRITERIA"),
+])
+def test_provider_critic_emits_only_safe_failure_category(monkeypatch, failure_kind, code):
+    from types import SimpleNamespace
+    from mkt_flow_p0 import rewriter
+    from mkt_flow_p0.editorial_development import (
+        review_with_provider, ReviewProviderFailure,
+    )
+    class ProviderError(Exception):
+        status_code = 429
+    def create(**kwargs):
+        if failure_kind == "rate_limit":
+            raise ProviderError("secret error details must stay private")
+        if failure_kind == "truncated":
+            return SimpleNamespace(choices=[SimpleNamespace(
+                finish_reason="length", message=SimpleNamespace(content="{}"))])
+        if failure_kind == "bad_json":
+            content = "{invalid text"
+        else:
+            content = json.dumps({"criteria": {"voice": {"score": 4}}})
+        return SimpleNamespace(choices=[SimpleNamespace(
+            finish_reason="stop", message=SimpleNamespace(content=content))])
+    client=SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
+    monkeypatch.setattr(rewriter, "_get_client", lambda: (client, ""))
+    with pytest.raises(ReviewProviderFailure) as captured:
+        review_with_provider(TEXT, BRIEF)
+    assert captured.value.code == code
+    assert "secret error details" not in str(captured.value)
+
+
+def test_safe_receipt_removes_untrusted_provider_failure_details():
+    import pipeline_rss
+    from mkt_flow_p0.editorial_development import ReviewProviderFailure
+    assert "PROVIDER_RATE_LIMIT" in ReviewProviderFailure.ALLOWED
+    result = {
+        "acao": "pacote_editorial_criado", "escreveu": False,
+        "qualidade_editorial": {
+            "status": "ENRIQUECIMENTO_PENDENTE", "pendencias": [],
+            "palavras": 800,
+            "desenvolvimento": {"attempts": [
+                {"review_diagnostic": "PROVIDER_REVIEW_FAILED",
+                 "review_failure_code": "PROVIDER_RATE_LIMIT"},
+                {"review_diagnostic": "any private text",
+                 "review_failure_code": "my secret provider response"},
+            ]},
+        },
+    }
+    receipt = pipeline_rss.resumo_seguro_cli("fixture", result)
+    assert receipt["review_diagnostics"] == ["PROVIDER_REVIEW_FAILED", "UNKNOWN"]
+    assert receipt["review_failure_codes"] == ["PROVIDER_RATE_LIMIT", None]
+    assert "my secret" not in json.dumps(receipt)
