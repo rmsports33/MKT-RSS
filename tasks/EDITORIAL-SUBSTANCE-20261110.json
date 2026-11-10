@@ -179,6 +179,30 @@
       "reference": "WordPress plugin inventory (authenticated read only, 2026-11-10)",
       "result": "CONTROLLED_EDITORIAL_GATE_AND_HMAC_VAULT_ACTIVE",
       "details": "Gate 0.1.0-rc5; Vault 0.1.0; separate MU-plugin Gate inactive; live 403 not tested."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/86",
+      "result": "MERGED",
+      "sha": "beb85359b467ce0cb39f0368c57ca8577a2d9c97",
+      "scope": "Single MKT-RSS provider flow with optional deterministic voice lens; no new executor or claims of human persona."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42910671405",
+      "result": "PASS",
+      "tests_passed": 1104,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42910672463",
+      "result": "PASS",
+      "scope": "Conexo OS editorial validation after corrected fixture"
+    },
+    {
+      "reference": "PRIVATE_GOOGLE_DRIVE_REVIEW_PACKET",
+      "result": "MDA_REVIEW_CHECKLIST_INSERTED",
+      "notes": "No reviewer score/identity or manuscript content copied to public GitHub."
     }
   ],
   "blockers": [
@@ -189,7 +213,7 @@
     "Não há execução autenticada atual MKT-RSS → WordPress com handoff da mesma versão homologada; rascunho lido/editado não prova e2e.",
     "A execução histórica Groq #42809666543 continua cifrada e não recuperável sem chave privada; fica isolada e não impede novos pilotos."
   ],
-  "next_action": "Solicitar a revisor independente o parecer assinado sobre os manuscritos integrais A–E (sem enviar chave); depois comprovar direitos das capas e realizar teste de bloqueio 403 em ambiente WordPress isolado com a MESMA versão 0.1.0-rc5 antes de qualquer tentativa em produção. Não publicar.",
+  "next_action": "A engenharia de voz adaptativa MDA está integrada com CI completo; para declarar melhora real fazer A/B de artigos completos com fontes equivalentes, comparar cinco critérios com revisor humano independente e checar regressões factuais. Preservar fontes, direitos da imagem, Gate WordPress, aprovação por versão e bloqueio de publicação. Não executar Groq, gastar créditos, cron ou alterar WP apenas para marcar qualidade.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -270,7 +294,21 @@
     "mu_plugin_old_gate_inactive": "YES_SEPARATE_INSTALL",
     "real_publish_blocking_test": "NOT_RUN_PRODUCTION_PUBLICATION_RISK",
     "wp9798_image_local_sha256": "3db33303f9e6dd5d418da7792b9ff81750bc41001bddfc349158c52e5d7b3de1",
-    "wp9798_image_bytes_equal_to_wordpress": "NOT_PROVEN_REMOTE_HASH_UNAVAILABLE"
+    "wp9798_image_bytes_equal_to_wordpress": "NOT_PROVEN_REMOTE_HASH_UNAVAILABLE",
+    "mda_auto_academic_archive": "PRESERVED_UNMODIFIED",
+    "mda_adaptive_voice_adapter": "INTEGRATED_MASTER_PR86",
+    "mda_adaptive_voice_merge_sha": "beb85359b467ce0cb39f0368c57ca8577a2d9c97",
+    "mda_voice_lenses": "SIX_ALLOWLISTED_APPROACHES_NOT_PERSONAS",
+    "mda_voice_brief_contract": "UNCHANGED_SIX_FIELDS_HASH",
+    "mda_voice_dna_sha256": "UNCHANGED",
+    "mda_assisted_critic": "PROGRESSION_SOURCE_FUNCTION_TENSIONS_CLOSING_REVIEW_IN_EXISTING_PROVIDER_CALL",
+    "mda_style_signals": "ADVISORY_NON_APPROVING",
+    "mda_external_provider_calls_this_session": 0,
+    "mda_wordpress_writes_this_session": 0,
+    "mda_private_blind_review_packet": "MDA_RUBRIC_APPENDED",
+    "mda_a_b_full_article_comparison": "PENDING_NOT_GENERATED",
+    "mda_independent_human_quality_acceptance": "PENDING",
+    "mda_real_publish_gate_validation": "NOT_CHANGED_OR_PROVEN"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
