@@ -79,3 +79,9 @@ MKT-RSS e o motor prioritario e o publicador; ChatGPT e apoio opcional. Fluxo e 
 - O adaptador leve mkt_flow_p0/editorial_voice_adapter.py usa os seis campos existentes de briefing sem alterar contrato/hash ou o DNA ConexoTech. writing_instruction injeta uma lente por gênero na geração habitual; o revisor existente avalia progressão e qualidade sem nova chamada. Pode aumentar tokens no prompt já usado.
 - Sinais superficiais de estilo são apenas alertas de revisão: não concedem PASS, não certificam fatos e não autorizam publicar. Continuam obrigatórios direitos de imagens, fonte verificada, aprovação humana da versão e Gate Editorial.
 - Homologar qualquer ganho real por comparação A/B de artigos completos com fontes idênticas e avaliador humano cego; evitar declarar qualidade acima da média apenas por CI ou avaliação do próprio modelo. Detalhes: docs/EDITORIAL_MDA_ADAPTIVE_VOICE_20261110.md.
+
+## Qualidade MDA: protocolo A/B controlado (10/11/2026)
+
+- Comparar controle (sem instrução adicional MDA) e tratamento (com MDA), mantendo mesmas fontes/briefing/modelo/parâmetros, sem substituir o redator e sem nova chamada obrigatória. O fluxo normal continua com MDA.
+- Scripts opcionais de preparação e empacotamento A/B são locais, sem rede; materiais completos não podem ser versionados em GitHub público. Chave A/B fica separada do pacote do avaliador humano.
+- Um preflight verde não comprova execução Groq, qualidade nem consentimento de publicação. O avaliador independente deve examinar textos completos, e as falhas factuais não podem ser maquiadas por estilo. Protocolo: docs/EDITORIAL_MDA_AB_CONTROLLED_20261110.md.
