@@ -53,7 +53,7 @@ def test_paraphrased_boilerplate_fails_even_with_optimistic_review():
     ]
     article = "\n\n".join(paragraphs)
     long_sentences = [
-        sentence.strip().casefold() for sentence in re.split(r"[.!?]\\s+", article)
+        sentence.strip().casefold() for sentence in re.split(r"[.!?]\s+", article)
         if len(sentence.split()) > 6
     ]
     assert len(set(paragraphs)) == len(paragraphs)
