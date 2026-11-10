@@ -112,6 +112,37 @@ def prepare_case(case, output_dir):
     return manifest
 
 
+
+def prepare_batch(batch, output_dir):
+    """Batch preparation keeps all real manuscripts private and uses one source per pair."""
+    if (not isinstance(batch, dict)
+            or set(batch) != {"schema", "cases"}
+            or batch["schema"] != "conexo-mda-ab-batch/1"
+            or not isinstance(batch["cases"], list)
+            or not 1 <= len(batch["cases"]) <= 8):
+        raise ValueError("lote A/B inválido")
+    # Validate the entire batch before creating any output directory.
+    pairs = [build_pair(case) for case in batch["cases"]]
+    names = [manifest["case_id"] for _, _, manifest in pairs]
+    if len(set(names)) != len(names):
+        raise ValueError("case_id duplicado")
+    root = Path(output_dir)
+    root.mkdir(parents=True, exist_ok=False, mode=0o700)
+    manifests = []
+    for case in batch["cases"]:
+        manifests.append(prepare_case(case, root / case["case_id"]))
+    return {
+        "schema": "conexo-mda-ab-batch-preflight/1",
+        "count": len(manifests),
+        "cases": manifests,
+        "provider_called": False,
+        "generated_articles_present": False,
+        "independent_review_completed": False,
+        "quality_improvement_demonstrated": False,
+        "publication_authorized": False,
+    }
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description="Offline MDA/control prompt preflight; no model requests")
     parser.add_argument("--input", required=True, type=Path)
@@ -122,7 +153,9 @@ def main(argv=None):
         parser.error("arquivo de entrada excede limite")
     try:
         case = json.loads(args.input.read_text(encoding="utf-8"))
-        manifest = prepare_case(case, args.out)
+        manifest = (prepare_batch(case, args.out)
+                    if isinstance(case, dict) and case.get("schema") == "conexo-mda-ab-batch/1"
+                    else prepare_case(case, args.out))
     except (ValueError, OSError) as exc:
         parser.error(str(exc))
     # Only hashes and state are emitted, never article, prompts or sources.
