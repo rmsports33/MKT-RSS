@@ -171,9 +171,9 @@
       "description": "Four real draft pilots, readbacks of revision 9806/9805/9804, sources and remaining gate/rights obligations"
     },
     {
-      "reference": "https://docs.google.com/document/d/1hjlox6cjV4VmNKboYQ80mtInQnEYrl6bkt-iL2JxNK4/edit",
+      "reference": "PRIVATE_GOOGLE_DRIVE_REVIEW_PACKET",
       "result": "PRIVATE_BLINDED_FULL_TEXT_PACKET",
-      "notes": "A–E; no human reviewer score or approval. Keep private links out of public status updates."
+      "notes": "Caderno integral A–E em pasta privada do Google Drive, chave separada; nenhum link privado exposto em repositório público."
     }
   ],
   "blockers": [
