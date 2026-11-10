@@ -88,9 +88,12 @@ def gerar_slug(titulo: str) -> str:
 
 def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "",
                    keywords: list = None, evidencias_aprovadas: dict = None,
-                   contexto_complementar: dict = None, editorial_brief: dict = None, editorial_feedback=None) -> str:
+                   contexto_complementar: dict = None, editorial_brief: dict = None,
+                   editorial_feedback=None, *, voice_variant="mda") -> str:
     from mkt_flow_p0.editorial_substance import writing_instruction
-    briefing_instruction = writing_instruction(editorial_brief) if editorial_brief is not None else (
+    if voice_variant not in ("control", "mda"):
+        raise ValueError("variante editorial inválida")
+    briefing_instruction = writing_instruction(editorial_brief, voice_variant=voice_variant) if editorial_brief is not None else (
         "\nBriefing específico ausente: gerar apenas candidato pendente, nunca declarar qualidade aprovada.\n")
     if len(texto_original) > 60000:
         raise ValueError("insumo excede 60000 caracteres; dividir apuração sem truncar silenciosamente")
