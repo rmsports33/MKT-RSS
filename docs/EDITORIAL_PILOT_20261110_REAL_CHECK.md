@@ -53,3 +53,17 @@ As edições abaixo foram feitas com `status=draft` e verificadas com leitura po
 ## Decisão operacional
 
 Os quatro pilotos continuam como rascunhos. Nenhum parecer automatizado, caderno ou status verde de workflow autoriza publicação. Quando o revisor externo entregar notas justificadas, confrontar as versões com as fontes, resolver imagens e comprovar o Gate real, atualizar este checkpoint por evidência, sem instalar outro executor, staging ou serviço pago.
+
+## Gate Editorial — conferência de instalação em produção (somente leitura)
+
+Em 2026-11-10, a listagem autenticada de plugins de `conexotech.com.br` registrou:
+- **Conexo Editorial Gate (controlado)**, `conexo-editorial-gate/conexo-editorial-gate`, versão **0.1.0-rc5**, **ATIVO**.
+- **Conexo HMAC Vault (provisao segura)**, `conexo-hmac-vault/conexo-hmac-vault`, versão **0.1.0**, **ATIVO**.
+- Uma instalação MU-plugin intitulada `Conexo Editorial Gate` permaneceu **INATIVA** (não confundir com a implementação controlada ativa).
+- Rank Math SEO e Conexo Native SEO (controlado) 0.5.2 também estavam ativos, sem alteração nesta auditoria.
+
+A confirmação do status **não demonstra** que o Gate ativo intercepta qualquer tentativa de `publish`, que mantém assinaturas por versão nem que há rollback funcional. **Não** tentar publicar conteúdo de teste na produção sem uma barreira comprovada, pois isso poderia colocar o artigo no ar. A prova WordPress isolada existente no GitHub usa outro código MU-plugin; não pode ser extrapolada automaticamente para a implementação controlada rc5 em produção.
+
+## Imagem editorial do guia (somente inspeção)
+
+Na Biblioteca pessoal há imagem gerada em conversa, nome `Teclado inteligente no smartphone.png`, com 1672×941 px e 1.746.051 bytes (SHA-256 local `3db33303f9e6dd5d418da7792b9ff81750bc41001bddfc349158c52e5d7b3de1`). Metadados do WordPress para mídia #9799 apresentam mesmas dimensões e tamanho de arquivo. A imagem representa teclado **genérico estilizado sem textos**, não tela real do iOS; adequação temática visual preliminar positiva. As semelhanças de metadados **não são prova de bytes idênticos**, pois o hash do arquivo remoto não foi obtido, e não são atestado automático do titular. O direito de uso definitivo ainda requer comprovação de correspondência e confirmação do proprietário.
