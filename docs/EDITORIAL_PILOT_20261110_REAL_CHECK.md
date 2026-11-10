@@ -67,3 +67,19 @@ A confirmação do status **não demonstra** que o Gate ativo intercepta qualque
 ## Imagem editorial do guia (somente inspeção)
 
 Na Biblioteca pessoal há imagem gerada em conversa, nome `Teclado inteligente no smartphone.png`, com 1672×941 px e 1.746.051 bytes (SHA-256 local `3db33303f9e6dd5d418da7792b9ff81750bc41001bddfc349158c52e5d7b3de1`). Metadados do WordPress para mídia #9799 apresentam mesmas dimensões e tamanho de arquivo. A imagem representa teclado **genérico estilizado sem textos**, não tela real do iOS; adequação temática visual preliminar positiva. As semelhanças de metadados **não são prova de bytes idênticos**, pois o hash do arquivo remoto não foi obtido, e não são atestado automático do titular. O direito de uso definitivo ainda requer comprovação de correspondência e confirmação do proprietário.
+
+
+## Integração MDA AUTO — complemento técnico (PR #86)
+
+Em 2026-11-10, o [PR #86](https://github.com/rmsports33/MKT-RSS/pull/86) foi integrado na master (merge beb85359b467ce0cb39f0368c57ca8577a2d9c97), após CI com **1.104 testes aprovados, 1 ignorado, 11 subtestes e 52 testes do redator**, além de validação editorial Conexo OS verde.
+
+O adaptador mkt_flow_p0/editorial_voice_adapter.py opera **na redação e crítica existentes**. Não altera o briefing de seis campos, o hash do DNA, a permissão de publicar, o WordPress ou as fontes dos rascunhos atuais. É seleção de abordagem e movimentos intelectuais, **não** nova autoria. A documentação técnica é [EDITORIAL_MDA_ADAPTIVE_VOICE_20261110.md](EDITORIAL_MDA_ADAPTIVE_VOICE_20261110.md).
+
+| Piloto real | Lente prevista ao reescrever sob o mesmo briefing |
+|---|---|
+| Guia #9798 | didático-prática: sintomas, escolhas reversíveis, consequências |
+| Notícia #9635 | investigativo-documental: homologação regulatória vs. disponibilidade comercial |
+| Análise #9687 | analítico-crítica; científico-explicativa somente se o recorte do briefing for explicitamente pesquisa/estudo |
+| Comparativo #9681 | comparativo-decisória: critérios, trade-offs, decisão condicional |
+
+Essas lentes são uma **previsão de roteamento por gênero, não prova de aplicação nos rascunhos atuais**. O caderno privado de avaliação A–E foi complementado com a rubrica MDA: função de cada seção, progressão, uso das fontes, contradições e fechamento. **Não houve novo A/B gerado**, chamada Groq, aceitação humana, concessão de direitos de imagem ou publicação WordPress por este PR. Para comprovar ganho real, comparar versões completas com as mesmas fontes e revisor humano independente, preservando o conteúdo privado e a chave das versões em locais separados.
