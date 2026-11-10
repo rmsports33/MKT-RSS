@@ -88,6 +88,7 @@ def main():
             "substantive_scores":{k:v.get("score") for k,v in review.get("criteria",{}).items()},
             "review_method":review.get("method"),
             "review_diagnostics":item.get("review_diagnostics",[]),
+            "review_failure_codes":item.get("review_failure_codes",[]),
             "review_attempt_count":item.get("review_attempt_count")})
         code=0
     except Exception as exc:
