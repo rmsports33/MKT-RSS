@@ -9,7 +9,7 @@
   "owner": "Codex nesta sessão",
   "coordinator": "sessão atual",
   "reviewer": "revisão técnica assistida pela mesma sessão, sem independência",
-  "status": "ENGINEERING_FIXES_INTEGRATED_HISTORICAL_EVIDENCE_AND_BLIND_ACCEPTANCE_PENDING",
+  "status": "FOUR_GENRE_PILOT_PREPARED_EXTERNAL_ACCEPTANCE_AND_GATE_PROOF_PENDING",
   "scope": [
     "Rastrear as rotas atuais de importação, redação, identidade e prontidão",
     "Implementar briefing, adaptação e crítica vinculada ao texto, preservando controles existentes",
@@ -164,15 +164,27 @@
       "reference": "private ChatGPT Library ConexoOS/AuditoriaEditorial",
       "result": "SAFE_EVIDENCE_REPORTS_SAVED",
       "note": "No private editorial plaintext or keys published. Encrypted ZIP is also present in Library root."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/blob/master/docs/EDITORIAL_PILOT_20261110_REAL_CHECK.md",
+      "result": "FACTUAL_AUDIT_DOCUMENTED",
+      "description": "Four real draft pilots, readbacks of revision 9806/9805/9804, sources and remaining gate/rights obligations"
+    },
+    {
+      "reference": "https://docs.google.com/document/d/1hjlox6cjV4VmNKboYQ80mtInQnEYrl6bkt-iL2JxNK4/edit",
+      "result": "PRIVATE_BLINDED_FULL_TEXT_PACKET",
+      "notes": "A–E; no human reviewer score or approval. Keep private links out of public status updates."
     }
   ],
   "blockers": [
-    "A execução Groq histórica #42809666543 preservou o artigo apenas cifrado e o código antigo perdeu o subtipo da exceção; não há chave RSA privada localizada nos conectores ou arquivos acessíveis. O diagnóstico exato retrospectivo não é comprovável.",
-    "A fonte complementar histórica continua não identificável sem o plaintext ou outra cópia privada do handoff. As fontes RSS candidatas não satisfazem a verificação multifonte.",
-    "Imagem do handoff Groq histórico não foi associada a qualquer mídia com licença e revisão visual. A imagem ChatGPT/WP #9799 só pertence ao guia #9798; proveniência e adequação visual têm evidências, mas o atestado final do titular segue pendente.",
-    "Avaliação cega independente por gênero e aceite humano por versão não ocorreram; o segundo parecer sobre WP #9798 é assistido e não cego, portanto não prova qualidade acima da média nem libera publicação."
+    "Parecer independente e cego dos artigos completos A–E não recebido; não declarar qualidade acima da média.",
+    "Direitos: #9635 e #9687 tiveram imagens sem proveniência removidas da associação; #9681 sem capa; #9798 imagem IA com proveniência declarada, aguardando verificação definitiva e conferência visual.",
+    "Homologação factual por versão pendente nas alegações de mercado, na identificação regulatória do fabricante e em originalidade do comparativo.",
+    "Conferência visual 390/1440 px e bloqueio WordPress real pelo Gate Editorial Único ainda não testados nesta sessão.",
+    "Não há execução autenticada atual MKT-RSS → WordPress com handoff da mesma versão homologada; rascunho lido/editado não prova e2e.",
+    "A execução histórica Groq #42809666543 continua cifrada e não recuperável sem chave privada; fica isolada e não impede novos pilotos."
   ],
-  "next_action": "Não repetir Groq para salvar o handoff antigo: mantê-lo como evidência cifrada histórica, não publicável e não bloqueante para novos pilotos. Usar rascunho WordPress #9798 como guia piloto distinto; checar fonte oficial, origem e direitos da mídia #9799 (aguarda confirmação do titular) e obter aceite humano independente da versão. Para notícias, iniciar piloto com fontes independentes verificadas; publicação sempre continua bloqueada até o aceite.",
+  "next_action": "Coletar notas de revisor externo usando caderno privado completo e sem compartilhar chave de versões; depois verificar imagens/direitos, homologar gate real com tentativa de publicação isolada e bloqueada, validar visual 390/1440 e somente então declarar pronto. Não contratar serviços, não reintroduzir staging, não publicar sem aceite.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -229,7 +241,25 @@
     "historical_handoff_disposition": "ARCHIVED_ENCRYPTED_NONPUBLISHABLE_NONBLOCKING_FOR_NEW_EDITORIAL_PILOTS",
     "historical_reprocessing": "NOT_AUTHORIZED_OR_REQUIRED",
     "editorial_production_state": "NOT_HOMOLOGATED",
-    "new_pilot_safety": "PENDING_HUMAN_SOURCE_IMAGE_AND_INDEPENDENT_QUALITY_ACCEPTANCE"
+    "new_pilot_safety": "PENDING_HUMAN_SOURCE_IMAGE_AND_INDEPENDENT_QUALITY_ACCEPTANCE",
+    "pilot_guide_post_id": 9798,
+    "pilot_guide_revision_id": 9806,
+    "pilot_guide_status": "DRAFT_SOURCES_RECHECKED_MEDIA_RIGHTS_ATTESTATION_PENDING",
+    "pilot_news_post_id": 9635,
+    "pilot_news_revision_id": 9805,
+    "pilot_news_status": "DRAFT_FACTUAL_CORRECTIONS_SAVED_IMAGE_REMOVED",
+    "pilot_analysis_post_id": 9687,
+    "pilot_analysis_revision_id": 9804,
+    "pilot_analysis_status": "DRAFT_RESEARCH_QUALIFIED_THIRD_PARTY_BIO_REMOVED_IMAGE_REMOVED",
+    "pilot_comparison_post_id": 9681,
+    "pilot_comparison_status": "DRAFT_SPEC_CHECKED_NO_IMAGE_OR_INDEPENDENT_REVIEW",
+    "private_blind_review_packet": "CREATED_FULL_TEXTS_A_THROUGH_E_UPDATED",
+    "private_version_key": "CREATED_SEPARATE_FROM_REVIEW_PACKET",
+    "external_human_review": "PENDING_NO_SCORE_RECORDED",
+    "end_to_end_mkt_rss_to_wp": "NOT_PROVEN",
+    "wordpress_publications_from_pilot": 0,
+    "production_posts_modified_only_drafts": true,
+    "publicly_approved": false
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
