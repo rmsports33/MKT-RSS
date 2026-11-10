@@ -343,3 +343,21 @@ def test_rss_review_failure_diagnostic_is_redacted_and_never_passes(monkeypatch,
     assert not attempts[0]["assessment"]["review_valid"]
     assert "editorial_substance_review" not in result["editorial_handoff"]["metadata"]
     assert "private provider or editorial response detail" not in json.dumps(result)
+
+    receipt = pipeline_rss.resumo_seguro_cli("apple-fixture", result)
+    assert receipt["review_diagnostics"] == [expected]
+    assert receipt["review_attempt_count"] == 1
+    assert "private provider or editorial response detail" not in json.dumps(receipt)
+
+    monkeypatch.setattr(
+        editorial_identity, "atualizar_handoff_revisao",
+        lambda *a, **kw: (_ for _ in ()).throw(ValueError("private article content")),
+    )
+    blocked = pipeline_rss.processar_item(
+        item, handoff_only=True, contexto_complementar=payload()["research"])
+    assert blocked["acao"] == "falha"
+    assert blocked["motivo"] == "handoff_version_update_failed"
+    assert blocked["escreveu"] is False
+    safe_blocked = pipeline_rss.resumo_seguro_cli("apple-fixture", blocked)
+    assert safe_blocked["motivo"] == "handoff_version_update_failed"
+    assert "private article content" not in json.dumps(safe_blocked)
