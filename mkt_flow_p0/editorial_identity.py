@@ -35,10 +35,10 @@ DNA_PROMPT_SHA256 = hashlib.sha256(DNA_EDITORIAL_PROMPT.encode("utf-8")).hexdige
 
 
 def normalizar_aplicacao_voz(value):
-    """Registra evidência de aplicação do DNA sem confundir metadados com estilo.
+    """Validate provenance that the editorial DNA was applied.
 
-    Texto pronto importado sem prova recebe NOT_APPLIED. O caminho de geração
-    só pode marcar PROMPT_APPLIED quando inclui hashes do DNA e da chamada.
+    Imported text without proof stays NOT_APPLIED. Native and external provider
+    adapters must record the canonical DNA hash and the exact submitted prompt hash.
     """
     if value is None:
         return {"status": "NOT_APPLIED", "method": "prewritten_text_import"}
@@ -46,15 +46,29 @@ def normalizar_aplicacao_voz(value):
             and value.get("status") == "NOT_APPLIED"
             and value.get("method") == "prewritten_text_import"):
         return dict(value)
-    required = {"status", "method", "dna_prompt_sha256", "prompt_sha256"}
-    if not isinstance(value, dict) or set(value) != required:
+    native = {"status", "method", "dna_prompt_sha256", "prompt_sha256"}
+    external = native | {"provider_id"}
+    if not isinstance(value, dict):
         raise ValueError("prova de aplicação da voz inválida")
-    if (value["status"] != "PROMPT_APPLIED"
-            or value["method"] != "mkt_flow_p0.rewriter.system_prompt"
-            or value["dna_prompt_sha256"] != DNA_PROMPT_SHA256
-            or not isinstance(value["prompt_sha256"], str)
+    is_native = set(value) == native
+    is_external = set(value) == external
+    if not (is_native or is_external):
+        raise ValueError("prova de aplicação da voz inválida")
+    if value.get("status") != "PROMPT_APPLIED":
+        raise ValueError("prova de aplicação da voz incompatível")
+    valid_method = (
+        (is_native and value.get("method") == "mkt_flow_p0.rewriter.system_prompt")
+        or (is_external and value.get("method") == "external_provider.system_prompt")
+    )
+    if (not valid_method
+            or value.get("dna_prompt_sha256") != DNA_PROMPT_SHA256
+            or not isinstance(value.get("prompt_sha256"), str)
             or not re.fullmatch(r"[0-9a-f]{64}", value["prompt_sha256"])):
         raise ValueError("prova de aplicação da voz incompatível")
+    if is_external and (
+            not isinstance(value["provider_id"], str)
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,79}", value["provider_id"])):
+        raise ValueError("identificador do provedor externo inválido")
     return dict(value)
 
 
