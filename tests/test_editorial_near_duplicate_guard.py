@@ -18,7 +18,7 @@ CORE = (
 
 
 def _optimistic_review(article):
-    excerpts = [p for p in article.split("\\n\\n") if len(p) > 60]
+    excerpts = [p for p in article.split("\n\n") if len(p) > 60]
     return {
         "method": "assisted",
         "reviewer": "fixture-automated-critic",
@@ -41,7 +41,7 @@ def test_paraphrased_boilerplate_fails_even_with_optimistic_review():
         CORE + f" No cenário {i}, mudamos somente um pequeno detalhe da recomendação."
         for i in range(8)
     ]
-    article = "\\n\\n".join(paragraphs)
+    article = "\n\n".join(paragraphs)
     assessment = assess_substance(article, BRIEF, _optimistic_review(article))
     assert assessment["review_valid"]
     assert "repeticao_substantiva" in assessment["pendencias"]
@@ -53,5 +53,5 @@ def test_distinct_long_paragraphs_do_not_trigger_repetition_guard():
         " ".join(f"conceito{i}_dado{j}" for j in range(35))
         for i in range(8)
     ]
-    assessment = assess_substance("\\n\\n".join(paragraphs))
+    assessment = assess_substance("\n\n".join(paragraphs))
     assert "repeticao_substantiva" not in assessment["pendencias"]
