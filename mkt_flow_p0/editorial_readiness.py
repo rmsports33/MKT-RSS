@@ -7,7 +7,7 @@ import re
 from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
-from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt, verificar_aplicacao_voz
 
 SITE = "conexotech.com.br"
 LIMITES_POR_GENERO = {"noticia": 550, "guia": 700, "comparativo": 800,
@@ -49,6 +49,7 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
         return {"status": "PACOTE_INVALIDO", "pendencias": ["handoff_invalido"],
                 "pronto_para_publicar": False}
     meta = handoff["metadata"]
+    voice_application = verificar_aplicacao_voz(meta)
     markdown = handoff["markdown"]
     palavras = len(re.findall(r"\b[\wÀ-ÿ]+\b", markdown, re.UNICODE))
     genero = genero if genero in LIMITES_POR_GENERO else "noticia"
@@ -83,6 +84,8 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
     desc = seo.get("description", "") if isinstance(seo, dict) else ""
     pendencias = []
     avisos = ["texto_abaixo_da_referencia_do_genero"] if palavras < limite else []
+    if voice_application["status"] != "PROMPT_APPLIED":
+        pendencias.append("persona_editorial_nao_aplicada")
     if genero != "nota_breve" and len(fontes) - fontes_rss_pendentes < 2:
         pendencias.append("pesquisa_multifonte_pendente")
     if fontes_rss_pendentes:
@@ -99,6 +102,8 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
     return {
         "status": "PRONTO_PARA_REVISAO_HUMANA" if not pendencias else "ENRIQUECIMENTO_PENDENTE",
         "pendencias": pendencias, "avisos": avisos,
+        "persona_editorial": voice_application,
+        "revisao_de_voz": "PENDENTE_AVALIACAO_HUMANA",
         "genero": genero, "palavras": palavras, "referencia_palavras": limite,
         "fontes": len(fontes), "fontes_rss_pendentes": fontes_rss_pendentes,
         "links_internos": len(links.paths),
