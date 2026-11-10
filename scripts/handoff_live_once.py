@@ -38,6 +38,29 @@ def seal_directory(root, public_key, destination):
     destination.write_text(json.dumps(result), encoding="utf-8")
 
 
+def assess_handoff_quality(packet, reported_status, reported_pending):
+    """A green handoff is never silently treated as passing editorial review."""
+    from mkt_flow_p0.editorial_substance import assess_substance
+    if not isinstance(packet, dict) or not isinstance(packet.get("metadata"), dict):
+        return {"status": "PENDING", "review_valid": False}
+    meta = packet["metadata"]
+    assessment = assess_substance(
+        packet.get("markdown", ""), meta.get("editorial_brief"),
+        meta.get("editorial_substance_review"))
+    ready = (
+        reported_status == "PRONTO_PARA_REVISAO_HUMANA"
+        and reported_pending == []
+        and assessment["status"] == "PASS"
+        and assessment["review_valid"] is True
+    )
+    return {
+        "status": "READY_FOR_HUMAN_REVIEW" if ready else "PENDING",
+        "review_valid": assessment["review_valid"],
+        "review_status": assessment["status"],
+        "publication_authorized": False,
+    }
+
+
 def main():
     root = Path("work/handoff-live/private")
     root.mkdir(parents=True, mode=0o700)
@@ -78,6 +101,8 @@ def main():
         check=validar_handoff_chatgpt(packet)
         metadata=packet["metadata"]
         review=metadata.get("editorial_substance_review") or {}
+        quality_gate = assess_handoff_quality(
+            packet, item.get("quality_status"), item.get("quality_pending", []))
         report.update({"outcome":"HANDOFF_CREATED", "version_sha256":check["version_sha256"],
             "content_sha256":hashlib.sha256(packet["markdown"].encode()).hexdigest(),
             "sources_count":check["source_count"], "claims_pending":check["claims_pending"],
@@ -89,8 +114,13 @@ def main():
             "review_method":review.get("method"),
             "review_diagnostics":item.get("review_diagnostics",[]),
             "review_failure_codes":item.get("review_failure_codes",[]),
-            "review_attempt_count":item.get("review_attempt_count")})
-        code=0
+            "review_attempt_count":item.get("review_attempt_count"),
+            "quality_gate":quality_gate})
+        if quality_gate["status"] != "READY_FOR_HUMAN_REVIEW":
+            report["outcome"] = "HANDOFF_CREATED_QUALITY_PENDING"
+            code=3
+        else:
+            code=0
     except Exception as exc:
         report.update(outcome="BLOCKED", error_type=type(exc).__name__)
     finally:
