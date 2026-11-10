@@ -63,7 +63,7 @@ def test_existing_writer_receives_mda_guidance_without_changing_editorial_dna():
     direct = writing_instruction(source)
     prompt = montar_prompt(
         "Galaxy A36 ou A16", "O modelo A36 e o A16 são opções diferentes. " * 10,
-        fonte_nome="Ficha técnica", url_fonte="https://example.com/phone",
+        fonte_nome="Ficha técnica",
         editorial_brief=source,
     )
     assert "comparativo-decisória" in guidance
