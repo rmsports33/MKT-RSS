@@ -217,13 +217,13 @@ def executar_ferramenta_mcp(wp_url: str, wp_user: str, wp_app_password: str,
 
 def publicar_comparativo(contrato: dict, wp_url: str, wp_user: str,
                          wp_app_password: str, timeout: int = 10) -> dict:
-    """Cria um COMPARATIVO como rascunho, via MCP create_comparativo.
+    """Valida comparativo legado, mas bloqueia escrita MCP direta.
 
     O contrato passa por `contrato_para_mcp`, que valida a estrutura E roda o
     gate de valor por produto (M04.17A). Contrato sem evidência por produto
     NAO chega ao WordPress: nem uma requisição é feita.
 
-    Retorna {"post_id":..., "status":"draft", "link":...} ou {"erro":...}.
+    Retorna erro explícito: o contrato assinado do Gate é obrigatório.
     Nunca levanta: contrato inválido vira {"erro"} com a lista de erros.
     """
     from mkt_flow_p0.comparativo_contract import ContratoInvalido, contrato_para_mcp
@@ -248,22 +248,3 @@ def publicar_comparativo(contrato: dict, wp_url: str, wp_user: str,
     # proibida nem recorrer ao REST sem contrato editorial assinado.
     return {"erro": "comparativo bloqueado: criar rascunho pelo transporte editorial canônico assinado",
             "status": "blocked", "retry_automatic": False}
-    if resposta.get("erro"):
-        return resposta
-
-    resultado = resposta.get("result") or {}
-    post_id = resultado.get("post_id")
-    status = resultado.get("status")
-    if not post_id:
-        return {"erro": "MCP nao devolveu post_id", "resposta": resultado}
-    if status != "draft":
-        # O MCP fixa draft; se vier outra coisa, e' erro NAO silencioso —
-        # e o post_id vai junto para o post poder ser inspecionado.
-        return {"erro": f"MCP devolveu status={status!r} (esperado draft)",
-                "post_id": post_id, "status": status}
-    return {
-        "post_id": post_id,
-        "status": status,
-        "link": resultado.get("edit_link"),
-        "fonte": "mcp:create_comparativo",
-    }
