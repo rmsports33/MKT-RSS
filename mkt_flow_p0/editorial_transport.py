@@ -128,6 +128,20 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             blockers = [b for b in blockers if b != v.HUMAN_PENDING]
         if errors or blockers:
             raise ValueError("gate editorial bloqueou: " + "; ".join(errors + blockers))
+        # Diagnostic editorial review is version-bound and never grants approval.
+        # Enforce supplied review metadata when present; the trusted trace and
+        # canonical independent Gate remain mandatory for every release.
+        if intent in {"publish", "schedule"} and isinstance(package, dict):
+            editorial = package.get("editorial_assessment")
+            if editorial is not None:
+                from mkt_flow_p0.editorial_substance import assess_editorial_package
+                if not isinstance(editorial, dict):
+                    raise ValueError("avaliação editorial inválida")
+                assessment = assess_editorial_package(
+                    package, editorial.get("brief"), editorial.get("review"),
+                    editorial.get("receipts"))
+                if assessment["status"] != "REQUIRES_AUTHENTICATED_GATE":
+                    raise ValueError("avaliação substantiva pendente: " + "; ".join(assessment["blockers"]))
         # Mandatory trusted provenance preflight for publish/schedule.
         # Private stage/draft remain unaffected. The WordPress broker
         # performs the same check independently before any write.
