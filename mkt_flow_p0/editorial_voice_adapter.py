@@ -205,9 +205,67 @@ def writing_voice_guidance(brief):
         + "Não atribua à redação testes, fotografias, benchmarks ou uso de aparelhos "
         + "não executados e documentados; atribua medições de terceiros. "
         + "Preço e disponibilidade somente com fonte, data, mercado e variante. "
+        + "Nunca deixe marcadores editoriais como [jogo X], [inserir fonte], "
+        + "TODO ou metacomentários sobre o briefing no artigo entregue: "
+        + "identifique o caso real em fonte confiável ou retire o exemplo. "
+        + "Em temas regulatórios, homologaçao de equipamento não comprova "
+        + "autorização de operação da empresa, disponibilidade comercial, "
+        + "cobertura, preço ou contrato. Distinga os atos e seus documentos. "
         + "Não invente conclusão forte quando a pauta não a sustenta. "
         + "O DNA ConexoTech e a revisão humana por versão continuam prevalecendo.\n"
     )
+
+
+def editorial_placeholder_signals(markdown):
+    """Block only high-confidence production artifacts; never verify facts.
+
+    Keep Markdown citations/links and instructional samples intact. A missing
+    source must be reported in prose, never filled with "[jogo X]" or TODO.
+    """
+    if not isinstance(markdown, str):
+        raise ValueError("texto inválido para auditoria de integridade")
+    lines = []
+    fenced = False
+    marker = None
+    for line in markdown.splitlines():
+        fence = re.match(r"^\\s*(`{3,}|~{3,})", line)
+        if fence:
+            glyph = fence.group(1)[0]
+            if not fenced:
+                fenced, marker = True, glyph
+            elif glyph == marker:
+                fenced, marker = False, None
+            continue
+        if not fenced:
+            lines.append(line)
+    body = "\n".join(lines)
+    # [Apple](https://...) is a citation/link, not an unfinished manuscript.
+    body = re.sub(r"\\[[^]\\n]+\\]\\(https?://[^)\\n]+\\)", "", body)
+    placeholder = re.compile(
+        r"\\[(?:\\s*(?:jogo|produto|modelo|marca|nome|empresa|autor|cidade|"
+        r"pre[cç]o|dado|n[uú]mero|fonte|link|imagem|data)\\s+"
+        r"(?:x|y|z|a\\s+definir|a\\s+confirmar)\\s*|"
+        r"(?:inserir|preencher|adicionar|substituir|todo|tbd|xxx)"
+        r"[^]\\n]{0,80}|link\\s+afiliado)\\]",
+        re.IGNORECASE,
+    )
+    meta = re.compile(
+        r"\\b(?:este\\s+texto\\s+segue\\s+o\\s+briefing\\s+editorial|"
+        r"como\\s+modelo\\s+de\\s+linguagem|"
+        r"este\\s+artigo\\s+foi\\s+(?:gerado|produzido)\\s+(?:por|com)\\s+(?:um\\s+)?prompt)\\b",
+        re.IGNORECASE,
+    )
+    signals = []
+    if placeholder.search(body):
+        signals.append("marcador_editorial_nao_resolvido")
+    if meta.search(body):
+        signals.append("metatexto_de_producao_no_artigo")
+    return {
+        "scope": "artefatos_formais_alta_confianca_nao_checagem_factual",
+        "signals": signals,
+        "factual_approval": False,
+        "publication_authorized": False,
+    }
 
 
 def surface_style_signals(markdown):
