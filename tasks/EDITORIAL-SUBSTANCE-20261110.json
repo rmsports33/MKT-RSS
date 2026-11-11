@@ -285,6 +285,11 @@
       "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261110/mda_4_versoes_qa_v2_privadas.zip",
       "result": "FOUR_PRIVATE_QA_V2_WORKING_COPIES",
       "description": "Source-linked fact qualification + consistent Markdown tables + separate private manifest; never changes frozen A/B arms"
+    },
+    {
+      "reference": "PRIVATE_DRIVE:neutral_AB_independent_review_packet",
+      "result": "READY",
+      "description": "Four complete anonymous A/B pairs. Replaced identity-revealing header; reviewer independence declaration and scoring rubric included; original corpus unchanged. Access remains owner-only and mapping separate."
     }
   ],
   "blockers": [
@@ -296,7 +301,7 @@
     "Execução autenticada de ponta a ponta MKT-RSS → WordPress com mesma versão editorial homologada ainda não demonstrada.",
     "Handoff Groq histórico #42809666543 continua cifrado e isolado, não bloqueia o piloto novo."
   ],
-  "next_action": "Solicitar parecer independente HUMANAMENTE preenchido no caderno cego original A/B e revisão factual das quatro cópias QA-v2, mantendo chave separada. Até receber pareceres, não declarar melhoria comprovada ou aprovação para publicar. Completar licenciamento de capas e comprovar bloqueio real Gate 0.1.0-rc5 por versão em teste seguro isolado antes de qualquer escrita WordPress.",
+  "next_action": "Precisamos de um avaliador humano externo identificado pelo titular; não há pessoa ou e-mail autorizado para receber o documento. Compartilhar apenas o novo caderno cego neutro como commenter/reader com o revisor designado; NUNCA enviar chave A/B, análises assistidas nem QA-v2 antes do parecer. Registrar independência, notas 0-4, citações e revisão factual para os 4 pares. A publicação continua bloqueada.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -444,7 +449,7 @@
       "games_causality_speculation_and_control_percent",
       "Galaxy_control_incorrect_4K_A16"
     ],
-    "mda_ab_independent_human_quality_acceptance": "PENDING",
+    "mda_ab_independent_human_quality_acceptance": "PENDING_EXTERNAL_REVIEWER",
     "mda_ab_factual_approval": false,
     "mda_ab_gate_numeric_correction": "INTEGRATED_PR89",
     "mda_ab_gate_numeric_tests": "7_LOCAL_PASS_AND_FULL_CI_PASS",
@@ -463,7 +468,17 @@
     "mda_qa_v2_provider_calls": 0,
     "mda_table_quality_guard": "MERGED_MASTER_PR90",
     "mda_table_quality_guard_sha": "85e54f7511aa98ef52025a90e6f4312fbfb0f0cb",
-    "mda_table_quality_guard_tests": "1127_PASSED_1_SKIPPED_11_SUBTESTS_52_REDACTOR"
+    "mda_table_quality_guard_tests": "1127_PASSED_1_SKIPPED_11_SUBTESTS_52_REDACTOR",
+    "mda_external_blind_review_packet": "NEW_NEUTRAL_FULL_TEXT_PACKET_READY_PRIVATE_DRIVE",
+    "mda_external_blind_review_packet_id": "1mft-Vl1CkKyaLuDof2hMoe6HLegByvOoJ5AcETJppvA",
+    "mda_external_blind_review_original": "PRESERVED_UNCHANGED",
+    "mda_external_blind_review_versions": "FOUR_A_AND_FOUR_B_COMPLETE",
+    "mda_external_blind_review_model_identity_in_packet": false,
+    "mda_external_blind_review_mapping_shared": false,
+    "mda_external_blind_review_reader_access": "OWNER_ONLY_NO_EXTERNAL_REVIEWER_ASSIGNED",
+    "mda_external_blind_review_comments_count": 0,
+    "mda_external_blind_review_human_score": "NOT_RECEIVED",
+    "mda_external_blind_review_independence_declaration": "BLANK_AWAITING_REVIEWER"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
