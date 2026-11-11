@@ -246,5 +246,5 @@ def publicar_comparativo(contrato: dict, wp_url: str, wp_user: str,
 
     # O MCP direto e somente leitura. Nao simular sucesso de uma escrita
     # proibida nem recorrer ao REST sem contrato editorial assinado.
-    return {"erro": "comparativo bloqueado: criar rascunho pelo transporte editorial canônico assinado",
+    return {"erro": "MCP direto de escrita bloqueado: criar rascunho pelo transporte editorial canônico assinado",
             "status": "blocked", "retry_automatic": False}
