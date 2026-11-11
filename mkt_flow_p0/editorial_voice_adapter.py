@@ -98,9 +98,92 @@ def editorial_voice_plan(brief, *, preferred_lens=None):
     }
 
 
+# A thesis-to-consequence pathway, never a template or invented reporting.
+# Adapted as a general editorial practice; no third-party text is reproduced.
+ARGUMENT_MOVES = {
+    "documental": {
+        "thesis": "Explique a novidade comprovada e por que importa agora ao público.",
+        "evidence": "Separe documento primário, declaração interessada e lacuna verificável.",
+        "consequence": "Mostre o que muda na prática e o que ainda NÃO está disponível.",
+        "tradeoff": "Registre expectativas divergentes somente se houver fontes para ambas.",
+        "closing": "Indique o próximo fato verificável; não force recomendação de compra.",
+    },
+    "analitica": {
+        "thesis": "Formule uma interpretação provisória e testável para o problema do leitor.",
+        "evidence": "Dê a base documental e indique a força ou a amostra de cada evidência.",
+        "consequence": "Explique o que a conclusão muda em cenários e públicos distintos.",
+        "tradeoff": "Considere interpretações concorrentes e causalidade não demonstrada.",
+        "closing": "Ofereça síntese condicional, com limites e fatos capazes de revisá-la.",
+    },
+    "didatica": {
+        "thesis": "Explique qual decisão ou sintoma concreto o guia ajuda a resolver.",
+        "evidence": "Fundamente cada instrução na versão e documentação adequadas.",
+        "consequence": "Para cada passo, explicite o efeito esperado e o que pode ser perdido.",
+        "tradeoff": "Prefira correção reversível antes de medidas amplas ou destrutivas.",
+        "closing": "Indique quando funciona, quando não funciona e quando pedir suporte.",
+    },
+    "comparativa": {
+        "thesis": "Indique quais diferenças realmente decidem a escolha do leitor.",
+        "evidence": "Diferencie ficha técnica, medição própria comprovada e teste de terceiros.",
+        "consequence": "Relacione atributos a consequências e perfis concretos de uso.",
+        "tradeoff": "Pese vantagens e limitações sem inventar experiência, preços ou vencedores.",
+        "closing": "Conclua para quem e sob quais condições cada opção faz sentido.",
+    },
+    "cientifica": {
+        "thesis": "Formule a pergunta investigada sem antecipar uma conclusão definitiva.",
+        "evidence": "Identifique desenho, amostra, representatividade e resultados observados.",
+        "consequence": "Traduza o significado potencial dos resultados sem extrapolação.",
+        "tradeoff": "Separe hipótese, correlação, causalidade e limites metodológicos.",
+        "closing": "Explique o que já se sabe e qual evidência mudaria o julgamento.",
+    },
+    "factual": {
+        "thesis": "Dê o fato verificável e sua consequência direta na abertura.",
+        "evidence": "Inclua só a atribuição e a confirmação suficientes para uma nota breve.",
+        "consequence": "Mostre o impacto conhecido sem inflar uma possibilidade futura.",
+        "tradeoff": "Sinalize a lacuna decisiva, sem criar falsa controvérsia.",
+        "closing": "Termine no último fato útil, sem veredito ou fechamento decorativo.",
+    },
+}
+
+
+def editorial_argument_plan(brief):
+    """Advisory argumentative movement plan, not a score or approval receipt.
+
+    Derives only from existing allowlisted lenses and immutable six-field brief.
+    """
+    voice = editorial_voice_plan(brief)
+    return {
+        "schema": "conexo-editorial-argument-plan/1",
+        "brief_sha256": voice["brief_sha256"],
+        "genre": voice["genre"],
+        "lens": voice["lens"],
+        "moves": dict(ARGUMENT_MOVES[voice["lens"]]),
+        "status": "ADVISORY_NOT_APPLIED_OR_APPROVED",
+        "factual_approval": False,
+        "publication_authorized": False,
+    }
+
+
+def argumentation_review_questions(brief):
+    """Same existing critic call; questions supplement, never replace, its rubric."""
+    plan = editorial_argument_plan(brief)
+    probes = {
+        "thesis": "A abertura traz questão/tese verificável sem inventar certeza?",
+        "evidence": "Fontes e testes têm proveniência, data e alcance adequados?",
+        "consequence": "Cada fato relevante produz consequência concreta para o leitor?",
+        "tradeoff": "Limitações, alternativas e contraexemplos estão contextualizados?",
+        "closing": "O fechamento responde à tese nos limites das evidências?",
+    }
+    return [
+        {"move": key, "review_question": probes[key], "genre_expectation": plan["moves"][key]}
+        for key in ("thesis", "evidence", "consequence", "tradeoff", "closing")
+    ]
+
+
 def writing_voice_guidance(brief):
     """Compact instruction used in an existing generation call; zero extra calls."""
     plan = editorial_voice_plan(brief)
+    arguments = editorial_argument_plan(brief)["moves"]
     return (
         "\nLENTE EDITORIAL ADAPTATIVA (MDA AUTO; NÃO é persona fictícia nem outro autor): "
         + plan["lens_name"] + ". "
@@ -112,6 +195,17 @@ def writing_voice_guidance(brief):
         + "nem varie frases artificialmente. Preserve limites, exceções e "
         + "a correspondência entre afirmação e fonte; quando faltar prova, marque pendência. "
         + "Antes de recomendar uma ação, confira se ela resolve o sintoma sem desativar ""justamente a função que o leitor quer preservar. ""Não introduza preços, capacidades, percentuais ou causalidades sem lastro explícito. ""Corte paráfrases e fechamentos decorativos sem cortar raciocínio. "
+        + "MOVIMENTO ARGUMENTATIVO (organize pelo mérito, sem copiar estruturas externas): "
+        + "Tese: " + arguments["thesis"] + " "
+        + "Prova: " + arguments["evidence"] + " "
+        + "Consequência: " + arguments["consequence"] + " "
+        + "Contrapeso: " + arguments["tradeoff"] + " "
+        + "Veredito/limite: " + arguments["closing"] + " "
+        + "Transforme dados em critérios úteis, sem reproduzir fórmulas de outro veículo. "
+        + "Não atribua à redação testes, fotografias, benchmarks ou uso de aparelhos "
+        + "não executados e documentados; atribua medições de terceiros. "
+        + "Preço e disponibilidade somente com fonte, data, mercado e variante. "
+        + "Não invente conclusão forte quando a pauta não a sustenta. "
         + "O DNA ConexoTech e a revisão humana por versão continuam prevalecendo.\n"
     )
 
