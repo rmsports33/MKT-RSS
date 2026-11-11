@@ -4,7 +4,7 @@ import tempfile
 from pathlib import Path
 import unittest
 
-from mkt_flow_p0.wp_quality_executor import WPReadError, review_once, _private_db
+from mkt_flow_p0.wp_quality_executor import WPReadError, WPClient, _NoRedirect, review_once, _private_db
 from mkt_flow_p0.revisor_qualidade_unico import _sha
 
 
@@ -75,6 +75,30 @@ class TestCloudAdapter(unittest.TestCase):
             with self.assertRaises(WPReadError):
                 review_once(FakeWP(mutate=True), 9768, {}, db)
             self.assertFalse(Path(db).exists())
+
+    def test_wrong_domain_and_url_components_fail_closed(self):
+        for url in ("https://evil.invalid", "http://conexotech.com.br",
+                    "https://conexotech.com.br:444", "https://conexotech.com.br/other",
+                    "https://conexotech.com.br?redirect=1"):
+            with self.subTest(url=url), self.assertRaises(ValueError):
+                WPClient(url, "editor", "test-app-password")
+
+    def test_redirect_rejected_before_authorization_leaves_origin(self):
+        handler = _NoRedirect()
+        from urllib.request import Request
+        with self.assertRaises(WPReadError):
+            handler.redirect_request(Request("https://conexotech.com.br/wp-json/wp/v2/posts/1"),
+                                     None, 302, "redirect", {}, "https://evil.invalid/steal")
+
+    def test_published_post_never_generates_review_or_submission(self):
+        with tempfile.TemporaryDirectory() as root:
+            client = FakeWP()
+            client.p["status"] = "publish"
+            db = str(Path(root) / "report.db")
+            with self.assertRaises(WPReadError):
+                review_once(client, 9768, {}, db, submit_quality=True)
+            self.assertFalse(Path(db).exists())
+            self.assertEqual(client.writes, [])
 
     def test_no_remote_submission_of_partial_review(self):
         with tempfile.TemporaryDirectory() as root:
