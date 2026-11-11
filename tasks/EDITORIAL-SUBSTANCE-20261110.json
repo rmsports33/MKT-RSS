@@ -309,18 +309,47 @@
       "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42940784241",
       "result": "PASS",
       "scope": "Conexo OS editorial validation for PR92"
+    },
+    {
+      "reference": "https://github.com/rmsports33/-site-conexotech/actions/runs/43003300959",
+      "result": "PASS",
+      "tests_passed": 32,
+      "tests_failed": 0,
+      "source": "Installed controlled Gate 0.1.0-rc5 read-only source, all four PHP SHA256 matched, exact code mounted in disposable WordPress+MySQL with synthetic secret; NO production write."
+    },
+    {
+      "reference": "https://github.com/rmsports33/-site-conexotech/pull/70",
+      "result": "PRIVATE_PR_OPEN_NOT_DEPLOYED",
+      "description": "Code mirror from Hostinger kept private; GitLab mirror on merge means no automatic merge."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/42",
+      "result": "DRAFT_CORRECTED_NOT_MERGED",
+      "description": "Numeric alert is not factual approval; 0..3 relevant links with human attestation; block redirects, unauthorized origins and nondraft WordPress reads."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43004638829",
+      "result": "PASS",
+      "tests_passed": 1158,
+      "subtests": 16,
+      "scope": "PR42 security branch CI; no master merge or production activation"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43004028812",
+      "result": "IN_PROGRESS",
+      "scope": "Four-pair Groq Free A/B on PR92 argumentative MDA; encrypted-only artifacts, WordPress GET-only."
     }
   ],
   "blockers": [
-    "Parecer humano externo independente, cego, com justificativas e revisão factual por versão dos oito artigos ainda não recebido.",
-    "Pré-avaliação assistida do MDA não demonstrou ganho simultâneo de contribuição/voz nos quatro gêneros; guia MDA tem contradição de procedimento; outros textos incluem preço, percentual ou capacidade de vídeo sem lastro.",
-    "Quatro rascunhos WordPress originais preservados sem publicação; quaisquer artigos derivados precisam de revisão e aprovação vinculada à versão final, não apenas de geração Groq.",
-    "Direitos e adequação visual de imagens continuam pendentes conforme piloto WP; mídias sem proveniência não foram reanexadas.",
-    "Gate controlado WordPress 0.1.0-rc5 permanece ativo, mas bloqueio real de publicação sem aprovação não foi comprovado nesta execução.",
-    "Execução autenticada de ponta a ponta MKT-RSS → WordPress com mesma versão editorial homologada ainda não demonstrada.",
-    "Handoff Groq histórico #42809666543 continua cifrado e isolado, não bloqueia o piloto novo."
+    "Revisão humana independente dos oito textos originais e das versões finais ainda não recebida. A preferência do proprietário por B não é um parecer cego independente.",
+    "Nova comparação A/B PR92 em execução; só declarar ganho quando artefatos forem recuperados, auditados e avaliados por humano.",
+    "Fontes e fatos das cópias QA-v2 ainda exigem comprovação integral por versão, inclusive certificado primário Anatel e variantes Samsung.",
+    "Imagens de #9635, #9687 e #9681 ausentes; #9798 tem proveniência de IA declarada, mas confirmação editorial final ainda não registrada.",
+    "Gate 0.1.0-rc5 passou 32/32 em WordPress/MySQL isolados com código real da Hostinger. Configuração real de operador/segredos e bloqueio da rota de produção não foram testados para evitar publicação acidental; backup restaurável igualmente não comprovado.",
+    "PR #42 revisor único corrigido e testado em draft, mas integração real com Gate e identidade dos avaliadores ainda não homologada.",
+    "Handoff ponta a ponta MKT-RSS→WordPress para versão aprovada ainda não demonstrado; rascunhos devem continuar sem escrita."
   ],
-  "next_action": "Integração técnica da nova linha argumentativa MDA/ConexoTech concluída na master (PR92; CI verde). Ainda é necessário validar melhoria de prosa produzida por esta NOVA versão por A/B comparável sem confundir a execução antiga Groq #42917583190 com o prompt atualizado; obter revisor HUMANO independente cego para os 8 textos antigos, fact-check das cópias QA-v2 por versão, direitos/licenças das imagens e teste real do Gate WordPress rc5 seguro. Não publicar, não reintroduzir staging e não acionar nova geração Groq automaticamente.",
+  "next_action": "Concluir recebimento do A/B PR92 #43004028812, preservar ciphertext e chave privada separados, auditar os textos completos e entregar caderno cego sem a chave. Não criar outro revisor nem integrar PR42 draft enquanto falta comprovar um único Gate. Gate ativo foi homologado isoladamente na exata fonte PHP instalada (32/32), mas sua configuração de produção continua distinta e não testada. Realizar parecer humano independente, factualidade completa, imagens e provas de rollback antes de autorizar qualquer publicação. Sem staging.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -517,8 +546,25 @@
     "mda_argumentative_current_prose_human_review": "PENDING",
     "mda_argumentative_current_prose_live_ab": "NOT_RUN_NEW_REVISION",
     "mda_external_editorial_reference": "CANALTECH_S26FE_20261104_REASONING_ONLY_NO_COPY",
-    "mda_owner_blind_preference": "B_IN_FOUR_CASES_USER_PREFERENCE_ONLY_NOT_INDEPENDENT_ACCEPTANCE"
+    "mda_owner_blind_preference": "B_IN_FOUR_CASES_USER_PREFERENCE_ONLY_NOT_INDEPENDENT_ACCEPTANCE",
+    "gate_active_version": "CONEXO_CONTROLLED_0.1.0_RC5",
+    "gate_active_code_snapshot": "HOSTINGER_READ_ONLY_SHA256_VERIFIED_PRIVATE_SITE_PR70",
+    "gate_active_isolated_wp_mysql": "PASS_32_OF_32_RUN_43003300959",
+    "gate_active_isolated_code_files_sha256_checked": 4,
+    "gate_real_production_publish_attempt": "NOT_EXECUTED_INTENTIONALLY",
+    "gate_real_hostinger_secret_config": "NOT_READ_OR_PROVEN",
+    "gate_production_backup_restore_test": "NOT_PROVEN",
+    "gate_historical_mu_plugin": "INACTIVE_NOT_TO_REACTIVATE",
+    "editorial_unique_reviewer_pr42": "DRAFT_SECURITY_FIXES_CI_1158_PASS_16_SUBTESTS_NOT_MERGED",
+    "editorial_unique_reviewer_factual_evidence": "NO_NUMERIC_ALERT_IS_NOT_FACTUAL_PROOF",
+    "editorial_unique_reviewer_internal_links": "MAX_THREE_RELEVANT_NO_QUOTA_HUMAN_EVIDENCE",
+    "mda_argumentative_new_live_ab": "IN_PROGRESS_GITHUB_RUN_43004028812",
+    "mda_argumentative_new_live_ab_model": "openai/gpt-oss-120b",
+    "mda_argumentative_new_live_ab_max_calls": 8,
+    "guide_9798_featured_media_provenance": "CHATGPT_AI_GENERATED_DECLARED_WP_MEDIA_9799",
+    "guide_9798_featured_media_visual_factual_rights": "FINAL_HUMAN_CONFIRMATION_PENDING",
+    "other_three_articles_featured_media": "MISSING"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
-  "checked_at": "2026-11-10"
+  "checked_at": "2026-11-11"
 }
