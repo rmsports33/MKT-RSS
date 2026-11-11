@@ -228,7 +228,7 @@ def editorial_placeholder_signals(markdown):
     fenced = False
     marker = None
     for line in markdown.splitlines():
-        fence = re.match(r"^\\s*(`{3,}|~{3,})", line)
+        fence = re.match(r"^\s*(`{3,}|~{3,})", line)
         if fence:
             glyph = fence.group(1)[0]
             if not fenced:
@@ -240,19 +240,19 @@ def editorial_placeholder_signals(markdown):
             lines.append(line)
     body = "\n".join(lines)
     # [Apple](https://...) is a citation/link, not an unfinished manuscript.
-    body = re.sub(r"\\[[^]\\n]+\\]\\(https?://[^)\\n]+\\)", "", body)
+    body = re.sub(r"\[[^]\n]+\]\(https?://[^)\n]+\)", "", body)
     placeholder = re.compile(
-        r"\\[(?:\\s*(?:jogo|produto|modelo|marca|nome|empresa|autor|cidade|"
-        r"pre[cç]o|dado|n[uú]mero|fonte|link|imagem|data)\\s+"
-        r"(?:x|y|z|a\\s+definir|a\\s+confirmar)\\s*|"
+        r"\[(?:\s*(?:jogo|produto|modelo|marca|nome|empresa|autor|cidade|"
+        r"pre[cç]o|dado|n[uú]mero|fonte|link|imagem|data)\s+"
+        r"(?:x|y|z|a\s+definir|a\s+confirmar)\s*|"
         r"(?:inserir|preencher|adicionar|substituir|todo|tbd|xxx)"
-        r"[^]\\n]{0,80}|link\\s+afiliado)\\]",
+        r"[^]\n]{0,80}|link\s+afiliado)\]",
         re.IGNORECASE,
     )
     meta = re.compile(
-        r"\\b(?:este\\s+texto\\s+segue\\s+o\\s+briefing\\s+editorial|"
-        r"como\\s+modelo\\s+de\\s+linguagem|"
-        r"este\\s+artigo\\s+foi\\s+(?:gerado|produzido)\\s+(?:por|com)\\s+(?:um\\s+)?prompt)\\b",
+        r"\b(?:este\s+texto\s+segue\s+o\s+briefing\s+editorial|"
+        r"como\s+modelo\s+de\s+linguagem|"
+        r"este\s+artigo\s+foi\s+(?:gerado|produzido)\s+(?:por|com)\s+(?:um\s+)?prompt)\b",
         re.IGNORECASE,
     )
     signals = []
