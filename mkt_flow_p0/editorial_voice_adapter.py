@@ -422,7 +422,8 @@ def editorial_readiness(markdown, receipts):
     return {
         "schema": "conexo-editorial-readiness/1",
         "content_sha256": sha,
-        "ready_for_gate": not missing,
+        "receipts_complete_unverified": not missing,
+        "ready_for_gate": False,
         "missing_receipts": missing,
         "publication_authorized": False,
         "note": "Apenas diagnóstico: Gate operacional deve autenticar pareceres.",
