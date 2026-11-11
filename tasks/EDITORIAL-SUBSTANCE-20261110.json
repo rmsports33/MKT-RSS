@@ -377,6 +377,21 @@
       "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/qa_v1_preview_390_1440_results.json",
       "result": "HTML_PREVIEW_390_AND_1440_PASS",
       "description": "All 4 panels inspected with headless Chromium at 390/1440 px, no document horizontal overflow, local tables scroll within container; this is not WordPress rendering evidence."
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/conexotech_qa_v2_quatro_artigos_e_evidencias_20261111.zip",
+      "result": "QA_V2_PRIVATE_COMPLETE",
+      "details": "Four full preferred manuscripts, 35 traceable corrections from QA-v1, 26 claim records, provenance/rights notes for 1 existing AI image and 3 free-bank Pexels candidates, 8/8 local static HTML viewport checks; no WordPress edits."
+    },
+    {
+      "reference": "https://informacoes.anatel.gov.br/legislacao/atos-complementares-de-regulacao/2129",
+      "result": "PRIMARY_ANATEL_ACT_CONFIRMED",
+      "scope": "Ato 3084 covers frequency coordination for SpaceSail; does not identify terminal homologation STG-S001-A0 nor consumer service plans."
+    },
+    {
+      "reference": "https://www.pexels.com/pt-br/licenca/",
+      "result": "FREE_BANK_LICENSE_GUIDELINES_REVIEWED",
+      "scope": "Three candidates have individual Pexels pages stating License Free; not downloaded, visually verified in full or uploaded to WordPress. Brand and illustration caveats remain."
     }
   ],
   "blockers": [
@@ -388,7 +403,7 @@
     "PR #42 revisor único corrigido e testado em draft, mas integração real com Gate e identidade dos avaliadores ainda não homologada.",
     "Handoff ponta a ponta MKT-RSS→WordPress para versão aprovada ainda não demonstrado; rascunhos devem continuar sem escrita."
   ],
-  "next_action": "Quatro versões escolhidas pelo proprietário agora têm cópias privadas QA-v1 com 23 correções e fontes pontuais, sem tocar nos oito originais A/B. O avaliador externo deve revisar somente os oito braços originais em caderno cego (sem preferência do proprietário, chaves ou QA-v1). Após parecer externo assinado, proceder a fact-check completo de cada cópia preferida, licenças/capas, inspeção visual 390/1440 e Gate operacional por versão. Sem publicar antes de autorização real.",
+  "next_action": "QA-v2 das quatro cópias preferidas concluída como PREPARAÇÃO PRIVADA: 35 alterações rastreáveis, 26 claims com fontes/estado e 8/8 testes estáticos de preview 390/1440. Imagem WP #9799 tem proveniência IA declarada; 3 fotos candidatas Pexels estão identificadas mas não baixadas nem validadas como capas finais. Gate rc5 32/32 WP isolado, porém verificação operacional real/backups pendente. Certidão primária STG-S001-A0 na Anatel, preço por SKU Samsung, aceite humano independente e por versão ainda faltam. Não alterar WordPress, não publicar e não revelar MDA/controle ao avaliador.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -640,7 +655,26 @@
     "mda_owner_second_round_editorial_qa_preview_visual": "PASS_390_1440_ALL_FOUR_PANELS_LOCAL_HTML",
     "mda_owner_second_round_editorial_qa_preview_mobile_tables": "HORIZONTAL_SCROLL_INSIDE_TABLE_ONLY",
     "mda_owner_second_round_editorial_qa_visual_evidence": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/qa_v1_preview_390_1440_results.json",
-    "mda_owner_second_round_editorial_qa_wp_actual_visual": "NOT_TESTED_LIVE_WORDPRESS"
+    "mda_owner_second_round_editorial_qa_wp_actual_visual": "NOT_TESTED_LIVE_WORDPRESS",
+    "mda_owner_second_round_qa_v2": "FOUR_PRIVATE_COMPLETE_WORKING_COPIES_CREATED_NOT_WORDPRESS",
+    "mda_owner_second_round_qa_v2_primary_sources": "APPLE_SAMSUNG_GDC_QUANTIC_NVIDIA_ANATEL",
+    "mda_owner_second_round_qa_v2_edits": 35,
+    "mda_owner_second_round_qa_v2_claim_matrix": 26,
+    "mda_owner_second_round_qa_v2_claim_approval": "PARTIAL_NOT_FINAL",
+    "mda_owner_second_round_qa_v2_anatel_official": "ACT_3084_2026_COVERED_COORDINATION_NOT_TERMINAL_CERTIFICATE",
+    "mda_owner_second_round_qa_v2_anatel_terminal": "STG_S001_A0_SECONDARY_ONLY_PRIMARY_PENDING",
+    "mda_owner_second_round_qa_v2_iphone": "APPLE_KEYBOARD_RESET_SCOPE_SOURCES_DIFFER_WARNING_INCLUDED",
+    "mda_owner_second_round_qa_v2_gdc": "GDC_MORE_THAN_2300_QUANTIC_1799_CONFIRMED",
+    "mda_owner_second_round_qa_v2_dlss": "NVIDIA_2K_OFFICIAL_NBA2K27_SUPPORTED_NO_INDEPENDENT_BENCHMARK",
+    "mda_owner_second_round_qa_v2_samsung": "A16_HYBRID_MICROSD_AND_A36_SEPARATE_45W_CHARGER_REPORTED",
+    "mda_owner_second_round_qa_v2_image_options": "THREE_PEXELS_FREE_LICENSE_CANDIDATES_NOT_DOWNLOADED_NOT_ATTACHED",
+    "mda_owner_second_round_qa_v2_original_cover": "WP_9799_AI_PROVENANCE_DECLARED_NEEDS_VISUAL",
+    "mda_owner_second_round_qa_v2_visual": "8_8_LOCAL_HTML_390_1440_PASS_WORDPRESS_NOT_TESTED",
+    "mda_owner_second_round_qa_v2_artifact": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/conexotech_qa_v2_quatro_artigos_e_evidencias_20261111.zip",
+    "mda_owner_second_round_qa_v2_preview": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/preview_quatro_artigos_qa_v2_20261111.html",
+    "mda_owner_second_round_qa_v2_external_reviewer": "NOT_RECEIVED",
+    "mda_owner_second_round_qa_v2_wp_writes": 0,
+    "mda_owner_second_round_qa_v2_groq_calls": 0
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-11"
