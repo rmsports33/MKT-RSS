@@ -1,0 +1,59 @@
+name: MDA argumentativo A/B - piloto unico autorizado
+run-name: Piloto argumentativo controlado de quatro pares (sem WordPress writes)
+
+on:
+  push:
+    branches: [master]
+    paths: [.github/workflows/mda-argumentative-ab-once-20261111.yml]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mda-ab-argumentativo-20261111-once
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    if: >-
+      ${{ github.event_name == 'push' && github.repository == 'rmsports33/MKT-RSS' && github.ref == 'refs/heads/master' && github.actor == 'rmsports33' && startsWith(github.event.head_commit.message, 'homolog: run owner-approved MDA argument AB once 20261111') }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 20
+    steps:
+      - name: Checkout codigo exato do MDA em master sem credenciais no Git
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.sha }}
+          persist-credentials: false
+
+      - name: Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar somente dependencias existentes do executor cifrado
+        run: python -m pip install -q -r requirements/rss.txt 'cryptography>=45,<47'
+
+      - name: Gerar quatro pares completos controle versus MDA PR92, cifrados
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          MDA_AB_FREE_CONFIRMATION: CONFIRMED_FREE_TIER
+          MDA_AB_MAX_CALLS: '8'
+          CONEXO_RSS_DRAFT: '0'
+          CONEXO_RSS_DRAFT_STAGING: '0'
+        run: |
+          set -euo pipefail
+          python -m scripts.run_mda_live_ab_once
+
+      - name: Guardar apenas ciphertext e recibo publico saneado por 1 dia
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: mda-ab-argumentativo-cifrado-${{ github.run_id }}
+          path: work/mda-ab-live/public/
+          if-no-files-found: error
+          retention-days: 1
