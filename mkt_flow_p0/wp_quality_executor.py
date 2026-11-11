@@ -24,11 +24,19 @@ class WPReadError(RuntimeError):
     pass
 
 
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    # Do not send the Application Password to a redirected endpoint.
+    def redirect_request(self, req, fp, code, msg, hdrs, newurl):
+        raise WPReadError("WordPress redirect forbidden")
+
+
 class WPClient:
     def __init__(self, site, username, app_password):
         parsed = urllib.parse.urlparse(site)
-        if parsed.scheme != "https" or not parsed.hostname or parsed.username or parsed.password:
-            raise ValueError("WP site must be an HTTPS origin")
+        if (parsed.scheme != "https" or parsed.hostname != "conexotech.com.br"
+                or parsed.username or parsed.password or parsed.path not in ("", "/")
+                or parsed.query or parsed.fragment or parsed.port not in (None, 443)):
+            raise ValueError("WP site must be the authorized HTTPS ConexoTech origin")
         if not username or not app_password:
             raise ValueError("WordPress authentication not configured")
         self.origin = parsed.scheme + "://" + parsed.netloc
@@ -42,7 +50,8 @@ class WPClient:
             headers={"Authorization": self.auth, "Accept": "application/json",
                      "Content-Type": "application/json", "User-Agent": "ConexoQuality/1"})
         try:
-            with urllib.request.urlopen(req, timeout=20) as response:
+            opener = urllib.request.build_opener(_NoRedirect)
+            with opener.open(req, timeout=20) as response:
                 actual = urllib.parse.urlparse(response.geturl())
                 if actual.scheme != "https" or actual.netloc != urllib.parse.urlparse(self.origin).netloc:
                     raise WPReadError("Unexpected redirect target")
@@ -104,6 +113,8 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False):
     if type(post_id) is not int or post_id <= 0:
         raise ValueError("post_id invalid")
     first = client.post(post_id)
+    if not isinstance(first, dict) or first.get("status") != "draft" or first.get("id") != post_id:
+        raise WPReadError("WordPress post is not the requested draft")
     media_id = first.get("featured_media")
     media = client.media(media_id) if type(media_id) is int and media_id > 0 else None
     report = avaliar_artigo(
@@ -114,7 +125,7 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False):
     )
     # Detect concurrent edits between read and commit of the private report.
     latest = client.post(post_id)
-    if not verificar_versao(report, latest):
+    if not isinstance(latest, dict) or latest.get("status") != "draft" or not verificar_versao(report, latest):
         raise WPReadError("Article changed while reviewing; rerun")
     with _private_db(db_path) as conn:
         conn.execute("""INSERT INTO quality_reviews
