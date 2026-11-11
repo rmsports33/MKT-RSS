@@ -1,5 +1,41 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
+## Desenvolvimento substantivo — precedência 10/11/2026
+
+- Online, importar artigo pendente inclui planejamento, adaptação e crítica pelo
+  provedor existente automaticamente. `--adapt-editorial` força nova adaptação;
+  não é requisito de execução dos módulos. `--offline` preserva o insumo e registra
+  as pendências; não inventa redação, voz aplicada ou aprovação.
+- RSS prepara briefing quando necessário e critica o texto final, incluindo
+  atribuição e links, com até duas redações. Falha de provedor permanece pendente.
+- Briefing define leitor, necessidade, recorte, contribuição e limites. Avaliação
+  substantiva exige justificativa e trechos literais vinculados ao texto e briefing;
+  PROMPT_APPLIED isolado não aprova qualidade. Crítica pode usar o mesmo modelo:
+  declarar revisão assistida, nunca independência ou aceite humano inexistentes.
+- Adaptação feita por Codex/ChatGPT pode usar ASSISTED_ADAPTED com hash do conteúdo;
+  nunca usar HUMAN_ADAPTED para personificar o proprietário nem alegar chamada de
+  system prompt externo que não ocorreu. Edição invalida a avaliação textual.
+- Aplicar até três links internos realmente relacionados; não completar quota com
+  links irrelevantes. Links internos presentes sem verificação continuam pendentes.
+- No workflow manual, github.sha fixa o código da própria execução e evita rodar
+  um snapshot antigo depois de corrigir o motor. Não ativa cron nem publicação.
+- Critério técnico não certifica fatos nem padrão acima da média. Artigo final e
+  recibo da versão continuam necessários para revisão do proprietário.
+
+## Gate editorial obrigatorio — 10/11/2026
+
+- Toda rota de geração/importação passa pelo mesmo módulo de prontidão. Aplicar a identidade não pode ser inferido do nome da marca nos metadados.
+- O gerador MKT-RSS registra hashes do DNA e do prompt. Importações aceitam prova verificável de outro provedor ou atestado humano vinculado ao hash do Markdown; sem prova, recebem `persona_editorial_nao_aplicada` e não podem ser declaradas completas para revisão.
+- Toda execução produz lista de módulos, manifesto por versão e status de conclusão. `EXECUTED` não significa `PASS`; mudanças no conteúdo invalidam o recibo anterior.
+- Apresentar ao proprietário o artigo completo e o manifesto correspondente; nunca perguntar se os módulos devem ser usados. A revisão humana do conteúdo e a autorização de publicação continuam separadas.
+- Detalhes: `docs/EDITORIAL_ORCHESTRATION_GATE_20261110.md`.
+
+## Precedencia do usuario — 08/11/2026
+
+MKT-RSS e o motor completo e unico publicador do fluxo RSS. ChatGPT e apoio opcional: nao exigir conversa, sessao Work ou servico Conexo OS em execucao para operar. O validador Conexo OS fixado por hash continua dependencia de codigo, nao outro publicador. Uma identidade WordPress de editor de servico MKT-RSS basta; revisao e aprovacao humanas continuam independentes e vinculadas a versao. Contrato preparado: `docs/MKT_PRIMARY_PUBLISHER_20261108.md`. Instalacao/configuracao real e aprovacao de artigo sao etapas distintas da integracao de codigo.
+
+`--handoff-only --handoff-dir` bloqueia escrita remota mesmo com flags de rascunho ativas. Pacotes mantem revisao humana pendente; `--research-context` nao aprova conteudo. Preservar pesquisa gratuita de imagens, proveniencia e validacao de direitos; imagem extraida do RSS nao autoriza reutilizacao.
+
 ## Decisões vigentes e precedência — 05–06/11/2026
 
 - **MKT-RSS é motor editorial completo**, não mero alimentador RSS: preservar coleta, filtros, pesquisa/insumos de fontes complementares, redação Groq Free ou outro provedor autorizado, DNA ConexoTech, SEO, mídias com direitos verificados, pacote com hash, links relacionados e criação de rascunhos privados. ChatGPT-first é o colaborador de apuração/revisão, não o substituto obrigatório do MKT-RSS. O WordPress REST/MCP também pode operar diretamente uma pauta sem exigir que Python esteja ativo.
@@ -28,3 +64,30 @@ A divisão Work (operação) / Codex Cloud (engenharia) é temporária para desb
 - SEM_ALERTAS não comprova factualidade. Preservar o bloqueio de escrita quando o gate factual não estiver integrado.
 - Trabalhar em branch isolada, validar proporcionalmente e preservar mudanças preexistentes. Merge, deploy, publicação e custos dependem do escopo autorizado.
 - Drive V3 continua oficial; memória não concede autorização. Não ativar publicação ou agendamentos ao aplicar estas diretrizes.
+
+## Precedencia expressa do proprietario - 08/11/2026
+
+O usuario autorizou "Autorizar aprovacao pelo proprietario" para resolver a publicacao do artigo #9768 sem trocar sua autoria nem criar terceiro usuario. RC5 permite o aceite humano explicito do proprietario verificado ID3, vinculado ao snapshot, SEO e evidencias de qualidade. O publicador tecnico MKT-RSS ID4 permanece impedido de aprovar e continua sendo o unico publicador desse fluxo.
+
+Esse modo se registra como review_mode=owner e nao representa revisao independente por outra pessoa. Nao fabricar conferencia visual, fatos, aceite ou assinatura. A tela administrativa exige verificacao humana; texto alterado invalida a aprovacao. HMAC privada, Turso, leitura de confirmacao, reserva por versao e SEO assinado continuam obrigatorios no publicador MKT-RSS do modo owner. A politica anterior de impedir autor=aprovador continua para o modo independent; a excecao autorizada e restrita ao proprietario e exige papel administrativo vigente.
+
+MKT-RSS e o motor prioritario e o publicador; ChatGPT e apoio opcional. Fluxo e evidencias: docs/OWNER_APPROVAL_20261108.md. Nunca transformar um teste verde em aprovacao editorial ou desativar o Gate para publicar.
+
+## Integração MDA AUTO — voz adaptativa, 10/11/2026
+
+- Reutilizar somente os princípios do acervo documental MDA AUTO: função do trecho, progressão, interpretação, contenção da evidência, voz decorrente do argumento, ritmo proporcional e revisão cirúrgica. O sistema acadêmico permanece separado; não criar executor ou personalidade fictícia.
+- O adaptador leve mkt_flow_p0/editorial_voice_adapter.py usa os seis campos existentes de briefing sem alterar contrato/hash ou o DNA ConexoTech. writing_instruction injeta uma lente por gênero na geração habitual; o revisor existente avalia progressão e qualidade sem nova chamada. Pode aumentar tokens no prompt já usado.
+- Sinais superficiais de estilo são apenas alertas de revisão: não concedem PASS, não certificam fatos e não autorizam publicar. Continuam obrigatórios direitos de imagens, fonte verificada, aprovação humana da versão e Gate Editorial.
+- Homologar qualquer ganho real por comparação A/B de artigos completos com fontes idênticas e avaliador humano cego; evitar declarar qualidade acima da média apenas por CI ou avaliação do próprio modelo. Detalhes: docs/EDITORIAL_MDA_ADAPTIVE_VOICE_20261110.md.
+
+## Qualidade MDA: protocolo A/B controlado (10/11/2026)
+
+- Comparar controle (sem instrução adicional MDA) e tratamento (com MDA), mantendo mesmas fontes/briefing/modelo/parâmetros, sem substituir o redator e sem nova chamada obrigatória. O fluxo normal continua com MDA.
+- Scripts opcionais de preparação e empacotamento A/B são locais, sem rede; materiais completos não podem ser versionados em GitHub público. Chave A/B fica separada do pacote do avaliador humano.
+- Um preflight verde não comprova execução Groq, qualidade nem consentimento de publicação. O avaliador independente deve examinar textos completos, e as falhas factuais não podem ser maquiadas por estilo. Protocolo: docs/EDITORIAL_MDA_AB_CONTROLLED_20261110.md.
+
+## Referência externa de qualidade editorial — 10/11/2026
+
+- O proprietário indicou a análise Canaltech sobre Galaxy S26 FE (04/11/2026) como possível exemplo de boa escrita. Aprendizado: tese explícita, evidência rastreável, consequência prática de cada especificação, trade-offs, perfis de leitor e veredito condicionado aos fatos — **não** reproduzir estrutura ou texto de terceiros nem impor template a todo gênero.
+- Não alegar testes, preço atual ou experiência pessoal do ConexoTech sem evidência própria; atribuir medições de terceiros e contextualizar preços por data/mercado/variante. A preferência anterior do proprietário por versões B é observação subjetiva separada do parecer A/B cego e não revela qual foi gerada com MDA.
+- Referência e critérios de aplicação: `docs/EDITORIAL_REFERENCE_CANALTECH_S26FE_20261110.md`. Não alterar o Gate, integrar nova persona, criar chamada IA nem homologar qualidade com base apenas nesta preferência.

@@ -29,6 +29,7 @@ jobs:
           test -f tests/test_editorial_trace_bridge.py
           test -f tests/test_editorial_trace_turso.py
           test -f tests/test_groq_trace_fingerprint.py
+          test -f tests/test_editorial_trace_release.py
           git log -1 --format='MKT-RSS trace commit: %H'
       - name: Python 3.12
         uses: actions/setup-python@v5
@@ -47,3 +48,4 @@ jobs:
           python -m unittest discover -s tests -p 'test_editorial_trace_bridge.py' -v
           python -m unittest discover -s tests -p 'test_editorial_trace_turso.py' -v
           python -m unittest discover -s tests -p 'test_groq_trace_fingerprint.py' -v
+          python -m unittest discover -s tests -p 'test_editorial_trace_release.py' -v

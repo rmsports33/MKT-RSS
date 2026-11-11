@@ -101,6 +101,31 @@ class TestRevisorUnico(unittest.TestCase):
         r = avaliar_artigo(p, media=media(), fontes=fontes())
         self.assertIn("html", r["bloqueios"])
 
+    def test_guard_atual_bloqueia_artefatos_mesmo_com_atestados(self):
+        for marker in ("[jogo X]", "[fonte a confirmar]",
+                       "Este texto segue o briefing editorial.",
+                       "[jogo <em>X</em>]", "&#91;jogo X&#93;"):
+            with self.subTest(marker=marker):
+                p = artigo()
+                p["content"] += "<p>" + marker + "</p>"
+                report = avaliar_artigo(
+                    p, media=media(), fontes=fontes(), evidencias=evidencias(p),
+                    corpo_original_fonte="Google apresentou um recurso experimental sem disponibilidade geral.")
+                self.assertEqual(report["veredito"], "BLOQUEADO")
+                self.assertIn("html", report["bloqueios"])
+                self.assertTrue(report["checks"]["html"]["evidencia"])
+                self.assertFalse(report["publicacao_autorizada"])
+
+    def test_guard_preserva_citacao_com_link_real(self):
+        p = artigo()
+        p["content"] += '<p><a href="https://example.org/fonte">[fonte X]</a></p>'
+        report = avaliar_artigo(p, media=media(), fontes=fontes())
+        # HTML labels are visible manuscript text, not Markdown citations.
+        self.assertIn("html", report["bloqueios"])
+        p["content"] = p["content"].replace("[fonte X]", "Documentação Apple")
+        report = avaliar_artigo(p, media=media(), fontes=fontes())
+        self.assertEqual(report["checks"]["html"]["estado"], "VERIFICADO")
+
     def test_alegacao_propria_sem_fonte_bloqueia(self):
         p = artigo()
         p["content"] += "<p>Em nossos testes descobrimos algo.</p>"

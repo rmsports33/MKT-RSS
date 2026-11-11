@@ -45,6 +45,18 @@ def init_db():
     con.close()
 
 
+def confirmar_readback_trilha(resultado: dict) -> bool:
+    """A telemetry PASS requires the actual successful draft readback result."""
+    return (
+        isinstance(resultado, dict)
+        and resultado.get("acao") == "publicado_rascunho"
+        and resultado.get("status") == "draft"
+        and type(resultado.get("post_id")) is int
+        and resultado["post_id"] > 0
+        and not resultado.get("erro")
+    )
+
+
 def classificar_resultado_wp(resultado: dict) -> str:
     """Only a confirmed WordPress draft counts as successful delivery."""
     if (isinstance(resultado, dict) and not resultado.get("erro")
@@ -83,8 +95,33 @@ def avaliar_gate_publicacao(titulo: str, texto: str, links: list) -> dict:
         }
 
 
-def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None) -> dict:
-    """Processa 1 item RSS. Retorna {acao: publicado_rascunho|bloqueado|falha, ...}."""
+def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", publication_reference=None, operation_nonce=None, trace_run_id=None):
+    """Conclusão supervisionada da pauta RSS; jamais certifica texto automaticamente."""
+    from mkt_flow_p0.editorial_transport import publish_package
+    payload = package.get("payload", {}) if isinstance(package, dict) else {}
+    discovery = payload.get("discovery")
+    if (not isinstance(discovery, dict) or not isinstance(discovery.get("pauta_id"), str)
+            or len(discovery["pauta_id"]) != 32
+            or any(c not in "0123456789abcdef" for c in discovery["pauta_id"])
+            or not any(isinstance(s, dict) and s.get("url") == discovery.get("source_url")
+                       for s in payload.get("sources", []))):
+        return {"acao": "bloqueado", "erro": "origem da pauta RSS não corresponde às fontes apuradas"}
+    return publish_package(package, core_root=core_root, actor_id=actor_id, intent=intent, operation_nonce=operation_nonce,
+        trace_run_id=trace_run_id, publication_reference=publication_reference, wp_url=os.getenv("WP_URL", ""),
+        wp_user=os.getenv("WP_USER", ""), wp_password=os.getenv("WP_APP_PASSWORD", ""))
+
+
+def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None,
+                   pacote_editorial=None, core_root=None, actor_id=None, contexto_complementar=None, handoff_only=False,
+                   featured_media_id=None, media_rights_confirmed=False) -> dict:
+    """Processa RSS: rascunho WP, handoff offline ou bloqueio sem publicar."""
+    if pacote_editorial is not None:
+        if handoff_only:
+            return {"acao": "bloqueado", "erro": "handoff-only não aceita pacote de publicação"}
+        discovery = pacote_editorial.get("payload", {}).get("discovery", {})
+        if dry_run or discovery.get("source_url") != item.get("link"):
+            return {"acao": "bloqueado", "erro": "dry-run não escreve; pauta deve corresponder ao pacote"}
+        return processar_pacote_editorial(pacote_editorial, core_root=core_root, actor_id=actor_id)
     from mkt_flow_p0.content_filter import filtrar_item_rss, filtrar_conteudo, filtrar_por_tema
     from mkt_flow_p0.extractor import extrair_conteudo
     from mkt_flow_p0.rewriter import reescrever_materia, adicionar_atribuicao
@@ -145,23 +182,126 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     except Exception as e:
         logger.warning(f"keywords puladas: {e}")
 
-    rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
-                            fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
-                            keywords=kws, evidencias_aprovadas=evidencias_aprovadas)
-    if "erro" in rw:
-        return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte}
-
-    texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
+    contexto_pesquisa = contexto_complementar
+    if contexto_pesquisa is None and os.getenv("CONEXO_RSS_RESEARCH_FEEDS") == "1":
+        from mkt_flow_p0.research_candidates import descobrir_fontes_candidatas
+        try:
+            contexto_pesquisa = descobrir_fontes_candidatas(
+                ext.get("titulo") or item.get("titulo", ""), url_fonte,
+                fonte_original=item.get("fonte", ""))
+        except (ValueError, TypeError, OSError) as exc:
+            logger.warning("Pesquisa RSS auxiliar indisponivel: %s", str(exc)[:100])
+            contexto_pesquisa = None
+    from mkt_flow_p0.editorial_development import plan_brief_with_provider, review_with_provider, ReviewProviderFailure
+    from mkt_flow_p0.editorial_substance import assess_substance
+    brief = item.get("editorial_brief")
+    planning = "SUPPLIED" if brief is not None else "PENDING"
+    if brief is None:
+        try:
+            brief = plan_brief_with_provider(ext.get("titulo") or item.get("titulo", ""),
+                ext["texto"], genre=item.get("genero", "noticia"), research=contexto_pesquisa)
+            planning = "PLANNED_WITH_PROVIDER"
+        except ValueError:
+            logger.warning("Briefing específico pendente; candidato não será declarado pronto")
+    editorial_attempts = []
+    feedback = None
+    relacionados = []
+    for attempt in range(2 if brief is not None else 1):
+        rw = reescrever_materia(ext.get("titulo") or item.get("titulo", ""), ext["texto"],
+                                fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
+                                keywords=kws, evidencias_aprovadas=evidencias_aprovadas,
+                                contexto_complementar=contexto_pesquisa,
+                                editorial_brief=brief, editorial_feedback=feedback)
+        if "erro" in rw:
+            from mkt_flow_p0.editorial_trace import make_trace
+            trace = make_trace(url_fonte, "", error=rw["erro"])
+            return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte,
+                    "editorial_trace": trace}
+        texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
+        if os.getenv("CONEXO_RSS_RELATED_LINKS") == "1":
+            from mkt_flow_p0.related_posts import buscar_relacionados_wordpress, anexar_relacionados
+            if attempt == 0:
+                relacionados = buscar_relacionados_wordpress(rw["titulo_seo"], "https://conexotech.com.br")
+            if relacionados:
+                texto_final = anexar_relacionados(texto_final, relacionados)
+        if isinstance(rw.get("editorial_handoff"), dict):
+            from mkt_flow_p0.editorial_identity import (
+                atualizar_handoff_revisao, validar_handoff_chatgpt)
+            try:
+                validar_handoff_chatgpt(rw["editorial_handoff"])
+            except ValueError:
+                return {"acao": "falha", "motivo": "handoff_editorial_invalido",
+                        "url": url_fonte, "escreveu": False}
+            try:
+                rw["editorial_handoff"] = atualizar_handoff_revisao(
+                    rw["editorial_handoff"], texto_final, related_articles=relacionados,
+                    featured_media_id=featured_media_id,
+                    media_rights_confirmed=media_rights_confirmed)
+            except ValueError:
+                # Never retain the original handoff after the final Markdown changed.
+                # Otherwise a successful artifact could refer to a different article.
+                return {"acao": "falha", "motivo": "handoff_version_update_failed",
+                        "url": url_fonte, "escreveu": False}
+            if rw["editorial_handoff"]["markdown"] != texto_final:
+                return {"acao": "falha", "motivo": "handoff_content_mismatch",
+                        "url": url_fonte, "escreveu": False}
+        review = None
+        review_diagnostic = "NOT_RUN_NO_BRIEF" if brief is None else "NOT_RUN_NO_VALID_HANDOFF"
+        review_failure_code = None
+        if brief is not None and isinstance(rw.get("editorial_handoff"), dict):
+            from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt, vincular_avaliacao_substantiva
+            review_stage = "validate_handoff"
+            try:
+                validar_handoff_chatgpt(rw["editorial_handoff"])
+                review_stage = "provider_review"
+                review = review_with_provider(texto_final, brief)
+                review_stage = "attach_review"
+                rw["editorial_handoff"] = vincular_avaliacao_substantiva(
+                    rw["editorial_handoff"], brief, review)
+                review_diagnostic = "REVIEW_ATTACHED"
+            except ValueError as exc:
+                if review_stage == "provider_review" and isinstance(exc, ReviewProviderFailure):
+                    review_failure_code = exc.code
+                review_diagnostic = {
+                    "validate_handoff": "HANDOFF_INVALID",
+                    "provider_review": "PROVIDER_REVIEW_FAILED",
+                    "attach_review": "REVIEW_ATTACHMENT_FAILED",
+                }[review_stage]
+                # Never mark a detached/invalid critique as successful.
+                review = None
+                logger.warning("Revisão substantiva pendente; etapa=%s", review_diagnostic)
+        assessment = assess_substance(texto_final, brief, review)
+        if review_diagnostic == "REVIEW_ATTACHED" and not assessment["review_valid"]:
+            review_diagnostic = "REVIEW_CONTENT_INVALID"
+        editorial_attempts.append({"attempt":attempt+1, "assessment":assessment,
+                                   "review_diagnostic":review_diagnostic,
+                                   "review_failure_code":review_failure_code})
+        if assessment["status"] == "PASS" or not assessment["review_valid"]:
+            break
+        feedback = review["criteria"]
     html = markdown_para_html(texto_final)
 
     # Imagens externas e extraídas do RSS não são autorizadas automaticamente.
     # A pesquisa gratuita é opt-in, sem upload nem escrita WordPress.
     plano_imagem = {"status": "PESQUISA_NAO_EXECUTADA",
                     "proxima_etapa": "BUSCAR_BANCO_GRATUITO"}
-    if os.getenv("CONEXO_RSS_PREVIEW_SOURCE_IMAGE") == "1":
-        plano_imagem = preparar_capa(consulta_fallback=rw["titulo_seo"], timeout=10)
+    # Handoff-only blocks WP writes, not free image research. Protocol always runs.
+    from mkt_flow_p0.image_protocol import plan_image
+    plano_imagem = plan_image(rw['titulo_seo'],offline=False)
     # Qualquer candidata permanece pendente de licença/atribuição e de
     # revisão 1440px desktop / 390px celular. Não altera hash do artigo.
+    # Diagnostico de prontidao nao bloqueia o armazenamento de rascunhos;
+    # sinaliza lacunas antes da revisao humana e NUNCA autoriza publicacao.
+    from mkt_flow_p0.editorial_readiness import avaliar_prontidao_editorial
+    qualidade_editorial = avaliar_prontidao_editorial(
+        rw.get("editorial_handoff"), html=html,
+        genero=item.get("genero", "noticia"),
+        featured_media_id=featured_media_id,
+        direitos_imagem_confirmados=media_rights_confirmed,
+        verified_related_urls=[x["url"] for x in relacionados])
+
+    qualidade_editorial["desenvolvimento"] = {"planning":planning,"attempts":editorial_attempts,
+        "outcome":assessment["status"],"human_acceptance":"PENDING"}
 
     # C19: nunca considerar a ausencia de alertas como aprovacao factual.
     # A integracao do contrato de evidencias permanece obrigatoria.
@@ -191,13 +331,79 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     except Exception as exc:
         logger.warning("Auditoria de cobertura pos-IA falhou: %s", exc)
         auditoria_cobertura = {"veredito": "BLOQUEADO", "motivos": ["erro_auditoria_cobertura"]}
-    # Mesmo EVIDENCIAS_ESTRUTURADAS nao certifica as claims do HTML.
+    # Nenhuma análise automática certifica fatos: a publicação continua
+    # condicionada à revisão humana. Porém o WordPress nativo pode receber
+    # rascunhos privados para edição sem depender do novo Editorial Gate.
     verificacao_factual = "NAO_VERIFICADO"
-    # M05.2C: uma unica saida fail-closed, independente de credenciais WP.
-    # Nenhum estado de evidencias atual autoriza publicacao ou draft remoto.
+    # Build provenance from the observed Groq response, not from an
+    # imagined editorial approval. Full output gets its own content hash.
+    from mkt_flow_p0.editorial_trace import make_trace
+    trace = make_trace(url_fonte, texto_final, generated=rw,
+                       readiness=qualidade_editorial)
+    if handoff_only:
+        handoff = rw.get("editorial_handoff")
+        if not isinstance(handoff, dict):
+            return {"acao": "falha", "motivo": "handoff_editorial_ausente",
+                    "url": url_fonte, "escreveu": False}
+        from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+        try:
+            validar_handoff_chatgpt(handoff)
+        except ValueError:
+            return {"acao": "falha", "motivo": "handoff_editorial_invalido",
+                    "url": url_fonte, "escreveu": False}
+        return {
+            "acao": "pacote_editorial_criado", "escreveu": False,
+            "qualidade_editorial": qualidade_editorial,
+            "editorial_handoff": handoff, "url": url_fonte,
+            "editorial_trace": trace,
+            "verificacao_factual": verificacao_factual,
+            "auditoria_pos_ia": auditoria_pos_ia,
+            "auditoria_evidencias": auditoria_evidencias,
+            "auditoria_lastro": auditoria_lastro,
+            "auditoria_cobertura": auditoria_cobertura,
+        }
+    if os.environ.get("CONEXO_RSS_DRAFT") == "1" or os.environ.get("CONEXO_RSS_DRAFT_STAGING") == "1":
+        # Drafts must carry the same verified, still-unapproved editorial
+        # handoff as the no-write pipeline. No silent bypass on missing data.
+        handoff = rw.get("editorial_handoff")
+        if not isinstance(handoff, dict):
+            return {"acao": "falha", "motivo": "handoff_editorial_ausente",
+                    "url": url_fonte, "escreveu": False}
+        from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
+        try:
+            validar_handoff_chatgpt(handoff)
+        except ValueError:
+            return {"acao": "falha", "motivo": "handoff_editorial_invalido",
+                    "url": url_fonte, "escreveu": False}
+        from mkt_flow_p0.wp_draft_staging import stage_rss_draft
+        staged = stage_rss_draft(
+            title=rw["titulo_seo"], content=html, source_url=url_fonte,
+            wp_url=os.environ.get("WP_URL", ""), wp_user=os.environ.get("WP_USER", ""),
+            wp_password=os.environ.get("WP_APP_PASSWORD", ""),
+            featured_media_id=featured_media_id,
+            media_rights_confirmed=media_rights_confirmed,
+        )
+        staged_trace = make_trace(
+            url_fonte, texto_final, generated=rw, readiness=qualidade_editorial,
+            post_id=staged.get("post_id") if type(staged.get("post_id")) is int else None,
+            wp_readback=confirmar_readback_trilha(staged))
+        return {**staged,
+                "editorial_trace": staged_trace,
+                "qualidade_editorial": qualidade_editorial,
+                "editorial_handoff": rw.get("editorial_handoff"),
+                "url": url_fonte,
+                "verificacao_factual": verificacao_factual,
+                "auditoria_pos_ia": auditoria_pos_ia,
+                "auditoria_evidencias": auditoria_evidencias,
+                "auditoria_lastro": auditoria_lastro,
+                "auditoria_cobertura": auditoria_cobertura}
+    # Compatibilidade: modo desligado mantém a recusa anterior e não escreve.
     return {
         "acao": "bloqueado",
         "motivo": "gate_factual_pos_ia_nao_integrado",
+        "qualidade_editorial": qualidade_editorial,
+        "editorial_trace": trace,
+        "editorial_handoff": rw.get("editorial_handoff"),
         "url": url_fonte,
         "escreveu": False,
         "custo_usd": float(rw.get("custo_usd_estimado", 0) or 0),
@@ -212,9 +418,116 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     }
 
 
+def autorizar_transicao_publicacao(post_persistido: dict, revisao_factual: dict = None, *, pacote_editorial=None, core_root=None) -> dict:
+    """Guard shared by any future WordPress publisher; no remote write.
+
+    The caller must supply a freshly read WordPress post and independently
+    certified editorial evidence. Never infer approval from RSS queue status.
+    """
+    from editorial_publish_gate import authorize_publish
+    return authorize_publish(post_persistido, revisao_factual, package=pacote_editorial, core_root=core_root)
+
+
+def inspecionar_rascunho_wordpress(fetch_post, post_id: int, revisao_factual: dict) -> dict:
+    """Read-only persisted draft check; never writes or publishes."""
+    from editorial_wordpress_adapter import inspect_wordpress_draft
+    return inspect_wordpress_draft(fetch_post, post_id, revisao_factual)
+
+def planejar_transicao_publicacao(post_persistido: dict, revisao_factual: dict) -> dict:
+    """Return an offline plan only; never publish directly from RSS."""
+    from editorial_publish_transition import plan_publish_transition
+    return plan_publish_transition(post_persistido, revisao_factual)
+
 def publicar_indice() -> dict:
     """Public sitemap is disabled for the draft-only RSS pipeline."""
     return {"aviso": "indice publico desativado: RSS produz apenas rascunhos"}
+
+
+
+def resumo_seguro_cli(fonte: str, resultado: dict) -> dict:
+    """Emit only operational metadata: never unpublished body, claims or evidence.
+
+    This is particularly important for public GitHub Actions logs, which may be
+    readable by third parties even when the underlying draft remains private.
+    The complete handoff is stored on disk under --handoff-dir.
+    """
+    if not isinstance(resultado, dict):
+        return {"fonte": fonte, "acao": "falha", "motivo": "resultado_invalido"}
+    output = {"fonte": fonte, "acao": resultado.get("acao", "desconhecido")}
+    simple = ("post_id", "status", "palavras", "escreveu",
+              "verificacao_factual", "handoff_path", "trace_path",
+              "central_trace_synced", "turso_trace_synced")
+    for key in simple:
+        value = resultado.get(key)
+        if isinstance(value, (str, int, float, bool)) and not isinstance(value, complex):
+            output[key] = value if not isinstance(value, str) else value[:160]
+    reason = resultado.get("motivo", resultado.get("erro"))
+    if isinstance(reason, str):
+        # Do not print provider error bodies or HTTP secrets verbatim.
+        allowed = ("GROQ_API_KEY ausente", "handoff_editorial_ausente",
+                   "handoff_editorial_invalido", "erro_persistencia_handoff",
+                   "handoff_version_update_failed", "handoff_content_mismatch")
+        output["motivo"] = next((x for x in allowed if reason.startswith(x)), "falha_processamento")
+    elif isinstance(reason, list):
+        output["motivo"] = "revisao_necessaria"
+    quality = resultado.get("qualidade_editorial")
+    if isinstance(quality, dict):
+        output["quality_status"] = quality.get("status")
+        output["quality_pending"] = quality.get("pendencias", [])[:12]
+        output["quality_words"] = quality.get("palavras")
+        development = quality.get("desenvolvimento")
+        if isinstance(development, dict):
+            attempts = development.get("attempts")
+            if isinstance(attempts, list):
+                safe_codes = {
+                    "NOT_RUN_NO_BRIEF", "NOT_RUN_NO_VALID_HANDOFF",
+                    "HANDOFF_INVALID", "PROVIDER_REVIEW_FAILED",
+                    "REVIEW_ATTACHMENT_FAILED", "REVIEW_CONTENT_INVALID",
+                    "REVIEW_ATTACHED",
+                }
+                output["review_attempt_count"] = len(attempts)
+                output["review_diagnostics"] = [
+                    item.get("review_diagnostic")
+                    if isinstance(item, dict) and item.get("review_diagnostic") in safe_codes
+                    else "UNKNOWN"
+                    for item in attempts[:2]
+                ]
+                safe_provider_codes = {
+                    "CLIENT_UNAVAILABLE", "PROVIDER_AUTH", "PROVIDER_RATE_LIMIT",
+                    "PROVIDER_REQUEST", "PROVIDER_TIMEOUT", "PROVIDER_EXCEPTION",
+                    "RESPONSE_TRUNCATED", "RESPONSE_INVALID_JSON",
+                    "RESPONSE_INVALID_CRITERIA",
+                }
+                output["review_failure_codes"] = [
+                    item.get("review_failure_code")
+                    if isinstance(item, dict) and item.get("review_failure_code") in safe_provider_codes
+                    else None
+                    for item in attempts[:2]
+                ]
+    # Identifiers only: never log unpublished content or credentials.
+    trace = resultado.get("editorial_trace")
+    if isinstance(trace, dict):
+        run_id = trace.get("run_id")
+        if isinstance(run_id, str) and len(run_id) <= 128:
+            output["trace_run_id"] = run_id
+        output["trace_statuses"] = {
+            event["stage"]: event["status"]
+            for event in trace.get("events", [])[:12]
+            if isinstance(event, dict)
+            and isinstance(event.get("stage"), str)
+            and isinstance(event.get("status"), str)
+        }
+    handoff = resultado.get("editorial_handoff")
+    if isinstance(handoff, dict):
+        v = handoff.get("version_sha256")
+        if isinstance(v, str) and len(v) == 64:
+            output["handoff_sha256"] = v
+        output["review_status"] = handoff.get("review_status") == "PENDING_HUMAN_REVIEW"
+        m = handoff.get("metadata")
+        if isinstance(m, dict):
+            output["sources_count"] = len(m.get("sources", [])) if isinstance(m.get("sources"), list) else 0
+            output["claims_count"] = len(m.get("claims", [])) if isinstance(m.get("claims"), list) else 0
+    return output
 
 
 def main():
@@ -230,8 +543,115 @@ def main():
     ap.add_argument("--limit", type=int, default=2)
     ap.add_argument("--fonte", default="")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--import-article", type=Path,
+                    help="Artigo pesquisado: desenvolvimento editorial automático online; --offline preserva texto sem IA")
+    ap.add_argument("--adapt-editorial", action="store_true",
+                    help="Forçar nova adaptação mesmo com avaliação vigente; online já adapta artigos pendentes automaticamente")
+    ap.add_argument("--image-manifest",type=Path,help="Imagem licenciada preparada; cópia local/preview sem upload")
+    ap.add_argument("--offline",action="store_true",help="Sem pesquisa de imagem na rede; protocolo mantém pendências explícitas")
+    ap.add_argument("--genero", choices=("noticia","guia","review","comparativo","analise","nota_breve"), default="guia")
     ap.add_argument("--queue-only", action="store_true", help="Coletar apenas pautas na fila, sem IA ou WordPress")
+    ap.add_argument("--research-context", type=Path,
+                    help="JSON com source_url + sources complementares para UMA pauta correspondente")
+    ap.add_argument("--handoff-dir", type=Path,
+                    help="Salvar pacote editorial versionado em diretório local")
+    ap.add_argument("--featured-media-id", type=int,
+                    help="ID de imagem ja presente no WP, autorizada explicitamente")
+    ap.add_argument("--confirm-media-rights", action="store_true",
+                    help="O operador confirmou os direitos de reutilizacao desta imagem")
+    ap.add_argument("--handoff-only", action="store_true",
+                    help="Gerar apenas pacote para revisão; nunca escrever no WordPress")
+    ap.add_argument("--editorial-package", type=Path, help="Pacote canônico já apurado/revisado; sem geração automática")
+    ap.add_argument("--core-root", type=Path)
+    ap.add_argument("--trace-db", type=Path,
+                    help="SQLite do traço central; exige --core-root com biblioteca Conexo OS")
+    ap.add_argument("--trace-turso", action="store_true",
+                    help="Persistir traço no Turso existente, somente host explicitamente autorizado")
+    ap.add_argument("--actor-id", type=int)
+    ap.add_argument("--intent", choices=("stage", "draft", "publish", "schedule"), default="stage")
+    ap.add_argument("--publication-reference", help="Referência real da ordem específica de publicar/agendar")
+    ap.add_argument("--operation-nonce", help="Retoma somente consulta da operação anterior; nunca repete escrita")
+    ap.add_argument("--trace-run-id", help="Execução no Turso homologada para preflight de publicação assinada")
     args = ap.parse_args()
+    if args.import_article:
+        if (not args.handoff_only or args.handoff_dir is None or args.fonte
+                or args.editorial_package or args.queue_only or args.dry_run
+                or args.research_context or args.featured_media_id is not None or args.confirm_media_rights
+                or args.trace_db or args.trace_turso or args.core_root or args.actor_id
+                or args.intent != "stage" or args.publication_reference or args.operation_nonce
+                or args.trace_run_id):
+            ap.error("import-article exige handoff-only/handoff-dir; nao combina com RSS, escrita ou publicacao")
+        if args.adapt_editorial and args.offline:
+            ap.error("--adapt-editorial exige provedor/rede; incompatível com --offline")
+        from mkt_flow_p0.editorial_import import processar_artigo_importado, resumo_execucao
+        try:
+            with args.import_article.open("rb") as stream:
+                data = stream.read(1024 * 1024 + 1)
+            if len(data) > 1024 * 1024:
+                raise ValueError("entrada excede 1 MiB")
+            image = None
+            if args.image_manifest:
+                if args.image_manifest.stat().st_size>512*1024:raise ValueError('IMAGE_MANIFEST_TOO_LARGE')
+                image=json.loads(args.image_manifest.read_text(encoding='utf-8'))
+            payload = json.loads(data)
+            result = processar_artigo_importado(payload, args.handoff_dir, genero=args.genero,
+                image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,offline=args.offline,
+                force_development=args.adapt_editorial)
+        except (ValueError, OSError, TypeError, KeyError) as exc:
+            print(json.dumps({"status":"BLOCKED","error_type":type(exc).__name__}))
+            return 1
+        # Public consoles receive receipts, never unreviewed drafts/claims.
+        print(json.dumps(resumo_execucao(result),ensure_ascii=False))
+        return 0
+    if args.adapt_editorial:
+        ap.error("--adapt-editorial exige --import-article")
+    if args.trace_db and not args.core_root:
+        ap.error("--trace-db requer --core-root; sem ele só o sidecar é gravado")
+    if args.handoff_only:
+        if (args.editorial_package or args.queue_only or args.dry_run
+                or args.handoff_dir is None):
+            ap.error("--handoff-only exige --handoff-dir e não combina com --editorial-package, --queue-only ou --dry-run")
+        if not args.fonte or args.limit != 1:
+            ap.error("--handoff-only requer --fonte NOME --limit 1 para limitar chamadas à IA")
+    if args.featured_media_id is not None or args.confirm_media_rights:
+        if (args.featured_media_id is None or args.featured_media_id <= 0
+                or not args.confirm_media_rights or not args.fonte or args.limit != 1
+                or args.queue_only or args.handoff_only or args.dry_run
+                or args.editorial_package):
+            ap.error("--featured-media-id exige --confirm-media-rights, --fonte, --limit 1 e modo rascunho")
+    contexto_pesquisa = None
+    if args.research_context:
+        if args.editorial_package:
+            ap.error("--research-context exige fluxo RSS, não --editorial-package")
+        if args.queue_only:
+            ap.error("--research-context não combina com --queue-only")
+        try:
+            if args.research_context.stat().st_size > 512 * 1024:
+                raise ValueError("pesquisa complementar excede 512 KiB")
+            loaded = json.loads(args.research_context.read_text(encoding="utf-8"))
+            if (not isinstance(loaded, dict) or (not {"source_url", "sources"}.issubset(loaded) or set(loaded) - {"source_url", "sources", "editorial_brief"})
+                    or not isinstance(loaded["source_url"], str)):
+                raise ValueError("formato exige source_url e sources")
+            from mkt_flow_p0.editorial_identity import normalizar_fontes_complementares
+            normalizar_fontes_complementares({"sources": loaded["sources"]})
+            if "editorial_brief" in loaded:
+                from mkt_flow_p0.editorial_substance import normalize_brief
+                loaded["editorial_brief"] = normalize_brief(loaded["editorial_brief"])
+            contexto_pesquisa = loaded
+        except (OSError, ValueError, TypeError) as exc:
+            ap.error("pesquisa complementar inválida: " + str(exc))
+    if args.editorial_package:
+        if args.dry_run or args.queue_only or not args.core_root or not args.actor_id:
+            ap.error("pacote exige core-root/actor-id e não combina com dry-run/queue-only")
+        try:
+            package = json.loads(args.editorial_package.read_text(encoding="utf-8"))
+            result = processar_pacote_editorial(package, core_root=args.core_root, actor_id=args.actor_id,
+                intent=args.intent, publication_reference=args.publication_reference, operation_nonce=args.operation_nonce,
+                trace_run_id=args.trace_run_id)
+        except (ValueError, OSError, TypeError) as exc:
+            result = {"erro": "pacote inválido", "reason": str(exc)}
+        print(json.dumps(result, ensure_ascii=False))
+        return 1 if result.get("erro") else 0
     if args.queue_only:
         if args.dry_run:
             ap.error("--queue-only e --dry-run são mutuamente exclusivos")
@@ -253,22 +673,97 @@ def main():
     if args.fonte and args.fonte not in FEEDS_PADRAO:
         print(json.dumps({"erro": f"fonte desconhecida: {args.fonte}. Opções: {sorted(FEEDS_PADRAO)}"}))
         sys.exit(2)
-    total = {"publicado_rascunho": 0, "bloqueado": 0, "falha": 0, "dry_run_ok": 0}
+    total = {"publicado_rascunho": 0, "pacote_editorial_criado": 0, "bloqueado": 0, "falha": 0, "feed_error": 0, "dry_run_ok": 0}
+    contexto_usado = False
     from mkt_flow_p0.rss_ingestor import marcar_visto
     for fonte, url in alvos.items():
         # dry-run nunca marca como visto (não gasta a pauta do dia)
         nov = buscar_novidades(url, fonte=fonte, limit=args.limit, marcar=False)
         if "erro" in nov:
-            print(json.dumps({"fonte": fonte, "erro": nov["erro"]}, ensure_ascii=False))
+            total["feed_error"] += 1
+            print(json.dumps({"fonte": fonte, "erro": nov["erro"], "acao": "falha_feed"}, ensure_ascii=False))
             continue
         for item in nov.get("novos", []):
-            r = processar_item(item, dry_run=args.dry_run)
+            enriquecimento = ({"sources": contexto_pesquisa["sources"]}
+                              if contexto_pesquisa is not None
+                              and item.get("link") == contexto_pesquisa["source_url"]
+                              else None)
+            if enriquecimento is not None:
+                contexto_usado = True
+                if "editorial_brief" in contexto_pesquisa:
+                    item = dict(item, editorial_brief=contexto_pesquisa["editorial_brief"],
+                                genero=contexto_pesquisa["editorial_brief"]["genre"])
+            r = processar_item(item, dry_run=args.dry_run,
+                               contexto_complementar=enriquecimento,
+                               handoff_only=args.handoff_only,
+                               featured_media_id=args.featured_media_id,
+                               media_rights_confirmed=args.confirm_media_rights)
+            if args.handoff_dir and isinstance(r.get("editorial_handoff"), dict):
+                from mkt_flow_p0.editorial_identity import salvar_handoff_chatgpt
+                try:
+                    r["handoff_path"] = salvar_handoff_chatgpt(
+                        r["editorial_handoff"], args.handoff_dir)
+                except (ValueError, OSError) as exc:
+                    r["handoff_error"] = str(exc)
+                    logger.warning("Falha ao persistir handoff: %s", exc)
+                    if args.handoff_only:
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_persistencia_handoff"
+                        r["escreveu"] = False
+            if args.handoff_dir and isinstance(r.get("editorial_trace"), dict):
+                from mkt_flow_p0.editorial_trace import save_trace
+                try:
+                    r["trace_path"] = save_trace(r["editorial_trace"], args.handoff_dir)
+                except (OSError, ValueError) as exc:
+                    logger.error("Falha ao gravar trilha editorial: %s", type(exc).__name__)
+                    # Do not claim full operational trace when persistence fails.
+                    r["trace_error"] = "trace_persistence_failed"
+                    if r.get("acao") in ("pacote_editorial_criado", "publicado_rascunho"):
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_persistencia_trilha"
+                        # A draft might already exist: retain its original
+                        # wrote flag and post_id, never retry the POST.
+            if args.trace_db and isinstance(r.get("editorial_trace"), dict):
+                try:
+                    # The import happens in this cloud executor, not on the user's PC.
+                    core_path = str(args.core_root.resolve())
+                    if core_path not in sys.path:
+                        sys.path.insert(0, core_path)
+                    from editorial.trace_store import TraceStore
+                    from editorial.trace_ingest import ingest_envelope
+                    report = ingest_envelope(TraceStore(args.trace_db),
+                                             r["editorial_trace"])
+                    r["central_trace_synced"] = (
+                        report["run_id"] == r["editorial_trace"]["run_id"])
+                except (ImportError, OSError, ValueError, sqlite3.Error) as exc:
+                    logger.error("Trilha central indisponivel: %s", type(exc).__name__)
+                    r["central_trace_synced"] = False
+                    r["trace_error"] = "central_trace_ingestion_failed"
+                    if r.get("acao") in ("pacote_editorial_criado", "publicado_rascunho"):
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_ingestao_trilha"
+                        # Preserve post_id for reconciliation of any written draft.
+            if args.trace_turso and isinstance(r.get("editorial_trace"), dict):
+                from mkt_flow_p0.editorial_trace_turso import save_turso_trace
+                persistence = save_turso_trace(r["editorial_trace"])
+                r["turso_trace_synced"] = persistence["ok"] is True
+                if not r["turso_trace_synced"]:
+                    r["trace_error"] = persistence["reason"]
+                    if r.get("acao") in ("pacote_editorial_criado", "publicado_rascunho"):
+                        r["acao"] = "falha"
+                        r["motivo"] = "erro_persistencia_trilha_cloud"
+                        # Preserve any preexisting WP draft and ID for reconciliation.
             if r["acao"] == "publicado_rascunho" and not args.dry_run:
                 marcar_visto(fonte, item["link"], item["titulo"])
             total[r["acao"]] = total.get(r["acao"], 0) + 1
-            print(json.dumps({"fonte": fonte, **r}, ensure_ascii=False))
+            print(json.dumps(resumo_seguro_cli(fonte, r), ensure_ascii=False))
+    if contexto_pesquisa is not None and not contexto_usado:
+        print(json.dumps({"aviso": "research_context_not_matched",
+                          "source_url": contexto_pesquisa["source_url"]}, ensure_ascii=False))
     print(json.dumps({"resumo": total}, ensure_ascii=False))
+    # Falha da fonte deve ser visível para o executor/agendador, mesmo sem itens.
+    return 1 if (total["feed_error"] or total["falha"]) else 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

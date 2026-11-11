@@ -1,0 +1,70 @@
+name: Editorial cloud proof - bounded homolog and real RSS shadow
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+concurrency:
+  group: editorial-cloud-probe
+  cancel-in-progress: false
+jobs:
+  verify:
+    if: >-
+      github.repository == 'rmsports33/MKT-RSS' && github.event.repository.private == false &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.issue.title == '[cloud-probe] validar homolog e RSS real'
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Offline shadow regressions
+        env:
+          PYTHONPATH: tests
+        run: python3 -S -m unittest test_opportunity_shadow -v
+  write:
+    needs: verify
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install requests==2.34.2
+      - name: One identified metadata record in existing homolog; exact readback
+        env:
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          PROBE_RUN: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: python3 scripts/cloud_editorial_probe.py write --run "$PROBE_RUN"
+  recover:
+    needs: write
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install requests==2.34.2
+      - name: Independent executor retrieves exact metadata without local DB or artifact
+        env:
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          PROBE_RUN: ${{ github.run_id }}-${{ github.run_attempt }}
+        run: python3 scripts/cloud_editorial_probe.py read --run "$PROBE_RUN"
+  rss_shadow:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m pip install requests==2.34.2 feedparser==6.0.14
+      - name: Real existing feed; three candidates; no demand or factuality invented
+        run: python3 scripts/cloud_editorial_probe.py rss-shadow

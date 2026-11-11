@@ -1,0 +1,80 @@
+name: Produzir pauta CT-006 - modulos MKT-RSS
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: Gerar um artigo da pauta CT-006 e salvar somente como rascunho
+        required: true
+        type: choice
+        default: NAO_EXECUTAR
+        options:
+          - NAO_EXECUTAR
+          - GERAR_RASCUNHO
+permissions:
+  contents: read
+concurrency:
+  group: mkt-bank-production
+  cancel-in-progress: false
+jobs:
+  produce:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 15
+    steps:
+      - name: Confirmar somente a producao de rascunho
+        env:
+          ACTION: ${{ inputs.action }}
+        run: |
+          if [ "$ACTION" != 'GERAR_RASCUNHO' ]; then
+            echo '::error::Selecione GERAR_RASCUNHO em uma nova execucao.'
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -r requirements/rss.txt
+      - name: Preparar leitura das fontes publicas com JavaScript
+        run: |
+          python -m pip install playwright==1.58.0
+          if ! command -v google-chrome >/dev/null && ! command -v chromium >/dev/null; then
+            python -m playwright install --with-deps chromium
+          fi
+      - name: Executar os modulos existentes sem publicar nem aprovar
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: python -m tools.produce_bank_article --execute-draft
+      - name: Relatorio por modulo sem texto privado
+        if: ${{ always() }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          path=Path('work/bank-production/module-report.json')
+          if not path.is_file():
+              raise SystemExit('No module report: production did not start.')
+          report=json.loads(path.read_text())
+          with open(os.environ['GITHUB_STEP_SUMMARY'],'a',encoding='utf-8') as out:
+              out.write('## Producao CT-006\n\n')
+              out.write('```json\n'+json.dumps(report,ensure_ascii=False,indent=2)+'\n```\n')
+          PY
+      - name: Guardar somente relatorio e candidata de imagem licenciada
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ct006-modules-${{ github.run_id }}
+          path: |
+            work/bank-production/module-report.json
+            work/bank-production/cover-candidate.jpg
+          if-no-files-found: ignore
+          retention-days: 30

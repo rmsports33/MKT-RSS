@@ -1,0 +1,27 @@
+name: WordPress MKT-RSS identity - read only
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: wp-identity-preflight
+  cancel-in-progress: false
+jobs:
+  identity:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate existing WordPress service identity without writes
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: python tools/wp_identity_preflight.py

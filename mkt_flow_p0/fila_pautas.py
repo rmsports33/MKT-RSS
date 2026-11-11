@@ -12,6 +12,7 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 from mkt_flow_p0 import cloud_db
 from mkt_flow_p0.prioridade_editorial import avaliar_pauta
+from mkt_flow_p0.opportunities import evaluate
 
 DEFAULT_DB = Path(__file__).resolve().parent.parent / "mkt_flow_p0.db"
 STATES = frozenset(("DESCOBERTA", "SELECIONADA", "EM_PRODUCAO", "EM_REVISAO",
@@ -220,9 +221,22 @@ def listar(estado="DESCOBERTA", limite=20, db_path=None):
     rows, _ = _exec("""SELECT p.id, p.fonte, p.url, p.titulo, p.estado,
         p.pontuacao, COALESCE(n.nota, MAX(1, MIN(10, CAST((p.pontuacao + 5)/10 AS INTEGER)))) AS nota,
         CASE WHEN n.nota IS NULL THEN 'HEURISTICA_PROVISORIA'
-             ELSE 'REVISAO_EDITORIAL' END AS origem_nota
+             ELSE 'REVISAO_EDITORIAL' END AS origem_nota,
+        p.publicada_em, p.created_at
         FROM rss_pautas p LEFT JOIN rss_notas_editoriais n ON n.pauta_id=p.id
         WHERE p.estado=? ORDER BY nota DESC, p.created_at DESC LIMIT ?""",
         (estado, max(1, min(int(limite), 100))), db_path)
-    return [dict(zip(("id", "fonte", "url", "titulo", "estado", "pontuacao",
-                      "nota", "origem_nota"), row)) for row in rows]
+    result = []
+    for row in rows:
+        item = dict(zip(("id", "fonte", "url", "titulo", "estado", "pontuacao",
+                         "nota", "origem_nota", "publicada_em", "created_at"), row))
+        # Discovery is preserved. A high heuristic note is never measured demand.
+        try:
+            item["opportunity"] = evaluate({"title": item["titulo"], "url": item["url"],
+                "kind": "noticia", "published_at": item["publicada_em"],
+                "observed_at": item["created_at"]})
+        except ValueError:
+            item["opportunity"] = {"status": "REVISAO_PENDENTE",
+                "reasons": ["METADADOS_INCOMPLETOS"], "publication_authorized": False}
+        result.append(item)
+    return result

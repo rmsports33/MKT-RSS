@@ -12,6 +12,7 @@ from html import unescape
 from urllib.parse import urlparse
 
 from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
+from mkt_flow_p0.editorial_voice_adapter import editorial_placeholder_signals
 
 VERSAO = "conexo-article-quality/1"
 HOST = "conexotech.com.br"
@@ -148,10 +149,12 @@ def avaliar_artigo(post, *, media=None, fontes=None, evidencias=None,
         len(content.split()) >= 250 else "NAO_VERIFICADO",
         "slug_resumo_ou_conteudo_insuficiente" if not (20 <= len(slug) <= 100 and len(excerpt) >= 80) else "")
     # Analise leve; nao faz parse DOM nem substitui verificacao visual.
-    placeholders = bool(re.search(r"\[LINK AFILIADO\]|FACHADA_VIDEO|lorem ipsum", content, re.I))
+    integrity = editorial_placeholder_signals(_txt(content))
+    placeholders = bool(integrity["signals"]) or bool(re.search(r"\[LINK AFILIADO\]|FACHADA_VIDEO|lorem ipsum", content, re.I))
     h1 = bool(re.search(r"<h1(?:\s|>)", content, re.I))
     checks["html"] = _check("REPROVADO" if placeholders or h1 else "VERIFICADO",
-                             "placeholder_ou_h1_no_corpo" if placeholders or h1 else "")
+                             "placeholder_ou_h1_no_corpo" if placeholders or h1 else "",
+                             integrity["signals"])
     for name in ("revisao_substantiva", "visual_390", "visual_1440"):
         checks[name] = _evidence(evidencias, name, fingerprint)
     falhas = [key for key in REQUIRED_CHECKS if checks[key]["estado"] == "REPROVADO"]

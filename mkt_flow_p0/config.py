@@ -20,7 +20,7 @@ for p in [ROOT / ".env", ROOT / "MKTFLOW" / ".env", Path.cwd() / ".env"]:
 # Definição de variáveis por perfil
 REQUIRED_P0 = {
     # Para pipeline ML->WP, WP é obrigatório; Groq é obrigatório para geração
-    "GROQ_API_KEY": "Obrigatório para geração de conteúdo (obtenha em https://console.groq.com)",
+    "GROQ_API_KEY": "Necessário somente para o redator Groq; importação editorial offline não usa esta chave",
     "WP_URL": "URL do WordPress (ex: https://seusite.com) — necessário para publicação",
     "WP_USER": "Usuário WordPress com Application Password",
     "WP_APP_PASSWORD": "Application Password do WordPress (Perfil > Application Passwords)",

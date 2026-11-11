@@ -1,0 +1,83 @@
+name: Editorial trace Turso homolog - manual only
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Type TURSO_HOMOLOG_TRACE; writes one metadata-only row into existing homolog database"
+        required: true
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: editorial-trace-turso-homolog
+  cancel-in-progress: false
+jobs:
+  trace_homolog:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && inputs.confirm == 'TURSO_HOMOLOG_TRACE' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 5
+    steps:
+      - name: Checkout exact trace executor branch
+        uses: actions/checkout@v4
+        with:
+          ref: feat/editorial-trace-bridge-20261107
+          persist-credentials: false
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install actual RSS dependencies
+        run: python -m pip install -r requirements/rss.txt
+      - name: Run trace + canonical publisher regressions before any Turso write
+        env:
+          GROQ_API_KEY: ''
+          TURSO_AUTH_TOKEN: ''
+          WP_APP_PASSWORD: ''
+          CONEXO_RSS_DRAFT: '0'
+          CONEXO_RSS_DRAFT_STAGING: '0'
+        run: |
+          python -m unittest discover -s tests -p 'test_editorial_trace_bridge.py' -v
+          python -m unittest discover -s tests -p 'test_editorial_trace_turso.py' -v
+          python -m unittest discover -s tests -p 'test_groq_trace_fingerprint.py' -v
+          python -m unittest discover -s tests -p 'test_editorial_trace_release.py' -v
+      - name: Authorized Turso homolog metadata write and readback
+        env:
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          GROQ_API_KEY: ''
+          WP_APP_PASSWORD: ''
+        run: |
+          python - <<'PY'
+          import hashlib
+          import json
+          import os
+          from mkt_flow_p0.editorial_trace import make_trace
+          from mkt_flow_p0.editorial_trace_turso import save_turso_trace, get_turso_trace
+
+          HOST = "mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io"
+          assert os.environ["CONEXO_TRACE_TURSO_ALLOWED_HOST"] == HOST
+          assert os.environ["TURSO_DATABASE_URL"] == "libsql://" + HOST
+          if not os.getenv("TURSO_AUTH_TOKEN", "").strip():
+              raise SystemExit("BLOCKED: no existing homolog Turso credential")
+          # This metadata identifies ONLY a synthetic test; no article text,
+          # personal data, prompt or WordPress credentials are persisted.
+          packet = make_trace("https://example.org/conexo-trace-homolog",
+                              "isolated-trace-probe")
+          assert packet["publication_authorized"] is False
+          assert packet["events"][0]["status"] == "UNKNOWN"
+          stored = save_turso_trace(packet)
+          if stored.get("ok") is not True:
+              raise SystemExit("BLOCKED: Turso write failed: " + stored.get("reason", "unknown"))
+          read = get_turso_trace(packet["run_id"])
+          if read.get("ok") is not True:
+              raise SystemExit("BLOCKED: Turso readback failed: " + read.get("reason", "unknown"))
+          assert read["trace"] == packet, "BLOCKED: readback differs from recorded run"
+          assert read["trace"]["publication_authorized"] is False
+          assert read["trace"]["events"][0]["status"] == "UNKNOWN"
+          print("PASS: Turso homolog stored/read back exact trace metadata")
+          print("run_id=" + packet["run_id"])
+          print("storage=existing-homolog-turso")
+          print("publication_authorized=false")
+          PY

@@ -1,0 +1,681 @@
+{
+  "schema_version": "1.0",
+  "task_id": "EDITORIAL-SUBSTANCE-20261110",
+  "title": "Corrigir desenvolvimento e avaliação substantiva editorial",
+  "repository": "rmsports33/MKT-RSS",
+  "base_branch": "master",
+  "base_sha": "5741f4914fa00cc7e0e10a9755ab486f52538044",
+  "branch": "fix/editorial-substance-20261110",
+  "owner": "Codex nesta sessão",
+  "coordinator": "sessão atual",
+  "reviewer": "revisão técnica assistida pela mesma sessão, sem independência",
+  "status": "MDA_AB_GENERATED_UNDER_REVIEW_NO_HUMAN_PUBLICATION_APPROVAL",
+  "scope": [
+    "Rastrear as rotas atuais de importação, redação, identidade e prontidão",
+    "Implementar briefing, adaptação e crítica vinculada ao texto, preservando controles existentes",
+    "Eliminar dependência de flag para adaptação online e atualizar runtime manual obsoleto",
+    "Homologar importação com versão real do artigo e entregar reescrita em rascunho editável"
+  ],
+  "acceptance": [
+    "Texto repetitivo com metadados completos não fica pronto para revisão",
+    "Briefing e avaliação vinculados à versão, com limites de execução explícitos",
+    "Testes locais passam; qualidade real depende de homologação com provedor"
+  ],
+  "restrictions": [
+    "Sem publicação de artigo ou aceite humano automático",
+    "Sem copiar segredos, gastos ou novos serviços; preservar coleta diária queue-only"
+  ],
+  "authorizations": {
+    "push": true,
+    "merge": true,
+    "deploy": false,
+    "production": false,
+    "publication": false,
+    "costs": false,
+    "credentials": false
+  },
+  "evidence": [
+    {
+      "sha": "5741f4914fa00cc7e0e10a9755ab486f52538044",
+      "reference": "python -m pytest tests redator-artigo-blogs/tests -q; final local run",
+      "result": "PASSOU",
+      "passed": 1121,
+      "skipped": 11,
+      "subtests_passed": 11
+    },
+    {
+      "sha": "5741f4914fa00cc7e0e10a9755ab486f52538044",
+      "reference": "docs/EDITORIAL_SUBSTANCE_20261110.md",
+      "result": "ENGENHARIA_LOCAL_PREPARADA"
+    },
+    {
+      "sha": "5741f4914fa00cc7e0e10a9755ab486f52538044",
+      "reference": "WordPress #9798 readback nesta sessão",
+      "result": "PASSOU",
+      "status": "draft",
+      "author_id": 3,
+      "featured_media_id": 9799,
+      "exact_block_content": true,
+      "publication_authorized": false
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/78",
+      "result": "INTEGRATED",
+      "sha": "b1549d7d6211926b2b3fe7c145ca5c7563324af4",
+      "scope": "Briefing/adaptação/crítica/validação de versão"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/79",
+      "result": "ONE_SHOT_WORKFLOW_CODE_INTEGRATED",
+      "sha": "bd5f013fff4ad01f4b5ba9d77a6a47aee12ef5fb",
+      "caution": "Integração do código não comprova execução real do Groq"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/80",
+      "result": "MERGED",
+      "sha": "efd41456c19530fb9f8f548d67b55f318a76bac7",
+      "scope": "Bloqueio de parágrafos quase duplicados e protocolo de aceite cego"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42880540204",
+      "result": "PASS",
+      "passed": 1081,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42880541044",
+      "result": "PASS",
+      "scope": "Conexo OS editorial validation"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42809666543",
+      "result": "HANDOFF_CREATED_BUT_QUALITY_PENDING",
+      "wordpress_written": false,
+      "words": 823,
+      "source_count": 2,
+      "claims_pending": 1,
+      "voice_application": "PROMPT_APPLIED",
+      "review_method": null,
+      "quality_status": "ENRIQUECIMENTO_PENDENTE",
+      "quality_pending": [
+        "avaliacao_substantiva_ausente_invalida_ou_desatualizada",
+        "pesquisa_multifonte_pendente",
+        "fontes_rss_candidatas_sem_verificacao",
+        "imagem_destacada_com_direitos_pendente"
+      ],
+      "notes": "Run #2 master success; gen #1 branch blocked/failure by environment protection. Does NOT demonstrate above-average editorial quality."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/82",
+      "result": "MERGED",
+      "sha": "0fe882bc375883a83023023f84ce38fd1255afd0",
+      "scope": "Fail-closed exact handoff version; sanitized review stage CLI"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/83",
+      "result": "MERGED",
+      "sha": "102dd8fa2b65d111a71ccfffc3236181fd6d8cd4",
+      "scope": "Sanitized provider error class: auth/rate-limit/timeout/JSON/truncation/criteria"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42894155738",
+      "result": "PASS",
+      "passed": 1088,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/blob/master/docs/EDITORIAL_9798_SECOND_REVIEW_20261110.md",
+      "result": "NONBLIND_REAL_PILOT",
+      "notes": "9798 revisions 9802/9803 compared; cannot transfer results to encrypted Groq handoff"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/84",
+      "result": "MERGED",
+      "sha": "1d470be7af60cb3662b8656fb9f9ed2fb05b982d",
+      "scope": "Distinguishes technical handoff from substantively ready-to-review; audits ciphertext integrity offline without private key."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42896831570",
+      "result": "PASS",
+      "passed": 1092,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/85",
+      "result": "MERGED",
+      "sha": "5c2ecfb51dca3d3e0d05fc1e3f9011a97a4968d6",
+      "scope": "Prevent multiple URLs of one outlet from passing multifonte."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42897889314",
+      "result": "PASS",
+      "passed": 1093,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "private ChatGPT Library ConexoOS/AuditoriaEditorial",
+      "result": "SAFE_EVIDENCE_REPORTS_SAVED",
+      "note": "No private editorial plaintext or keys published. Encrypted ZIP is also present in Library root."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/blob/master/docs/EDITORIAL_PILOT_20261110_REAL_CHECK.md",
+      "result": "FACTUAL_AUDIT_DOCUMENTED",
+      "description": "Four real draft pilots, readbacks of revision 9806/9805/9804, sources and remaining gate/rights obligations"
+    },
+    {
+      "reference": "PRIVATE_GOOGLE_DRIVE_REVIEW_PACKET",
+      "result": "PRIVATE_BLINDED_FULL_TEXT_PACKET",
+      "notes": "Caderno integral A–E em pasta privada do Google Drive, chave separada; nenhum link privado exposto em repositório público."
+    },
+    {
+      "reference": "WordPress plugin inventory (authenticated read only, 2026-11-10)",
+      "result": "CONTROLLED_EDITORIAL_GATE_AND_HMAC_VAULT_ACTIVE",
+      "details": "Gate 0.1.0-rc5; Vault 0.1.0; separate MU-plugin Gate inactive; live 403 not tested."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/86",
+      "result": "MERGED",
+      "sha": "beb85359b467ce0cb39f0368c57ca8577a2d9c97",
+      "scope": "Single MKT-RSS provider flow with optional deterministic voice lens; no new executor or claims of human persona."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42910671405",
+      "result": "PASS",
+      "tests_passed": 1104,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42910672463",
+      "result": "PASS",
+      "scope": "Conexo OS editorial validation after corrected fixture"
+    },
+    {
+      "reference": "PRIVATE_GOOGLE_DRIVE_REVIEW_PACKET",
+      "result": "MDA_REVIEW_CHECKLIST_INSERTED",
+      "notes": "No reviewer score/identity or manuscript content copied to public GitHub."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/87",
+      "result": "MERGED",
+      "sha": "8f07c10759beab529084a6faa750a857e295149d",
+      "scope": "Controlled control/MDA prompt split; blind packet tooling; zero provider calls."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42913503567",
+      "result": "PASS",
+      "passed": 1111,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42913505576",
+      "result": "PASS",
+      "scope": "Conexo OS editorial validation for PR87"
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/mda_ab_prompts_privados_20261110.zip",
+      "result": "OFFLINE_PREFLIGHT_EXECUTED",
+      "scope": "4 real cases, 8 confidential prompts, verified GitHub code hashes; publication not authorized"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/88",
+      "result": "MERGED",
+      "sha": "a5903eb696b18416900c1b6466992d1c1dcc1362",
+      "scope": "Single authorized live Free-tier MDA A/B, 8 completions and encrypted result; no WP writes"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42917583190",
+      "result": "COMPLETE_GENERATION_REVIEW_PENDING",
+      "completed_pairs": 4,
+      "provider_calls": 8,
+      "wordpress_writes": 0,
+      "encrypted": true,
+      "publication_authorized": false
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261110",
+      "result": "PRIVATE_EVIDENCE_PRESERVED",
+      "notes": "Eight full articles, blinded packet, separate private mapping, assisted diagnostic and numerical gate report."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/89",
+      "result": "MERGED",
+      "sha": "63fb9212ea3b164b73b8a1be7e04b4879b074e24",
+      "scope": "Numeric formatting/heading false positives reduced; unsupported 4K now detectable, MDA symptom-action consistency guidance."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42921471897",
+      "result": "PASS",
+      "tests_passed": 1123,
+      "skipped": 1,
+      "subtests_passed": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261110/mda_4_versoes_trabalho_corrigidas.zip",
+      "result": "PRIVATE_WORKING_COPIES_PREPARED",
+      "notes": "Four MDA revisions addressing confirmed logic, source attribution and causal overreach; original eight A/B articles untouched; not human-approved."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/90",
+      "result": "MERGED",
+      "sha": "85e54f7511aa98ef52025a90e6f4312fbfb0f0cb",
+      "description": "Table-structure diagnosis as editorial readiness blocker; zero WP writes, no editorial authorization"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42930577307",
+      "result": "PASS",
+      "tests_passed": 1127,
+      "skipped": 1,
+      "subtests": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261110/mda_4_versoes_qa_v2_privadas.zip",
+      "result": "FOUR_PRIVATE_QA_V2_WORKING_COPIES",
+      "description": "Source-linked fact qualification + consistent Markdown tables + separate private manifest; never changes frozen A/B arms"
+    },
+    {
+      "reference": "PRIVATE_DRIVE:neutral_AB_independent_review_packet",
+      "result": "READY",
+      "description": "Four complete anonymous A/B pairs. Replaced identity-revealing header; reviewer independence declaration and scoring rubric included; original corpus unchanged. Access remains owner-only and mapping separate."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/92",
+      "result": "MERGED",
+      "sha": "249d92fcd2e2063b7d8e1c28edb8687b7dbde65b",
+      "scope": "Genre-specific thesis, evidence, consequence, tradeoff, conditional close in existing MDA writer and assisted review; no additional provider call, no publication."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42940783830",
+      "result": "PASS",
+      "tests_passed": 1138,
+      "skipped": 1,
+      "subtests": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42940784241",
+      "result": "PASS",
+      "scope": "Conexo OS editorial validation for PR92"
+    },
+    {
+      "reference": "https://github.com/rmsports33/-site-conexotech/actions/runs/43003300959",
+      "result": "PASS",
+      "tests_passed": 32,
+      "tests_failed": 0,
+      "source": "Installed controlled Gate 0.1.0-rc5 read-only source, all four PHP SHA256 matched, exact code mounted in disposable WordPress+MySQL with synthetic secret; NO production write."
+    },
+    {
+      "reference": "https://github.com/rmsports33/-site-conexotech/pull/70",
+      "result": "PRIVATE_PR_OPEN_NOT_DEPLOYED",
+      "description": "Code mirror from Hostinger kept private; GitLab mirror on merge means no automatic merge."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/42",
+      "result": "DRAFT_CORRECTED_NOT_MERGED",
+      "description": "Numeric alert is not factual approval; 0..3 relevant links with human attestation; block redirects, unauthorized origins and nondraft WordPress reads."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43004638829",
+      "result": "PASS",
+      "tests_passed": 1158,
+      "subtests": 16,
+      "scope": "PR42 security branch CI; no master merge or production activation"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43004028812",
+      "result": "IN_PROGRESS",
+      "scope": "Four-pair Groq Free A/B on PR92 argumentative MDA; encrypted-only artifacts, WordPress GET-only."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43004028812",
+      "result": "COMPLETE_GENERATION_REVIEW_PENDING",
+      "completed_pairs": 4,
+      "articles_generated": 8,
+      "provider_calls": 8,
+      "wordpress_writes": 0,
+      "encrypted": true,
+      "publication_authorized": false
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/qa_diagnostic_originals_43004028812.json",
+      "result": "THREE_HIGH_CONFIDENCE_FORMAL_DEFECTS",
+      "description": "One unresolved [jogo X] in analysis MDA, metatext in analysis control and SpaceSail control. Private original texts unchanged; reviewer identity mapping separately stored."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/95",
+      "result": "MERGED",
+      "sha": "d55ce7aff3704e1d0f74cd85449f21befa7388af",
+      "description": "Shared fail-closed detection of unresolved manuscript markers/metatext; no AI retries; regulatory caution in MDA prompt."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43010060946",
+      "result": "PASS",
+      "tests_passed": 1148,
+      "tests_skipped": 1,
+      "subtests": 11,
+      "scope": "PR95 after regex/test fixes; Conexo OS editorial validation also success"
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/quatro_preferidas_qa_v1_20261111.zip",
+      "result": "PRIVATE_QA_V1_FOUR_SELECTED_WORKING_COPIES",
+      "details": "User selected 4 of 8 blind texts; 23 tracked partial factual and argumentation revisions, 5 consistent HTML tables. Mapping of choices retained privately and NOT shown to the independent A/B reviewer. Original A/B archive unchanged, no WordPress write or Groq call."
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/qa_v1_preview_390_1440_results.json",
+      "result": "HTML_PREVIEW_390_AND_1440_PASS",
+      "description": "All 4 panels inspected with headless Chromium at 390/1440 px, no document horizontal overflow, local tables scroll within container; this is not WordPress rendering evidence."
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/conexotech_qa_v2_quatro_artigos_e_evidencias_20261111.zip",
+      "result": "QA_V2_PRIVATE_COMPLETE",
+      "details": "Four full preferred manuscripts, 35 traceable corrections from QA-v1, 26 claim records, provenance/rights notes for 1 existing AI image and 3 free-bank Pexels candidates, 8/8 local static HTML viewport checks; no WordPress edits."
+    },
+    {
+      "reference": "https://informacoes.anatel.gov.br/legislacao/atos-complementares-de-regulacao/2129",
+      "result": "PRIMARY_ANATEL_ACT_CONFIRMED",
+      "scope": "Ato 3084 covers frequency coordination for SpaceSail; does not identify terminal homologation STG-S001-A0 nor consumer service plans."
+    },
+    {
+      "reference": "https://www.pexels.com/pt-br/licenca/",
+      "result": "FREE_BANK_LICENSE_GUIDELINES_REVIEWED",
+      "scope": "Three candidates have individual Pexels pages stating License Free; not downloaded, visually verified in full or uploaded to WordPress. Brand and illustration caveats remain."
+    }
+  ],
+  "blockers": [
+    "Revisão humana independente dos oito textos originais e das versões finais ainda não recebida. A preferência do proprietário por B não é um parecer cego independente.",
+    "Nova comparação A/B PR92 concluiu 8 textos completos (run #43004028812); auditoria formal acusou 3 defeitos. Parecer humano independente e prova de ganho de qualidade ainda não ocorreram.",
+    "Fontes e fatos das cópias QA-v2 ainda exigem comprovação integral por versão, inclusive certificado primário Anatel e variantes Samsung.",
+    "Imagens de #9635, #9687 e #9681 ausentes; #9798 tem proveniência de IA declarada, mas confirmação editorial final ainda não registrada.",
+    "Gate 0.1.0-rc5 passou 32/32 em WordPress/MySQL isolados com código real da Hostinger. Configuração real de operador/segredos e bloqueio da rota de produção não foram testados para evitar publicação acidental; backup restaurável igualmente não comprovado.",
+    "PR #42 revisor único corrigido e testado em draft, mas integração real com Gate e identidade dos avaliadores ainda não homologada.",
+    "Handoff ponta a ponta MKT-RSS→WordPress para versão aprovada ainda não demonstrado; rascunhos devem continuar sem escrita."
+  ],
+  "next_action": "QA-v2 das quatro cópias preferidas concluída como PREPARAÇÃO PRIVADA: 35 alterações rastreáveis, 26 claims com fontes/estado e 8/8 testes estáticos de preview 390/1440. Imagem WP #9799 tem proveniência IA declarada; 3 fotos candidatas Pexels estão identificadas mas não baixadas nem validadas como capas finais. Gate rc5 32/32 WP isolado, porém verificação operacional real/backups pendente. Certidão primária STG-S001-A0 na Anatel, preço por SKU Samsung, aceite humano independente e por versão ainda faltam. Não alterar WordPress, não publicar e não revelar MDA/controle ao avaliador.",
+  "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
+  "initial_authorizations": {
+    "push": false,
+    "merge": false,
+    "deploy": false,
+    "production": false,
+    "publication": false,
+    "costs": false,
+    "credentials": false
+  },
+  "authorization_basis": "Autorização explícita em 2026-11-10 para corrigir e integrar engenharia no GitHub. Não autoriza gasto novo nem publicação sem gate e aprovação humana.",
+  "current_state": {
+    "checked_at": "2026-11-10",
+    "editorial_development": "INTEGRATED",
+    "near_duplicate_quality_gate": "INTEGRATED_AND_CI_VERIFIED",
+    "groq_authenticated_handoff": "CONFIRMED_ONE_LIVE_HANDOFF",
+    "independent_blind_article_comparison": "PENDING",
+    "above_average_quality_demonstrated": false,
+    "wordpress_publication_authorized": false,
+    "editorial_quality_merge_sha": "efd41456c19530fb9f8f548d67b55f318a76bac7",
+    "last_groq_handoff_run_id": 42809666543,
+    "last_groq_handoff_quality": "ENRIQUECIMENTO_PENDENTE",
+    "substantive_review": "ABSENT_OR_INVALID_IN_LIVE_RECEIPT",
+    "blind_human_quality_approval": false,
+    "historical_groq_run_id": 42809666543,
+    "historical_handoff": "CREATED",
+    "historical_review": "MISSING_OR_INVALID",
+    "historical_provider_error_detail": "NOT_RECORDED_BY_OLD_REVIEWER",
+    "encrypted_artifact_sha256": "2cb75fed2dca23462cc3fcd5ca763d96b6981f6141f8437907574002bc073b17",
+    "encrypted_artifact_integrity": "VERIFIED",
+    "private_decryption_key": "NOT_LOCATED",
+    "secondary_rss_source": "UNKNOWN_IDENTITY_UNVERIFIED",
+    "historical_article_image_rights": "PENDING_NO_APPROVED_MEDIA_EVIDENCE",
+    "independent_review": "NOT_PERFORMED_ON_HISTORICAL_GROQ_ARTICLE",
+    "separate_wordpress_pilot_review": "NONBLIND_SECOND_REVIEW_9798",
+    "pilot_wp_media_9799": "AI_PROVENANCE_DOCUMENTED_OWNERSHIP_NOT_ATTESTED",
+    "review_error_reason_codes": "INTEGRATED_CI_VERIFIED",
+    "review_diagnostics_commit": "102dd8fa2b65d111a71ccfffc3236181fd6d8cd4",
+    "review_diagnostics_and_allowlisted_provider_faults": "INTEGRATED",
+    "one_shot_handoff_quality_gate": "INTEGRATED_PR84",
+    "offline_encrypted_audit": "TESTED_PR84",
+    "public_run_success_no_longer_implies_quality": "FIXED_FOR_FUTURE_ONE_SHOTS",
+    "independent_publisher_domain_coverage": "INTEGRATED_PR85",
+    "legacy_artifact_integrity": "PASS",
+    "legacy_artifact_sha256": "2cb75fed2dca23462cc3fcd5ca763d96b6981f6141f8437907574002bc073b17",
+    "legacy_source_candidate": "UNIDENTIFIED_ENCRYPTED",
+    "legacy_source_verification": "PENDING",
+    "legacy_image": "NO_LINKED_CONFIRMED_RIGHTS",
+    "wp9798_image_provenance": "LIBRARY_GENERATED_IMAGE_DIMENSIONS_SIZE_MATCH_MEDIA_9799_HASH_NOT_COMPARED",
+    "wp9798_image_visual_fit": "GENERIC_KEYBOARD_APPROPRIATE_NOT_REAL_IOS",
+    "wp9798_image_rights": "OWNER_CONFIRMATION_PENDING",
+    "blind_external_comparison": "NOT_COMPLETED",
+    "publication_authorized": false,
+    "historical_handoff_disposition": "ARCHIVED_ENCRYPTED_NONPUBLISHABLE_NONBLOCKING_FOR_NEW_EDITORIAL_PILOTS",
+    "historical_reprocessing": "NOT_AUTHORIZED_OR_REQUIRED",
+    "editorial_production_state": "NOT_HOMOLOGATED",
+    "new_pilot_safety": "PENDING_HUMAN_SOURCE_IMAGE_AND_INDEPENDENT_QUALITY_ACCEPTANCE",
+    "pilot_guide_post_id": 9798,
+    "pilot_guide_revision_id": 9806,
+    "pilot_guide_status": "DRAFT_SOURCES_RECHECKED_MEDIA_RIGHTS_ATTESTATION_PENDING",
+    "pilot_news_post_id": 9635,
+    "pilot_news_revision_id": 9805,
+    "pilot_news_status": "DRAFT_FACTUAL_CORRECTIONS_SAVED_IMAGE_REMOVED",
+    "pilot_analysis_post_id": 9687,
+    "pilot_analysis_revision_id": 9804,
+    "pilot_analysis_status": "DRAFT_RESEARCH_QUALIFIED_THIRD_PARTY_BIO_REMOVED_IMAGE_REMOVED",
+    "pilot_comparison_post_id": 9681,
+    "pilot_comparison_status": "DRAFT_SPEC_CHECKED_NO_IMAGE_OR_INDEPENDENT_REVIEW",
+    "private_blind_review_packet": "CREATED_FULL_TEXTS_A_THROUGH_E_UPDATED",
+    "private_version_key": "CREATED_SEPARATE_FROM_REVIEW_PACKET",
+    "external_human_review": "PENDING_NO_SCORE_RECORDED",
+    "end_to_end_mkt_rss_to_wp": "NOT_PROVEN",
+    "wordpress_publications_from_pilot": 0,
+    "production_posts_modified_only_drafts": true,
+    "publicly_approved": false,
+    "controlled_gate_wordpress_active": "YES_0.1.0-rc5_CONFIRMED_PLUGIN_LIST",
+    "hmac_vault_wordpress_active": "YES_0.1.0",
+    "mu_plugin_old_gate_inactive": "YES_SEPARATE_INSTALL",
+    "real_publish_blocking_test": "NOT_RUN_PRODUCTION_PUBLICATION_RISK",
+    "wp9798_image_local_sha256": "3db33303f9e6dd5d418da7792b9ff81750bc41001bddfc349158c52e5d7b3de1",
+    "wp9798_image_bytes_equal_to_wordpress": "NOT_PROVEN_REMOTE_HASH_UNAVAILABLE",
+    "mda_auto_academic_archive": "PRESERVED_UNMODIFIED",
+    "mda_adaptive_voice_adapter": "INTEGRATED_MASTER_PR86",
+    "mda_adaptive_voice_merge_sha": "beb85359b467ce0cb39f0368c57ca8577a2d9c97",
+    "mda_voice_lenses": "SIX_ALLOWLISTED_APPROACHES_NOT_PERSONAS",
+    "mda_voice_brief_contract": "UNCHANGED_SIX_FIELDS_HASH",
+    "mda_voice_dna_sha256": "UNCHANGED",
+    "mda_assisted_critic": "PROGRESSION_SOURCE_FUNCTION_TENSIONS_CLOSING_REVIEW_IN_EXISTING_PROVIDER_CALL",
+    "mda_style_signals": "ADVISORY_NON_APPROVING",
+    "mda_external_provider_calls_this_session": 0,
+    "mda_wordpress_writes_this_session": 0,
+    "mda_private_blind_review_packet": "MDA_RUBRIC_APPENDED",
+    "mda_a_b_full_article_comparison": "PENDING_NOT_GENERATED",
+    "mda_independent_human_quality_acceptance": "PENDING",
+    "mda_real_publish_gate_validation": "NOT_CHANGED_OR_PROVEN",
+    "mda_ab_code": "INTEGRATED_MASTER_PR87",
+    "mda_ab_merge_sha": "8f07c10759beab529084a6faa750a857e295149d",
+    "mda_ab_offline_preflight": "FOUR_REAL_CASES_EIGHT_PROMPTS_SHA_VERIFIED",
+    "mda_ab_full_text_corpus": "PRIVATE_DRIVE_VALID_JSON_FOUR_CASES",
+    "mda_ab_private_prompt_archive": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_mda_ab_prompts_privados_20261110.zip",
+    "mda_ab_private_preflight_receipt": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_mda_ab_preflight_resumo_20261110.json",
+    "mda_ab_cases": [
+      "guia-9798",
+      "noticia-9635",
+      "analise-9687",
+      "comparativo-9681"
+    ],
+    "mda_ab_outputs_generated": 8,
+    "mda_ab_real_provider_calls": 8,
+    "mda_ab_external_independent_acceptance": "PENDING_NO_ARTICLE_PAIR",
+    "mda_ab_quality_improvement_demonstrated": false,
+    "mda_ab_wordpress_written": false,
+    "mda_ab_live_generation": "COMPLETED_RUN_42917583190",
+    "mda_ab_live_model": "openai/gpt-oss-120b",
+    "mda_ab_workflow_status": "success",
+    "mda_ab_run_sha": "a5903eb696b18416900c1b6466992d1c1dcc1362",
+    "mda_ab_completed_pairs": 4,
+    "mda_ab_wordpress_drafts_unchanged": true,
+    "mda_ab_ciphertext_saved": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_MDA_AB_20261110",
+    "mda_ab_blind_packet": "PRIVATE_DRIVE_8_COMPLETE_ARTICLES",
+    "mda_ab_blind_mapping": "PRIVATE_SEPARATE_NEVER_SEND_TO_REVIEWER",
+    "mda_ab_second_assisted_review": "COMPLETED_NONHUMAN_NOT_FULLY_BLIND",
+    "mda_ab_preliminary_scores": {
+      "guide": {
+        "control": 17,
+        "mda": 14
+      },
+      "news": {
+        "control": 12,
+        "mda": 16
+      },
+      "analysis": {
+        "control": 11,
+        "mda": 12
+      },
+      "comparison": {
+        "control": 14,
+        "mda": 16
+      }
+    },
+    "mda_ab_strict_successful_genres": 0,
+    "mda_ab_preliminary_factual_issues": [
+      "guide_MDA_illogical_action",
+      "SpaceSail_control_unverified_USD_110",
+      "games_causality_speculation_and_control_percent",
+      "Galaxy_control_incorrect_4K_A16"
+    ],
+    "mda_ab_independent_human_quality_acceptance": "PENDING_EXTERNAL_REVIEWER",
+    "mda_ab_factual_approval": false,
+    "mda_ab_gate_numeric_correction": "INTEGRATED_PR89",
+    "mda_ab_gate_numeric_tests": "7_LOCAL_PASS_AND_FULL_CI_PASS",
+    "mda_ab_real_publish_gate_validation": "NOT_PERFORMED",
+    "mda_post_audit_working_copies": "FOUR_PRIVATE_REVISIONS_CREATED_NO_WORDPRESS_WRITES",
+    "mda_ab_originals_frozen_unchanged": true,
+    "mda_working_copy_human_acceptance": "PENDING",
+    "mda_working_copy_factual_acceptance": "PENDING",
+    "mda_working_copy_archive": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_MDA_AB_20261110_mda_4_versoes_trabalho_corrigidas.zip",
+    "mda_qa_v2_private_review_packet": "READY_FOUR_WORKING_COPIES_FULL_TEXT",
+    "mda_qa_v2_archive": "PRIVATE_LIBRARY_/ConexoOS/AuditoriaEditorial/MDA_AB_20261110/mda_4_versoes_qa_v2_privadas.zip",
+    "mda_qa_v2_format_table_consistency": "CHECKED_ALL_FOUR",
+    "mda_qa_v2_verified_source_review": "PARTIAL_OFFICIAL_SOURCES_NOT_FULL_FACT_ACCEPTANCE",
+    "mda_qa_v2_human_review": "PENDING",
+    "mda_qa_v2_wordpress_writes": 0,
+    "mda_qa_v2_provider_calls": 0,
+    "mda_table_quality_guard": "MERGED_MASTER_PR90",
+    "mda_table_quality_guard_sha": "85e54f7511aa98ef52025a90e6f4312fbfb0f0cb",
+    "mda_table_quality_guard_tests": "1127_PASSED_1_SKIPPED_11_SUBTESTS_52_REDACTOR",
+    "mda_external_blind_review_packet": "NEW_NEUTRAL_FULL_TEXT_PACKET_READY_PRIVATE_DRIVE",
+    "mda_external_blind_review_packet_id": "1mft-Vl1CkKyaLuDof2hMoe6HLegByvOoJ5AcETJppvA",
+    "mda_external_blind_review_original": "PRESERVED_UNCHANGED",
+    "mda_external_blind_review_versions": "FOUR_A_AND_FOUR_B_COMPLETE",
+    "mda_external_blind_review_model_identity_in_packet": false,
+    "mda_external_blind_review_mapping_shared": false,
+    "mda_external_blind_review_reader_access": "OWNER_ONLY_NO_EXTERNAL_REVIEWER_ASSIGNED",
+    "mda_external_blind_review_comments_count": 0,
+    "mda_external_blind_review_human_score": "NOT_RECEIVED",
+    "mda_external_blind_review_independence_declaration": "BLANK_AWAITING_REVIEWER",
+    "mda_argumentative_voice": "MERGED_PR92_TO_MASTER",
+    "mda_argumentative_voice_sha": "249d92fcd2e2063b7d8e1c28edb8687b7dbde65b",
+    "mda_argumentation_five_moves": [
+      "thesis",
+      "evidence",
+      "consequence",
+      "tradeoff",
+      "closing"
+    ],
+    "mda_argumentative_lenses": "6_ALLOWLISTED_GENRE_SPECIFIC",
+    "mda_argumentative_writer": "EXISTING_MKT_RSS_WRITER_SINGLE_CALL",
+    "mda_argumentative_critic": "EXISTING_ASSISTED_CRITIC_SINGLE_CALL",
+    "mda_argumentative_review_scale": "UNCHANGED_EXISTING_FIVE_CRITERIA_0_TO_4",
+    "mda_argumentative_legacy_control": "UNCHANGED",
+    "mda_argumentative_brief": "UNCHANGED_SIX_FIELDS_AND_HASH",
+    "mda_argumentative_test_results": "CI_1138_PASS_1_SKIP_11_SUBTESTS_52_REDACTOR_PASS",
+    "mda_argumentative_current_prose_human_review": "PENDING",
+    "mda_argumentative_current_prose_live_ab": "NOT_RUN_NEW_REVISION",
+    "mda_external_editorial_reference": "CANALTECH_S26FE_20261104_REASONING_ONLY_NO_COPY",
+    "mda_owner_blind_preference": "HISTORIC_FIRST_AB_20261110_B_ALL_FOUR_NOT_CURRENT_ROUND",
+    "gate_active_version": "CONEXO_CONTROLLED_0.1.0_RC5",
+    "gate_active_code_snapshot": "HOSTINGER_READ_ONLY_SHA256_VERIFIED_PRIVATE_SITE_PR70",
+    "gate_active_isolated_wp_mysql": "PASS_32_OF_32_RUN_43003300959",
+    "gate_active_isolated_code_files_sha256_checked": 4,
+    "gate_real_production_publish_attempt": "NOT_EXECUTED_INTENTIONALLY",
+    "gate_real_hostinger_secret_config": "NOT_READ_OR_PROVEN",
+    "gate_production_backup_restore_test": "NOT_PROVEN",
+    "gate_historical_mu_plugin": "INACTIVE_NOT_TO_REACTIVATE",
+    "editorial_unique_reviewer_pr42": "DRAFT_SECURITY_FIXES_CI_1158_PASS_16_SUBTESTS_NOT_MERGED",
+    "editorial_unique_reviewer_factual_evidence": "NO_NUMERIC_ALERT_IS_NOT_FACTUAL_PROOF",
+    "editorial_unique_reviewer_internal_links": "MAX_THREE_RELEVANT_NO_QUOTA_HUMAN_EVIDENCE",
+    "mda_argumentative_new_live_ab": "COMPLETE_GENERATION_REVIEW_PENDING",
+    "mda_argumentative_new_live_ab_model": "openai/gpt-oss-120b",
+    "mda_argumentative_new_live_ab_max_calls": 8,
+    "guide_9798_featured_media_provenance": "CHATGPT_AI_GENERATED_DECLARED_WP_MEDIA_9799",
+    "guide_9798_featured_media_visual_factual_rights": "FINAL_HUMAN_CONFIRMATION_PENDING",
+    "other_three_articles_featured_media": "MISSING",
+    "mda_argumentative_new_live_ab_run": 43004028812,
+    "mda_argumentative_new_live_ab_complete_pairs": 4,
+    "mda_argumentative_new_live_ab_complete_articles": 8,
+    "mda_argumentative_new_live_ab_provider_calls": 8,
+    "mda_argumentative_new_live_ab_encrypted_archive": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/evidencia_cifrada_43004028812.zip",
+    "mda_argumentative_new_live_ab_full_manuscripts": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/textos_completos_prompts_fontes_privados_43004028812.zip",
+    "mda_argumentative_new_live_ab_blind_html": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/preview_cego_8_artigos_argumentativos_43004028812.html",
+    "mda_argumentative_new_live_ab_mapping": "PRIVATE_SEPARATE_UNSHARED_KEY",
+    "mda_argumentative_new_live_ab_formal_defects_total": 3,
+    "mda_argumentative_new_live_ab_formal_defects": {
+      "analise_9687_mda": "marcador_editorial_nao_resolvido",
+      "analise_9687_control": "metatexto_de_producao_no_artigo",
+      "noticia_9635_control": "metatexto_de_producao_no_artigo"
+    },
+    "mda_argumentative_new_live_ab_human_review": "PENDING",
+    "mda_argumentative_new_live_ab_claims_review": "PARTIAL_DLS5_GDC_SPACESAIL_REGULATORY",
+    "mda_auto_placeholder_guard": "MERGED_MASTER_PR95",
+    "mda_auto_placeholder_guard_sha": "d55ce7aff3704e1d0f74cd85449f21befa7388af",
+    "mda_auto_placeholder_guard_test_result": "CI_1148_PASS_1_SKIP_11_SUBTESTS_EDITORIAL_PASS",
+    "mda_auto_placeholder_guard_scope": "REWRITER_FAIL_CLOSED_AND_SHARED_SUBSTANCE_READINESS",
+    "mda_auto_provider_calls_for_fix": 0,
+    "mda_auto_new_wordpress_writes_for_fix": 0,
+    "mda_owner_second_round_preferences": "PRIVATE_OWNER_RECORD_NOT_FOR_BLIND_REVIEWER",
+    "mda_owner_second_round_editorial_qa": "FOUR_WORKING_COPIES_QA_V1_PRIVATE_NOT_APPROVED",
+    "mda_owner_second_round_editorial_qa_changes": 23,
+    "mda_owner_second_round_editorial_qa_syntax": "FIVE_MARKDOWN_TABLES_CONSISTENT_IN_HTML",
+    "mda_owner_second_round_editorial_qa_archive": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/quatro_preferidas_qa_v1_20261111.zip",
+    "mda_owner_second_round_editorial_qa_preview": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/preview_quatro_preferidas_qa_v1_20261111.html",
+    "mda_owner_second_round_selection_not_shared_with_reviewer": true,
+    "mda_owner_second_round_original_eight_immutable": true,
+    "mda_owner_second_round_qa_factual_state": "PARTIAL_PRIMARY_EVIDENCE_REVIEW_NO_FULL_ACCEPTANCE",
+    "mda_owner_second_round_qa_missing_primary": "ANATEL_CERTIFICATE,ALL_CLAIMS_AND_IMAGES",
+    "mda_owner_second_round_qa_wp_writes": 0,
+    "mda_owner_second_round_qa_groq_calls": 0,
+    "mda_owner_second_round_editorial_qa_preview_visual": "PASS_390_1440_ALL_FOUR_PANELS_LOCAL_HTML",
+    "mda_owner_second_round_editorial_qa_preview_mobile_tables": "HORIZONTAL_SCROLL_INSIDE_TABLE_ONLY",
+    "mda_owner_second_round_editorial_qa_visual_evidence": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/qa_v1_preview_390_1440_results.json",
+    "mda_owner_second_round_editorial_qa_wp_actual_visual": "NOT_TESTED_LIVE_WORDPRESS",
+    "mda_owner_second_round_qa_v2": "FOUR_PRIVATE_COMPLETE_WORKING_COPIES_CREATED_NOT_WORDPRESS",
+    "mda_owner_second_round_qa_v2_primary_sources": "APPLE_SAMSUNG_GDC_QUANTIC_NVIDIA_ANATEL",
+    "mda_owner_second_round_qa_v2_edits": 35,
+    "mda_owner_second_round_qa_v2_claim_matrix": 26,
+    "mda_owner_second_round_qa_v2_claim_approval": "PARTIAL_NOT_FINAL",
+    "mda_owner_second_round_qa_v2_anatel_official": "ACT_3084_2026_COVERED_COORDINATION_NOT_TERMINAL_CERTIFICATE",
+    "mda_owner_second_round_qa_v2_anatel_terminal": "STG_S001_A0_SECONDARY_ONLY_PRIMARY_PENDING",
+    "mda_owner_second_round_qa_v2_iphone": "APPLE_KEYBOARD_RESET_SCOPE_SOURCES_DIFFER_WARNING_INCLUDED",
+    "mda_owner_second_round_qa_v2_gdc": "GDC_MORE_THAN_2300_QUANTIC_1799_CONFIRMED",
+    "mda_owner_second_round_qa_v2_dlss": "NVIDIA_2K_OFFICIAL_NBA2K27_SUPPORTED_NO_INDEPENDENT_BENCHMARK",
+    "mda_owner_second_round_qa_v2_samsung": "A16_HYBRID_MICROSD_AND_A36_SEPARATE_45W_CHARGER_REPORTED",
+    "mda_owner_second_round_qa_v2_image_options": "THREE_PEXELS_FREE_LICENSE_CANDIDATES_NOT_DOWNLOADED_NOT_ATTACHED",
+    "mda_owner_second_round_qa_v2_original_cover": "WP_9799_AI_PROVENANCE_DECLARED_NEEDS_VISUAL",
+    "mda_owner_second_round_qa_v2_visual": "8_8_LOCAL_HTML_390_1440_PASS_WORDPRESS_NOT_TESTED",
+    "mda_owner_second_round_qa_v2_artifact": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/conexotech_qa_v2_quatro_artigos_e_evidencias_20261111.zip",
+    "mda_owner_second_round_qa_v2_preview": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/preview_quatro_artigos_qa_v2_20261111.html",
+    "mda_owner_second_round_qa_v2_external_reviewer": "NOT_RECEIVED",
+    "mda_owner_second_round_qa_v2_wp_writes": 0,
+    "mda_owner_second_round_qa_v2_groq_calls": 0
+  },
+  "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
+  "checked_at": "2026-11-11"
+}

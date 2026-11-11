@@ -1,0 +1,60 @@
+{
+  "id": "CT-006",
+  "bank_sheet": "Banco de pautas",
+  "bank_row": 7,
+  "bank_priority": "Alta",
+  "title": "Robô NEO da 1X: preço, assinatura, privacidade e limites",
+  "summary": "Humanoide doméstico com inteligência artificial e supervisão remota: custos anunciados, reserva, autonomia e privacidade para o leitor brasileiro.",
+  "genre": "analise",
+  "source_url": "https://www.1x.tech/discover/neo-home-robot",
+  "source_name": "1X — anúncio do NEO",
+  "related_query": "agentes Android privacidade risco inteligência artificial",
+  "sources": [
+    {
+      "name": "1X — oferta atual",
+      "url": "https://www.1x.tech/order",
+      "anchors": ["$499", "$20,000", "$200"],
+      "facts": [
+        "A oferta consultada apresenta compra Early Access de US$ 20.000, assinatura Standard de US$ 499 por mês e depósito inicial de US$ 200. São condições distintas; o depósito não é o preço total.",
+        "A página informa autonomia básica inicial e supervisão remota agendada por especialistas para tarefas desconhecidas. Esses recursos anunciados não comprovam desempenho independente em todas as casas."
+      ]
+    },
+    {
+      "name": "1X — termos da reserva",
+      "url": "https://www.1x.tech/legal",
+      "anchors": ["Waitlist", "fourteen", "geographic"],
+      "facts": [
+        "A reserva coloca o interessado em uma lista de espera; os convites podem depender da localização e da modalidade escolhida. Os termos não garantem quando um convite será recebido.",
+        "Os termos permitem cancelamento com devolução do depósito até quatorze dias após o convite de compra. Preço final, adicionais e condições da venda ainda podem mudar antes da aceitação."
+      ]
+    },
+    {
+      "name": "1X — política de privacidade",
+      "url": "https://www.1x.tech/privacy-policy",
+      "anchors": ["website", "Payment information", "Privacy Choices"],
+      "facts": [
+        "A política consultada descreve dados de contato, conta, pagamentos, comunicações e navegação no site. Seu escopo não permite concluir que toda imagem ou conversa capturada dentro de casa seja tratada da mesma forma.",
+        "A política informa categorias de terceiros e opções relacionadas a dados pessoais. Para decidir sobre um robô doméstico, é preciso conferir também condições específicas de operação, acesso remoto, gravação e consentimento dos moradores."
+      ]
+    },
+    {
+      "name": "1X — informações sobre implantação",
+      "url": "https://www.1x.tech/about",
+      "anchors": ["2026", "2027"],
+      "facts": [
+        "A cronologia institucional apresenta implantação Early Access em 2026 e expansão posterior. O anúncio original prioriza os Estados Unidos e menciona outros mercados a partir de 2027; isso não confirma venda, preço ou assistência no Brasil.",
+        "Não foi localizada nesta apuração uma oferta oficial brasileira. Valores em dólar não são cotação brasileira nem incluem automaticamente importação, tributos, frete ou assistência local."
+      ]
+    }
+  ],
+  "image_candidate": {
+    "url": "https://images.pexels.com/photos/6019019/pexels-photo-6019019.jpeg?cs=srgb&dl=pexels-laura-musikanski-821773-6019019.jpg&fm=jpg",
+    "source_url": "https://www.pexels.com/photo/close-up-shot-of-a-white-robot-6019019/",
+    "license_url": "https://www.pexels.com/license/",
+    "credit": "Laura Musikanski / Pexels",
+    "alt": "Robô branco com olhos iluminados em verde, em fotografia ilustrativa.",
+    "caption": "Imagem ilustrativa de robótica; não mostra o NEO da 1X. Foto: Laura Musikanski / Pexels.",
+    "human_visual_review": "PENDING"
+  },
+  "publication_authorized": false
+}

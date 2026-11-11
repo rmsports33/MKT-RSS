@@ -10,7 +10,7 @@ import requests
 
 logger = logging.getLogger("keyword_research")
 
-_AUTOCOMPLETE_URL = "https://suggestqueries.google.com/complete/search?client=firefox&q={q}"
+_AUTOCOMPLETE_URL = "https://suggestqueries.google.com/complete/search?client=firefox&hl=pt-BR&gl=BR&q={q}"
 _CACHE: dict = {}
 TTL_SEGUNDOS = 3600
 HEADERS = {"User-Agent": "Mozilla/5.0 (MKT-Flow-P0 keywords)"}
@@ -61,3 +61,19 @@ def sugerir_keywords_review(nome_produto: str, limit: int = 8, categoria: str = 
 
 def limpar_cache():
     _CACHE.clear()
+
+
+def pesquisar_keywords(nome_produto: str, limit: int = 8) -> dict:
+    """Proveniência explícita; sugestões não comprovam procura nos últimos 7d.
+
+    Mantém o contrato legado da lista para SEO. Consumidores de seleção devem
+    usar este envelope e nunca tratar sementes sintéticas como buscas observadas.
+    """
+    nome = (nome_produto or "").strip()
+    if not 1 <= limit <= 20:
+        raise ValueError("limite de keywords deve ser 1..20")
+    values = list(dict.fromkeys(_autocomplete(nome)))[:limit] if nome else []
+    return {"source": "google_autocomplete", "geo": "BR", "language": "pt-BR",
+            "status": "SUGESTOES_OBSERVADAS" if values else "SEM_DADOS",
+            "observed_at": time.time(), "keywords": values,
+            "search_volume": None, "seven_day_demand_verified": False}

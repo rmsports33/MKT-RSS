@@ -1,14 +1,21 @@
 """Coleta RSS para fila editorial — comando opt-in, sem LLM e sem WordPress."""
 import argparse
 import json
+import os
+from datetime import datetime, timezone
 from mkt_flow_p0.rss_ingestor import FEEDS_PADRAO, fetch_feed
 from mkt_flow_p0.fila_pautas import registrar, listar
+from mkt_flow_p0.opportunities import recent
 
 
 def coletar(fonte="", limite=5):
     if fonte and fonte not in FEEDS_PADRAO:
         raise ValueError("Fonte desconhecida")
-    resultados = {"novas": 0, "duplicadas": 0, "falhas": []}
+    if os.getenv("CONEXO_REQUIRE_CLOUD_PERSISTENCE") == "1":
+        if not all(os.getenv(k, "").strip() for k in ("TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN")):
+            raise RuntimeError("PERSISTENCIA_CLOUD_AUSENTE: coleta cancelada antes da rede")
+    resultados = {"novas": 0, "duplicadas": 0, "falhas": [], "fora_da_janela": 0}
+    now = datetime.now(timezone.utc)
     for nome, feed_url in FEEDS_PADRAO.items():
         if fonte and nome != fonte:
             continue
@@ -17,6 +24,9 @@ def coletar(fonte="", limite=5):
             resultados["falhas"].append({"fonte": nome, "motivo": feed["erro"]})
             continue
         for item in feed["itens"][:limite]:
+            if not recent(item.get("published"), now, 168):
+                resultados["fora_da_janela"] += 1
+                continue
             try:
                 status = registrar(item)
                 resultados["novas" if status["novo"] else "duplicadas"] += 1
