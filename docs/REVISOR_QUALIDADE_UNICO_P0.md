@@ -45,3 +45,16 @@ python -m mkt_flow_p0.wp_quality_executor --post-id 9768 --evidence-file /secure
 Variáveis `CONEXO_WP_URL`, `CONEXO_WP_USER`, `CONEXO_WP_APP_PASSWORD` vêm do runtime autorizado. O relatório é gravado em arquivo com permissão 0600; em runner efêmero, **não equivale a armazenamento durável entre jobs**. Para uma aprovação APTO, o `--submit-quality` enviado com a identidade WordPress de um revisor independente persiste o relatório em `wp_options` privado, desde que o Gate novo esteja instalado. A submissão **não** chama publicar nem agendar. Um gate inativo ou uma credencial ausente não são contornados.
 
 No site de produção, o conector WordPress listou `Conexo Editorial Gate` como **inactive** na leitura de 07/11/2026; não presumir proteção ativa pelo status do CI. Testes completos de gate na [PR #62](https://github.com/rmsports33/-site-conexotech/pull/62), CI WordPress+MySQL: [run 42393624254](https://github.com/rmsports33/-site-conexotech/actions/runs/42393624254), 53 testes PHP + 32 verificações WP, sem deploy.
+
+
+## Correções de segurança e coerência — 11/11/2026
+
+A revisão do código antes de integrar este PR constatou que **ausência de alerta automático não equivale à confirmação factual**: o detector pós-IA é numérico e superficial. Agora alegações somente podem receber `VERIFICADO` se houver uma evidência humana identificada e vinculada ao fingerprint da versão, mesmo quando o detector retorna `SEM_ALERTAS`. Quando o detector encontra contradição numérica, o estado continua `REPROVADO`. Isso ainda NÃO autentica sozinho a identidade do revisor: o Gate WordPress deve executar a verificação real de permissões.
+
+A regra de links foi reconciliada com o DNA ConexoTech: **até três links internos genuínos**, e nenhum mínimo artificial. Zero links pode ser aceitável quando não houver conexão editorial real, mas depende do atestado humano de pertinência/ausência e da mesma versão. Mais de três links bloqueiam a prontidão.
+
+O cliente de revisão WordPress agora exige origem exata `https://conexotech.com.br`, **não segue redirects** que poderiam expor a Application Password, recusa posts fora de `draft` e reprova versões alteradas antes de persistir ou enviar parecer.
+
+As verificações internas continuam **somente pré-revisão**; um relatório `APTO_PARA_APROVACAO` não deve equivaler a aceite de um revisor independente, nem libera escrita. O subprocesso ainda deve ser integrado à única rota do Gate já ativa, sem duplicar aprovação ou criar executor concorrente.
+
+O PR permanece em **draft** até resolver o contrato entre os formatos `conexo-article-quality/1` e o plugin 0.1.0-rc5 da Hostinger, testar leitura real apenas de posts draft e comprovar se as evidências são verificadas por identidade e por versão antes do Gate, sem qualquer publicação. Testes sintéticos são necessários, mas insuficientes para homologação de produção.
