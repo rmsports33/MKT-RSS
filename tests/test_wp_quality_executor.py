@@ -5,12 +5,14 @@ from pathlib import Path
 import unittest
 
 from mkt_flow_p0.wp_quality_executor import WPReadError, WPClient, _NoRedirect, review_once, _private_db
-from mkt_flow_p0.revisor_qualidade_unico import _sha
+from mkt_flow_p0.revisor_qualidade_unico import _sha, _txt
+from mkt_flow_p0.wp_quality_executor import _gate_snapshot_sha
 
 
 def post_fixture():
     return {
-        "id": 9768, "status": "draft",
+        "id": 9768, "status": "draft", "type": "post",
+        "author": 3, "date_gmt": "2026-11-11T10:00:00",
         "title": {"raw": "Android MCP: como agentes de IA vao conectar aplicativos"},
         "content": {"raw": (
             "<p>Google apresentou recurso experimental no Android.</p>" * 80 +
@@ -39,13 +41,106 @@ class FakeWP:
         return {"id": 9714, "alt_text": "Android",
                 "description": "Pexels license: https://www.pexels.com/license/"}
     def gate_snapshot(self, post_id):
-        return {"snapshot_sha256": "a" * 64}
+        snapshot, sha = _gate_snapshot_sha(self.p)
+        return {"snapshot": snapshot, "snapshot_sha256": sha}
     def submit_quality(self, post_id, report, snapshot_sha):
         self.writes.append((post_id, snapshot_sha))
-        return {"recorded": True}
+        return {"recorded": True, "post_id": post_id, "snapshot_sha256": snapshot_sha}
+
+
+def complete_evidence(post):
+    return {
+        "fontes": [{"url": "https://developer.android.com/ai/appfunctions",
+                    "verificada": True, "alegacoes": ["Experimental"]}],
+        "corpo_original_fonte": _txt(post["content"]),
+        "evidencias": {key: {"fingerprint": _sha(post), "reviewer": "synthetic-test-reviewer",
+                             "aprovado": True, "referencias": ["synthetic-test-only"]}
+                       for key in ("licenca_imagem", "alegacoes", "links_internos",
+                                   "revisao_substantiva", "visual_390", "visual_1440")},
+    }
 
 
 class TestCloudAdapter(unittest.TestCase):
+    def test_complete_report_bound_to_gate_snapshot_and_ack(self):
+        with tempfile.TemporaryDirectory() as root:
+            client = FakeWP()
+            report, response = review_once(client, 9768, complete_evidence(client.p),
+                                          str(Path(root) / "private.db"), submit_quality=True)
+            self.assertEqual(report["veredito"], "APTO_PARA_APROVACAO")
+            self.assertTrue(response["recorded"])
+            self.assertEqual(len(client.writes), 1)
+            self.assertFalse(report["publicacao_autorizada"])
+
+    def test_mismatched_gate_snapshot_never_submits(self):
+        for field, value in (("post_content", "different manuscript"),
+                             ("post_author", 99), ("ID", 99),
+                             ("post_status", "publish")):
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as root:
+                client = FakeWP()
+                original = client.gate_snapshot
+                def altered(post_id):
+                    snapshot = original(post_id)
+                    snapshot["snapshot"][field] = value
+                    return snapshot
+                client.gate_snapshot = altered
+                with self.assertRaisesRegex(WPReadError, "does not match"):
+                    review_once(client, 9768, complete_evidence(client.p),
+                                str(Path(root) / "private.db"), submit_quality=True)
+                self.assertEqual(client.writes, [])
+
+    def test_malformed_or_wrong_snapshot_hash_never_submits(self):
+        for sha in ("z" * 64, "a" * 64, "a" * 63, None):
+            with self.subTest(sha=sha), tempfile.TemporaryDirectory() as root:
+                client = FakeWP()
+                original = client.gate_snapshot
+                def altered(post_id):
+                    result = original(post_id)
+                    result["snapshot_sha256"] = sha
+                    return result
+                client.gate_snapshot = altered
+                with self.assertRaises(WPReadError):
+                    review_once(client, 9768, complete_evidence(client.p),
+                                str(Path(root) / "private.db"), submit_quality=True)
+                self.assertEqual(client.writes, [])
+
+    def test_promotion_or_author_change_on_last_read_never_submits(self):
+        for field, value in (("status", "publish"), ("status", "future"),
+                             ("author", 99), ("date_gmt", "2026-11-12T10:00:00")):
+            with self.subTest(field=field, value=value), tempfile.TemporaryDirectory() as root:
+                client = FakeWP()
+                original = client.post
+                def altered(post_id):
+                    post = original(post_id)
+                    if client.calls == 3:
+                        post[field] = value
+                    return post
+                client.post = altered
+                with self.assertRaises(WPReadError):
+                    review_once(client, 9768, complete_evidence(client.p),
+                                str(Path(root) / "private.db"), submit_quality=True)
+                self.assertEqual(client.writes, [])
+
+    def test_ack_must_bind_post_and_snapshot(self):
+        for ack in ({"recorded": True}, {"recorded": True, "post_id": 99},
+                    {"recorded": True, "post_id": 9768, "snapshot_sha256": "a" * 64}):
+            with self.subTest(ack=ack), tempfile.TemporaryDirectory() as root:
+                client = FakeWP()
+                client.submit_quality = lambda *args: ack
+                with self.assertRaisesRegex(WPReadError, "acknowledge"):
+                    review_once(client, 9768, complete_evidence(client.p),
+                                str(Path(root) / "private.db"), submit_quality=True)
+
+    def test_gate_binding_requires_raw_fields_and_normalizes_date_and_categories(self):
+        post = post_fixture()
+        post["categories"] = [30, 10]
+        snapshot, sha = _gate_snapshot_sha(post)
+        self.assertEqual(snapshot["post_date_gmt"], "2026-11-11 10:00:00")
+        self.assertEqual(snapshot["post_category"], [10, 30])
+        self.assertEqual(len(sha), 64)
+        post["content"] = {"rendered": "Rendered fallback forbidden"}
+        with self.assertRaises(WPReadError):
+            _gate_snapshot_sha(post)
+
     def test_rascunho_realista_readonly_e_sqlite_privado(self):
         with tempfile.TemporaryDirectory() as root:
             client = FakeWP()

@@ -58,3 +58,15 @@ O cliente de revisão WordPress agora exige origem exata `https://conexotech.com
 As verificações internas continuam **somente pré-revisão**; um relatório `APTO_PARA_APROVACAO` não deve equivaler a aceite de um revisor independente, nem libera escrita. O subprocesso ainda deve ser integrado à única rota do Gate já ativa, sem duplicar aprovação ou criar executor concorrente.
 
 O PR permanece em **draft** até resolver o contrato entre os formatos `conexo-article-quality/1` e o plugin 0.1.0-rc5 da Hostinger, testar leitura real apenas de posts draft e comprovar se as evidências são verificadas por identidade e por versão antes do Gate, sem qualquer publicação. Testes sintéticos são necessários, mas insuficientes para homologação de produção.
+
+## Compatibilidade RC5 — 11/11/2026
+
+Comparação com a cópia auditada do plugin na branch `rmsports33/-site-conexotech:audit-active-gate-rc5-20261111`, árvore `5f549f2a2c6da6cc6f2eb92d5e3bef7658cffe5a` (core blob `fe51fdc6b72b87030ffe7abaec9f849ab0e2a756`). Não representa nova inspeção da Hostinger.
+
+Os 13 checks e os endpoints snapshot/quality/record são compatíveis. O hash do parecer Python continua distinto do hash RC5. Antes de enviar, o adaptador agora reconstrói o snapshot RC5 a partir dos campos REST brutos, normaliza data GMT e ordem das categorias, confere conteúdo e hash retornados, relê o draft e exige confirmação com post_id e snapshot_sha256 idênticos. Autor, tipo e data GMT passam a compor o fingerprint: pareceres anteriores precisam ser refeitos. Não há fallback para HTML rendered na submissão.
+
+Identidade autenticada e permissões continuam verificadas pelo servidor; o campo reviewer do JSON não autentica uma pessoa. O cliente permanece no modo independent padrão. O modo owner autorizado já existente no RC5 continua pela interface humana própria; este patch não o implementa no CLI nem inventa aceite humano. Parecer registrado não é aprovação nem publicação.
+
+Limites remanescentes: Gate exige evidência não vazia para cinco checks, mas não apura fatos nem valida sozinho os documentos de origem; o cliente exige atestados versionados também para alegações e links. Não tratar uma string de referência como prova factual independente. O vínculo do servidor é ao snapshot RC5, e não a uma recomputação do fingerprint Python. Testes locais são sintéticos; faltam piloto autenticado somente de rascunho, readback privado e aprovação humana real. Nenhuma mudança PHP/produção integra este patch.
+
+Validação local do revisor, executor, voz MDA e regressões numéricas: 46 testes e 25 subtestes aprovados; diff sem erros. Contraprovas cobrem divergência do snapshot, hash inválido/incorreto, troca de autor/data/status na última leitura e confirmação de outro post/versão.

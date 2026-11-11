@@ -46,7 +46,8 @@ def _sha(post):
     # Excluir status e modified: pode-se publicar sem invalidar a revisao da versao.
     # Incluir tudo que influencia o parecer, especialmente corpo, categoria e capa.
     vals = {
-        "id": post.get("id"), "title": _str(post.get("title")),
+        "id": post.get("id"), "author": post.get("author"),
+        "type": post.get("type"), "date_gmt": post.get("date_gmt"), "title": _str(post.get("title")),
         "content": _str(post.get("content")),
         "excerpt": _str(post.get("excerpt")),
         "slug": post.get("slug"), "categories": post.get("categories"),

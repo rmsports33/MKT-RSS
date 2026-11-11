@@ -8,6 +8,8 @@ Application Password and user from environment, never in logs/source.
 import argparse
 import base64
 import json
+import hashlib
+import re
 import os
 from pathlib import Path
 import sqlite3
@@ -109,6 +111,42 @@ def _private_db(db_path):
     return conn
 
 
+def _gate_snapshot_sha(post):
+    """Map raw REST fields to the audited RC5 snapshot; never reuse review hash."""
+    required = ("id", "type", "status", "date_gmt", "author", "title",
+                "content", "excerpt", "slug", "categories", "featured_media")
+    if any(key not in post for key in required):
+        raise WPReadError("Raw fields required to bind Gate snapshot")
+    if (type(post["id"]) is not int or type(post["author"]) is not int
+            or post["author"] <= 0 or type(post["featured_media"]) is not int
+            or not isinstance(post["categories"], list)
+            or not all(type(cat) is int for cat in post["categories"])
+            or post["status"] != "draft"):
+        raise WPReadError("Invalid draft fields for Gate snapshot")
+    raw = {}
+    for field in ("title", "content", "excerpt"):
+        value = post[field]
+        if not isinstance(value, dict) or not isinstance(value.get("raw"), str):
+            raise WPReadError("Gate binding requires raw editorial fields")
+        raw[field] = value["raw"]
+    if not all(isinstance(post[key], str) for key in ("type", "date_gmt", "slug")):
+        raise WPReadError("Invalid Gate snapshot metadata")
+    snapshot = {
+        "ID": post["id"], "post_type": post["type"],
+        "post_status": post["status"], "post_date_gmt": post["date_gmt"].replace("T", " "),
+        "post_author": post["author"], "post_title": raw["title"],
+        "post_content": raw["content"], "post_excerpt": raw["excerpt"],
+        "post_name": post["slug"], "post_category": sorted(post["categories"]),
+        "meta_input": {"_thumbnail_id": post["featured_media"]},
+    }
+    return snapshot, _canonical_sha(snapshot)
+
+
+def _canonical_sha(value):
+    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
 def review_once(client, post_id, evidence, db_path, *, submit_quality=False):
     if type(post_id) is not int or post_id <= 0:
         raise ValueError("post_id invalid")
@@ -142,13 +180,20 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False):
         # read-only Python review hash. Both must be checked independently.
         snapshot = client.gate_snapshot(post_id)
         snapshot_sha = snapshot.get("snapshot_sha256")
-        if not isinstance(snapshot_sha, str) or len(snapshot_sha) != 64:
+        if not isinstance(snapshot_sha, str) or not re.fullmatch(r"[a-f0-9]{64}", snapshot_sha):
             raise WPReadError("Gate snapshot unavailable; no remote write")
+        expected_snapshot, expected_sha = _gate_snapshot_sha(latest)
+        if snapshot.get("snapshot") != expected_snapshot or snapshot_sha != expected_sha:
+            raise WPReadError("Gate snapshot does not match reviewed draft")
         again = client.post(post_id)
-        if not verificar_versao(report, again):
+        if (not isinstance(again, dict) or again.get("status") != "draft"
+                or not verificar_versao(report, again)
+                or _gate_snapshot_sha(again)[1] != expected_sha):
             raise WPReadError("Version changed before quality submit")
         response = client.submit_quality(post_id, report, snapshot_sha)
-        if response.get("recorded") is not True:
+        if (not isinstance(response, dict) or response.get("recorded") is not True
+                or type(response.get("post_id")) is not int or response["post_id"] != post_id
+                or response.get("snapshot_sha256") != snapshot_sha):
             raise WPReadError("Gate did not acknowledge quality record")
     return report, response
 
