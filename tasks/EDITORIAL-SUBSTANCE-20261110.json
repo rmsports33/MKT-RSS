@@ -266,6 +266,25 @@
       "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261110/mda_4_versoes_trabalho_corrigidas.zip",
       "result": "PRIVATE_WORKING_COPIES_PREPARED",
       "notes": "Four MDA revisions addressing confirmed logic, source attribution and causal overreach; original eight A/B articles untouched; not human-approved."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/90",
+      "result": "MERGED",
+      "sha": "85e54f7511aa98ef52025a90e6f4312fbfb0f0cb",
+      "description": "Table-structure diagnosis as editorial readiness blocker; zero WP writes, no editorial authorization"
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42930577307",
+      "result": "PASS",
+      "tests_passed": 1127,
+      "skipped": 1,
+      "subtests": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261110/mda_4_versoes_qa_v2_privadas.zip",
+      "result": "FOUR_PRIVATE_QA_V2_WORKING_COPIES",
+      "description": "Source-linked fact qualification + consistent Markdown tables + separate private manifest; never changes frozen A/B arms"
     }
   ],
   "blockers": [
@@ -277,7 +296,7 @@
     "Execução autenticada de ponta a ponta MKT-RSS → WordPress com mesma versão editorial homologada ainda não demonstrada.",
     "Handoff Groq histórico #42809666543 continua cifrado e isolado, não bloqueia o piloto novo."
   ],
-  "next_action": "A geração real A/B e o diagnóstico estão concluídos; quatro versões MDA corrigidas existem APENAS como cópias privadas de trabalho, não aprovadas. Entregar exclusivamente o caderno cego ORIGINAL a um revisor humano independente (nunca a chave), obter parecer com justificativas, apurar fontes/alegações, revisar cópias finais por versão, confirmar imagens/licenças e Gate real antes de qualquer publicação WordPress. Não reexecutar Groq ou esconder resultados negativos.",
+  "next_action": "Solicitar parecer independente HUMANAMENTE preenchido no caderno cego original A/B e revisão factual das quatro cópias QA-v2, mantendo chave separada. Até receber pareceres, não declarar melhoria comprovada ou aprovação para publicar. Completar licenciamento de capas e comprovar bloqueio real Gate 0.1.0-rc5 por versão em teste seguro isolado antes de qualquer escrita WordPress.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -434,7 +453,17 @@
     "mda_ab_originals_frozen_unchanged": true,
     "mda_working_copy_human_acceptance": "PENDING",
     "mda_working_copy_factual_acceptance": "PENDING",
-    "mda_working_copy_archive": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_MDA_AB_20261110_mda_4_versoes_trabalho_corrigidas.zip"
+    "mda_working_copy_archive": "PRIVATE_LIBRARY_ConexoOS_AuditoriaEditorial_MDA_AB_20261110_mda_4_versoes_trabalho_corrigidas.zip",
+    "mda_qa_v2_private_review_packet": "READY_FOUR_WORKING_COPIES_FULL_TEXT",
+    "mda_qa_v2_archive": "PRIVATE_LIBRARY_/ConexoOS/AuditoriaEditorial/MDA_AB_20261110/mda_4_versoes_qa_v2_privadas.zip",
+    "mda_qa_v2_format_table_consistency": "CHECKED_ALL_FOUR",
+    "mda_qa_v2_verified_source_review": "PARTIAL_OFFICIAL_SOURCES_NOT_FULL_FACT_ACCEPTANCE",
+    "mda_qa_v2_human_review": "PENDING",
+    "mda_qa_v2_wordpress_writes": 0,
+    "mda_qa_v2_provider_calls": 0,
+    "mda_table_quality_guard": "MERGED_MASTER_PR90",
+    "mda_table_quality_guard_sha": "85e54f7511aa98ef52025a90e6f4312fbfb0f0cb",
+    "mda_table_quality_guard_tests": "1127_PASSED_1_SKIPPED_11_SUBTESTS_52_REDACTOR"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
