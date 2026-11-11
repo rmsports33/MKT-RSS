@@ -244,8 +244,10 @@ def publicar_comparativo(contrato: dict, wp_url: str, wp_user: str,
         return {"erro": "content com documento HTML completo: "
                         "o post receberia o documento inteiro, nao o corpo"}
 
-    resposta = executar_ferramenta_mcp(wp_url, wp_user, wp_app_password,
-                                        "create_comparativo", params, timeout)
+    # O MCP direto e somente leitura. Nao simular sucesso de uma escrita
+    # proibida nem recorrer ao REST sem contrato editorial assinado.
+    return {"erro": "comparativo bloqueado: criar rascunho pelo transporte editorial canônico assinado",
+            "status": "blocked", "retry_automatic": False}
     if resposta.get("erro"):
         return resposta
 
