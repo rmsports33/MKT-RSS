@@ -59,7 +59,7 @@ class ReviewProviderFailure(ValueError):
 
 def review_with_provider(markdown, brief):
     """A separate assisted critique; never independent/human/factual approval."""
-    from mkt_flow_p0.editorial_voice_adapter import surface_style_signals
+    from mkt_flow_p0.editorial_voice_adapter import surface_style_signals, argumentation_review_questions
     brief = normalize_brief(brief)
     try:
         from mkt_flow_p0.rewriter import _get_client, _modelo, _parse_json_resposta
@@ -79,13 +79,21 @@ def review_with_provider(markdown, brief):
                     "se a relação entre fontes foi interpretada e se existem limitações omitidas. "
                     "Avalie fechamentos decorativos, conectivos mecânicos e repetição da mesma ideia "
                     "com outras palavras; não force contrastes nem recompense variedade artificial. "
+                    "Confira a cadeia tese→prova→consequência→contrapeso→limite, sem exigir uma seção "
+                    "para cada movimento ou um veredito de compra em notícias e notas factuais. "
+                    "Se o artigo declarar teste próprio, benchmark, fotografia ou uso do produto, "
+                    "exija evidência de realização e atribuição; dados de terceiros não viram teste "
+                    "do ConexoTech. Verifique preço por fonte/data/mercado/variante. "
+                    "Verifique se uma recomendação contradiz o sintoma do leitor ou extrapola "
+                    "a força da pesquisa. Critique o texto efetivo, não suas intenções ou beleza formal. "
                     "Sinais superficiais de estilo são pistas para revisar, não prova semântica de falha. "
                     "Retorne JSON {criteria:{nome:{score:inteiro,reason:justificativa específica de 30 a 1500 "
                     "caracteres,excerpt:trecho literal de 30 a 1500 caracteres}}}. Todos os critérios são obrigatórios. "
                     "Não invente trechos nem aprove fatos. Critérios: " + json.dumps(RUBRIC, ensure_ascii=False))},
                 {"role": "user", "content": json.dumps({
                     "brief": brief, "article": markdown,
-                    "non_approving_style_signals": surface_style_signals(markdown)
+                    "non_approving_style_signals": surface_style_signals(markdown),
+                    "non_approving_argumentation_questions": argumentation_review_questions(brief)
                 }, ensure_ascii=False)},
             ])
         if getattr(response.choices[0], "finish_reason", None) == "length":
