@@ -1,6 +1,6 @@
 # Homologação incremental — argumentação decisória ConexoTech / MDA AUTO
 
-**Data:** 10/11/2026. **Escopo:** melhoria da geração e da crítica assistida **dentro do MKT-RSS já existente**. **Estado:** alterações em validação pelo CI; a aceitação editorial externa continua pendente.
+**Data:** 10/11/2026. **Escopo:** melhoria da geração e da crítica assistida **dentro do MKT-RSS já existente**. **Estado:** integração técnica concluída na `master` pelo [PR #92](https://github.com/rmsports33/MKT-RSS/pull/92), commit `249d92fcd2e2063b7d8e1c28edb8687b7dbde65b`; CI com **1.138 testes aprovados, 1 ignorado, 11 subtestes e 52 testes do redator**, e validação Conexo OS verde. **A aceitação editorial externa e o teste A/B desta nova versão permanecem pendentes.**
 
 ## Evidência de origem
 
