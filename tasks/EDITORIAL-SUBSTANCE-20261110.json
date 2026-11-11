@@ -338,18 +338,47 @@
       "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43004028812",
       "result": "IN_PROGRESS",
       "scope": "Four-pair Groq Free A/B on PR92 argumentative MDA; encrypted-only artifacts, WordPress GET-only."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43004028812",
+      "result": "COMPLETE_GENERATION_REVIEW_PENDING",
+      "completed_pairs": 4,
+      "articles_generated": 8,
+      "provider_calls": 8,
+      "wordpress_writes": 0,
+      "encrypted": true,
+      "publication_authorized": false
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/qa_diagnostic_originals_43004028812.json",
+      "result": "THREE_HIGH_CONFIDENCE_FORMAL_DEFECTS",
+      "description": "One unresolved [jogo X] in analysis MDA, metatext in analysis control and SpaceSail control. Private original texts unchanged; reviewer identity mapping separately stored."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/95",
+      "result": "MERGED",
+      "sha": "d55ce7aff3704e1d0f74cd85449f21befa7388af",
+      "description": "Shared fail-closed detection of unresolved manuscript markers/metatext; no AI retries; regulatory caution in MDA prompt."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43010060946",
+      "result": "PASS",
+      "tests_passed": 1148,
+      "tests_skipped": 1,
+      "subtests": 11,
+      "scope": "PR95 after regex/test fixes; Conexo OS editorial validation also success"
     }
   ],
   "blockers": [
     "Revisão humana independente dos oito textos originais e das versões finais ainda não recebida. A preferência do proprietário por B não é um parecer cego independente.",
-    "Nova comparação A/B PR92 em execução; só declarar ganho quando artefatos forem recuperados, auditados e avaliados por humano.",
+    "Nova comparação A/B PR92 concluiu 8 textos completos (run #43004028812); auditoria formal acusou 3 defeitos. Parecer humano independente e prova de ganho de qualidade ainda não ocorreram.",
     "Fontes e fatos das cópias QA-v2 ainda exigem comprovação integral por versão, inclusive certificado primário Anatel e variantes Samsung.",
     "Imagens de #9635, #9687 e #9681 ausentes; #9798 tem proveniência de IA declarada, mas confirmação editorial final ainda não registrada.",
     "Gate 0.1.0-rc5 passou 32/32 em WordPress/MySQL isolados com código real da Hostinger. Configuração real de operador/segredos e bloqueio da rota de produção não foram testados para evitar publicação acidental; backup restaurável igualmente não comprovado.",
     "PR #42 revisor único corrigido e testado em draft, mas integração real com Gate e identidade dos avaliadores ainda não homologada.",
     "Handoff ponta a ponta MKT-RSS→WordPress para versão aprovada ainda não demonstrado; rascunhos devem continuar sem escrita."
   ],
-  "next_action": "Concluir recebimento do A/B PR92 #43004028812, preservar ciphertext e chave privada separados, auditar os textos completos e entregar caderno cego sem a chave. Não criar outro revisor nem integrar PR42 draft enquanto falta comprovar um único Gate. Gate ativo foi homologado isoladamente na exata fonte PHP instalada (32/32), mas sua configuração de produção continua distinta e não testada. Realizar parecer humano independente, factualidade completa, imagens e provas de rollback antes de autorizar qualquer publicação. Sem staging.",
+  "next_action": "A/B argumentativo PR92 concluído e arquivado privadamente com prévia cega, chaves separadas; 3 falhas formais detectadas. Detector fail-closed PR95 integrado e CI verde. Próximo marco exige parecer humano independente cego para quatro pares A/B, revisão factual por claim de versões finalizadas, imagens de 3 rascunhos, conferência 390/1440 e comprovação operacional de identidades/backup Gate. Não regenerar automaticamente os 8 originais, não publicar, não criar segundo Gate nem staging.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -558,12 +587,34 @@
     "editorial_unique_reviewer_pr42": "DRAFT_SECURITY_FIXES_CI_1158_PASS_16_SUBTESTS_NOT_MERGED",
     "editorial_unique_reviewer_factual_evidence": "NO_NUMERIC_ALERT_IS_NOT_FACTUAL_PROOF",
     "editorial_unique_reviewer_internal_links": "MAX_THREE_RELEVANT_NO_QUOTA_HUMAN_EVIDENCE",
-    "mda_argumentative_new_live_ab": "IN_PROGRESS_GITHUB_RUN_43004028812",
+    "mda_argumentative_new_live_ab": "COMPLETE_GENERATION_REVIEW_PENDING",
     "mda_argumentative_new_live_ab_model": "openai/gpt-oss-120b",
     "mda_argumentative_new_live_ab_max_calls": 8,
     "guide_9798_featured_media_provenance": "CHATGPT_AI_GENERATED_DECLARED_WP_MEDIA_9799",
     "guide_9798_featured_media_visual_factual_rights": "FINAL_HUMAN_CONFIRMATION_PENDING",
-    "other_three_articles_featured_media": "MISSING"
+    "other_three_articles_featured_media": "MISSING",
+    "mda_argumentative_new_live_ab_run": 43004028812,
+    "mda_argumentative_new_live_ab_complete_pairs": 4,
+    "mda_argumentative_new_live_ab_complete_articles": 8,
+    "mda_argumentative_new_live_ab_provider_calls": 8,
+    "mda_argumentative_new_live_ab_encrypted_archive": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/evidencia_cifrada_43004028812.zip",
+    "mda_argumentative_new_live_ab_full_manuscripts": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/textos_completos_prompts_fontes_privados_43004028812.zip",
+    "mda_argumentative_new_live_ab_blind_html": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/preview_cego_8_artigos_argumentativos_43004028812.html",
+    "mda_argumentative_new_live_ab_mapping": "PRIVATE_SEPARATE_UNSHARED_KEY",
+    "mda_argumentative_new_live_ab_formal_defects_total": 3,
+    "mda_argumentative_new_live_ab_formal_defects": {
+      "analise_9687_mda": "marcador_editorial_nao_resolvido",
+      "analise_9687_control": "metatexto_de_producao_no_artigo",
+      "noticia_9635_control": "metatexto_de_producao_no_artigo"
+    },
+    "mda_argumentative_new_live_ab_human_review": "PENDING",
+    "mda_argumentative_new_live_ab_claims_review": "PARTIAL_DLS5_GDC_SPACESAIL_REGULATORY",
+    "mda_auto_placeholder_guard": "MERGED_MASTER_PR95",
+    "mda_auto_placeholder_guard_sha": "d55ce7aff3704e1d0f74cd85449f21befa7388af",
+    "mda_auto_placeholder_guard_test_result": "CI_1148_PASS_1_SKIP_11_SUBTESTS_EDITORIAL_PASS",
+    "mda_auto_placeholder_guard_scope": "REWRITER_FAIL_CLOSED_AND_SHARED_SUBSTANCE_READINESS",
+    "mda_auto_provider_calls_for_fix": 0,
+    "mda_auto_new_wordpress_writes_for_fix": 0
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-11"
