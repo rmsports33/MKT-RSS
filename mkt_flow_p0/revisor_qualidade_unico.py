@@ -124,17 +124,24 @@ def avaliar_artigo(post, *, media=None, fontes=None, evidencias=None,
                               [f["url"] for f in fontes_ok])
     if corpo_original_fonte and content:
         alerta = validar_saida(_txt(corpo_original_fonte), _txt(content))
-        checks["alegacoes"] = _check(
-            "VERIFICADO" if alerta["veredito"] == "SEM_ALERTAS" else "REPROVADO",
-            ",".join(alerta["motivos"]), [alerta["veredito"]])
+        # A numeric/style detector is not a factual verifier. Only independently
+        # attested, version-bound evidence can complete this quality dimension.
+        if alerta["veredito"] != "SEM_ALERTAS":
+            checks["alegacoes"] = _check("REPROVADO", ",".join(alerta["motivos"]),
+                                         [alerta["veredito"]])
+        else:
+            checks["alegacoes"] = _evidence(evidencias, "alegacoes", fingerprint)
     else:
         checks["alegacoes"] = _check("NAO_VERIFICADO", "texto_original_para_confronto_ausente")
     internos = [link for link in links if urlparse(link).hostname in (HOST, "www." + HOST)]
     # Quantidade nao basta: pertinencia precisa de revisao substantiva.
-    checks["links_internos"] = _check(
-        "VERIFICADO" if len(set(internos)) >= 3 else "NAO_VERIFICADO",
-        "menos_de_tres_links" if len(set(internos)) < 3 else "",
-        sorted(set(internos)))
+    # The DNA permits UP TO 3 genuinely related links, not a quota of 3.
+    # Relevance and deliberate absence require version-bound human evidence.
+    if len(set(internos)) > 3:
+        checks["links_internos"] = _check("REPROVADO", "mais_de_tres_links_internos",
+                                          sorted(set(internos)))
+    else:
+        checks["links_internos"] = _evidence(evidencias, "links_internos", fingerprint)
     slug = _str(post.get("slug"))
     checks["seo"] = _check(
         "VERIFICADO" if 20 <= len(slug) <= 100 and len(excerpt) >= 80 and
