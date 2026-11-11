@@ -153,3 +153,75 @@ def surface_style_signals(markdown):
         "factual_approval": False,
         "publication_authorized": False,
     }
+
+
+
+def markdown_table_structure_signals(markdown):
+    """Conservative checks for malformed standard Markdown tables.
+
+    This is a formatting preflight, NOT semantic/factual approval. Detects
+    uneven cell counts (a defect found in the 4-genre MDA A/B pilot).
+    Ignore code fences and non-table prose with pipes to reduce false alerts.
+    """
+    if not isinstance(markdown, str):
+        raise ValueError("texto inválido para auditoria de tabelas")
+
+    def cells(row):
+        line = row.strip()
+        if line.startswith("|"):
+            line = line[1:]
+        if line.endswith("|"):
+            line = line[:-1]
+        return [part.strip() for part in re.split(r"(?<!\\)\|", line)]
+
+    def separator(row):
+        values = cells(row)
+        return len(values) >= 2 and all(
+            re.fullmatch(r":?-{3,}:?", item) for item in values
+        )
+
+    blocks = []
+    current = []
+    fenced = False
+    fence_mark = None
+    for line in markdown.splitlines() + [""]:
+        stripped = line.lstrip()
+        boundary = re.match(r"^(\x60{3,}|~{3,})", stripped)
+        if boundary:
+            marker = boundary.group(1)[0]
+            if not fenced:
+                fenced = True
+                fence_mark = marker
+            elif marker == fence_mark:
+                fenced = False
+                fence_mark = None
+            if current:
+                blocks.append(current)
+                current = []
+            continue
+        if not fenced and stripped.startswith("|") and stripped.count("|") >= 2:
+            current.append(stripped)
+        elif current:
+            blocks.append(current)
+            current = []
+    signals = []
+    inspected = 0
+    for rows in blocks:
+        if len(rows) < 2:
+            continue
+        if not separator(rows[1]):
+            # Require 3 rows before assuming the block is a table at all.
+            if len(rows) >= 3 and "tabela_markdown_sem_separador" not in signals:
+                signals.append("tabela_markdown_sem_separador")
+            continue
+        inspected += 1
+        widths = [len(cells(row)) for row in rows]
+        if len(set(widths)) > 1 and "tabela_markdown_colunas_inconsistentes" not in signals:
+            signals.append("tabela_markdown_colunas_inconsistentes")
+    return {
+        "scope": "estrutura_markdown_nao_aprovacao_editorial",
+        "tables_inspected": inspected,
+        "signals": signals,
+        "factual_approval": False,
+        "publication_authorized": False,
+    }

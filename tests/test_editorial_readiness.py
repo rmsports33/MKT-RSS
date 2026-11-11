@@ -23,10 +23,11 @@ HTML = ('<h2>O que mudou</h2><p>Contexto</p><h2>Impactos</h2>'
         '<a href="https://conexotech.com.br/hdmi-arc-soundbar-tv-como-conectar/">HDMI</a>')
 
 
-def packet(extended=False):
+def packet(extended=False, extra_markdown=""):
     text = ("## Fatos confirmados\n\n" + "A pauta depende de dados comprovados e de contexto brasileiro. " *
             (72 if extended else 25) + "\n\n## Por que importa\n\n" +
             ("A explicacao adicional preserva as fontes e evita repeticoes. " * (8 if extended else 4)))
+    text += extra_markdown
     data = {"titulo_seo": "Android e as novas funcoes de assistentes",
             "meta_description": DESCRIPTION,
             "slug": "android-assistentes-funcoes", "texto_markdown": text}
@@ -174,3 +175,63 @@ def test_two_urls_from_one_publisher_do_not_satisfy_multifonte():
     assert readiness["dominios_editoriais_distintos_identificados"] == 1
     assert "pesquisa_multifonte_pendente" in readiness["pendencias"]
     assert readiness["pronto_para_publicar"] is False
+
+
+
+def test_mda_markdown_table_detector_blocks_malformed_real_pilot_shape():
+    from mkt_flow_p0.editorial_voice_adapter import markdown_table_structure_signals
+    bad = ("\n\n| Informação | Status | Fonte |\n"
+           "|---|---|---|\n"
+           "| Cobertura | Não demonstrada |\n"
+           "| Planos | Não confirmados | Sem comunicado |\n")
+    report = markdown_table_structure_signals(bad)
+    assert report["signals"] == ["tabela_markdown_colunas_inconsistentes"]
+    assert report["publication_authorized"] is False
+    result = avaliar_prontidao_editorial(
+        packet(extended=True, extra_markdown=bad), html=HTML,
+        featured_media_id=9714, direitos_imagem_confirmados=True,
+        verified_related_urls=VERIFIED)
+    assert "tabela_markdown_colunas_inconsistentes" in result["pendencias"]
+    assert result["status"] == "ENRIQUECIMENTO_PENDENTE"
+    assert result["pronto_para_publicar"] is False
+
+
+def test_mda_markdown_table_detector_accepts_correct_three_column_table():
+    from mkt_flow_p0.editorial_voice_adapter import markdown_table_structure_signals
+    valid = ("\n\n| Informação | Status | Fonte |\n"
+             "|---|:---:|---|\n"
+             "| Cobertura | Não demonstrada | Registro da Anatel |\n"
+             "| Planos | Não confirmados | Empresa |\n")
+    report = markdown_table_structure_signals(valid)
+    assert report["tables_inspected"] == 1
+    assert report["signals"] == []
+    packet_report = avaliar_prontidao_editorial(
+        packet(extended=True, extra_markdown=valid), html=HTML)
+    assert "tabela_markdown_colunas_inconsistentes" not in packet_report["pendencias"]
+    assert packet_report["pronto_para_publicar"] is False
+
+
+def test_mda_markdown_table_ignores_code_blocks_and_prose_pipes():
+    from mkt_flow_p0.editorial_voice_adapter import markdown_table_structure_signals
+    sample = (
+        "Texto com | separadores em uma frase comum, não é uma tabela.\n\n"
+        "~~~markdown\n"
+        "| Coluna A | Coluna B | Coluna C |\n"
+        "|---|---|---|\n"
+        "| incompleta | duas células |\n"
+        "~~~\n\n"
+        "A | B | C são categorias, não uma tabela."
+    )
+    report = markdown_table_structure_signals(sample)
+    assert report["signals"] == []
+    assert report["tables_inspected"] == 0
+    assert report["factual_approval"] is False
+    assert report["publication_authorized"] is False
+
+
+def test_mda_markdown_missing_separator_is_detected_without_publication_approval():
+    from mkt_flow_p0.editorial_voice_adapter import markdown_table_structure_signals
+    sample = "| Campo | Valor |\n| A | 1 |\n| B | 2 |\n"
+    report = markdown_table_structure_signals(sample)
+    assert "tabela_markdown_sem_separador" in report["signals"]
+    assert report["publication_authorized"] is False
