@@ -24,3 +24,11 @@ Estado: **NÃO HOMOLOGADO EDITORIALMENTE; PUBLICAÇÃO BLOQUEADA**.
 
 ## Limites operacionais
 Sem novas chamadas Groq ou serviços pagos, sem credenciais, sem produção/staging, sem publicar, sem revelar textos privados/chave A/B. Caso acesso privado ou revisor real esteja indisponível, registrar bloqueio e continuar apenas a validação offline. Esta auditoria de rastreabilidade não representa aceite humano, factual ou operacional.
+
+## Contrato de automação editorial — decisão operacional
+- **Uma execução por pauta, um texto final completo:** o executor MKT-RSS reutiliza o redator e crítico existentes; sem A/B, sem segundo executor e sem nova chamada ao provedor apenas para revisar a introdução.
+- **Retomada idempotente:** identificar cada trabalho por pauta + SHA-256 do artigo; corrigir pontualmente a mesma versão e invalidar aprovações anteriores quando o texto mudar.
+- **Falha fechada:** só enviar ao Gate se houver evidência verificável e vinculada ao SHA atual para artigo completo, introdução, fontes primárias, revisão factual, licença de imagem, parecer humano independente e prévias de 390/1440 px. Campos ausentes ou apenas declarações de IA não equivalem a aprovação.
+- **Gate único:** o Gate WordPress precisa validar autenticidade e versão do parecer e rejeitar ausência/expiração; agendamento ou publicação somente por caminho já autorizado, nunca por este documento.
+- **Tratamento de falhas:** registrar etapa, causa, tentativas e próximo reparo; não regenerar o artigo inteiro, não consumir serviços pagos e não contornar bloqueios com escrita direta no WordPress.
+- **Status honesto:** orientação de prompt e CI verde não comprovam execução ponta a ponta. Este contrato não substitui integração real, testes de bloqueio, revisão humana ou licença.
