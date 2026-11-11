@@ -85,3 +85,9 @@ MKT-RSS e o motor prioritario e o publicador; ChatGPT e apoio opcional. Fluxo e 
 - Comparar controle (sem instrução adicional MDA) e tratamento (com MDA), mantendo mesmas fontes/briefing/modelo/parâmetros, sem substituir o redator e sem nova chamada obrigatória. O fluxo normal continua com MDA.
 - Scripts opcionais de preparação e empacotamento A/B são locais, sem rede; materiais completos não podem ser versionados em GitHub público. Chave A/B fica separada do pacote do avaliador humano.
 - Um preflight verde não comprova execução Groq, qualidade nem consentimento de publicação. O avaliador independente deve examinar textos completos, e as falhas factuais não podem ser maquiadas por estilo. Protocolo: docs/EDITORIAL_MDA_AB_CONTROLLED_20261110.md.
+
+## Referência externa de qualidade editorial — 10/11/2026
+
+- O proprietário indicou a análise Canaltech sobre Galaxy S26 FE (04/11/2026) como possível exemplo de boa escrita. Aprendizado: tese explícita, evidência rastreável, consequência prática de cada especificação, trade-offs, perfis de leitor e veredito condicionado aos fatos — **não** reproduzir estrutura ou texto de terceiros nem impor template a todo gênero.
+- Não alegar testes, preço atual ou experiência pessoal do ConexoTech sem evidência própria; atribuir medições de terceiros e contextualizar preços por data/mercado/variante. A preferência anterior do proprietário por versões B é observação subjetiva separada do parecer A/B cego e não revela qual foi gerada com MDA.
+- Referência e critérios de aplicação: `docs/EDITORIAL_REFERENCE_CANALTECH_S26FE_20261110.md`. Não alterar o Gate, integrar nova persona, criar chamada IA nem homologar qualidade com base apenas nesta preferência.
