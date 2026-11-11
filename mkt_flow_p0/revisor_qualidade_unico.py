@@ -112,7 +112,10 @@ def avaliar_artigo(post, *, media=None, fontes=None, evidencias=None,
     desc = _txt(med.get("description"))
     alt = _txt(med.get("alt_text"))
     # Metadados com link de licença sao declaracoes, nao prova de direito.
-    licenca_declarada = bool(re.search(r"https?://\S*(?:license|licen[cs]a)", desc, re.I))
+    licenca_declarada = bool(
+        re.search(r"https?://\S*(?:license|licen[cs]a)", desc, re.I)
+        or re.search(r"https://creativecommons\.org/publicdomain/zero/1\.0(?:[/\s?#]|$)", desc, re.I)
+    )
     licenca_provada = _evidence(evidencias, "licenca_imagem", fingerprint)
     # Generated illustrations have provenance/usage evidence, not a stock license URL.
     # Metadata alone never attests rights; the human record must identify this origin.

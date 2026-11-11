@@ -45,6 +45,16 @@ def evidencias(post):
 
 
 class TestRevisorUnico(unittest.TestCase):
+    def test_cc0_declaration_needs_attestation_without_license_path_keyword(self):
+        p = artigo()
+        m = media()
+        m["description"] = "Autor identificado. Fonte individual Commons. CC0 1.0: https://creativecommons.org/publicdomain/zero/1.0/"
+        report = avaliar_artigo(p, media=m, fontes=fontes())
+        self.assertEqual(report["checks"]["licenca_imagem"]["estado"], "NAO_VERIFICADO")
+        report = avaliar_artigo(p, media=m, fontes=fontes(), evidencias=evidencias(p))
+        self.assertEqual(report["checks"]["licenca_imagem"]["estado"], "VERIFICADO")
+        self.assertFalse(report["publicacao_autorizada"])
+
     def test_ia_declarada_nao_certifica_direitos_sozinha(self):
         p = artigo()
         m = media()
