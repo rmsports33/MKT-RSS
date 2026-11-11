@@ -60,7 +60,7 @@ def test_never_break_normal_markdown_citations_code_or_controls():
 def test_writer_names_uncertainties_without_inventing_product_or_sale():
     analysis = writing_voice_guidance(briefing())
     news = writing_voice_guidance(briefing("noticia"))
-    assert "[jogo X]" in analysis and "omita" in analysis.casefold()
+    assert "[jogo X]" in analysis and "retire o exemplo" in analysis.casefold()
     assert "homologa" in news.casefold()
     assert "disponibilidade comercial" in news
     assert "não" in news.casefold()
