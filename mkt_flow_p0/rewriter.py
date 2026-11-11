@@ -250,6 +250,13 @@ def reescrever_materia(
     palavras_out = len(re.findall(r"\S+", texto))
     if palavras_out < 200:
         return {"erro": f"Reescrita curta demais ({palavras_out} palavras) — rode de novo."}
+    # Fail closed before producing a WordPress draft, without retrying a model
+    # or concealing the rejected manuscript as a successful review.
+    from mkt_flow_p0.editorial_voice_adapter import editorial_placeholder_signals
+    integrity = editorial_placeholder_signals(texto)
+    if integrity["signals"]:
+        return {"erro": "Reescrita contém marcadores editoriais pendentes.",
+                "pendencias": integrity["signals"]}
 
     # C19: o rewriter nao possui evidencias aprovadas por claim.
     # Nunca atribuir PASS a partir de um JSON gerado pela propria IA.
