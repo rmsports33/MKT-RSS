@@ -146,3 +146,21 @@ def assess_editorial_release(markdown, brief=None, review=None, receipts=None):
         "publication_authorized": False,
         "factual_approval": False,
     }
+
+
+def assess_editorial_package(package, brief=None, review=None, receipts=None):
+    """Version-bound editorial diagnostics for a canonical package; never approval.
+
+    Fail closed if the manuscript differs from the reviewed package content.
+    The trusted release trace and canonical Gate are separate requirements.
+    """
+    if not isinstance(package, dict) or not isinstance(package.get("payload"), dict):
+        raise ValueError("pacote editorial inválido")
+    manuscript = package["payload"].get("content")
+    if not isinstance(manuscript, str) or not manuscript.strip():
+        raise ValueError("conteúdo editorial ausente")
+    result = assess_editorial_release(manuscript, brief, review, receipts)
+    result["package_version_sha256"] = package.get("version_sha256")
+    result["status"] = "BLOCKED" if result["blockers"] else "REQUIRES_AUTHENTICATED_GATE"
+    result["publication_authorized"] = False
+    return result
