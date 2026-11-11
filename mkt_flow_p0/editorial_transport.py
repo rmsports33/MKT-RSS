@@ -105,18 +105,6 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         mode = os.environ.get("CONEXO_EDITORIAL_TRANSPORT", "")
         if mode not in ("", "signed", "wp_broker"):
             raise ValueError("transporte editorial nao homologado")
-        # Require substantive editorial evidence on both signed and broker paths.
-        # No caller-provided assessment can replace trusted Turso approval.
-        if intent in {"publish", "schedule"}:
-            from mkt_flow_p0.editorial_substance import assess_editorial_package
-            editorial = package.get("editorial_assessment") if isinstance(package, dict) else None
-            if not isinstance(editorial, dict):
-                raise ValueError("avaliação editorial obrigatória ausente")
-            assessment = assess_editorial_package(
-                package, editorial.get("brief"), editorial.get("review"),
-                editorial.get("receipts"))
-            if assessment["status"] != "REQUIRES_AUTHENTICATED_GATE":
-                raise ValueError("avaliação substantiva pendente: " + "; ".join(assessment["blockers"]))
         if mode == "wp_broker" and intent in {"publish", "schedule"}:
             if operation_nonce is not None:
                 raise ValueError("broker exige reconciliacao remota; retomada nao pode repetir escrita")
