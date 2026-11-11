@@ -138,7 +138,7 @@ def assess_editorial_release(markdown, brief=None, review=None, receipts=None):
     blockers.extend("comprovante_ausente_ou_invalido:" + name
                     for name in readiness["missing_receipts"])
     return {
-        "status": "READY_FOR_AUTHENTICATED_GATE" if not blockers else "BLOCKED",
+        "status": "REQUIRES_AUTHENTICATED_GATE" if not blockers else "BLOCKED",
         "content_sha256": readiness["content_sha256"],
         "blockers": blockers,
         "substance": substance,
