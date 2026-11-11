@@ -92,6 +92,10 @@ def assess_substance(markdown, brief=None, review=None):
             or (len(sentences) > 5 and len(set(sentences)) / len(sentences) < .5)
             or _near_duplicate_repetition(paragraphs)):
         pending.append("repeticao_substantiva")
+    # Structural manuscript defects remain pending regardless of a favorable
+    # assisted review: the reviewer is not a factual or publication gate.
+    from mkt_flow_p0.editorial_voice_adapter import editorial_placeholder_signals
+    pending.extend(editorial_placeholder_signals(markdown)["signals"])
     valid = isinstance(review, dict) and normalized is not None
     valid = valid and review.get("content_sha256") == content_hash(markdown)
     valid = valid and review.get("brief_sha256") == brief_hash(normalized)
