@@ -105,6 +105,18 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         mode = os.environ.get("CONEXO_EDITORIAL_TRANSPORT", "")
         if mode not in ("", "signed", "wp_broker"):
             raise ValueError("transporte editorial nao homologado")
+        # Require substantive editorial evidence on both signed and broker paths.
+        # No caller-provided assessment can replace trusted Turso approval.
+        if intent in {"publish", "schedule"}:
+            from mkt_flow_p0.editorial_substance import assess_editorial_package
+            editorial = package.get("editorial_assessment") if isinstance(package, dict) else None
+            if not isinstance(editorial, dict):
+                raise ValueError("avaliação editorial obrigatória ausente")
+            assessment = assess_editorial_package(
+                package, editorial.get("brief"), editorial.get("review"),
+                editorial.get("receipts"))
+            if assessment["status"] != "REQUIRES_AUTHENTICATED_GATE":
+                raise ValueError("avaliação substantiva pendente: " + "; ".join(assessment["blockers"]))
         if mode == "wp_broker" and intent in {"publish", "schedule"}:
             if operation_nonce is not None:
                 raise ValueError("broker exige reconciliacao remota; retomada nao pode repetir escrita")
@@ -128,20 +140,6 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             blockers = [b for b in blockers if b != v.HUMAN_PENDING]
         if errors or blockers:
             raise ValueError("gate editorial bloqueou: " + "; ".join(errors + blockers))
-        # Diagnostic editorial review is version-bound and never grants approval.
-        # Enforce supplied review metadata when present; the trusted trace and
-        # canonical independent Gate remain mandatory for every release.
-        if intent in {"publish", "schedule"} and isinstance(package, dict):
-            editorial = package.get("editorial_assessment")
-            if editorial is not None:
-                from mkt_flow_p0.editorial_substance import assess_editorial_package
-                if not isinstance(editorial, dict):
-                    raise ValueError("avaliação editorial inválida")
-                assessment = assess_editorial_package(
-                    package, editorial.get("brief"), editorial.get("review"),
-                    editorial.get("receipts"))
-                if assessment["status"] != "REQUIRES_AUTHENTICATED_GATE":
-                    raise ValueError("avaliação substantiva pendente: " + "; ".join(assessment["blockers"]))
         # Mandatory trusted provenance preflight for publish/schedule.
         # Private stage/draft remain unaffected. The WordPress broker
         # performs the same check independently before any write.
