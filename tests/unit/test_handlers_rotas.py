@@ -102,6 +102,7 @@ def test_patterns_nao_se_sobrepoem():
     assert re.match(PAT_LINK, "pub:9249") is None
 
 
+@pytest.mark.skipif(not PTB_REAL, reason="PTB real nao instalado; handlers dependem do pacote opcional")
 def test_linkflow_registra_o_padrao_lk():
     if not getattr(L, "_TEM_PTB", False):
         pytest.skip("python-telegram-bot é opcional: sem PTB não há handlers a registrar")
