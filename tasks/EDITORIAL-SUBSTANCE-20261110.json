@@ -290,6 +290,25 @@
       "reference": "PRIVATE_DRIVE:neutral_AB_independent_review_packet",
       "result": "READY",
       "description": "Four complete anonymous A/B pairs. Replaced identity-revealing header; reviewer independence declaration and scoring rubric included; original corpus unchanged. Access remains owner-only and mapping separate."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/92",
+      "result": "MERGED",
+      "sha": "249d92fcd2e2063b7d8e1c28edb8687b7dbde65b",
+      "scope": "Genre-specific thesis, evidence, consequence, tradeoff, conditional close in existing MDA writer and assisted review; no additional provider call, no publication."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42940783830",
+      "result": "PASS",
+      "tests_passed": 1138,
+      "skipped": 1,
+      "subtests": 11,
+      "redactor_tests_passed": 52
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/42940784241",
+      "result": "PASS",
+      "scope": "Conexo OS editorial validation for PR92"
     }
   ],
   "blockers": [
@@ -301,7 +320,7 @@
     "Execução autenticada de ponta a ponta MKT-RSS → WordPress com mesma versão editorial homologada ainda não demonstrada.",
     "Handoff Groq histórico #42809666543 continua cifrado e isolado, não bloqueia o piloto novo."
   ],
-  "next_action": "Precisamos de um avaliador humano externo identificado pelo titular; não há pessoa ou e-mail autorizado para receber o documento. Compartilhar apenas o novo caderno cego neutro como commenter/reader com o revisor designado; NUNCA enviar chave A/B, análises assistidas nem QA-v2 antes do parecer. Registrar independência, notas 0-4, citações e revisão factual para os 4 pares. A publicação continua bloqueada.",
+  "next_action": "Integração técnica da nova linha argumentativa MDA/ConexoTech concluída na master (PR92; CI verde). Ainda é necessário validar melhoria de prosa produzida por esta NOVA versão por A/B comparável sem confundir a execução antiga Groq #42917583190 com o prompt atualizado; obter revisor HUMANO independente cego para os 8 textos antigos, fact-check das cópias QA-v2 por versão, direitos/licenças das imagens e teste real do Gate WordPress rc5 seguro. Não publicar, não reintroduzir staging e não acionar nova geração Groq automaticamente.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -478,7 +497,27 @@
     "mda_external_blind_review_reader_access": "OWNER_ONLY_NO_EXTERNAL_REVIEWER_ASSIGNED",
     "mda_external_blind_review_comments_count": 0,
     "mda_external_blind_review_human_score": "NOT_RECEIVED",
-    "mda_external_blind_review_independence_declaration": "BLANK_AWAITING_REVIEWER"
+    "mda_external_blind_review_independence_declaration": "BLANK_AWAITING_REVIEWER",
+    "mda_argumentative_voice": "MERGED_PR92_TO_MASTER",
+    "mda_argumentative_voice_sha": "249d92fcd2e2063b7d8e1c28edb8687b7dbde65b",
+    "mda_argumentation_five_moves": [
+      "thesis",
+      "evidence",
+      "consequence",
+      "tradeoff",
+      "closing"
+    ],
+    "mda_argumentative_lenses": "6_ALLOWLISTED_GENRE_SPECIFIC",
+    "mda_argumentative_writer": "EXISTING_MKT_RSS_WRITER_SINGLE_CALL",
+    "mda_argumentative_critic": "EXISTING_ASSISTED_CRITIC_SINGLE_CALL",
+    "mda_argumentative_review_scale": "UNCHANGED_EXISTING_FIVE_CRITERIA_0_TO_4",
+    "mda_argumentative_legacy_control": "UNCHANGED",
+    "mda_argumentative_brief": "UNCHANGED_SIX_FIELDS_AND_HASH",
+    "mda_argumentative_test_results": "CI_1138_PASS_1_SKIP_11_SUBTESTS_52_REDACTOR_PASS",
+    "mda_argumentative_current_prose_human_review": "PENDING",
+    "mda_argumentative_current_prose_live_ab": "NOT_RUN_NEW_REVISION",
+    "mda_external_editorial_reference": "CANALTECH_S26FE_20261104_REASONING_ONLY_NO_COPY",
+    "mda_owner_blind_preference": "B_IN_FOUR_CASES_USER_PREFERENCE_ONLY_NOT_INDEPENDENT_ACCEPTANCE"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-10"
