@@ -133,7 +133,7 @@ def assess_editorial_release(markdown, brief=None, review=None, receipts=None):
     """
     from mkt_flow_p0.editorial_voice_adapter import editorial_readiness
     substance = assess_substance(markdown, brief, review)
-    readiness = editorial_readiness(markdown, receipts or {})
+    readiness = editorial_readiness(markdown, receipts if receipts is not None else {})
     blockers = list(substance["pendencias"])
     blockers.extend("comprovante_ausente_ou_invalido:" + name
                     for name in readiness["missing_receipts"])
