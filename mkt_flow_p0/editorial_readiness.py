@@ -111,6 +111,10 @@ def avaliar_prontidao_editorial(handoff, *, html="", genero="noticia",
     substance = assess_substance(markdown, meta.get("editorial_brief"),
                                  meta.get("editorial_substance_review"))
     pendencias = list(substance["pendencias"])
+    # A real MDA A/B draft contained a 3-column table with 2-cell data rows.
+    # Structural errors remain editorial pendências; never confer publication rights.
+    from mkt_flow_p0.editorial_voice_adapter import markdown_table_structure_signals
+    pendencias.extend(markdown_table_structure_signals(markdown)["signals"])
     if isinstance(meta.get("editorial_brief"), dict) and meta["editorial_brief"].get("genre", genero) != genero:
         pendencias.append("briefing_genero_divergente")
     avisos = ["texto_abaixo_da_referencia_do_genero"] if palavras < limite else []
