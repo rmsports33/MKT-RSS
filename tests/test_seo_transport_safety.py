@@ -5,6 +5,19 @@ import hmac
 from unittest.mock import MagicMock, patch
 
 from mkt_flow_p0 import editorial_transport as transport
+import pytest
+
+
+@pytest.fixture(autouse=True)
+def _authenticated_trace_for_seo_only():
+    """Isolate downstream SEO behavior; trace enforcement has dedicated tests.
+
+    This is an offline mock, not a valid real-world approval or Turso receipt.
+    """
+    with patch("mkt_flow_p0.editorial_trace_gate.require_release_trace",
+               return_value={"trace_checked": True, "publication_authorized": False}):
+        yield
+
 
 KEY = "synthetic-secret-32-bytes-offline-only-1234"
 NONCE = "a" * 32
