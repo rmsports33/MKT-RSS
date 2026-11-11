@@ -1,5 +1,6 @@
 """Contraprovas fail-closed do revisor editorial unico, sem WordPress real."""
 import copy
+import re
 import unittest
 
 from mkt_flow_p0.revisor_qualidade_unico import (
@@ -39,7 +40,8 @@ def evidencias(post):
     fp = _sha(post)
     return {k: {"fingerprint": fp, "reviewer": "editor-independente",
                 "aprovado": True, "referencias": ["https://evidencias.example.org/registro"]}
-            for k in ("licenca_imagem", "revisao_substantiva", "visual_390", "visual_1440")}
+            for k in ("licenca_imagem", "revisao_substantiva", "visual_390", "visual_1440",
+                      "alegacoes", "links_internos")}
 
 
 class TestRevisorUnico(unittest.TestCase):
@@ -112,6 +114,33 @@ class TestRevisorUnico(unittest.TestCase):
         m["description"] = "Imagem de origem desconhecida"
         r = avaliar_artigo(p, media=m, fontes=fontes())
         self.assertIn("licenca_imagem", r["bloqueios"])
+
+    def test_sem_alertas_numericos_nao_equivale_a_checagem_factual_humana(self):
+        p = artigo()
+        e = evidencias(p)
+        e.pop("alegacoes")
+        report = avaliar_artigo(p, media=media(), fontes=fontes(), evidencias=e,
+                                corpo_original_fonte="Google apresentou um recurso experimental sem disponibilidade geral.")
+        self.assertEqual(report["checks"]["alegacoes"]["estado"], "NAO_VERIFICADO")
+        self.assertIn("alegacoes", report["pendencias"])
+        self.assertNotEqual(report["veredito"], "APTO_PARA_APROVACAO")
+
+    def test_ate_tres_links_nao_cria_quota_obrigatoria(self):
+        p = artigo()
+        # Remove os três hiperlinks do site, preservando fonte externa.
+        p["content"] = re.sub(r'<a href="https://conexotech.com.br/[^"]+">[^<]+</a>', "", p["content"])
+        e = evidencias(p)
+        report = avaliar_artigo(p, media=media(), fontes=fontes(), evidencias=e,
+                                corpo_original_fonte="Google apresentou um recurso experimental sem disponibilidade geral.")
+        self.assertEqual(report["checks"]["links_internos"]["estado"], "VERIFICADO")
+        self.assertNotIn("links_internos", report["pendencias"])
+
+    def test_link_extra_violates_max_three_even_with_attestation(self):
+        p = artigo()
+        p["content"] += '<a href="https://conexotech.com.br/quarto-artigo/">Outro</a>'
+        report = avaliar_artigo(p, media=media(), fontes=fontes(), evidencias=evidencias(p))
+        self.assertEqual(report["checks"]["links_internos"]["estado"], "REPROVADO")
+        self.assertIn("links_internos", report["bloqueios"])
 
     def test_nao_muta_snapshot(self):
         p = artigo()
