@@ -128,10 +128,10 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             blockers = [b for b in blockers if b != v.HUMAN_PENDING]
         if errors or blockers:
             raise ValueError("gate editorial bloqueou: " + "; ".join(errors + blockers))
-        # Opt-in trusted provenance preflight: does not replace the canonical
-        # gate/receipt, and never blocks private stage/draft creation.
-        if intent in ("publish", "schedule") and os.environ.get(
-                "CONEXO_REQUIRE_TRACE_FOR_PUBLICATION") == "1":
+        # Mandatory trusted provenance preflight for publish/schedule.
+        # Private stage/draft remain unaffected. The WordPress broker
+        # performs the same check independently before any write.
+        if intent in ("publish", "schedule"):
             from mkt_flow_p0.editorial_trace_gate import require_release_trace
             require_release_trace(package, trace_run_id)
         # Strict mode becomes mandatory only after the executor and SEO Gate
