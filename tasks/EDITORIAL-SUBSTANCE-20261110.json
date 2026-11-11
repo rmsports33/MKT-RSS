@@ -372,6 +372,11 @@
       "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/quatro_preferidas_qa_v1_20261111.zip",
       "result": "PRIVATE_QA_V1_FOUR_SELECTED_WORKING_COPIES",
       "details": "User selected 4 of 8 blind texts; 23 tracked partial factual and argumentation revisions, 5 consistent HTML tables. Mapping of choices retained privately and NOT shown to the independent A/B reviewer. Original A/B archive unchanged, no WordPress write or Groq call."
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/qa_v1_preview_390_1440_results.json",
+      "result": "HTML_PREVIEW_390_AND_1440_PASS",
+      "description": "All 4 panels inspected with headless Chromium at 390/1440 px, no document horizontal overflow, local tables scroll within container; this is not WordPress rendering evidence."
     }
   ],
   "blockers": [
@@ -631,7 +636,11 @@
     "mda_owner_second_round_qa_factual_state": "PARTIAL_PRIMARY_EVIDENCE_REVIEW_NO_FULL_ACCEPTANCE",
     "mda_owner_second_round_qa_missing_primary": "ANATEL_CERTIFICATE,ALL_CLAIMS_AND_IMAGES",
     "mda_owner_second_round_qa_wp_writes": 0,
-    "mda_owner_second_round_qa_groq_calls": 0
+    "mda_owner_second_round_qa_groq_calls": 0,
+    "mda_owner_second_round_editorial_qa_preview_visual": "PASS_390_1440_ALL_FOUR_PANELS_LOCAL_HTML",
+    "mda_owner_second_round_editorial_qa_preview_mobile_tables": "HORIZONTAL_SCROLL_INSIDE_TABLE_ONLY",
+    "mda_owner_second_round_editorial_qa_visual_evidence": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/qa_v1_preview_390_1440_results.json",
+    "mda_owner_second_round_editorial_qa_wp_actual_visual": "NOT_TESTED_LIVE_WORDPRESS"
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-11"
