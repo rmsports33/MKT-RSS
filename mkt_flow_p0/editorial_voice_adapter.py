@@ -208,7 +208,7 @@ def writing_voice_guidance(brief):
         + "Nunca deixe marcadores editoriais como [jogo X], [inserir fonte], "
         + "TODO ou metacomentários sobre o briefing no artigo entregue: "
         + "identifique o caso real em fonte confiável ou retire o exemplo. "
-        + "Em temas regulatórios, homologaçao de equipamento não comprova "
+        + "Em temas regulatórios, homologação de equipamento não comprova "
         + "autorização de operação da empresa, disponibilidade comercial, "
         + "cobertura, preço ou contrato. Distinga os atos e seus documentos. "
         + "Não invente conclusão forte quando a pauta não a sustenta. "
