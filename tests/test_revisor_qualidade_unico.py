@@ -45,6 +45,30 @@ def evidencias(post):
 
 
 class TestRevisorUnico(unittest.TestCase):
+    def test_ia_declarada_nao_certifica_direitos_sozinha(self):
+        p = artigo()
+        m = media()
+        m["description"] = "Imagem gerada pelo gerador integrado do ChatGPT. Ilustração editorial."
+        e = evidencias(p)
+        report = avaliar_artigo(p, media=m, fontes=fontes(), evidencias=e)
+        self.assertEqual(report["checks"]["licenca_imagem"]["estado"], "NAO_VERIFICADO")
+        e["licenca_imagem"]["tipo_origem"] = "gerada_ia"
+        report = avaliar_artigo(p, media=m, fontes=fontes(), evidencias=e)
+        self.assertEqual(report["checks"]["licenca_imagem"]["estado"], "VERIFICADO")
+        self.assertFalse(report["publicacao_autorizada"])
+        e["licenca_imagem"]["referencias"] = []
+        report = avaliar_artigo(p, media=m, fontes=fontes(), evidencias=e)
+        self.assertEqual(report["checks"]["licenca_imagem"]["estado"], "NAO_VERIFICADO")
+
+    def test_atestado_ia_nao_substitui_declaracao_de_origem_na_midia(self):
+        p = artigo()
+        m = media()
+        m["description"] = "Imagem sem origem identificada"
+        e = evidencias(p)
+        e["licenca_imagem"]["tipo_origem"] = "gerada_ia"
+        report = avaliar_artigo(p, media=m, fontes=fontes(), evidencias=e)
+        self.assertIn("licenca_imagem", report["bloqueios"])
+
     def test_sem_evidencias_nao_aprova(self):
         r = avaliar_artigo(artigo(), media=media(), fontes=fontes())
         self.assertEqual(r["schema"], VERSAO)

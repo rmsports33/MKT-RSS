@@ -114,8 +114,15 @@ def avaliar_artigo(post, *, media=None, fontes=None, evidencias=None,
     # Metadados com link de licença sao declaracoes, nao prova de direito.
     licenca_declarada = bool(re.search(r"https?://\S*(?:license|licen[cs]a)", desc, re.I))
     licenca_provada = _evidence(evidencias, "licenca_imagem", fingerprint)
-    if med.get("id") != capa_id or not alt or not licenca_declarada:
+    # Generated illustrations have provenance/usage evidence, not a stock license URL.
+    # Metadata alone never attests rights; the human record must identify this origin.
+    ia_declarada = bool(re.search(r"(?:gerad[ao]|produzid[ao]).{0,100}(?:\bIA\b|ChatGPT|intelig[eê]ncia artificial)", desc, re.I))
+    origem = evidencias.get("licenca_imagem")
+    origem_ia = isinstance(origem, dict) and origem.get("tipo_origem") == "gerada_ia"
+    if med.get("id") != capa_id or not alt or not (licenca_declarada or ia_declarada):
         checks["licenca_imagem"] = _check("REPROVADO", "mídia_sem_alt_origem_ou_licenca_declarada")
+    elif ia_declarada and not licenca_declarada and not origem_ia:
+        checks["licenca_imagem"] = _check("NAO_VERIFICADO", "proveniencia_ia_sem_atestado_especifico")
     else:
         checks["licenca_imagem"] = licenca_provada
     fontes_ok = [f for f in fontes if isinstance(f, dict) and f.get("verificada") is True

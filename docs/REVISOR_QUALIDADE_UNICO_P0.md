@@ -70,3 +70,15 @@ Identidade autenticada e permissões continuam verificadas pelo servidor; o camp
 Limites remanescentes: Gate exige evidência não vazia para cinco checks, mas não apura fatos nem valida sozinho os documentos de origem; o cliente exige atestados versionados também para alegações e links. Não tratar uma string de referência como prova factual independente. O vínculo do servidor é ao snapshot RC5, e não a uma recomputação do fingerprint Python. Testes locais são sintéticos; faltam piloto autenticado somente de rascunho, readback privado e aprovação humana real. Nenhuma mudança PHP/produção integra este patch.
 
 Validação local do revisor, executor, voz MDA e regressões numéricas: 46 testes e 25 subtestes aprovados; diff sem erros. Contraprovas cobrem divergência do snapshot, hash inválido/incorreto, troca de autor/data/status na última leitura e confirmação de outro post/versão.
+
+## Piloto autenticado somente leitura — 11/11/2026
+
+Concluído o piloto pela conexão WordPress MCP: duas leituras context=edit do post #9798 e uma leitura da mídia #9799; os dois snapshots do post foram idênticos e mantiveram status draft. O motor review_once consumiu essas leituras capturadas localmente, salvou um parecer em SQLite 0600 e confirmou a persistência por SELECT. Não houve credencial transportada para o Python, HTTP direto do WPClient, chamada ao endpoint Gate, submissão de parecer, aprovação ou escrita WordPress. Portanto isto comprova MCP autenticado → motor local → registro privado, não integração HTTP autenticada direta nem armazenamento durável hospedado.
+
+O antigo alvo #9768 já estava publicado na leitura atual. O motor recusou essa captura real antes de criar o banco, corrigindo a premissa antiga de usá-lo como draft. Não alterar status de artigo publicado para testar.
+
+Resultado editorial final do #9798: BLOQUEADO pela categoria padrão [1]. Pendências: licença/proveniência da imagem, fontes, alegações, links internos, revisão substantiva e conferências 390/1440. Não foram fornecidos atestados humanos: campos ausentes permanecem pendentes mesmo quando existem referências no corpo. O parecer privado não foi versionado nem transformado em autorização. Capturas e SQLite permanecem no executor efêmero; não foi comprovado arquivo durável externo.
+
+Falha de classificação corrigida: uma ilustração declarada como gerada por IA não precisa inventar URL de licença de banco. Para esse caso, o atestado licenca_imagem exige tipo_origem=gerada_ia, reviewer, fingerprint, aprovado=true e referências de proveniência/uso verificadas; declaração na mídia sozinha permanece NAO_VERIFICADO. Sem origem declarada ou ALT, o bloqueio permanece. Não foi criado atestado humano para a mídia real.
+
+Validação da correção: 48 testes e 25 subtestes locais aprovados. Continuação editorial depende de categoria adequada e evidências reais; o piloto técnico de leitura está concluído.
