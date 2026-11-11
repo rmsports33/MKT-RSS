@@ -367,6 +367,11 @@
       "tests_skipped": 1,
       "subtests": 11,
       "scope": "PR95 after regex/test fixes; Conexo OS editorial validation also success"
+    },
+    {
+      "reference": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/quatro_preferidas_qa_v1_20261111.zip",
+      "result": "PRIVATE_QA_V1_FOUR_SELECTED_WORKING_COPIES",
+      "details": "User selected 4 of 8 blind texts; 23 tracked partial factual and argumentation revisions, 5 consistent HTML tables. Mapping of choices retained privately and NOT shown to the independent A/B reviewer. Original A/B archive unchanged, no WordPress write or Groq call."
     }
   ],
   "blockers": [
@@ -378,7 +383,7 @@
     "PR #42 revisor único corrigido e testado em draft, mas integração real com Gate e identidade dos avaliadores ainda não homologada.",
     "Handoff ponta a ponta MKT-RSS→WordPress para versão aprovada ainda não demonstrado; rascunhos devem continuar sem escrita."
   ],
-  "next_action": "A/B argumentativo PR92 concluído e arquivado privadamente com prévia cega, chaves separadas; 3 falhas formais detectadas. Detector fail-closed PR95 integrado e CI verde. Próximo marco exige parecer humano independente cego para quatro pares A/B, revisão factual por claim de versões finalizadas, imagens de 3 rascunhos, conferência 390/1440 e comprovação operacional de identidades/backup Gate. Não regenerar automaticamente os 8 originais, não publicar, não criar segundo Gate nem staging.",
+  "next_action": "Quatro versões escolhidas pelo proprietário agora têm cópias privadas QA-v1 com 23 correções e fontes pontuais, sem tocar nos oito originais A/B. O avaliador externo deve revisar somente os oito braços originais em caderno cego (sem preferência do proprietário, chaves ou QA-v1). Após parecer externo assinado, proceder a fact-check completo de cada cópia preferida, licenças/capas, inspeção visual 390/1440 e Gate operacional por versão. Sem publicar antes de autorização real.",
   "operational_authorization": "Pedido explícito nesta sessão: siga a recomendação, corrija tudo necessário e utilize os meios necessários para concluir; cobre sincronização, PR e integração desta correção. Não aprova publicação de artigo.",
   "initial_authorizations": {
     "push": false,
@@ -575,7 +580,7 @@
     "mda_argumentative_current_prose_human_review": "PENDING",
     "mda_argumentative_current_prose_live_ab": "NOT_RUN_NEW_REVISION",
     "mda_external_editorial_reference": "CANALTECH_S26FE_20261104_REASONING_ONLY_NO_COPY",
-    "mda_owner_blind_preference": "B_IN_FOUR_CASES_USER_PREFERENCE_ONLY_NOT_INDEPENDENT_ACCEPTANCE",
+    "mda_owner_blind_preference": "HISTORIC_FIRST_AB_20261110_B_ALL_FOUR_NOT_CURRENT_ROUND",
     "gate_active_version": "CONEXO_CONTROLLED_0.1.0_RC5",
     "gate_active_code_snapshot": "HOSTINGER_READ_ONLY_SHA256_VERIFIED_PRIVATE_SITE_PR70",
     "gate_active_isolated_wp_mysql": "PASS_32_OF_32_RUN_43003300959",
@@ -614,7 +619,19 @@
     "mda_auto_placeholder_guard_test_result": "CI_1148_PASS_1_SKIP_11_SUBTESTS_EDITORIAL_PASS",
     "mda_auto_placeholder_guard_scope": "REWRITER_FAIL_CLOSED_AND_SHARED_SUBSTANCE_READINESS",
     "mda_auto_provider_calls_for_fix": 0,
-    "mda_auto_new_wordpress_writes_for_fix": 0
+    "mda_auto_new_wordpress_writes_for_fix": 0,
+    "mda_owner_second_round_preferences": "PRIVATE_OWNER_RECORD_NOT_FOR_BLIND_REVIEWER",
+    "mda_owner_second_round_editorial_qa": "FOUR_WORKING_COPIES_QA_V1_PRIVATE_NOT_APPROVED",
+    "mda_owner_second_round_editorial_qa_changes": 23,
+    "mda_owner_second_round_editorial_qa_syntax": "FIVE_MARKDOWN_TABLES_CONSISTENT_IN_HTML",
+    "mda_owner_second_round_editorial_qa_archive": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/quatro_preferidas_qa_v1_20261111.zip",
+    "mda_owner_second_round_editorial_qa_preview": "PRIVATE_LIBRARY:/ConexoOS/AuditoriaEditorial/MDA_AB_20261111/preview_quatro_preferidas_qa_v1_20261111.html",
+    "mda_owner_second_round_selection_not_shared_with_reviewer": true,
+    "mda_owner_second_round_original_eight_immutable": true,
+    "mda_owner_second_round_qa_factual_state": "PARTIAL_PRIMARY_EVIDENCE_REVIEW_NO_FULL_ACCEPTANCE",
+    "mda_owner_second_round_qa_missing_primary": "ANATEL_CERTIFICATE,ALL_CLAIMS_AND_IMAGES",
+    "mda_owner_second_round_qa_wp_writes": 0,
+    "mda_owner_second_round_qa_groq_calls": 0
   },
   "latest_change": "Sincronização de status após merge PR #80 e dois CIs verdes; preservar histórico em initial_authorizations.",
   "checked_at": "2026-11-11"
