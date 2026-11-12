@@ -1,6 +1,9 @@
 name: MKT release readiness - no article writes
 on:
   workflow_dispatch:
+  push:
+    branches: [master]
+    paths: [.github/workflows/mkt-release-readiness-manual.yml]
 permissions:
   contents: read
 concurrency:
@@ -8,7 +11,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   readiness:
-    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.ref == 'refs/heads/master' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     environment: rss-homolog
     timeout-minutes: 3
