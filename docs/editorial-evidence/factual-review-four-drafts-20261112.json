@@ -1,0 +1,104 @@
+{
+  "schema": "conexo-factual-review/1",
+  "date": "2026-11-12",
+  "scope": [
+    9810,
+    9814,
+    9815,
+    9816
+  ],
+  "method": "Direct read of authenticated WP draft and comparison with primary/current publisher sources. Assisted evidence audit; not independent human editorial authorization.",
+  "publication_authorized": false,
+  "sources": [
+    {
+      "url": "https://www.1x.tech/order",
+      "fact": "NEO early access USD 20,000, standard USD 499/month, USD 200 deposit, distinct modalities"
+    },
+    {
+      "url": "https://www.1x.tech/legal",
+      "fact": "Pre-order cancellation deposit refund until 14 days after order invitation; after that deadline refund restrictions apply"
+    },
+    {
+      "url": "https://www.1x.tech/discover/neo-home-robot",
+      "fact": "2026 primarily U.S. deliveries and expansion plans from 2027: company plans only, not Brazilian availability"
+    },
+    {
+      "url": "https://www.1x.tech/privacy-policy",
+      "fact": "General site/interactions privacy policy; does not establish complete in-home robot and teleoperation terms"
+    },
+    {
+      "url": "https://www.unitree.com/R1/",
+      "fact": "R1 variants and parameter variations; manufacturer safety warning"
+    },
+    {
+      "url": "https://www.unitree.com/g1/",
+      "fact": "G1 and G1 EDU variants and manufacturer caution; no direct comparative performance measurements"
+    },
+    {
+      "url": "https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/manuais/despacho-de-importacao/topicos-1/conceitos-e-definicoes/tipos-de-declaracao-de-importacao/declaracao-simplificada-de-importacao-dsi-eletronica",
+      "fact": "DSI is conditional and 2016 source alone not sufficient for current telecom compliance"
+    },
+    {
+      "url": "https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/manuais/despacho-de-importacao/topicos-1/procedimentos-preliminares/outros-controles-1/anatel",
+      "fact": "Updated August 2026, Anatel controls for covered telecom import operations; device-specific classification remains unverified"
+    },
+    {
+      "url": "https://www.gov.br/anatel/pt-br/regulado/certificacao-de-produtos/importacao-para-uso-proprio",
+      "fact": "Specific own-use homologation is conditional and not a blanket commercial authorization; direct automated access challenged, official search index corroborates"
+    },
+    {
+      "url": "https://www.figure.ai/news/introducing-figure-03",
+      "fact": "Figure 03 announced October 9 2025 with hardware and perception redesign"
+    },
+    {
+      "url": "https://www.figure.ai/news/helix-02",
+      "fact": "Helix 02 reported whole-body control January 27 2026"
+    },
+    {
+      "url": "https://www.figure.ai/news/helix-2-5-zero-shot-30-home-generalization",
+      "fact": "Figure claims 30 untrained Bay Area homes and three behaviors September 17 2026, not an independent success-rate certification"
+    },
+    {
+      "url": "https://time.com/7324233/figure-03-robot-humanoid-reveal/",
+      "fact": "October 9 2025 independent reporting on demonstration limitations; should not be conflated with September 2026 company findings"
+    }
+  ],
+  "articles": [
+    {
+      "post_id": 9810,
+      "result": "MAIN_PRIMARY_SOURCE_FACTS_SUPPORTED",
+      "action": "NO_CHANGE",
+      "modified": "2026-11-12T10:46:34"
+    },
+    {
+      "post_id": 9814,
+      "result": "SUPPORTED_AFTER_REGULATORY_CONTEXT_UPDATE",
+      "action": "UPDATED_DRAFT_WITH_2026_RECEITA_ANATEL_GUIDANCE",
+      "modified": "2026-11-12T11:37:26",
+      "new_canonical_snapshot_required": true
+    },
+    {
+      "post_id": 9815,
+      "result": "MAIN_COMPARISON_FRAMING_SUPPORTED",
+      "action": "REMOVED_UNUSED_STANFORD_AI_INDEX_BIBLIOGRAPHY",
+      "modified": "2026-11-12T11:37:41",
+      "new_canonical_snapshot_required": true
+    },
+    {
+      "post_id": 9816,
+      "result": "FIGURE_PRIMARY_SOURCES_AND_2025_EXTERNAL_CONTEXT_SUPPORTED",
+      "action": "NO_CHANGE",
+      "modified": "2026-11-12T10:47:05"
+    }
+  ],
+  "confirmations": [
+    "All four drafts reread via authenticated WordPress after any change; statuses draft, categories preserved, featured_media=9812 and table open/close tag counts equal.",
+    "No article published or approved by a signed Gate in this task."
+  ],
+  "limitations": [
+    "Sources establish reported claims, not hands-on performance certification, purchase availability in Brazil or legal compliance of any specific robot.",
+    "Human substantive editorial acceptance and visual risk inspection still pending.",
+    "New content version of 9814 and 9815 must be captured before version-bound Gate authorization, without treating old hashes as current."
+  ],
+  "next": "Re-use source audit for a single substantive independent editorial opinion per draft; perform only risk-targeted visual checks; then generate canonical snapshot and authentic signed Gate approval if publication separately authorized."
+}
