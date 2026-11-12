@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "OWNER_ACCEPTED_FINAL_COVERS_READY_REVIEWER_GATE_PENDING",
+  "status": "OWNER_ACCEPTED_COVERS_DONE_BATCH_GUARD_MERGED_GATE_SIGNATURE_PENDING",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -98,13 +98,18 @@
       "sha": "481791cd6267b8cbb4e1a454211434193a0d8be1",
       "reference": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
       "result": "Seis JPEG IA finais 9838–9843 vinculados aos drafts, texto Gutenberg preservado por SHA256, projeções de metadados atualizadas."
+    },
+    {
+      "sha": "bcfdc48fc15ad2e736724ccefe715c6d79603681",
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/98",
+      "result": "PR #98 integrado à master, CI pytest e contrato editorial verdes. image_protocol usa reserva de imagens no lote; pipeline_rss impede reutilização de featured_media_id no mesmo run após escrita; sete testes de regressão incluídos."
     }
   ],
   "blockers": [
     "Revisor WordPress autenticado distinto do autor ID3 assinar parecer e autorização por versão no Gate real; modo proprietário ID3 não representa revisor distinto.",
     "Executar publicação pelo publicador MKT-RSS após assinatura e confirmar status publish/URLs; nenhum bypass direto via REST."
   ],
-  "next_action": "No owner confirmation needs to be repeated. An actual authorized reviewer distinct from WP author ID3 must sign the current Gate snapshot; only then the existing MKT-RSS publish workflow can run. Images/text already final.",
+  "next_action": "Os seis rascunhos estão prontos com capas únicas. Revisor autenticado distinto do autor ID3 precisa conferir e assinar parecer/vigência de cada versão no Gate. Somente depois disparar publicador MKT-RSS com recibos Gate e verificar readback. Owner não precisa repetir aceite editorial.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -173,13 +178,16 @@
     "gate_signed_release": "PENDING_DIFFERENT_AUTHENTICATED_REVIEWER",
     "cover_optimization": "6 JPEG 1200x675, 79-119KB, current in WordPress",
     "image_pipeline_root_cause": "Six drafts previously shared Pexels media #9812; no topic-distinct generation/selection invoked for each article in the pilot. Corrected for this batch with unique AI illustrated JPEG media 9838-9843.",
-    "image_pipeline_future_rule": "For each article first prefer a properly licensed topical free image; if no suitable image, generate original AI illustration with clear caption. Discourage repetition within the batch unless explicitly justified; do not present AI imagery as manufacturer photos."
+    "image_pipeline_future_rule": "For each article first prefer a properly licensed topical free image; if no suitable image, generate original AI illustration with clear caption. Discourage repetition within the batch unless explicitly justified; do not present AI imagery as manufacturer photos.",
+    "image_batch_uniqueness_implementation": "MERGED_MASTER_BCFDC48_CI_SUCCESS",
+    "ai_generation_execution": "REQUEST_ONLY_NOT_BACKGROUND_AUTO_GENERATED",
+    "wordPress_available_reviewers": "SITE_USERS_ID3_ADMIN_AND_ID4_EDITOR; SAME_DISPLAY_NAME; INDEPENDENT_REVIEW_NOT_ATTESTED",
+    "authenticated_gate_reviewer": "NOT_VERIFIED_FOR_CURRENT_VERSIONS"
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
     "Restauração de backup e replay/rollback: trilha separada de resiliência.",
-    "Mesma imagem #9812 nos seis rascunhos: opcional diversificar capas antes de publicação.",
     "Prévia nativa dos rascunhos não certificada; evidência visual reconstruída e responsividade pública já reutilizadas.",
-    "Codificar/verificar seleção automática de capa temática por artigo em futuros lotes (sem duplicar imagens sem justificativa); correção do lote atual concluída, runtime recorrente ainda não atualizado."
+    "A IA em GitHub Actions continua solicitação de imagem, não renderização automática sem serviço autorizado. Planejamento único e deduplicação por lote já estão na master."
   ]
 }
