@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "task_id": "EDITORIAL-INTEGRATION-20261112",
+  "title": "Exigir briefing e validar integração editorial com núcleo fixado",
+  "repository": "rmsports33/MKT-RSS",
+  "base_branch": "fix/editorial-integration-20261112",
+  "base_sha": "75e6c8fb2c8155f891d116b7f9a5e3dd82cf8729",
+  "owner": "Codex",
+  "coordinator": "Codex",
+  "reviewer": "rmsports33",
+  "status": "BLOCKED",
+  "scope": [
+    "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
+    "Registrar separadamente homologação real e pendências de acesso."
+  ],
+  "acceptance": [
+    "Novas gerações sem briefing não invocam o redator/provedor.",
+    "Seis gêneros atravessam os módulos existentes com autorização de publicação falsa.",
+    "Transporte com núcleo fixado é testado sem substituir aprovação real por fixtures."
+  ],
+  "restrictions": [
+    "Sem publicação, deploy, ativação de rotina, custos ou alteração de segredos.",
+    "Preservar aprovações da versão e alterações preexistentes."
+  ],
+  "authorizations": {
+    "push": false,
+    "merge": false,
+    "deploy": false,
+    "production": false,
+    "publication": false,
+    "costs": false,
+    "credentials": false
+  },
+  "evidence": [
+    {
+      "sha": "75e6c8fb2c8155f891d116b7f9a5e3dd82cf8729",
+      "reference": "docs/EDITORIAL_INTEGRATION_CHECKPOINT_20261112.md",
+      "result": "1255 passed, 2 skipped, 13 subtests passed; fronteiras externas simuladas"
+    }
+  ],
+  "blockers": [
+    "Acessos do executor IA/Turso/WordPress ainda não configurados no ambiente.",
+    "Homologação editorial, PHP remoto e aceite humano não executados.",
+    "Correções locais não enviadas ao PR; CI remoto desta revisão não executado."
+  ],
+  "next_action": "Obter autorização concreta para enviar correção ao PR97 e concluir configuração de acessos já escolhida pelo usuário.",
+  "gates": {
+    "G0": "PASSOU",
+    "G1": "PASSOU",
+    "G2": "PASSOU",
+    "G3": "PASSOU",
+    "G4": "PASSOU",
+    "G5": "PENDENTE"
+  },
+  "review": {
+    "mode": "solo",
+    "responsible": "rmsports33",
+    "technical_review": {
+      "status": "PASSOU",
+      "sha": "75e6c8fb2c8155f891d116b7f9a5e3dd82cf8729",
+      "reference": "docs/EDITORIAL_INTEGRATION_CHECKPOINT_20261112.md",
+      "independent": false
+    },
+    "human_acceptance": {
+      "status": "PENDENTE",
+      "sha": "75e6c8fb2c8155f891d116b7f9a5e3dd82cf8729",
+      "actor": "rmsports33",
+      "reference": ""
+    }
+  }
+}
