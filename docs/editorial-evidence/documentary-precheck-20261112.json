@@ -1,0 +1,112 @@
+{
+  "date": "2026-11-12",
+  "method": "WordPress authenticated raw content inspection",
+  "result": "DOCUMENTARY_PRECHECK_COMPLETE",
+  "limits": "Not an independent human editorial approval; external URLs and claims not verified against original documents; no native mobile screenshot.",
+  "articles": [
+    {
+      "id": 9810,
+      "title": "NEO da 1X: compra, assinatura e limites de privacidade",
+      "modified": "2026-11-12T10:46:34",
+      "source_section": true,
+      "external_sources": [
+        "https://www.1x.tech/order",
+        "https://www.1x.tech/legal",
+        "https://www.1x.tech/discover/neo-home-robot",
+        "https://www.1x.tech/about",
+        "https://www.1x.tech/privacy-policy",
+        "https://conexotech.com.br/android-mcp-agentes-ia-conectar-aplicativos/",
+        "https://conexotech.com.br/ceo-da-anthropic-pede-freio-na-ia-e-alerta-risco-online/"
+      ],
+      "table_tags_balanced": true,
+      "genre_fit": "análise",
+      "review_scope": "Structural/documentary consistency only; external sources not independently fact-checked.",
+      "human_approval": false
+    },
+    {
+      "id": 9813,
+      "title": "Optimus: Tesla informa início de produção em Fremont",
+      "modified": "2026-11-12T10:46:42",
+      "source_section": true,
+      "external_sources": [
+        "https://assets-ir.tesla.com/tesla-contents/IR/TSLA-Q3-2026-Update.pdf",
+        "https://www.sec.gov/Archives/edgar/data/1318605/000162828026066775/tsla-20260930.htm",
+        "https://www.tesla.com/AI",
+        "https://www.wsj.com/livecoverage/stock-market-today-dow-sp-500-nasdaq-10-21-2026/card/tesla-says-it-has-started-early-optimus-robot-production-ToY7AAUqZdVUhKmpmeou"
+      ],
+      "table_tags_balanced": true,
+      "genre_fit": "notícia",
+      "review_scope": "Structural/documentary consistency only; external sources not independently fact-checked.",
+      "human_approval": false
+    },
+    {
+      "id": 9814,
+      "title": "Unitree R1 e G1: como apurar o custo de importação",
+      "modified": "2026-11-12T10:46:50",
+      "source_section": true,
+      "external_sources": [
+        "https://www.unitree.com/R1/",
+        "https://www.unitree.com/g1/",
+        "https://www.gov.br/receitafederal/pt-br/assuntos/aduana-e-comercio-exterior/manuais/despacho-de-importacao/topicos-1/conceitos-e-definicoes/tipos-de-declaracao-de-importacao/declaracao-simplificada-de-importacao-dsi-eletronica",
+        "https://www.gov.br/anatel/pt-br/regulado/certificacao-de-produtos/importacao-para-uso-proprio"
+      ],
+      "table_tags_balanced": true,
+      "genre_fit": "guia",
+      "review_scope": "Structural/documentary consistency only; external sources not independently fact-checked.",
+      "human_approval": false
+    },
+    {
+      "id": 9815,
+      "title": "Optimus e Unitree G1: o que é possível comparar",
+      "modified": "2026-11-12T10:46:57",
+      "source_section": true,
+      "external_sources": [
+        "https://www.tesla.com/AI",
+        "https://www.unitree.com/g1/",
+        "https://assets-ir.tesla.com/tesla-contents/IR/TSLA-Q3-2026-Update.pdf",
+        "https://hai.stanford.edu/assets/files/ai_index_report_2026.pdf"
+      ],
+      "table_tags_balanced": true,
+      "genre_fit": "comparativo",
+      "review_scope": "Structural/documentary consistency only; external sources not independently fact-checked.",
+      "human_approval": false
+    },
+    {
+      "id": 9816,
+      "title": "Figure 03: avaliação documental das promessas domésticas",
+      "modified": "2026-11-12T10:47:05",
+      "source_section": true,
+      "external_sources": [
+        "https://www.figure.ai/news/introducing-figure-03",
+        "https://www.figure.ai/news/helix-02",
+        "https://www.figure.ai/news/helix-2-5-zero-shot-30-home-generalization",
+        "https://time.com/7324233/figure-03-robot-humanoid-reveal/"
+      ],
+      "table_tags_balanced": true,
+      "genre_fit": "review documental",
+      "review_scope": "Structural/documentary consistency only; external sources not independently fact-checked.",
+      "human_approval": false
+    },
+    {
+      "id": 9817,
+      "title": "LG CLOiD: rodas também entram na robótica doméstica",
+      "modified": "2026-11-12T10:47:12",
+      "source_section": true,
+      "external_sources": [
+        "https://www.lg.com/global/newsroom/news/home-appliance-solution/lg-electronics-presents-lg-cloid-home-robot-to-demonstrate-zero-labor-home-at-ces-2026/",
+        "https://www.theverge.com/tech/855233/lg-cloid-robot-laundry-ces-2026-keynote"
+      ],
+      "table_tags_balanced": true,
+      "genre_fit": "nota breve",
+      "review_scope": "Structural/documentary consistency only; external sources not independently fact-checked.",
+      "human_approval": false
+    }
+  ],
+  "priority_actions": [
+    "For #9810 confirm caption of featured media #9812 in native theme; no inline credit duplication needed if theme caption renders.",
+    "For #9814 and #9815 inspect table overflow on mobile, using existing responsive evidence where applicable.",
+    "For #9813 verify Tesla Q3 2026 source statements against primary PDF and SEC filing before acceptance.",
+    "For all six, single reviewer to sign version-bound opinion; keep Gate unchanged."
+  ],
+  "publication_authorized": false
+}
