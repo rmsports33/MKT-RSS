@@ -109,7 +109,9 @@ def inserir_links_contextuais(markdown, relacionados, *, limite=2):
             terms = [word for word in re.findall(r"[^\W_]+", html.unescape(title))
                      if len(word) >= 5 and _tokens(word) and
                      not _tokens(word).isdisjoint(_tokens(title))]
-            terms.sort(key=lambda word: (-len(word), word.casefold()))
+            # A named subject (Optimus, Unitree) is a better anchor than "industrial".
+            terms.sort(key=lambda word: (0 if word[:1].isupper() else 1,
+                                         -len(word), word.casefold()))
             segments = _PROTECTED_MARKDOWN.split(line)
             inserted = False
             for word in terms:
