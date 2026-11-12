@@ -1,5 +1,5 @@
 {
-  "schema": "conexo-owner-editorial-consent-and-cover-release/1",
+  "schema": "conexo-owner-editorial-consent-and-cover-release/2",
   "recorded_on": "2026-11-12",
   "authority": "User's explicit current conversation instruction, not authenticated WordPress reviewer nor Gate HMAC",
   "editorial_consent": {
@@ -20,88 +20,100 @@
   "cover_installs": [
     {
       "id": 9810,
-      "media": 9832,
+      "media": 9838,
       "concept": "Humanoid in home; subscription and privacy",
       "slug": "neo-1x",
-      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-neo-1x-ilustracao-ia.png",
+      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-neo-1x-arte-ia-1200x675-1.jpg",
       "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
-      "preapproval_metadata_sha256": "37ad02b72de4e9d2fd147e8ba815be12f1897111fb46793b1450ff574799bd06",
-      "wp_modified": "2026-11-12T13:56:03",
+      "preapproval_metadata_sha256": "1516e279a64a396929e617ddfb57278c479610b7257626a16de98741179cb222",
+      "wp_modified": "2026-11-12T14:14:02",
       "wordpress_status": "draft",
       "image_is_illustrative": true,
-      "official_product_photo": false
+      "official_product_photo": false,
+      "initial_png_media": 9832,
+      "optimized_jpeg_bytes": 89216
     },
     {
       "id": 9813,
-      "media": 9833,
+      "media": 9839,
       "concept": "Humanoid production setting",
       "slug": "tesla-optimus",
-      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-optimus-producao-industrial-ilustracao-ia.png",
+      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-tesla-optimus-arte-ia-1200x675-1.jpg",
       "content_sha256": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d",
-      "preapproval_metadata_sha256": "370f574af70be70b84a4055d5aa0d1c2373a196e207e74620749114b9757547d",
-      "wp_modified": "2026-11-12T13:56:09",
+      "preapproval_metadata_sha256": "24b131a9def4822a5deb29d097625979770f731727ee31724dd3ae94d22c1619",
+      "wp_modified": "2026-11-12T14:14:09",
       "wordpress_status": "draft",
       "image_is_illustrative": true,
-      "official_product_photo": false
+      "official_product_photo": false,
+      "initial_png_media": 9833,
+      "optimized_jpeg_bytes": 95748
     },
     {
       "id": 9814,
-      "media": 9834,
+      "media": 9840,
       "concept": "Two humanoids in engineering laboratory",
       "slug": "unitree-r1-g1",
-      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-unitree-r1-g1-laboratorio-ilustracao-ia.png",
+      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-unitree-r1-g1-arte-ia-1200x675-1.jpg",
       "content_sha256": "b0a4919b8dbca2ec7502df26cd9eab86c988bc931229a8d4c9fb8f780ab9da46",
-      "preapproval_metadata_sha256": "9856227d74e936f5adf35c05fce75ceace039c29b54a3c7add293c52bf224e3d",
-      "wp_modified": "2026-11-12T13:56:14",
+      "preapproval_metadata_sha256": "53039411e37df32d8660e586ffec0ebeb5611c58a029c3ab6e0b9711c43c5c14",
+      "wp_modified": "2026-11-12T14:14:14",
       "wordpress_status": "draft",
       "image_is_illustrative": true,
-      "official_product_photo": false
+      "official_product_photo": false,
+      "initial_png_media": 9834,
+      "optimized_jpeg_bytes": 87327
     },
     {
       "id": 9815,
-      "media": 9835,
+      "media": 9841,
       "concept": "Two conceptual humanoids compared side by side",
       "slug": "optimus-vs-g1",
-      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-optimus-versus-g1-comparativo-ilustracao-ia.png",
+      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-optimus-vs-g1-arte-ia-1200x675-1.jpg",
       "content_sha256": "a1c70fbd09631aeea5e441d0cb345e972fc285b2341f26d20b8df22db49870ad",
-      "preapproval_metadata_sha256": "a979f6252ca9aed9c76cf95a1b2d55af43a927a3e4ea080a7ced320b6e8d1b4d",
-      "wp_modified": "2026-11-12T13:56:19",
+      "preapproval_metadata_sha256": "54dc2df9e71d701a96570f1aa17c64ae498560de825061a37e13ff17535fc57c",
+      "wp_modified": "2026-11-12T14:14:19",
       "wordpress_status": "draft",
       "image_is_illustrative": true,
-      "official_product_photo": false
+      "official_product_photo": false,
+      "initial_png_media": 9835,
+      "optimized_jpeg_bytes": 79192
     },
     {
       "id": 9816,
-      "media": 9836,
+      "media": 9842,
       "concept": "Concept humanoid folding fabric in a domestic room",
       "slug": "figure-03",
-      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-figure-03-domicilio-roupas-ilustracao-ia.png",
+      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-figure03-arte-ia-1200x675-1.jpg",
       "content_sha256": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226",
-      "preapproval_metadata_sha256": "7bb79cb9771c68f69172a9241124984b8231a84bd4e91d0737d64aa3e5b5178d",
-      "wp_modified": "2026-11-12T13:56:24",
+      "preapproval_metadata_sha256": "17d4185dab5b01d9e9715ca23a19b8b8d2717b3f8046a54a69ff01991a69dfbc",
+      "wp_modified": "2026-11-12T14:14:24",
       "wordpress_status": "draft",
       "image_is_illustrative": true,
-      "official_product_photo": false
+      "official_product_photo": false,
+      "initial_png_media": 9836,
+      "optimized_jpeg_bytes": 100632
     },
     {
       "id": 9817,
-      "media": 9837,
+      "media": 9843,
       "concept": "Conceptual wheeled home robot in living room",
       "slug": "lg-cloid",
-      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-lg-cloid-rodas-ambiente-ilustracao-ia.png",
+      "media_url": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-lg-cloid-arte-ia-1200x675-1.jpg",
       "content_sha256": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb",
-      "preapproval_metadata_sha256": "065352fc8e3e717c3795dabd2cd91270bc30a5a4c53d83a2213794d04940efe2",
-      "wp_modified": "2026-11-12T13:56:29",
+      "preapproval_metadata_sha256": "60e85d32a822a5849d9a2d95e4d52a6c86597dc4d60ea81182900644787440a0",
+      "wp_modified": "2026-11-12T14:14:28",
       "wordpress_status": "draft",
       "image_is_illustrative": true,
-      "official_product_photo": false
+      "official_product_photo": false,
+      "initial_png_media": 9837,
+      "optimized_jpeg_bytes": 118966
     }
   ],
   "gate_checks": {
     "wordpress_plugin": "Conexo Editorial Gate (controlado) 0.1.0-rc5 ACTIVE on production (live WordPress plugin list)",
     "wp_post_author_id": 3,
     "owner_review_mode_configured_user_id": 3,
-    "warning": "Owner review mode explicitly says it is not independent review by another person; user insisted on authorized reviewer distinct from post author. No such authenticated third-party review was executed.",
+    "warning": "Owner-review mode defaults to user ID3, same as all six post authors. Owner mode is not independent third-party review. Do not treat as meeting user's explicit distinct-reviewer requirement.",
     "signing_and_approval_records_issued": false,
     "owner_acceptance_outside_wp_gate": true,
     "allow_auto_publish": false,
@@ -113,5 +125,7 @@
     "Real authorized reviewer different from post author #3 must authenticate, inspect current versions and submit the genuine Gate quality/review checks.",
     "Publish selected articles using Gate-approved version hashes via MKT-RSS publisher, then verify public readback. Never write status publish directly to bypass the Gate."
   ],
-  "publication_performed": false
+  "publication_performed": false,
+  "final_image_policy": "AI_ORIGINAL_ILLUSTRATION_COMPRESSED_JPEG_1200x675",
+  "why_not_published": "No authenticated reviewer distinct from author ID3 has signed the actual current Gate snapshot; no publisher run attempted. Explicit editorial consent remains recorded."
 }
