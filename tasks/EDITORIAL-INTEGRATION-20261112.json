@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "WP_NATIVE_GATE_OWNER_BATCH_UI_LIVE_HUMAN_REVIEW_AND_REAL_SCHEDULING_PENDING",
+  "status": "SIX_WORDPRESS_FUTURE_POSTS_VERIFIED_AFTER_USER_GATE_APPROVAL",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -153,14 +153,17 @@
       "sha": "6097205f7bb6cd26002df9e612978594635b9301",
       "reference": "https://github.com/rmsports33/-site-conexotech/blob/master/docs/deployments/conexo-gate-agenda-nativa-20261112.md",
       "result": "Auditoria 12/11: plugin Gate e Agenda ativos, seis drafts interligados e capas presentes, cron Hostinger UID ZYPioOw0ag criado e lido; sem assinaturas verificadas, nenhum future ou publish."
+    },
+    {
+      "reference": "WordPress REST authenticated posts-get for 9813,9815,9814,9810,9816,9817",
+      "result": "Six posts returned status future, author=4, featured media 9839,9841,9840,9838,9842,9843, exactly 10-minute UTC intervals, post modified 2026-11-12 19:28:19 BRT.",
+      "checked_at": "2026-11-12T19:28:00-03:00"
     }
   ],
   "blockers": [
-    "Revisor proprietário autenticado WordPress ID3 precisa confirmar pessoalmente os critérios e registrar observação para cada versão na tela única do Gate: https://conexotech.com.br/wp-admin/tools.php?page=conexo-gate-revisar-lote. Não há assinatura humana criada no chat.",
-    "Após submissão autenticada, conferir readback de seis posts future e posteriormente publish pelo WP-Cron; nenhuma execução real de agendamento ocorreu até esta verificação.",
-    "Auditar SEO público na primeira publicação agendada; contrato Conexo Native SEO para posts future ainda não foi homologado (Rank Math segue ativo)."
+    "Verificar publicação real (status publish, URLs e SEO) dos seis posts após o WP-Cron nos horários futuros. Gate assinado é presumido pelo fluxo protegido, mas registros privados HMAC não foram lidos diretamente."
   ],
-  "next_action": "O cron Hostinger está ativo. Única ação de autorização pendente: o proprietário WP ID3 abrir Ferramentas > Conexo — revisar e agendar lote; examinar as seis prévias/links/fontes, registrar observação e marcar confirmações por versão, selecionar um horário futuro e enviar. Depois confirmar 6 posts future, publish posterior e SEO público; não repetir aprovações do chat nem usar GitHub por matéria.",
+  "next_action": "Não repetir aceites ou agendamentos. WordPress já marcou seis posts como future e Hostinger cron a cada 5 minutos está ativo. Verificar publicações após 21h30 BRT, SEO/canonical e links internos. Automação de leitura agendada para 21h45 BRT nesta conversa.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -201,7 +204,7 @@
     "native_preview": "9810_DESKTOP_TOP_CONFIRMED_BY_USER_SCREENSHOT; SIX_FULL_PREVIEWS_PENDING",
     "human_factual_acceptance": "PENDING",
     "private_zip_drive_upload": "DELIVERED_VERIFIED",
-    "publication_authorized": false,
+    "publication_authorized": "WP_NATIVE_SCHEDULE_ACCEPTED_GUARDED_BY_INSTALLED_GATE; FUTURE_PUBLISH_NOT_YET_READBACK",
     "private_package_receipt": "docs/editorial-evidence/private-package-delivery.json",
     "native_preview_evidence": "docs/editorial-evidence/native-preview-attempt.json",
     "category_corrections": "APPLIED_BODY_HASHES_PRESERVED",
@@ -215,7 +218,7 @@
     "version_snapshot_9814_9815": "UPDATED_PREAPPROVAL_HASHES; GATE_CANONICAL_PENDING",
     "current_snapshot_receipt": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
     "assisted_editorial_review": "SIX_COMPLETED_OWNER_DECISION_PENDING",
-    "wordpress_latest_status": "ALL_SIX_DRAFT_0_SCHEDULED_0_PUBLISHED_2026_11_12_EVENING",
+    "wordpress_latest_status": "SIX_FUTURE_0_PUBLISHED_READBACK_2026_11_12_19_28_BRT",
     "featured_media_by_post": {
       "9810": 9838,
       "9813": 9839,
@@ -246,7 +249,7 @@
     "owner_gate_signed_current_versions": "NOT_CONFIRMED",
     "followup_check": "AUTOMATION_2026_11_12_17_10_BRT",
     "wordpress_native_schedule_code": "MERGED_MASTER_6CDC427_CI_PASSED_MANUAL_FALLBACK",
-    "wordpress_native_schedule_execution": "NOT_EXECUTED_AWAITING_PERSONAL_OWNER_AUTHENTICATED_REVIEW",
+    "wordpress_native_schedule_execution": "SIX_FUTURE_READBACK_CONFIRMED_AFTER_USER_APPROVAL",
     "github_recurring_six_slots": "REMOVED_FROM_MASTER",
     "hostinger_server_cron": "CREATED_VERIFIED_5MIN_UID_ZYPioOw0ag_EXECUTION_NOT_YET_PROVEN",
     "native_seo_future_finalize": "NOT_IMPLEMENTED",
@@ -259,7 +262,41 @@
     "github_action_publication_per_post": "NOT_REQUIRED_WP_ADMIN_NATIVE_PREFERRED",
     "batch_plug_in_live": "GATE_RC5_AND_NATIVE_AGENDA_0_2_0_ACTIVE",
     "plugin_package_drive_verified": "DRIVE_FILE_1W2vZfMwnyAfsGD6JTZpfnvZroQp5X7G- ZIP_8170_BYTES_HASH_LOCAL_MATCH_DOC",
-    "production_file_hash_readback": "UNAVAILABLE_HOSTINGER_CONTENT_API_EMPTY_RESPONSE"
+    "production_file_hash_readback": "UNAVAILABLE_HOSTINGER_CONTENT_API_EMPTY_RESPONSE",
+    "owner_gate_approval_signal": "USER_REPORTED_APPROVED; SIX_STATUS_FUTURE_CONFIRMED; PRIVATE_HMAC_RECORDS_NOT_READ",
+    "schedule_actual": [
+      {
+        "id": 9813,
+        "utc": "2026-11-12T23:40:00",
+        "brt": "2026-11-12T20:40:00-03:00"
+      },
+      {
+        "id": 9815,
+        "utc": "2026-11-12T23:50:00",
+        "brt": "2026-11-12T20:50:00-03:00"
+      },
+      {
+        "id": 9814,
+        "utc": "2026-11-13T00:00:00",
+        "brt": "2026-11-12T21:00:00-03:00"
+      },
+      {
+        "id": 9810,
+        "utc": "2026-11-13T00:10:00",
+        "brt": "2026-11-12T21:10:00-03:00"
+      },
+      {
+        "id": 9816,
+        "utc": "2026-11-13T00:20:00",
+        "brt": "2026-11-12T21:20:00-03:00"
+      },
+      {
+        "id": 9817,
+        "utc": "2026-11-13T00:30:00",
+        "brt": "2026-11-12T21:30:00-03:00"
+      }
+    ],
+    "next_verify_automation_id": "Automation_09ec821d7c1081918ef7acb0fa8e953f"
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
