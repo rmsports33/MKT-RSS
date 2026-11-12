@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "READY_FOR_OWNER_EDITORIAL_DELIBERATION",
+  "status": "OWNER_EDITORIAL_ACCEPTED_GATE_RELEASE_PENDING",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -83,13 +83,23 @@
       "sha": "9fb94a78488cf7a71440a0defb8b4474db8f4d2a",
       "reference": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
       "result": "Hashes SHA256 verificados de todo conteúdo Gutenberg e projeção auditável com título/categorias/imagem após correções; projeção não é recibo assinado Gate."
+    },
+    {
+      "sha": "1fbe540d7519492749d47a799b62455bfd434c02",
+      "reference": "docs/editorial-evidence/owner-consent-six-ai-covers-20261112.json",
+      "result": "Usuário aceitou seis pareceres, autorizou capas distintas e pediu publicação. Seis mídias IA 9832–9837 vinculadas; nenhum aceite autentificado do Gate foi emitido."
+    },
+    {
+      "sha": "8601fc6a635b1371f34521a7b26b61002bd4cfca",
+      "reference": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
+      "result": "Hashes Gutenberg inalterados; projeções de versão atualizadas com featured_media distintos; nenhum status publish."
     }
   ],
   "blockers": [
-    "Aprovação editorial substantiva do proprietário ou revisor autorizado para cada versão, sem fingir aceite humano.",
-    "Liberação assinada pelo Gate real somente para posts que forem explicitamente aprovados para publicação/agendamento."
+    "Revisão autenticada e aprovação Gate real por WordPress revisor autorizado diferente do autor 3, vinculadas às seis versões com novas capas.",
+    "Publicação via único workflow MKT-RSS autorizado após recibo Gate assinado, com readback público por post."
   ],
-  "next_action": "Solicitar deliberação do proprietário sobre os seis artigos com scores e hashes no pacote de avaliação; depois emitir recibos autênticos via Gate, sem aprovação falsa e sem publicar automaticamente.",
+  "next_action": "Não repetir geração, imagens nem avaliações. Obter assinaturas reais de revisor diferente do autor para as seis versões e executar publicação por MKT-RSS; até lá preservar drafts.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -144,7 +154,18 @@
     "version_snapshot_9814_9815": "UPDATED_PREAPPROVAL_HASHES; GATE_CANONICAL_PENDING",
     "current_snapshot_receipt": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
     "assisted_editorial_review": "SIX_COMPLETED_OWNER_DECISION_PENDING",
-    "wordpress_latest_status": "SIX_DRAFTS_NO_PUBLISH"
+    "wordpress_latest_status": "SIX_DRAFTS_NO_PUBLISH",
+    "featured_media_by_post": {
+      "9810": 9832,
+      "9813": 9833,
+      "9814": 9834,
+      "9815": 9835,
+      "9816": 9836,
+      "9817": 9837
+    },
+    "owner_editorial_acceptance": "ALL_SIX_ACCEPTED_2026_11_12",
+    "owner_publication_requested": true,
+    "gate_signed_release": "PENDING_REVIEWER_DISTINCT_FROM_AUTHOR_3"
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
