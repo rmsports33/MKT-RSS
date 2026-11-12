@@ -1,0 +1,13 @@
+{
+  "schema": "conexo-private-evidence-delivery/1",
+  "date": "2026-11-12",
+  "authorization": "User explicitly authorized the private ZIP upload to the specified Drive folder in the current turn.",
+  "file_id": "1aSHmwNGmGDKJrddngDYFoUC2tAx3_TKW",
+  "url": "https://drive.google.com/file/d/1aSHmwNGmGDKJrddngDYFoUC2tAx3_TKW/view?usp=drivesdk",
+  "folder_id": "1P2lAWEkjGCRYeJu7jznbzPzhg-FqhLay",
+  "size": 13773503,
+  "local_sha256": "de668456bc7214c0f878362589ddf5df194f2909db3ab1cabad8dd2cfc6b0652",
+  "readback": "File ID, MIME type, size and parent folder confirmed by Drive metadata; checksum not exposed by connector.",
+  "permissions_readback": "Owner only; no sharing changes",
+  "status": "DELIVERED"
+}

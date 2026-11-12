@@ -46,14 +46,22 @@
       "sha": "ee342280b13516c346d38a61725c92a748fa3451",
       "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43204278757",
       "result": "CI final de código concluído com success."
+    },
+    {
+      "reference": "docs/editorial-evidence/private-package-delivery.json",
+      "result": "Pacote privado entregue no Drive e metadados relidos, após autorização específica."
+    },
+    {
+      "reference": "https://github.com/rmsports33/-site-conexotech/actions/runs/43003300959",
+      "result": "Evidência existente reconciliada: 32 verificações rc5 em WordPress/MySQL, 0 falhas; sem repetição."
     }
   ],
   "blockers": [
-    "Faltam fontes independentes, imagem com direitos concluídos e apresentação real do #9810 em 390/1440px.",
-    "Os outros cinco gêneros ainda não têm artigos reais homologados.",
-    "Ponte PHP isolada e comprovações remotas completas de versão antiga/replay/rollback ainda pendentes."
+    "Prévia nativa dos seis rascunhos aguarda login do usuário no perfil TinyFish Default; configuração iniciada a pedido do usuário.",
+    "Aceite editorial/factual humano das seis versões permanece pendente; nenhuma aprovação fabricada.",
+    "Restauração de backup e provas remotas de replay/rollback não são cobertas pelo ensaio isolado existente."
   ],
-  "next_action": "Concluir evidências editoriais da versão corrigida do #9810, sem regeneração e sem novos pedidos rotineiros de autorização de engenharia.",
+  "next_action": "Após o usuário salvar o perfil autenticado, conferir as seis prévias nativas e anexar as evidências, sem alterar o conteúdo do #9810.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -91,9 +99,10 @@
     "license_evidence_commit": "10a263b",
     "turso_workflow_run": 43207824274,
     "metadata_evidence": "docs/editorial-evidence/",
-    "native_preview": "PENDING",
+    "native_preview": "AWAITING_USER_BROWSER_LOGIN",
     "human_factual_acceptance": "PENDING",
-    "private_zip_drive_upload": "AUTO_REVIEW_REJECTED",
-    "publication_authorized": false
+    "private_zip_drive_upload": "DELIVERED_VERIFIED",
+    "publication_authorized": false,
+    "private_package_receipt": "docs/editorial-evidence/private-package-delivery.json"
   }
 }

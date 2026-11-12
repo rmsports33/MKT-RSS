@@ -48,9 +48,12 @@ O run43207824274 releu os seis corpos reais no WordPress, conferiu os hashes, st
 Doze capturas em390/1440px, reconstruídas com CSS atual do tema, não apresentaram overflow horizontal e carregaram a imagem. Não são prévias autenticadas nativas; fontes remotas não carregadas. O tema não confirmou exibição da legenda destacada; crédito permanece nos metadados e nos corpos dos cinco textos novos.
 
 ## Pendências reais
-Conferência autenticada do tema e aceite editorial/factual das versões continuam pendentes. As evidências assistidas não representam testes físicos dos robôs ou revisão humana independente. A homologação integral do Gate PHP isolado continua fora desta entrega.
+Conferência autenticada do tema e aceite editorial/factual das versões continuam pendentes. As evidências assistidas não representam testes físicos dos robôs ou revisão humana independente. A evidência existente de Gate rc5 foi reconciliada abaixo; não representa homologação completa da operação em produção.
 
-O ZIP privado de manuscritos/capturas foi preparado localmente, mas NÃO enviado ao Drive: revisão automática rejeitou o upload por ausência de autorização específica do conteúdo privado para aquele destino. A pasta vazia criada não significa entrega do pacote.
+O bloqueio anterior do upload foi resolvido pela autorização explícita do usuário. O ZIP privado foi entregue no Drive e teve ID, tipo, tamanho13773503 bytes e pasta confirmados por leitura de metadados. Acesso somente do proprietário, sem alteração de compartilhamento. Recibo em docs/editorial-evidence/private-package-delivery.json.
 
 ## Próxima ação concreta
-Revisar as versões salvas no WordPress usando a prévia nativa e registrar o aceite associado a cada hash; preservar os textos, sem nova geração. Para entregar o ZIP no Drive, obter autorização específica para o pacote e a pasta. Nenhum artigo foi publicado.
+Revisar as versões salvas no WordPress usando a prévia nativa e registrar o aceite associado a cada hash; preservar os textos, sem nova geração. O ZIP já foi entregue. A prévia nativa aguarda o usuário salvar a conexão WordPress no perfil TinyFish Default, cuja configuração foi iniciada a pedido dele. Nenhum artigo foi publicado.
+
+## Reconciliação de evidência existente — sem repetir testes
+Run43003300959 do site, SHA5f549f2a2c6da6cc6f2eb92d5e3bef7658cffe5a: job e logs relidos nesta sessão confirmaram32 verificações,0 falhas, contra os quatro arquivos rc5 cujos hashes foram conferidos. Inclui HMAC inválido/expirado, versão divergente/obsoleta, bloqueio de escrita direta, publicação assinada sintética, invalidação por edição e agendamento/cron. Não cobre restauração de backup, replay/rollback em produção nem aceite dos artigos. Prova em docs/editorial-evidence/gate-existing-proof.json. Nenhuma nova execução do ensaio foi necessária.
