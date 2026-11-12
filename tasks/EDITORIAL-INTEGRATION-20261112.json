@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "BOT_EDITOR_AUTHOR_SET_OWNER_GATE_FORMS_PENDING_BATCH_PUBLISH_READY",
+  "status": "SIX_INTERLINKED_DRAFTS_STAGGERED_RELEASE_SCHEDULED_GATE_FORMS_PENDING",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -113,13 +113,28 @@
       "sha": "9689c242af677f34846b6c292f91fc38cacd1141",
       "reference": "https://github.com/rmsports33/MKT-RSS/pull/99",
       "result": "Publicação em lote protegida por seis preflights Gate antes da primeira escrita; CI pytest e contrato editorial concluídos com sucesso."
+    },
+    {
+      "sha": "4273d8e1f028a355f13b2822810a89f8cabb45ab",
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/100",
+      "result": "Links internos contextuais e Leia também em novos artigos, com destinos somente WordPress publish; CI pytest e validação editorial PASS."
+    },
+    {
+      "sha": "14f7a36af32bb0cac8e6e21e97d7b48d0584db44",
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/101",
+      "result": "Seis janelas cron dia 12/11 às 16h,16h10,16h20,16h30,16h40,16h50 BRT; Gate obrigatório e espaçamento verificado; CI PASS."
+    },
+    {
+      "sha": "ede44e8dfb10379be2da736bf52088f6cef6e643",
+      "reference": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
+      "result": "Hashes UTF-8 recalculados de todos os seis rascunhos após links internos; destaque e autoria preservados."
     }
   ],
   "blockers": [
-    "Seis registros de revisão substantiva/SEO/visual devem ser preenchidos e enviados pelo administrador proprietário ID3 no Gate ativo, agora com autores de conta de serviço ID4.",
-    "Após seis recibos atuais do Gate, disparar workflow manual de publicação em lote e conferir readback. Não publicar sem assinatura."
+    "Os seis artigos receberam links internos e alterações em resumo SEO, por isso cada nova versão exige aprovação autenticada atual no Gate pelo proprietário WP ID3.",
+    "O cron de 16h–16h50 somente publica se houver Gate válido no horário e publicação anterior confirmada; se 16h faltar assinatura, não há publicação automática de recuperação."
   ],
-  "next_action": "Nenhuma nova alteração de texto/imagem necessária. O administrador ID3 deve abrir Ferramentas > Revisao do proprietario no WordPress para IDs 9810,9813,9814,9815,9816,9817 e assinar cada versão. Depois uma execução de publish-owner-approved-batch-manual.yml com PUBLICAR_SEIS realiza preflight completo e publica somente releases válidos.",
+  "next_action": "Proprietário WP ID3 assina seis versões atuais no Gate antes de 16h, incluindo avaliação de links internos que apontam para outros artigos ainda não publicados no mesmo lote. GitHub cron validará as assinaturas e tentará publicar nos horários definidos. Às 17h10, automação única audita statuses reais.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -174,7 +189,7 @@
     "version_snapshot_9814_9815": "UPDATED_PREAPPROVAL_HASHES; GATE_CANONICAL_PENDING",
     "current_snapshot_receipt": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
     "assisted_editorial_review": "SIX_COMPLETED_OWNER_DECISION_PENDING",
-    "wordpress_latest_status": "SIX_DRAFTS_NO_PUBLISH",
+    "wordpress_latest_status": "SIX_DRAFTS_INTERLINKED_2026_11_12_15_50_BRT",
     "featured_media_by_post": {
       "9810": 9838,
       "9813": 9839,
@@ -196,7 +211,14 @@
     "wordpress_authors_current": 4,
     "owner_reviewer_id": 3,
     "author_review_separation": "RESOLVED_AUTHORS_ID4_OWNER_ID3",
-    "batch_publication_workflow": "MERGED_MASTER_9689C24_CI_SUCCESS"
+    "batch_publication_workflow": "MERGED_MASTER_9689C24_CI_SUCCESS",
+    "internal_links_revision": "SIX_POSTS_UPDATED_WITH_CONTEXTUAL_LINKS_AND_THREE_LEIA_TAMBEM_EACH",
+    "related_links_future_pipeline": "MERGED_MASTER_4273D8E_CI_PASS",
+    "seo_excerpts_factual": "FIVE_DRAFTS_UPDATED_SEO_EXCERPTS",
+    "staggered_release_workflow": "MERGED_MASTER_14F7A36_16_00_16_50_BRT_SIGNED_GATE_ONLY",
+    "staggered_release_queue": "docs/editorial-evidence/internal-links-and-release-queue-20261112.json",
+    "owner_gate_signed_current_versions": "NOT_CONFIRMED",
+    "followup_check": "AUTOMATION_2026_11_12_17_10_BRT"
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
