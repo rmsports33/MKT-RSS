@@ -5,9 +5,15 @@
   "file_id": "1aSHmwNGmGDKJrddngDYFoUC2tAx3_TKW",
   "url": "https://drive.google.com/file/d/1aSHmwNGmGDKJrddngDYFoUC2tAx3_TKW/view?usp=drivesdk",
   "folder_id": "1P2lAWEkjGCRYeJu7jznbzPzhg-FqhLay",
-  "size": 13773503,
-  "local_sha256": "de668456bc7214c0f878362589ddf5df194f2909db3ab1cabad8dd2cfc6b0652",
+  "size": 14121556,
+  "local_sha256": "f733086ac4fcdde330e6d7694954c56533c19bc4734e85b3041f83f794aa204e",
   "readback": "File ID, MIME type, size and parent folder confirmed by Drive metadata; checksum not exposed by connector.",
   "permissions_readback": "Owner only; no sharing changes",
-  "status": "DELIVERED"
+  "status": "DELIVERED",
+  "previous_delivery": {
+    "size": 13773503,
+    "local_sha256": "de668456bc7214c0f878362589ddf5df194f2909db3ab1cabad8dd2cfc6b0652"
+  },
+  "revision": "Categories and theme-caption corrections; same Drive ID and owner-only permissions; metadata size/parent verified.",
+  "theme_commit": "6194eed"
 }

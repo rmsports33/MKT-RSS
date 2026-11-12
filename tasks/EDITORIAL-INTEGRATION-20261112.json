@@ -57,7 +57,7 @@
     }
   ],
   "blockers": [
-    "Prévia nativa bloqueada: navegador TinyFish recebeu HTTP429 persistente e falha de conexão; usuário salvou o perfil, mas autenticação não pôde ser verificada.",
+    "Prévia nativa9810 desktop confirmada parcialmente pela captura; tabela/mobile e prévias completas dos outros cinco ainda não verificadas. TinyFish continua com bloqueio429.",
     "Aceite editorial/factual humano das seis versões permanece pendente; nenhuma aprovação fabricada.",
     "Restauração de backup e provas remotas de replay/rollback não são cobertas pelo ensaio isolado existente."
   ],
@@ -99,11 +99,13 @@
     "license_evidence_commit": "10a263b",
     "turso_workflow_run": 43207824274,
     "metadata_evidence": "docs/editorial-evidence/",
-    "native_preview": "BLOCKED_HTTP_429",
+    "native_preview": "9810_DESKTOP_TOP_CONFIRMED_BY_USER_SCREENSHOT; SIX_FULL_PREVIEWS_PENDING",
     "human_factual_acceptance": "PENDING",
     "private_zip_drive_upload": "DELIVERED_VERIFIED",
     "publication_authorized": false,
     "private_package_receipt": "docs/editorial-evidence/private-package-delivery.json",
-    "native_preview_evidence": "docs/editorial-evidence/native-preview-attempt.json"
+    "native_preview_evidence": "docs/editorial-evidence/native-preview-attempt.json",
+    "category_corrections": "APPLIED_BODY_HASHES_PRESERVED",
+    "featured_caption": "DEPLOYED_THEME_1.6.9_PUBLIC_RESPONSIVE_VERIFIED"
   }
 }

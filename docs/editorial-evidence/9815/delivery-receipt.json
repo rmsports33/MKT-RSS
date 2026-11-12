@@ -89,5 +89,12 @@
     "turso_readback": "EXACT_MATCH",
     "publication_authorized": false
   },
-  "evidence_workflow_run": 43207824274
+  "evidence_workflow_run": 43207824274,
+  "categories": [
+    44,
+    437
+  ],
+  "metadata_modified": "2026-11-12T10:46:57",
+  "category_correction_evidence": "docs/editorial-evidence/category-corrections.json",
+  "featured_caption_presentation": "Theme1.6.9 renders media-library caption; actual public page checked390/1440; private preview not reverified"
 }

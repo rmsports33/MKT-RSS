@@ -1,0 +1,19 @@
+{
+  "scope": "Actual public existing article; not the private draft previews",
+  "checks": [
+    {
+      "text": "Imagem ilustrativa de smartphone Android. Foto: Deyvi Romero/Pexels.",
+      "visible": true,
+      "width": 346,
+      "viewport": 390,
+      "document_width": 390
+    },
+    {
+      "text": "Imagem ilustrativa de smartphone Android. Foto: Deyvi Romero/Pexels.",
+      "visible": true,
+      "width": 960,
+      "viewport": 1440,
+      "document_width": 1440
+    }
+  ]
+}

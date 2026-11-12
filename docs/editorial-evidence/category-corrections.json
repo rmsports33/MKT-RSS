@@ -1,0 +1,74 @@
+{
+  "category": {
+    "id": 437,
+    "name": "Gadgets",
+    "url": "https://conexotech.com.br/category/gadgets/"
+  },
+  "posts": [
+    {
+      "post_id": 9810,
+      "categories": [
+        437
+      ],
+      "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+      "status": "draft",
+      "body_preserved": true,
+      "modified": "2026-11-12T10:46:34"
+    },
+    {
+      "post_id": 9813,
+      "categories": [
+        437,
+        10
+      ],
+      "content_sha256": "d370b37d26aac5cd2c6b3405a68def9cc55466038fe94a1e2c7755218b676887",
+      "status": "draft",
+      "body_preserved": true,
+      "modified": "2026-11-12T10:46:42"
+    },
+    {
+      "post_id": 9814,
+      "categories": [
+        437,
+        8
+      ],
+      "content_sha256": "556ff4f07325b0f03cdf69d7335bd19645fd7d55bdcb40c1de42486871f87d3a",
+      "status": "draft",
+      "body_preserved": true,
+      "modified": "2026-11-12T10:46:50"
+    },
+    {
+      "post_id": 9815,
+      "categories": [
+        44,
+        437
+      ],
+      "content_sha256": "a1fae1374436f6b762c537ca2e0fd9148609ad7a31a2f23765ef18bc17ec26a7",
+      "status": "draft",
+      "body_preserved": true,
+      "modified": "2026-11-12T10:46:57"
+    },
+    {
+      "post_id": 9816,
+      "categories": [
+        437
+      ],
+      "content_sha256": "2346e49de6eb4e1631f0852f6cca86d35fc040f4e36f28a74cb3edff71da1ec8",
+      "status": "draft",
+      "body_preserved": true,
+      "modified": "2026-11-12T10:47:05"
+    },
+    {
+      "post_id": 9817,
+      "categories": [
+        437,
+        10
+      ],
+      "content_sha256": "57218ecc143835126a0fef515f162aff10a7786bf0ad4662379fba6964c19533",
+      "status": "draft",
+      "body_preserved": true,
+      "modified": "2026-11-12T10:47:12"
+    }
+  ],
+  "version_note": "Previous body-only traces remain valid for body; category metadata changed. No editorial acceptance existed or was granted. Future signed publication must use a fresh full snapshot."
+}

@@ -1,0 +1,52 @@
+{
+  "domain": "conexotech.com.br",
+  "theme_version": "1.6.9",
+  "files": [
+    {
+      "path": "single.php",
+      "uploaded_sha256": "47e4bc9e5c373be5b0c34a7976f2cbb7ea92ff4615340ca2dc455b976a9568d1",
+      "api_content_sha256": "aa002cecc05e4ed94f9173de8e0b773e5b60eb671c89b6cfb34880ac91fc25b5",
+      "api_omits_final_lf": true,
+      "readback": "CODE_EXACT_FINAL_NEWLINE_NORMALIZED"
+    },
+    {
+      "path": "single-caption-backup-20261112.php",
+      "uploaded_sha256": "0242aa148c62b0a10d66e4aa63bd218ebc90af2ea03afe571d8641dd401bca9e",
+      "api_content_sha256": "1379975687e624f90293bd6e065ef971d5defcadf0d57e5a7bb3c550fef7ad82",
+      "api_omits_final_lf": true,
+      "readback": "CODE_EXACT_FINAL_NEWLINE_NORMALIZED"
+    },
+    {
+      "path": "functions.php",
+      "uploaded_sha256": "aebb357f5e6e48a82fa7cf8332f1d89502c0cfb043ccea1d480a4453e352fb09",
+      "api_content_sha256": "aebb357f5e6e48a82fa7cf8332f1d89502c0cfb043ccea1d480a4453e352fb09",
+      "api_omits_final_lf": false,
+      "readback": "EXACT_MATCH"
+    },
+    {
+      "path": "functions-caption-backup-20261112.php",
+      "uploaded_sha256": "5704b635e3990e53d00f8bef67b0f0d2f9e96dc5b3e8e2ff093826ae12952c93",
+      "api_content_sha256": "5704b635e3990e53d00f8bef67b0f0d2f9e96dc5b3e8e2ff093826ae12952c93",
+      "api_omits_final_lf": false,
+      "readback": "EXACT_MATCH"
+    },
+    {
+      "path": "style.css",
+      "uploaded_sha256": "bc95aeebc2b02e7bc211a57413c687b2186335d0b02971d9ffa9a4e474576048",
+      "api_content_sha256": "df224b4fe39fef1fddeee757b9723b79e60be833ba5c0c73e9686759ebfa94eb",
+      "api_omits_final_lf": true,
+      "readback": "CODE_EXACT_FINAL_NEWLINE_NORMALIZED"
+    },
+    {
+      "path": "style-caption-backup-20261112.css",
+      "uploaded_sha256": "9492780e8282a858e51b242171efa0856bd9aa76a05521246998d16d2f6e79d5",
+      "api_content_sha256": "72792cb334dbe6684c712e2e40f3bbf5e3b54de0df0fe20fcf9ef60d3ef124f4",
+      "api_omits_final_lf": true,
+      "readback": "CODE_EXACT_FINAL_NEWLINE_NORMALIZED"
+    }
+  ],
+  "public_page": "https://conexotech.com.br/android-mcp-agentes-ia-conectar-aplicativos/",
+  "public_verification": "HTTP200; actual figcaption and Deyvi Romero credit rendered; CSS1.6.9 bytes match uploadedSHA256",
+  "article_bodies_changed": false,
+  "native_draft_preview": "User screenshot confirms9810 desktop opening; full six previews still not verified"
+}

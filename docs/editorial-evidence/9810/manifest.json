@@ -14,5 +14,10 @@
   "asset_readback_sha256": "846b4e1999de59ef2e67f5b7e395e4b1ebfb1e370c422d017c0815487bf218ca",
   "uploaded_asset_sha256": "539bcef531892a99db49d93d040a1f17b8abbf8795a939c5a6a2dd0fed2d8543",
   "server_bytes_changed": true,
-  "stored_asset_visual_review": "ASSISTED_VISUAL_CHECK_COMPLETED"
+  "stored_asset_visual_review": "ASSISTED_VISUAL_CHECK_COMPLETED",
+  "categories": [
+    437
+  ],
+  "theme_caption_rendering": "DEPLOYED_1.6.9",
+  "preview_evidence": "User screenshot confirms title, image and intro in native desktop preview; table/mobile not shown"
 }
