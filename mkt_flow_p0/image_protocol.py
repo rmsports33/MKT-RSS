@@ -55,7 +55,33 @@ def _generation_request(title, reason, candidate=None):
     }
 
 
-def plan_image(title, *, offline=True, content_fit=None):
+def _used_image_keys(used_image_identifiers):
+    """IDs and original URLs already reserved by this editorial batch."""
+    if used_image_identifiers is None:
+        return set()
+    if not isinstance(used_image_identifiers, (set, frozenset, list, tuple)):
+        raise ValueError('IMAGE_BATCH_USED_INVALID')
+    if any(not isinstance(v, str) or not v.strip() for v in used_image_identifiers):
+        raise ValueError('IMAGE_BATCH_USED_INVALID')
+    return set(used_image_identifiers)
+
+
+def reserve_image_candidate(plan, used_image_identifiers):
+    """Reserve a catalog image for a single article; never imply WP upload."""
+    if not isinstance(used_image_identifiers, set):
+        raise ValueError('IMAGE_BATCH_USED_INVALID')
+    resource = plan.get('resource') if isinstance(plan, dict) else None
+    if not isinstance(resource, dict) or plan.get('status') != 'CANDIDATE_LICENSE_DOCUMENTED':
+        return False
+    resource = validate_resource(resource)
+    used_image_identifiers.update(
+        v for v in (resource.get('id'), resource.get('image_url'), resource.get('source_page'))
+        if isinstance(v, str) and v
+    )
+    return True
+
+
+def plan_image(title, *, offline=True, content_fit=None, used_image_identifiers=None):
     """Check free/licensed sources first; an incongruent candidate requires AI generation.
 
     A keyword match is only a candidate. The caller must pass content_fit='PASS'
@@ -65,10 +91,15 @@ def plan_image(title, *, offline=True, content_fit=None):
     """
     if content_fit not in (None, 'PASS', 'INCONGRUENT'):
         raise ValueError('IMAGE_CONTENT_FIT_INVALID')
+    used=_used_image_keys(used_image_identifiers)
     catalog=json.loads(CATALOG.read_text(encoding='utf-8'))
+    duplicate_sources=[]
     for entry in catalog:
         if all(term.casefold() in title.casefold() for term in entry.get('match_all',[])):
             resource=validate_resource(entry)
+            if used.intersection({resource['id'], resource['image_url'], resource['source_page']}):
+                duplicate_sources.append(resource['id'])
+                continue
             if content_fit == 'INCONGRUENT':
                 return _generation_request(title,'FREE_CANDIDATE_NOT_CONGRUENT',resource['id'])
             return {'status':'CANDIDATE_LICENSE_DOCUMENTED',
@@ -78,6 +109,8 @@ def plan_image(title, *, offline=True, content_fit=None):
                     'network_called':False,'ai_called':False,'wordpress_written':False}
     if offline:
         return {'status':'RESEARCH_REQUIRED_OFFLINE','next_step':'FREE_STOCK_RESEARCH',
+                'reason':'BATCH_COVER_ALREADY_RESERVED' if duplicate_sources else 'NO_CATALOG_MATCH',
+                'rejected_duplicate_ids':duplicate_sources,
                 'network_called':False,'ai_called':False,'wordpress_written':False}
     try:
         from mkt_flow_p0.image_handler import buscar_fallback
@@ -85,7 +118,11 @@ def plan_image(title, *, offline=True, content_fit=None):
     except ImportError:
         return {'status':'RESEARCH_DEPENDENCY_UNAVAILABLE','next_step':'INSTALL_FREE_REQUESTS_OR_SUPPLY_LICENSED_MANIFEST',
                 'network_called':False,'ai_called':False,'wordpress_written':False}
-    candidates=found.get('candidatos') or []
+    candidates=[
+        item for item in (found.get('candidatos') or [])
+        if not any(item.get(key) in used for key in ('url','pagina_origem','page_url')
+                   if isinstance(item.get(key),str))
+    ]
     if content_fit == 'INCONGRUENT':
         return _generation_request(title,'FREE_CANDIDATES_NOT_CONGRUENT',
                                    [item.get('pagina_origem') or item.get('page_url') or item.get('url') for item in candidates])
@@ -99,7 +136,33 @@ def plan_image(title, *, offline=True, content_fit=None):
                 'research':found,'content_fit_review':'PENDING',
                 'next_step':'REVIEW_CONTENT_FIT','network_called':True,
                 'ai_called':False,'wordpress_written':False}
-    return _generation_request(title,'NO_SUITABLE_FREE_CANDIDATE')
+    if found.get('proxima_etapa') == 'PESQUISA_BANCO_PENDENTE':
+        # Free-stock access was unavailable; do not claim a failed search justifies AI.
+        return {'status':'FREE_STOCK_RESEARCH_PENDING','next_step':'FREE_STOCK_RESEARCH',
+                'network_called':True,'ai_called':False,'wordpress_written':False}
+    return _generation_request(title,'NO_DISTINCT_FREE_CANDIDATE'
+                               if duplicate_sources or used else 'NO_SUITABLE_FREE_CANDIDATE')
+
+
+def plan_image_batch(titles, *, offline=True, content_fit=None):
+    """Plan distinct editorial covers, licensed stock before an AI request.
+
+    Planning never creates images, validates unknown media rights or writes WP.
+    """
+    if not isinstance(titles, (list, tuple)) or not all(
+        isinstance(title, str) and title.strip() for title in titles
+    ):
+        raise ValueError('IMAGE_BATCH_TITLES_INVALID')
+    used=set()
+    plans=[]
+    for title in titles:
+        plan=plan_image(title, offline=offline, content_fit=content_fit,
+                        used_image_identifiers=used)
+        reserve_image_candidate(plan,used)
+        plans.append(plan)
+    return {'schema':'conexo-image-batch-plan/1','plans':plans,
+            'reserved_image_keys':sorted(used),'wordpress_written':False,
+            'ai_called':False}
 
 
 def prepare_assets(resource, image_bytes):
