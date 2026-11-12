@@ -106,41 +106,8 @@ def validar_pacote(article, markdown):
 
 
 def _renderizar_markdown_editorial(markdown):
-    """Renderiza tabelas Markdown com escape de HTML, preservando a ordem dos blocos."""
-    out, buffer, lines = [], [], markdown.splitlines()
-
-    def flush():
-        if buffer:
-            out.append(markdown_para_html("\n".join(buffer)))
-            buffer.clear()
-
-    i = 0
-    while i < len(lines):
-        if (i + 1 < len(lines) and lines[i].strip().startswith("|")
-                and re.fullmatch(r"[|:\-\s]+", lines[i + 1].strip() or "x")):
-            header = [x.strip() for x in lines[i].strip().strip("|").split("|")]
-            divider = [x.strip() for x in lines[i + 1].strip().strip("|").split("|")]
-            if (len(header) > 1 and len(header) == len(divider)
-                    and all(re.fullmatch(r":?-{3,}:?", x) for x in divider)):
-                flush()
-                out.append("<table><thead><tr>" + "".join(
-                    "<th>" + html.escape(x) + "</th>" for x in header
-                ) + "</tr></thead><tbody>")
-                i += 2
-                while i < len(lines) and lines[i].strip().startswith("|"):
-                    cells = [x.strip() for x in lines[i].strip().strip("|").split("|")]
-                    if len(cells) != len(header):
-                        raise ValueError("Tabela Markdown com colunas inconsistentes")
-                    out.append("<tr>" + "".join(
-                        "<td>" + html.escape(x) + "</td>" for x in cells
-                    ) + "</tr>")
-                    i += 1
-                out.append("</tbody></table>")
-                continue
-        buffer.append(lines[i])
-        i += 1
-    flush()
-    return "\n".join(out)
+    """Use the same escaped table renderer as RSS and generated drafts."""
+    return markdown_para_html(markdown)
 
 
 def gerar_corpo_wordpress(article, markdown):

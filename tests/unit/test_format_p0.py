@@ -35,3 +35,13 @@ def test_sanitizar_url():
     assert sanitizar_url("https://x.com/vaza-odispositivo/") == "https://x.com/vaza-odispositivo/"
     assert "­" not in sanitizar_url("https://x.com/vaza-o­dispositivo/")
     assert sanitizar_url("https://x.com/a" + chr(0) + "b ") == "https://x.com/ab"
+
+
+def test_table_from_live_draft_uses_same_renderer_as_offline_core():
+    from mkt_flow_p0.editorial_core_offline import _renderizar_markdown_editorial
+    markdown = '## Custos\n\n| Opção | Valor |\n|---|---|\n| Compra | 20.000 |\n| Assinatura | <script>x</script> |'
+    html = markdown_para_html(markdown)
+    assert '<table>' in html and '<th>Opção</th>' in html
+    assert '<script>' not in html and '&lt;script&gt;' in html
+    assert '<p>|' not in html
+    assert html == _renderizar_markdown_editorial(markdown)

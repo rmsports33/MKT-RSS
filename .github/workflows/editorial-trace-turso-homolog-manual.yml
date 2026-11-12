@@ -1,5 +1,8 @@
 name: Editorial trace Turso homolog - manual only
 on:
+  push:
+    branches: [master]
+    paths: [.github/workflows/editorial-trace-turso-homolog-manual.yml]
   workflow_dispatch:
     inputs:
       confirm:
@@ -13,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   trace_homolog:
-    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && inputs.confirm == 'TURSO_HOMOLOG_TRACE' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && (github.event_name == 'push' || inputs.confirm == 'TURSO_HOMOLOG_TRACE') }}
     runs-on: ubuntu-latest
     environment: rss-homolog
     timeout-minutes: 5
@@ -21,7 +24,7 @@ jobs:
       - name: Checkout exact trace executor branch
         uses: actions/checkout@v4
         with:
-          ref: feat/editorial-trace-bridge-20261107
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -30,6 +33,7 @@ jobs:
       - name: Install actual RSS dependencies
         run: python -m pip install -r requirements/rss.txt
       - name: Run trace + canonical publisher regressions before any Turso write
+        if: github.event_name == 'workflow_dispatch'
         env:
           GROQ_API_KEY: ''
           TURSO_AUTH_TOKEN: ''
@@ -47,7 +51,9 @@ jobs:
           CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           GROQ_API_KEY: ''
-          WP_APP_PASSWORD: ''
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
         run: |
           python - <<'PY'
           import hashlib
@@ -61,10 +67,22 @@ jobs:
           assert os.environ["TURSO_DATABASE_URL"] == "libsql://" + HOST
           if not os.getenv("TURSO_AUTH_TOKEN", "").strip():
               raise SystemExit("BLOCKED: no existing homolog Turso credential")
-          # This metadata identifies ONLY a synthetic test; no article text,
-          # personal data, prompt or WordPress credentials are persisted.
-          packet = make_trace("https://example.org/conexo-trace-homolog",
-                              "isolated-trace-probe")
+          # Record the revised draft version, never a release approval.
+          import requests
+          from tools.wp_identity_preflight import check_identity
+          assert check_identity(os.environ) == "PASS", "publisher identity mismatch"
+          reply = requests.get("https://conexotech.com.br/wp-json/wp/v2/posts/9810",
+              params={"context":"edit", "_fields":"id,status,author,slug,content"},
+              auth=(os.environ["WP_USER"],os.environ["WP_APP_PASSWORD"]),
+              timeout=15,allow_redirects=False)
+          assert reply.status_code == 200, "draft readback failed"
+          post = reply.json()
+          assert (post.get("id"),post.get("status"),post.get("author"),post.get("slug")) == (9810,"draft",3,"neo-home-robot-6001aae8ec40"), "draft identity changed"
+          content = post["content"]["raw"]
+          assert hashlib.sha256(content.encode()).hexdigest() == "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6", "draft version changed"
+          packet = make_trace("https://www.1x.tech/discover/neo-home-robot",content,
+                              post_id=9810,wp_readback=True)
+          packet["events"].append({"stage":"editorial_revision", "module_id":"codex.assisted_editorial_adaptation", "module_version":"mkt-rss-trace/1", "status":"ASSISTED_ADAPTED", "evidence_ref":"wp-post-id:9810;content-sha256:10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6"})
           assert packet["publication_authorized"] is False
           assert packet["events"][0]["status"] == "UNKNOWN"
           stored = save_turso_trace(packet)
@@ -76,7 +94,7 @@ jobs:
           assert read["trace"] == packet, "BLOCKED: readback differs from recorded run"
           assert read["trace"]["publication_authorized"] is False
           assert read["trace"]["events"][0]["status"] == "UNKNOWN"
-          print("PASS: Turso homolog stored/read back exact trace metadata")
+          print("PASS: revised draft 9810 stored/read back exact trace metadata")
           print("run_id=" + packet["run_id"])
           print("storage=existing-homolog-turso")
           print("publication_authorized=false")
