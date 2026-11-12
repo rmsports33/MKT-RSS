@@ -29,12 +29,12 @@
     },
     {
       "post_id": 9813,
-      "modified": "2026-11-12T13:30:31",
+      "modified": "2026-11-12T13:35:37",
       "status": "draft",
-      "content_sha256": "9d67eea3e6b37d6c2749c38093865d0f928147967cc5dbd227b85c068459f742",
+      "content_sha256": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d",
       "previous_content_sha256": "d370b37d26aac5cd2c6b3405a68def9cc55466038fe94a1e2c7755218b676887",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "6c22555e0fb316ab3bf210c9664efcdc8f96479706e50f4179a55533a04a76cd",
+      "preapproval_projection_sha256": "b24528446e10c0952fe25b8811ddf79bd0d59839904bafc0fde3f69b4c514407",
       "projection": {
         "id": 9813,
         "slug": "optimus-producao-fremont-limites-2026",
@@ -44,19 +44,19 @@
           437
         ],
         "featured_media": 9812,
-        "content_sha256": "9d67eea3e6b37d6c2749c38093865d0f928147967cc5dbd227b85c068459f742"
+        "content_sha256": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d"
       },
       "gate_signed_approval": null,
       "publication_authorized": false
     },
     {
       "post_id": 9814,
-      "modified": "2026-11-12T13:30:37",
+      "modified": "2026-11-12T13:34:53",
       "status": "draft",
-      "content_sha256": "2ffed892a93b188977895b2fc319b186c3a0a9543b3f84fa6d6659499eb8705a",
+      "content_sha256": "b0a4919b8dbca2ec7502df26cd9eab86c988bc931229a8d4c9fb8f780ab9da46",
       "previous_content_sha256": "556ff4f07325b0f03cdf69d7335bd19645fd7d55bdcb40c1de42486871f87d3a",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "cbe791b5a81731b72b795293ccbe6b75c4183856daecb464807622720f9de682",
+      "preapproval_projection_sha256": "df52a7a5d73ee10643dae21a723957d548e102128d08fc449004169560ed4175",
       "projection": {
         "id": 9814,
         "slug": "unitree-r1-g1-importacao-brasil-guia",
@@ -66,7 +66,7 @@
           437
         ],
         "featured_media": 9812,
-        "content_sha256": "2ffed892a93b188977895b2fc319b186c3a0a9543b3f84fa6d6659499eb8705a"
+        "content_sha256": "b0a4919b8dbca2ec7502df26cd9eab86c988bc931229a8d4c9fb8f780ab9da46"
       },
       "gate_signed_approval": null,
       "publication_authorized": false
