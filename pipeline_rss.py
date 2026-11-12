@@ -236,10 +236,15 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             return {"acao": "falha", "motivo": rw["erro"], "url": url_fonte,
                     "editorial_trace": trace}
         texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
-        if os.getenv("CONEXO_RSS_RELATED_LINKS") == "1":
+        # Interligacao editorial padrao: apenas posts realmente publicados, nunca rascunhos.
+        # Falha de rede = nenhum link, nao URLs inventadas nem bloqueio da geracao.
+        related_mode = os.getenv("CONEXO_RSS_RELATED_LINKS")
+        if (related_mode == "1" or (related_mode is None and
+                os.getenv("WP_URL", "").rstrip("/") == "https://conexotech.com.br")):
             from mkt_flow_p0.related_posts import buscar_relacionados_wordpress, anexar_relacionados
             if attempt == 0:
-                relacionados = buscar_relacionados_wordpress(rw["titulo_seo"], "https://conexotech.com.br")
+                relacionados = buscar_relacionados_wordpress(
+                    rw["titulo_seo"], "https://conexotech.com.br", timeout=5)
             if relacionados:
                 texto_final = anexar_relacionados(texto_final, relacionados)
         if isinstance(rw.get("editorial_handoff"), dict):
