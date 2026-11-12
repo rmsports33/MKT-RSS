@@ -80,11 +80,31 @@ def publicar_no_wordpress(
             or (categoria_ids is not None and categoria_ids != wp.get("categories"))
             or tag_ids or imagem_url or rank_math):
         return {"erro": "escrita bloqueada: conteúdo/metadados divergem da revisão"}
+    # Diagnostic is attached at the actual executor handoff, including drafts.
+    # Never convert a diagnostic PASS into publication authorization.
+    from mkt_flow_p0.editorial_substance import assess_editorial_package
+    assessment_data = pacote_editorial.get("editorial_assessment")
+    if isinstance(assessment_data, dict):
+        try:
+            assessment = assess_editorial_package(
+                pacote_editorial, assessment_data.get("brief"),
+                assessment_data.get("review"), assessment_data.get("receipts"))
+        except (ValueError, TypeError, KeyError) as exc:
+            return {"erro": "avaliação editorial inválida", "reason": str(exc)}
+    else:
+        assessment = assess_editorial_package(pacote_editorial)
+    if status_desejado == "publish" and assessment["status"] == "BLOCKED":
+        return {"erro": "qualidade editorial pendente",
+                "pendencias": assessment["blockers"],
+                "content_sha256": assessment["content_sha256"]}
     from mkt_flow_p0.editorial_transport import publish_package
-    return publish_package(pacote_editorial, core_root=core_root, wp_url=wp_url,
+    result = publish_package(pacote_editorial, core_root=core_root, wp_url=wp_url,
         wp_user=wp_user, wp_password=wp_app_password, actor_id=actor_id,
         intent=status_desejado, publication_reference=publication_reference,
         trace_run_id=trace_run_id, timeout=timeout)
+    if isinstance(result, dict):
+        result["editorial_diagnostic"] = assessment
+    return result
 
 
 def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_user: str,
