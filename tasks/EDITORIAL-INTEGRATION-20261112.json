@@ -158,12 +158,16 @@
       "reference": "WordPress REST authenticated posts-get for 9813,9815,9814,9810,9816,9817",
       "result": "Six posts returned status future, author=4, featured media 9839,9841,9840,9838,9842,9843, exactly 10-minute UTC intervals, post modified 2026-11-12 19:28:19 BRT.",
       "checked_at": "2026-11-12T19:28:00-03:00"
+    },
+    {
+      "reference": "Hostinger account cron list + WordPress posts readback",
+      "result": "Tarefa UID ZYPioOw0ag excluída, Hostinger cron jobs=[]; seis artigos permanecem future no WP com date_gmt e mídias preservados."
     }
   ],
   "blockers": [
     "Verificar publicação real (status publish, URLs e SEO) dos seis posts após o WP-Cron nos horários futuros. Gate assinado é presumido pelo fluxo protegido, mas registros privados HMAC não foram lidos diretamente."
   ],
-  "next_action": "Não repetir aceites ou agendamentos. WordPress já marcou seis posts como future e Hostinger cron a cada 5 minutos está ativo. Verificar publicações após 21h30 BRT, SEO/canonical e links internos. Automação de leitura agendada para 21h45 BRT nesta conversa.",
+  "next_action": "Não recriar cron Hostinger: usuário confirmou agendamento sem ele e tarefa ZYPioOw0ag foi excluída. Seis posts future no WordPress; verificar publish real após horários agendados e falhas WP-Cron por baixo tráfego. Nenhuma aprovação adicional solicitada.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -218,7 +222,7 @@
     "version_snapshot_9814_9815": "UPDATED_PREAPPROVAL_HASHES; GATE_CANONICAL_PENDING",
     "current_snapshot_receipt": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
     "assisted_editorial_review": "SIX_COMPLETED_OWNER_DECISION_PENDING",
-    "wordpress_latest_status": "SIX_FUTURE_0_PUBLISHED_READBACK_2026_11_12_19_28_BRT",
+    "wordpress_latest_status": "SIX_FUTURE_POSTS_ZERO_PUBLISHED_AT_LAST_CHECK_20261112",
     "featured_media_by_post": {
       "9810": 9838,
       "9813": 9839,
@@ -249,9 +253,9 @@
     "owner_gate_signed_current_versions": "NOT_CONFIRMED",
     "followup_check": "AUTOMATION_2026_11_12_17_10_BRT",
     "wordpress_native_schedule_code": "MERGED_MASTER_6CDC427_CI_PASSED_MANUAL_FALLBACK",
-    "wordpress_native_schedule_execution": "SIX_FUTURE_READBACK_CONFIRMED_AFTER_USER_APPROVAL",
+    "wordpress_native_schedule_execution": "SIX_WP_FUTURE_POSTS_CONFIRMED_DIRECT_READBACK_20261112",
     "github_recurring_six_slots": "REMOVED_FROM_MASTER",
-    "hostinger_server_cron": "CREATED_VERIFIED_5MIN_UID_ZYPioOw0ag_EXECUTION_NOT_YET_PROVEN",
+    "hostinger_server_cron": "REMOVED_AT_USER_REQUEST_UID_ZYPioOw0ag_LIST_EMPTY",
     "native_seo_future_finalize": "NOT_IMPLEMENTED",
     "current_post_status": "SIX_DRAFTS_WP_READBACK_VERIFIED_20261112",
     "wordpress_native_scheduler_plugin": "ACTIVE_PRODUCTION_CONEXO_GATE_AGENDA_NATIVA_0_2_0",
@@ -305,6 +309,6 @@
     "A IA em GitHub Actions continua solicitação de imagem, não renderização automática sem serviço autorizado. Planejamento único e deduplicação por lote já estão na master.",
     "Cadência normal: 1-2 matérias/dia (09h e 17h); lote atual interligado pode ser liberado uma só vez em janela de 50min após seis revisões, evitando links de rascunhos por dias.",
     "O contrato Native SEO de post future não é finalizado pelo broker atual; priorizar verificação pública de tags no primeiro post após o cron.",
-    "Cron Hostinger a cada 5min criado e listado; verificar a primeira execução real de future→publish e monitorar recursos sem alterar wp-config.php antes de evidência."
+    "Conservar o agendamento WP nativo sem cron Hostinger, conforme decisão explícita do usuário; validar publicações reais, pois future não garante pontualidade do WP-Cron."
   ]
 }
