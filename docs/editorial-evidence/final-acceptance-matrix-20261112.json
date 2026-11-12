@@ -1,16 +1,17 @@
 {
-  "schema": "conexo-final-acceptance-matrix/1",
+  "schema": "conexo-final-acceptance-matrix/2",
   "date": "2026-11-12",
   "source": "WordPress authenticated edit readback and existing GitHub evidence",
-  "decision": "PENDING_EXTERNAL_EVIDENCE",
+  "decision": "EDITORIAL_ACCEPTANCE_PENDING_NOT_BLOCKED_BY_UNRELATED_RECOVERY",
   "publication_authorized": false,
   "shared": {
     "generator_integration": "PASS_EXISTING_PR97",
     "gate_isolated_rc5": "PASS_32_CHECKS",
-    "gate_operational_recovery": "NOT_PROVEN",
-    "tinyfish_native_preview": "BLOCKED_429_NO_SIGNED_IN_SITE",
+    "gate_operational_recovery": "SEPARATE_OPERATIONS_WORKSTREAM_NOT_EDITORIAL_ACCEPTANCE_BLOCKER",
+    "tinyfish_native_preview": "OPTIONAL_ROUTE_BLOCKED_USE_EXISTING_WORDPRESS_ACCESS",
     "public_theme_responsiveness": "PASS_EXISTING_EVIDENCE_NOT_PRIVATE_DRAFT",
-    "human_independent_review": "PENDING"
+    "human_independent_review": "ONE_SUBSTANTIVE_EDITORIAL_FACTUAL_REVIEW_PER_VERSION_REQUIRED",
+    "visual_evidence": "EXISTING_PUBLIC_THEME_RESPONSIVENESS_REUSED; TARGETED_PRIVATE_CHECK_ONLY_WHEN_NEEDED"
   },
   "articles": [
     {
@@ -23,11 +24,11 @@
       "tables": 1,
       "featured_media": 9812,
       "source_and_license_evidence": "RECORDED_PREVIOUSLY_NOT_RECERTIFIED",
-      "native_full_preview": "DESKTOP_TOP_ONLY",
-      "factual_human_acceptance": "PENDING",
-      "editorial_independent_acceptance": "PENDING",
-      "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Inspect native draft at desktop and mobile; review factual claims and sources; register independent signed approval tied to exact canonical snapshot."
+      "native_full_preview": "PARTIAL_DESKTOP_EXISTING; TARGETED_TABLE_CHECK",
+      "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
+      "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
+      "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
+      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
     },
     {
       "id": 9813,
@@ -39,11 +40,11 @@
       "tables": 0,
       "featured_media": 9812,
       "source_and_license_evidence": "RECORDED_PREVIOUSLY_NOT_RECERTIFIED",
-      "native_full_preview": "PENDING",
-      "factual_human_acceptance": "PENDING",
-      "editorial_independent_acceptance": "PENDING",
-      "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Inspect native draft at desktop and mobile; review factual claims and sources; register independent signed approval tied to exact canonical snapshot."
+      "native_full_preview": "NOT_MANDATORY_IF_EXISTING_RENDER_AND_TARGETED_RISK_CHECK_SUFFICIENT",
+      "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
+      "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
+      "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
+      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
     },
     {
       "id": 9814,
@@ -55,11 +56,11 @@
       "tables": 1,
       "featured_media": 9812,
       "source_and_license_evidence": "RECORDED_PREVIOUSLY_NOT_RECERTIFIED",
-      "native_full_preview": "PENDING",
-      "factual_human_acceptance": "PENDING",
-      "editorial_independent_acceptance": "PENDING",
-      "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Inspect native draft at desktop and mobile; review factual claims and sources; register independent signed approval tied to exact canonical snapshot."
+      "native_full_preview": "NOT_MANDATORY_IF_EXISTING_RENDER_AND_TARGETED_RISK_CHECK_SUFFICIENT",
+      "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
+      "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
+      "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
+      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
     },
     {
       "id": 9815,
@@ -71,11 +72,11 @@
       "tables": 1,
       "featured_media": 9812,
       "source_and_license_evidence": "RECORDED_PREVIOUSLY_NOT_RECERTIFIED",
-      "native_full_preview": "PENDING",
-      "factual_human_acceptance": "PENDING",
-      "editorial_independent_acceptance": "PENDING",
-      "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Inspect native draft at desktop and mobile; review factual claims and sources; register independent signed approval tied to exact canonical snapshot."
+      "native_full_preview": "NOT_MANDATORY_IF_EXISTING_RENDER_AND_TARGETED_RISK_CHECK_SUFFICIENT",
+      "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
+      "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
+      "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
+      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
     },
     {
       "id": 9816,
@@ -87,11 +88,11 @@
       "tables": 0,
       "featured_media": 9812,
       "source_and_license_evidence": "RECORDED_PREVIOUSLY_NOT_RECERTIFIED",
-      "native_full_preview": "PENDING",
-      "factual_human_acceptance": "PENDING",
-      "editorial_independent_acceptance": "PENDING",
-      "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Inspect native draft at desktop and mobile; review factual claims and sources; register independent signed approval tied to exact canonical snapshot."
+      "native_full_preview": "NOT_MANDATORY_IF_EXISTING_RENDER_AND_TARGETED_RISK_CHECK_SUFFICIENT",
+      "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
+      "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
+      "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
+      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
     },
     {
       "id": 9817,
@@ -103,17 +104,46 @@
       "tables": 0,
       "featured_media": 9812,
       "source_and_license_evidence": "RECORDED_PREVIOUSLY_NOT_RECERTIFIED",
-      "native_full_preview": "PENDING",
-      "factual_human_acceptance": "PENDING",
-      "editorial_independent_acceptance": "PENDING",
-      "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Inspect native draft at desktop and mobile; review factual claims and sources; register independent signed approval tied to exact canonical snapshot."
+      "native_full_preview": "NOT_MANDATORY_IF_EXISTING_RENDER_AND_TARGETED_RISK_CHECK_SUFFICIENT",
+      "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
+      "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
+      "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
+      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
     }
   ],
   "release_criteria": [
-    "Six complete native draft previews verified at 390 and 1440 including tables, captions and footer.",
-    "Independent factual/editorial acceptance for each exact content-and-metadata snapshot.",
-    "Operational Gate and recovery evidence verified, without weakening production security.",
-    "Publish only separately approved content; no blanket authorization implied."
+    "For editorial acceptance: one substantive reviewer opinion per article version covering factual claims, sources, genre, image and editorial quality; do not duplicate factual and editorial approvals.",
+    "For visual acceptance: reuse public 390/1440 theme checks and reconstructed renders; check actual private draft only where material rendering risk remains, especially tables and featured caption; no six-by-two blanket screenshot requirement.",
+    "For publishing: preserve existing trusted independent Gate authorization, immutable canonical snapshot/version checks, signed approval and WordPress readback; never fabricate approval.",
+    "For operational resilience: validate backup restore and replay/rollback as a separate hardening milestone, not an automatic blocker for editorial review or saving drafts; assess risk before any unattended production rollout.",
+    "TinyFish HTTP429 is a tooling issue, not a publication-quality failure; do not retry unchanged or weaken global security."
+  ],
+  "policy": "RISK_PROPORTIONATE",
+  "overrigor_corrections": [
+    {
+      "previous": "Twelve mandatory native screenshots",
+      "replacement": "Reuse existing responsive evidence plus targeted visual inspection of table/featured image risk",
+      "disposition": "RELAXED"
+    },
+    {
+      "previous": "Separate independent factual and editorial signoffs",
+      "replacement": "Single substantive independent review covers both per canonical version",
+      "disposition": "CONSOLIDATED"
+    },
+    {
+      "previous": "Gate backup restoration and rollback before any editorial acceptance",
+      "replacement": "Separate operational milestone; preserve strict Gate publication authorization",
+      "disposition": "DECOUPLED"
+    },
+    {
+      "previous": "TinyFish 429 blocking all progress",
+      "replacement": "Use authenticated WP API for content and owner browser only for unresolved visual cases",
+      "disposition": "REMOVED_AS_GENERAL_BLOCKER"
+    },
+    {
+      "previous": "Require version-bound approval for saving drafts",
+      "replacement": "Only for publication/scheduling; drafts can be saved without editorial approval",
+      "disposition": "SCOPED"
+    }
   ]
 }
