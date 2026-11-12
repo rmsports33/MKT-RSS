@@ -238,8 +238,9 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         texto_final = adicionar_atribuicao(rw["texto_markdown"], item.get("fonte", ""), url_fonte)
         # Interligacao editorial padrao: apenas posts realmente publicados, nunca rascunhos.
         # Falha de rede = nenhum link, nao URLs inventadas nem bloqueio da geracao.
-        if (os.getenv("CONEXO_RSS_RELATED_LINKS", "1") != "0"
-                and os.getenv("WP_URL", "").rstrip("/") == "https://conexotech.com.br"):
+        related_mode = os.getenv("CONEXO_RSS_RELATED_LINKS")
+        if (related_mode == "1" or (related_mode is None and
+                os.getenv("WP_URL", "").rstrip("/") == "https://conexotech.com.br")):
             from mkt_flow_p0.related_posts import buscar_relacionados_wordpress, anexar_relacionados
             if attempt == 0:
                 relacionados = buscar_relacionados_wordpress(
