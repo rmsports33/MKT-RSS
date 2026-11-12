@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "BLOCKED_EXTERNAL_REVIEW",
+  "status": "EDITORIAL_ACCEPTANCE_PENDING",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -58,14 +58,19 @@
     {
       "reference": "WordPress connected posts_get edit 2026-11-12",
       "result": "Leitura direta dos IDs 9810,9813,9814,9815,9816,9817: todos draft, mídia destacada 9812, categorias conforme recibos; nenhuma escrita ou publicação."
+    },
+    {
+      "sha": "f089d66402f177d2208c9dc47de377aee9c5528c",
+      "reference": "docs/editorial-evidence/final-acceptance-matrix-20261112.json",
+      "result": "Critérios de homologação proporcionais: captura visual direcionada, parecer único, Gate rigoroso somente para publicação, resiliência separada."
     }
   ],
   "blockers": [
-    "Prévia nativa integral dos seis rascunhos, incluindo celular e tabelas, ainda não comprovada; apenas topo desktop do #9810 confirmado pelo proprietário.",
-    "Parecer editorial e factual humano independente por versão/hash ainda pendente.",
-    "Gate rc5 validado em WordPress/MySQL isolado; restauração de backup e replay/rollback operacional ainda não comprovados."
+    "Uma revisão substantiva por versão dos seis artigos, cobrindo fatos, fontes, gênero, imagem e qualidade editorial; não duplicar pareceres.",
+    "Conferência visual direcionada apenas aos riscos ainda não cobertos pelas evidências existentes (especialmente tabelas e legenda), sem exigir doze capturas nativas.",
+    "Aprovação assinada por versão pelo Gate real antes de publicar ou agendar; não necessária para salvar/manter rascunhos."
   ],
-  "next_action": "Não repetir TinyFish 429 nem regenerar textos. Obter conferência nativa completa dos seis rascunhos via sessão autenticada funcional, com evidência mobile/tabelas, seguida de parecer factual/editorial independente por hash; só depois homologar autorização real do Gate e recuperação operacional.",
+  "next_action": "Aplicar revisão editorial/factual única a cada versão e somente inspeções visuais de risco; aproveitar as evidências existentes. Após aceite, exigir autorização real do Gate para publicar. Não repetir suítes ou regenerar artigos.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -112,5 +117,9 @@
     "category_corrections": "APPLIED_BODY_HASHES_PRESERVED",
     "featured_caption": "DEPLOYED_THEME_1.6.9_PUBLIC_RESPONSIVE_VERIFIED",
     "wordpress_live_readback": "SIX_DRAFTS_CONFIRMED_2026-11-12"
-  }
+  },
+  "nonblocking_followups": [
+    "HTTP429 TinyFish: rota opcional indisponível; usar API WordPress e inspeção pontual pelo proprietário.",
+    "Restauração de backup e replay/rollback: trilha separada de resiliência operacional; não impede aceite editorial nem manutenção dos rascunhos."
+  ]
 }
