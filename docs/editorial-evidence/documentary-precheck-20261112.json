@@ -108,5 +108,32 @@
     "For #9813 verify Tesla Q3 2026 source statements against primary PDF and SEC filing before acceptance.",
     "For all six, single reviewer to sign version-bound opinion; keep Gate unchanged."
   ],
-  "publication_authorized": false
+  "publication_authorized": false,
+  "source_verification_20261112": {
+    "method": "Independent public-source retrieval",
+    "verified": [
+      {
+        "post_id": 9813,
+        "source": "Tesla Q3 2026 quarterly deck",
+        "url": "https://assets-ir.tesla.com/tesla-contents/IR/TSLA-Q3-2026-Update.pdf",
+        "finding": "Production began Fremont; first production-quality units; California early ramp; Texas construction; installed capacity not current production rate",
+        "result": "PRIMARY_SOURCE_CONFIRMED"
+      },
+      {
+        "post_id": 9813,
+        "source": "TechCrunch Oct 21 2026",
+        "url": "https://techcrunch.com/2026/10/21/tesla-stars-optimus-robot-production-in-california-as-profit-falls-43/",
+        "finding": "Independent reporting corroborates early production, not consumer availability",
+        "result": "SECONDARY_SOURCE_CONFIRMED"
+      },
+      {
+        "post_id": 9817,
+        "source": "LG official CES 2026 release",
+        "url": "https://www.lg.com/global/newsroom/news/home-appliance-solution/lg-electronics-presents-lg-cloid-home-robot-to-demonstrate-zero-labor-home-at-ces-2026/",
+        "finding": "Wheeled base and CES 2026 demonstration confirmed; no proof of commercial Brazil availability",
+        "result": "PRIMARY_SOURCE_CONFIRMED"
+      }
+    ],
+    "not_verified": "Remaining source claims in 9810,9814,9815,9816,9817; all native previews and independent human signoff."
+  }
 }
