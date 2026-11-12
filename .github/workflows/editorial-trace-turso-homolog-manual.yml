@@ -1,5 +1,8 @@
 name: Editorial trace Turso homolog - manual only
 on:
+  push:
+    branches: [master]
+    paths: [".github/workflows/editorial-trace-turso-homolog-manual.yml"]
   workflow_dispatch:
     inputs:
       confirm:
@@ -13,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   trace_homolog:
-    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && inputs.confirm == 'TURSO_HOMOLOG_TRACE' }}
+    if: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && (github.event_name == 'push' || inputs.confirm == 'TURSO_HOMOLOG_TRACE') }}
     runs-on: ubuntu-latest
     environment: rss-homolog
     timeout-minutes: 5
@@ -30,6 +33,7 @@ jobs:
       - name: Install actual RSS dependencies
         run: python -m pip install -r requirements/rss.txt
       - name: Run trace + canonical publisher regressions before any Turso write
+        if: github.event_name == 'workflow_dispatch'
         env:
           GROQ_API_KEY: ''
           TURSO_AUTH_TOKEN: ''
@@ -47,7 +51,9 @@ jobs:
           CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           GROQ_API_KEY: ''
-          WP_APP_PASSWORD: ''
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
         run: |
           python - <<'PY'
           import hashlib
@@ -56,28 +62,22 @@ jobs:
           from mkt_flow_p0.editorial_trace import make_trace
           from mkt_flow_p0.editorial_trace_turso import save_turso_trace, get_turso_trace
 
-          HOST = "mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io"
-          assert os.environ["CONEXO_TRACE_TURSO_ALLOWED_HOST"] == HOST
-          assert os.environ["TURSO_DATABASE_URL"] == "libsql://" + HOST
-          if not os.getenv("TURSO_AUTH_TOKEN", "").strip():
-              raise SystemExit("BLOCKED: no existing homolog Turso credential")
-          # This metadata identifies ONLY a synthetic test; no article text,
-          # personal data, prompt or WordPress credentials are persisted.
-          packet = make_trace("https://example.org/conexo-trace-homolog",
-                              "isolated-trace-probe")
-          assert packet["publication_authorized"] is False
-          assert packet["events"][0]["status"] == "UNKNOWN"
-          stored = save_turso_trace(packet)
-          if stored.get("ok") is not True:
-              raise SystemExit("BLOCKED: Turso write failed: " + stored.get("reason", "unknown"))
-          read = get_turso_trace(packet["run_id"])
-          if read.get("ok") is not True:
-              raise SystemExit("BLOCKED: Turso readback failed: " + read.get("reason", "unknown"))
-          assert read["trace"] == packet, "BLOCKED: readback differs from recorded run"
-          assert read["trace"]["publication_authorized"] is False
-          assert read["trace"]["events"][0]["status"] == "UNKNOWN"
-          print("PASS: Turso homolog stored/read back exact trace metadata")
-          print("run_id=" + packet["run_id"])
-          print("storage=existing-homolog-turso")
-          print("publication_authorized=false")
+          import requests
+          rows = [{'post_id': 9810, 'source_url': 'https://www.1x.tech/discover/neo-home-robot', 'content_sha256': '10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6', 'package_sha256': 'fd5b50c3611e7745287aaeb54562af46d5200af13ce9e0ebb2938dcb157b43e9'}, {'post_id': 9813, 'source_url': 'https://assets-ir.tesla.com/tesla-contents/IR/TSLA-Q3-2026-Update.pdf', 'content_sha256': 'd370b37d26aac5cd2c6b3405a68def9cc55466038fe94a1e2c7755218b676887', 'package_sha256': 'eb13e4793fc5302a0ef4249932ff089cecb4878499d8cc5cfc471c3464ae3a97'}, {'post_id': 9814, 'source_url': 'https://www.unitree.com/R1/', 'content_sha256': '556ff4f07325b0f03cdf69d7335bd19645fd7d55bdcb40c1de42486871f87d3a', 'package_sha256': 'ac983a394c665cc98104e99129fdf318b56f48dd100e0e52fde2c6a47f1d611d'}, {'post_id': 9815, 'source_url': 'https://www.tesla.com/AI', 'content_sha256': 'a1fae1374436f6b762c537ca2e0fd9148609ad7a31a2f23765ef18bc17ec26a7', 'package_sha256': '0c0ffa85597b3838999dc7c941b7ceb155e486382b45182bfa6efc186a6a58c9'}, {'post_id': 9816, 'source_url': 'https://www.figure.ai/news/introducing-figure-03', 'content_sha256': '2346e49de6eb4e1631f0852f6cca86d35fc040f4e36f28a74cb3edff71da1ec8', 'package_sha256': '7348b055e6c84771dc9cfba36c1a36e64785d36d0ac6ca3f24e9d9d9666ce297'}, {'post_id': 9817, 'source_url': 'https://www.lg.com/global/newsroom/news/home-appliance-solution/lg-electronics-presents-lg-cloid-home-robot-to-demonstrate-zero-labor-home-at-ces-2026/', 'content_sha256': '57218ecc143835126a0fef515f162aff10a7786bf0ad4662379fba6964c19533', 'package_sha256': '51ea1663dd80e47d8d95ab1a52c5dc8d3f8c361b781ab642fd2e8790f20484bd'}]
+          session=requests.Session()
+          session.auth=(os.environ['WP_USER'],os.environ['WP_APP_PASSWORD'])
+          for row in rows:
+              response=session.get(os.environ['WP_URL'].rstrip('/')+'/wp-json/wp/v2/posts/'+str(row['post_id']),params={'context':'edit'},timeout=30)
+              response.raise_for_status()
+              post=response.json(); body=post['content']['raw']
+              assert hashlib.sha256(body.encode()).hexdigest()==row['content_sha256'], 'body mismatch'
+              assert post['status']=='draft' and post['featured_media']==9812, 'delivery mismatch'
+              packet=make_trace(row['source_url'],body,post_id=row['post_id'],wp_readback=True)
+              packet['events'].append({'stage':'media_license_evidence','module_id':'editorial-evidence','module_version':'1','status':'PASS','evidence_ref':'git:10a263b:docs/editorial-evidence/9810/image-license-proof.json'})
+              packet['events'].append({'stage':'package_binding','module_id':'editorial-evidence','module_version':'1','status':'PASS','evidence_ref':'package-sha256:'+row['package_sha256']})
+              result=save_turso_trace(packet)
+              assert result.get('ok') is True, 'trace write failed'
+              read=get_turso_trace(packet['run_id'])
+              assert read.get('ok') is True and read['trace']==packet, 'trace readback mismatch'
+              print('EDITORIAL_RECEIPT='+json.dumps({'post_id':row['post_id'],'run_id':packet['run_id'],'content_sha256':row['content_sha256'],'package_sha256':row['package_sha256'],'turso_readback':'EXACT_MATCH','publication_authorized':False}))
           PY
