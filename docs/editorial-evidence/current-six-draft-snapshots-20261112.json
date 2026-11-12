@@ -1,170 +1,224 @@
 {
-  "schema": "conexo-draft-version-readback/3",
+  "schema": "conexo-draft-version-readback/4",
   "date": "2026-11-12",
   "method": "Live WordPress edit readback; SHA-256 over exact UTF-8 Gutenberg content, same algorithm as historical Turso body receipts; new metadata projection SHA-256 for evidence only",
-  "warning": "The projection hash is not Gate canonical snapshot SHA. Recalculate Gate snapshot in owner review screen after author changed.",
+  "warning": "Hashes are Gutenberg UTF-8 body plus a separate metadata projection; neither is a Gate-signed approval. Version changed after links and SEO excerpt editing. No publication was performed.",
   "media_9812_caption_verified": true,
   "source_turso_receipts": "docs/editorial-evidence/turso-batch-receipts.json",
   "snapshots": [
     {
       "post_id": 9810,
-      "modified": "2026-11-12T14:55:37",
+      "modified": "2026-11-12T15:30:22",
       "status": "draft",
-      "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+      "content_sha256": "57dadd3683ea7d5316c6a3a28c1e4fa30128a98e915afa1945f51fb7b4954101",
       "previous_content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
       "body_changed_since_turso": false,
-      "preapproval_projection_sha256": "e197383140f3bb03b5a39b8fbd6424e09d0b71181d07574a892df9d4e5f36cb7",
+      "preapproval_projection_sha256": "40ec1e2e2cadd8380489423e3c3650f0648d81e21de14532b0470f2a863d37a1",
       "projection": {
         "id": 9810,
         "slug": "neo-home-robot-6001aae8ec40",
         "title": "NEO da 1X: compra, assinatura e limites de privacidade",
+        "excerpt": "Compra, assinatura e reserva do NEO são condições distintas. Veja o que os documentos da 1X esclarecem sobre custos, acesso remoto e limites para o Brasil.",
+        "author_id": 4,
         "categories": [
           437
         ],
         "featured_media": 9838,
-        "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
-        "author_id": 4
+        "content_sha256": "57dadd3683ea7d5316c6a3a28c1e4fa30128a98e915afa1945f51fb7b4954101"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "owner_editorial_acceptance": "ACCEPTED_CONTENT_AND_INSTRUCTED_LINK_EDIT; FORMAL_CURRENT_GATE_REVIEW_PENDING",
       "publication_requested": true,
       "final_optimized_cover": true,
-      "wp_author_id": 4
+      "wp_author_id": 4,
+      "content_sha256_before_related_links": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+      "related_links_added": true,
+      "related_link_targets": [
+        "unitree-r1-g1-importacao-brasil-guia",
+        "figure-03-review-documental-helix",
+        "lg-cloid-rodas-nota-documental"
+      ],
+      "leia_tambem_present": true
     },
     {
       "post_id": 9813,
-      "modified": "2026-11-12T14:56:02",
+      "modified": "2026-11-12T15:46:43",
       "status": "draft",
-      "content_sha256": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d",
+      "content_sha256": "c9953b3bae46b7fab43c0e1b5ef08dc4a7749161c97bb178bdf890f130cde743",
       "previous_content_sha256": "d370b37d26aac5cd2c6b3405a68def9cc55466038fe94a1e2c7755218b676887",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "7a23718b7fd7b7e04cbb276a62b75a334e0c8daafbf3e2d507be0e5397b253e2",
+      "preapproval_projection_sha256": "d93301b76852ed7b60fe74a7ab35db2efb9fe436039eedb7ca8e87d19aac7f2a",
       "projection": {
         "id": 9813,
         "slug": "optimus-producao-fremont-limites-2026",
         "title": "Optimus: Tesla informa início de produção em Fremont",
+        "excerpt": "Tesla informou em outubro de 2026 o início da produção do Optimus em Fremont. Entenda o alcance do anúncio e o que ainda falta para uso doméstico.",
+        "author_id": 4,
         "categories": [
           10,
           437
         ],
         "featured_media": 9839,
-        "content_sha256": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d",
-        "author_id": 4
+        "content_sha256": "c9953b3bae46b7fab43c0e1b5ef08dc4a7749161c97bb178bdf890f130cde743"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "owner_editorial_acceptance": "ACCEPTED_CONTENT_AND_INSTRUCTED_LINK_EDIT; FORMAL_CURRENT_GATE_REVIEW_PENDING",
       "publication_requested": true,
       "final_optimized_cover": true,
-      "wp_author_id": 4
+      "wp_author_id": 4,
+      "content_sha256_before_related_links": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d",
+      "related_links_added": true,
+      "related_link_targets": [
+        "figure-03-review-documental-helix",
+        "optimus-unitree-g1-comparativo-documental",
+        "unitree-r1-g1-importacao-brasil-guia"
+      ],
+      "leia_tambem_present": true
     },
     {
       "post_id": 9814,
-      "modified": "2026-11-12T14:56:10",
+      "modified": "2026-11-12T15:46:48",
       "status": "draft",
-      "content_sha256": "b0a4919b8dbca2ec7502df26cd9eab86c988bc931229a8d4c9fb8f780ab9da46",
+      "content_sha256": "557b50685b7cd96456019222fa7ffedf2af29ae9fea07326f398357354250bdb",
       "previous_content_sha256": "556ff4f07325b0f03cdf69d7335bd19645fd7d55bdcb40c1de42486871f87d3a",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "c4c651b97e196002f37e550b203c6bf919b1cd9d48ddfc83837516861181abac",
+      "preapproval_projection_sha256": "ee6f0f76ba8f937956fe6cf89cea635491f9997107f3bcec79b5ca30cb6fe308",
       "projection": {
         "id": 9814,
         "slug": "unitree-r1-g1-importacao-brasil-guia",
         "title": "Unitree R1 e G1: como apurar o custo de importação",
+        "excerpt": "Guia para apurar o custo de importar Unitree R1 ou G1 ao Brasil: configuração, frete, tributos, documentação e possíveis exigências da Anatel.",
+        "author_id": 4,
         "categories": [
           8,
           437
         ],
         "featured_media": 9840,
-        "content_sha256": "b0a4919b8dbca2ec7502df26cd9eab86c988bc931229a8d4c9fb8f780ab9da46",
-        "author_id": 4
+        "content_sha256": "557b50685b7cd96456019222fa7ffedf2af29ae9fea07326f398357354250bdb"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "owner_editorial_acceptance": "ACCEPTED_CONTENT_AND_INSTRUCTED_LINK_EDIT; FORMAL_CURRENT_GATE_REVIEW_PENDING",
       "publication_requested": true,
       "final_optimized_cover": true,
-      "wp_author_id": 4
+      "wp_author_id": 4,
+      "content_sha256_before_related_links": "b0a4919b8dbca2ec7502df26cd9eab86c988bc931229a8d4c9fb8f780ab9da46",
+      "related_links_added": true,
+      "related_link_targets": [
+        "optimus-unitree-g1-comparativo-documental",
+        "optimus-producao-fremont-limites-2026",
+        "neo-home-robot-6001aae8ec40"
+      ],
+      "leia_tambem_present": true
     },
     {
       "post_id": 9815,
-      "modified": "2026-11-12T14:56:16",
+      "modified": "2026-11-12T15:46:53",
       "status": "draft",
-      "content_sha256": "a1c70fbd09631aeea5e441d0cb345e972fc285b2341f26d20b8df22db49870ad",
+      "content_sha256": "a0bd745d6f83c23b720af17bf4d5b2ba328ae65bea4d3667641273d8aa5c5132",
       "previous_content_sha256": "a1fae1374436f6b762c537ca2e0fd9148609ad7a31a2f23765ef18bc17ec26a7",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "7441e547e216a4e629fb39889f29baf755158de4261d25b7ea49f6c033c8e7b7",
+      "preapproval_projection_sha256": "c4e7f23135bcab1fae4fcb26fcbb214296026d6404326b3208efd9e97f3b3842",
       "projection": {
         "id": 9815,
         "slug": "optimus-unitree-g1-comparativo-documental",
         "title": "Optimus e Unitree G1: o que é possível comparar",
+        "excerpt": "Optimus e Unitree G1 em comparação documental: estágio industrial, configuração, autonomia e limites de demonstrações que não são testes equivalentes.",
+        "author_id": 4,
         "categories": [
           44,
           437
         ],
         "featured_media": 9841,
-        "content_sha256": "a1c70fbd09631aeea5e441d0cb345e972fc285b2341f26d20b8df22db49870ad",
-        "author_id": 4
+        "content_sha256": "a0bd745d6f83c23b720af17bf4d5b2ba328ae65bea4d3667641273d8aa5c5132"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "owner_editorial_acceptance": "ACCEPTED_CONTENT_AND_INSTRUCTED_LINK_EDIT; FORMAL_CURRENT_GATE_REVIEW_PENDING",
       "publication_requested": true,
       "final_optimized_cover": true,
-      "wp_author_id": 4
+      "wp_author_id": 4,
+      "content_sha256_before_related_links": "a1c70fbd09631aeea5e441d0cb345e972fc285b2341f26d20b8df22db49870ad",
+      "related_links_added": true,
+      "related_link_targets": [
+        "unitree-r1-g1-importacao-brasil-guia",
+        "optimus-producao-fremont-limites-2026",
+        "figure-03-review-documental-helix"
+      ],
+      "leia_tambem_present": true
     },
     {
       "post_id": 9816,
-      "modified": "2026-11-12T14:56:22",
+      "modified": "2026-11-12T15:46:57",
       "status": "draft",
-      "content_sha256": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226",
+      "content_sha256": "0542769fb6fe63a39511bc452a99adfca1bb26e21a7af9050b3b0789ed3b4a1a",
       "previous_content_sha256": "2346e49de6eb4e1631f0852f6cca86d35fc040f4e36f28a74cb3edff71da1ec8",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "2800c498f2cf859ab6ec41bd5fb056dab642f6fe9218a93ab3fd825c6a38bfae",
+      "preapproval_projection_sha256": "87e06d6fe45a586cf6a7074e25a9a9109ab2f98cbf426ad499b4e14b9d382e4a",
       "projection": {
         "id": 9816,
         "slug": "figure-03-review-documental-helix",
         "title": "Figure 03: avaliação documental das promessas domésticas",
+        "excerpt": "Figure 03 e Helix: o que as demonstrações indicam sobre autonomia doméstica e quais limites devem ser considerados numa avaliação documental.",
+        "author_id": 4,
         "categories": [
           437
         ],
         "featured_media": 9842,
-        "content_sha256": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226",
-        "author_id": 4
+        "content_sha256": "0542769fb6fe63a39511bc452a99adfca1bb26e21a7af9050b3b0789ed3b4a1a"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "owner_editorial_acceptance": "ACCEPTED_CONTENT_AND_INSTRUCTED_LINK_EDIT; FORMAL_CURRENT_GATE_REVIEW_PENDING",
       "publication_requested": true,
       "final_optimized_cover": true,
-      "wp_author_id": 4
+      "wp_author_id": 4,
+      "content_sha256_before_related_links": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226",
+      "related_links_added": true,
+      "related_link_targets": [
+        "neo-home-robot-6001aae8ec40",
+        "lg-cloid-rodas-nota-documental",
+        "optimus-unitree-g1-comparativo-documental"
+      ],
+      "leia_tambem_present": true
     },
     {
       "post_id": 9817,
-      "modified": "2026-11-12T14:56:26",
+      "modified": "2026-11-12T15:47:07",
       "status": "draft",
-      "content_sha256": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb",
+      "content_sha256": "e3500af4e048c4d1236de6b66ddca88781ea835d0def90ac72075c0f28881a54",
       "previous_content_sha256": "57218ecc143835126a0fef515f162aff10a7786bf0ad4662379fba6964c19533",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "2e77ad38f0172e256d1877d212fcc4e6761eaa93fc59660cdda394c34c629098",
+      "preapproval_projection_sha256": "8e94b0cbb631ec00b4dc45c4539c49d23b468e9976136761740089db5615e7aa",
       "projection": {
         "id": 9817,
         "slug": "lg-cloid-rodas-nota-documental",
         "title": "LG CLOiD: rodas também entram na robótica doméstica",
+        "excerpt": "LG CLOiD usa rodas em sua proposta de robótica doméstica. Veja o que a CES 2026 mostrou e por que a demonstração não comprova autonomia contínua.",
+        "author_id": 4,
         "categories": [
           10,
           437
         ],
         "featured_media": 9843,
-        "content_sha256": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb",
-        "author_id": 4
+        "content_sha256": "e3500af4e048c4d1236de6b66ddca88781ea835d0def90ac72075c0f28881a54"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "owner_editorial_acceptance": "ACCEPTED_CONTENT_AND_INSTRUCTED_LINK_EDIT; FORMAL_CURRENT_GATE_REVIEW_PENDING",
       "publication_requested": true,
       "final_optimized_cover": true,
-      "wp_author_id": 4
+      "wp_author_id": 4,
+      "content_sha256_before_related_links": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb",
+      "related_links_added": true,
+      "related_link_targets": [
+        "figure-03-review-documental-helix",
+        "neo-home-robot-6001aae8ec40",
+        "optimus-unitree-g1-comparativo-documental"
+      ],
+      "leia_tambem_present": true
     }
   ],
   "owner_editorial_deliberation": "ACCEPTED_ALL_SIX_2026-11-12",
@@ -177,7 +231,24 @@
     "9817": 9843
   },
   "publication_requested": true,
-  "signed_gate_release": "PENDING_OWNER_REVIEW_FORM",
+  "signed_gate_release": "PENDING_POST_LINK_REVISIONS",
   "final_optimized_images": true,
-  "author_identity_note": "Post author corrected to technical MKT-RSS editorial service WP ID4; owner reviewer configured as WP ID3. This is separation of technical accounts, NOT a fabricated human Gate approval."
+  "author_identity_note": "Post author corrected to technical MKT-RSS editorial service WP ID4; owner reviewer configured as WP ID3. This is separation of technical accounts, NOT a fabricated human Gate approval.",
+  "schedule_request": {
+    "date": "2026-11-12",
+    "timezone": "America/Fortaleza",
+    "start": "16:00",
+    "interval_minutes": 10,
+    "order": [
+      9813,
+      9815,
+      9814,
+      9810,
+      9816,
+      9817
+    ],
+    "workflow": "https://github.com/rmsports33/MKT-RSS/actions/workflows/publish-owner-approved-slots-20261112.yml",
+    "condition": "AUTHENTICATED_GATE_RELEASE_FOR_CURRENT_VERSION_BEFORE_EACH_SLOT"
+  },
+  "note_about_unpublished_internal_targets": "Several links point to other drafts within coordinated six-post release; those links will be unavailable before each target is published; readers may see temporary 404. Human Gate review should explicitly assess this risk."
 }
