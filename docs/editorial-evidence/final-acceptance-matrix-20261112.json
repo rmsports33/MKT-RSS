@@ -11,7 +11,9 @@
     "tinyfish_native_preview": "OPTIONAL_ROUTE_BLOCKED_USE_EXISTING_WORDPRESS_ACCESS",
     "public_theme_responsiveness": "PASS_EXISTING_EVIDENCE_NOT_PRIVATE_DRAFT",
     "human_independent_review": "ONE_SUBSTANTIVE_EDITORIAL_FACTUAL_REVIEW_PER_VERSION_REQUIRED",
-    "visual_evidence": "EXISTING_PUBLIC_THEME_RESPONSIVENESS_REUSED; TARGETED_PRIVATE_CHECK_ONLY_WHEN_NEEDED"
+    "visual_evidence": "EXISTING_PUBLIC_THEME_RESPONSIVENESS_REUSED; TARGETED_PRIVATE_CHECK_ONLY_WHEN_NEEDED",
+    "factual_primary_source_review": "PASS_ASSISTED_4_ARTICLES_WITH_TWO_TARGETED_CORRECTIONS",
+    "factual_review_reference": "docs/editorial-evidence/factual-review-four-drafts-20261112.json"
   },
   "articles": [
     {
@@ -28,7 +30,9 @@
       "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
       "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
       "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
-      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
+      "next_action": "Independent substantive editorial judgment on this version; target native visual risk only if material. Preserve draft; signed Gate approval required before publication.",
+      "factual_source_check": "MAIN_PRIMARY_SOURCE_FACTS_SUPPORTED",
+      "factual_source_check_evidence": "docs/editorial-evidence/factual-review-four-drafts-20261112.json"
     },
     {
       "id": 9813,
@@ -50,7 +54,7 @@
       "id": 9814,
       "title": "Unitree R1 e G1: como apurar o custo de importação",
       "status": "draft",
-      "modified": "2026-11-12T10:46:50",
+      "modified": "2026-11-12T11:37:26",
       "content_present": true,
       "links": 8,
       "tables": 1,
@@ -59,14 +63,17 @@
       "native_full_preview": "NOT_MANDATORY_IF_EXISTING_RENDER_AND_TARGETED_RISK_CHECK_SUFFICIENT",
       "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
       "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
-      "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
-      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
+      "version_bound_gate_approval": "NOT_GRANTED",
+      "next_action": "Independent substantive editorial judgment on this version; target native visual risk only if material. Preserve draft; signed Gate approval required before publication.",
+      "factual_source_check": "SUPPORTED_AFTER_REGULATORY_CONTEXT_UPDATE",
+      "factual_source_check_evidence": "docs/editorial-evidence/factual-review-four-drafts-20261112.json",
+      "canonical_snapshot": "STALE_AFTER_DRAFT_EDIT_NEEDS_REFRESH"
     },
     {
       "id": 9815,
       "title": "Optimus e Unitree G1: o que é possível comparar",
       "status": "draft",
-      "modified": "2026-11-12T10:46:57",
+      "modified": "2026-11-12T11:37:41",
       "content_present": true,
       "links": 6,
       "tables": 1,
@@ -75,8 +82,11 @@
       "native_full_preview": "NOT_MANDATORY_IF_EXISTING_RENDER_AND_TARGETED_RISK_CHECK_SUFFICIENT",
       "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
       "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
-      "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
-      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
+      "version_bound_gate_approval": "NOT_GRANTED",
+      "next_action": "Independent substantive editorial judgment on this version; target native visual risk only if material. Preserve draft; signed Gate approval required before publication.",
+      "factual_source_check": "MAIN_COMPARISON_FRAMING_SUPPORTED",
+      "factual_source_check_evidence": "docs/editorial-evidence/factual-review-four-drafts-20261112.json",
+      "canonical_snapshot": "STALE_AFTER_DRAFT_EDIT_NEEDS_REFRESH"
     },
     {
       "id": 9816,
@@ -92,7 +102,9 @@
       "factual_human_acceptance": "PENDING_SINGLE_SUBSTANTIVE_REVIEW",
       "editorial_independent_acceptance": "SAME_SINGLE_REVIEW_CAN_COVER_FACTUAL_AND_EDITORIAL",
       "version_bound_gate_approval": "REQUIRED_ONLY_BEFORE_PUBLICATION",
-      "next_action": "Revisar afirmações centrais, fontes, imagem e adequação do gênero uma vez por versão; inspecionar visualmente apenas risco específico (tabela, legenda, overflow) com evidência já existente; manter draft até aceite e Gate real."
+      "next_action": "Independent substantive editorial judgment on this version; target native visual risk only if material. Preserve draft; signed Gate approval required before publication.",
+      "factual_source_check": "FIGURE_PRIMARY_SOURCES_AND_2025_EXTERNAL_CONTEXT_SUPPORTED",
+      "factual_source_check_evidence": "docs/editorial-evidence/factual-review-four-drafts-20261112.json"
     },
     {
       "id": 9817,
