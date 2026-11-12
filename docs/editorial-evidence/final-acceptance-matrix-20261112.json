@@ -18,7 +18,9 @@
     "visual_risk": "MITIGATED_USING_EXISTING_12_RECONSTRUCTED_RENDERINGS_PUBLIC_390_1440_AND_GUTENBERG_STRUCTURE_NOT_NATIVE_PRIVATE_PREVIEW",
     "duplicate_image_credit": "RESOLVED_FIVE_DRAFTS_INLINE_CREDIT_REMOVED_FEATURED_MEDIA_CAPTION_RETAINED",
     "image_repetition": "NONBLOCKING_OWNER_AESTHETIC_CHOICE",
-    "gate_real_publication_authorization": "NOT_GRANTED"
+    "gate_real_publication_authorization": "NOT_GRANTED",
+    "wp_post_author_id": "3_FOR_ALL_SIX",
+    "gate_independent_reviewer_requirement": "SIGNED_REVIEWER_MUST_NOT_BE_POST_AUTHOR_ID_3"
   },
   "articles": [
     {
@@ -35,7 +37,7 @@
       "factual_human_acceptance": "PENDING_OWNER",
       "editorial_independent_acceptance": "PENDING_OWNER",
       "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Owner decide accept/revise for exact post content hash; if accepted obtain real Gate-issued signed version authorization before any publish/schedule.",
+      "next_action": "Owner deliberate on recorded SHA; authorized Gate reviewer different from author WP id3 must sign exact canonical version before publication.",
       "factual_source_check": "MAIN_PRIMARY_SOURCE_FACTS_SUPPORTED",
       "factual_source_check_evidence": "docs/editorial-evidence/factual-review-four-drafts-20261112.json",
       "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
@@ -46,7 +48,8 @@
       "assisted_review_verdict": "RECOMMEND_OWNER_ACCEPTANCE",
       "assisted_review_record": "docs/editorial-evidence/substantive-editorial-assessment-six-20261112.json",
       "technical_visual_risk": "LOW_GUTENBERG_TABLES_VALID_PLUS_RECONSTRUCTED_VIEWS; NATIVE_PRIVATE_SCREENSHOT_NOT_CERTIFIED",
-      "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING"
+      "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING",
+      "wp_author_id": 3
     },
     {
       "id": 9813,
@@ -62,7 +65,7 @@
       "factual_human_acceptance": "PENDING_OWNER",
       "editorial_independent_acceptance": "PENDING_OWNER",
       "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Owner decide accept/revise for exact post content hash; if accepted obtain real Gate-issued signed version authorization before any publish/schedule.",
+      "next_action": "Owner deliberate on recorded SHA; authorized Gate reviewer different from author WP id3 must sign exact canonical version before publication.",
       "content_sha256": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d",
       "preapproval_projection_sha256": "b24528446e10c0952fe25b8811ddf79bd0d59839904bafc0fde3f69b4c514407",
       "image_caption_verified": true,
@@ -71,7 +74,8 @@
       "assisted_review_verdict": "RECOMMEND_OWNER_ACCEPTANCE",
       "assisted_review_record": "docs/editorial-evidence/substantive-editorial-assessment-six-20261112.json",
       "technical_visual_risk": "LOW_GUTENBERG_TABLES_VALID_PLUS_RECONSTRUCTED_VIEWS; NATIVE_PRIVATE_SCREENSHOT_NOT_CERTIFIED",
-      "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING"
+      "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING",
+      "wp_author_id": 3
     },
     {
       "id": 9814,
@@ -87,7 +91,7 @@
       "factual_human_acceptance": "PENDING_OWNER",
       "editorial_independent_acceptance": "PENDING_OWNER",
       "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Owner decide accept/revise for exact post content hash; if accepted obtain real Gate-issued signed version authorization before any publish/schedule.",
+      "next_action": "Owner deliberate on recorded SHA; authorized Gate reviewer different from author WP id3 must sign exact canonical version before publication.",
       "factual_source_check": "SUPPORTED_AFTER_REGULATORY_CONTEXT_UPDATE",
       "factual_source_check_evidence": "docs/editorial-evidence/factual-review-four-drafts-20261112.json",
       "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING",
@@ -98,7 +102,8 @@
       "quality_score": 8.3,
       "assisted_review_verdict": "RECOMMEND_OWNER_ACCEPTANCE",
       "assisted_review_record": "docs/editorial-evidence/substantive-editorial-assessment-six-20261112.json",
-      "technical_visual_risk": "LOW_GUTENBERG_TABLES_VALID_PLUS_RECONSTRUCTED_VIEWS; NATIVE_PRIVATE_SCREENSHOT_NOT_CERTIFIED"
+      "technical_visual_risk": "LOW_GUTENBERG_TABLES_VALID_PLUS_RECONSTRUCTED_VIEWS; NATIVE_PRIVATE_SCREENSHOT_NOT_CERTIFIED",
+      "wp_author_id": 3
     },
     {
       "id": 9815,
@@ -114,7 +119,7 @@
       "factual_human_acceptance": "PENDING_OWNER",
       "editorial_independent_acceptance": "PENDING_OWNER",
       "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Owner decide accept/revise for exact post content hash; if accepted obtain real Gate-issued signed version authorization before any publish/schedule.",
+      "next_action": "Owner deliberate on recorded SHA; authorized Gate reviewer different from author WP id3 must sign exact canonical version before publication.",
       "factual_source_check": "MAIN_COMPARISON_FRAMING_SUPPORTED",
       "factual_source_check_evidence": "docs/editorial-evidence/factual-review-four-drafts-20261112.json",
       "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING",
@@ -125,7 +130,8 @@
       "quality_score": 7.6,
       "assisted_review_verdict": "RECOMMEND_OWNER_ACCEPTANCE_WITH_FORMAT_NOTE",
       "assisted_review_record": "docs/editorial-evidence/substantive-editorial-assessment-six-20261112.json",
-      "technical_visual_risk": "LOW_GUTENBERG_TABLES_VALID_PLUS_RECONSTRUCTED_VIEWS; NATIVE_PRIVATE_SCREENSHOT_NOT_CERTIFIED"
+      "technical_visual_risk": "LOW_GUTENBERG_TABLES_VALID_PLUS_RECONSTRUCTED_VIEWS; NATIVE_PRIVATE_SCREENSHOT_NOT_CERTIFIED",
+      "wp_author_id": 3
     },
     {
       "id": 9816,
@@ -141,7 +147,7 @@
       "factual_human_acceptance": "PENDING_OWNER",
       "editorial_independent_acceptance": "PENDING_OWNER",
       "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Owner decide accept/revise for exact post content hash; if accepted obtain real Gate-issued signed version authorization before any publish/schedule.",
+      "next_action": "Owner deliberate on recorded SHA; authorized Gate reviewer different from author WP id3 must sign exact canonical version before publication.",
       "factual_source_check": "FIGURE_PRIMARY_SOURCES_AND_2025_EXTERNAL_CONTEXT_SUPPORTED",
       "factual_source_check_evidence": "docs/editorial-evidence/factual-review-four-drafts-20261112.json",
       "content_sha256": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226",
@@ -152,7 +158,8 @@
       "assisted_review_verdict": "RECOMMEND_OWNER_ACCEPTANCE_WITH_FORMAT_NOTE",
       "assisted_review_record": "docs/editorial-evidence/substantive-editorial-assessment-six-20261112.json",
       "technical_visual_risk": "LOW_GUTENBERG_TABLES_VALID_PLUS_RECONSTRUCTED_VIEWS; NATIVE_PRIVATE_SCREENSHOT_NOT_CERTIFIED",
-      "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING"
+      "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING",
+      "wp_author_id": 3
     },
     {
       "id": 9817,
@@ -168,7 +175,7 @@
       "factual_human_acceptance": "PENDING_OWNER",
       "editorial_independent_acceptance": "PENDING_OWNER",
       "version_bound_gate_approval": "NOT_GRANTED",
-      "next_action": "Owner decide accept/revise for exact post content hash; if accepted obtain real Gate-issued signed version authorization before any publish/schedule.",
+      "next_action": "Owner deliberate on recorded SHA; authorized Gate reviewer different from author WP id3 must sign exact canonical version before publication.",
       "content_sha256": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb",
       "preapproval_projection_sha256": "9df4e44ff931c5c6f44d6da1572d8f6962053f04e2206e54e2f39f0a5bebe6ec",
       "image_caption_verified": true,
@@ -177,7 +184,8 @@
       "assisted_review_verdict": "RECOMMEND_OWNER_ACCEPTANCE",
       "assisted_review_record": "docs/editorial-evidence/substantive-editorial-assessment-six-20261112.json",
       "technical_visual_risk": "LOW_GUTENBERG_TABLES_VALID_PLUS_RECONSTRUCTED_VIEWS; NATIVE_PRIVATE_SCREENSHOT_NOT_CERTIFIED",
-      "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING"
+      "canonical_snapshot": "LATEST_PREAPPROVAL_PROJECTION_RECORDED; GATE_ISSUED_CANONICAL_VERSION_PENDING",
+      "wp_author_id": 3
     }
   ],
   "release_criteria": [
