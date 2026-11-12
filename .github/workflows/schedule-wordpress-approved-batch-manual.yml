@@ -1,0 +1,59 @@
+name: Agendar seis matérias aprovadas pelo Gate no próprio WordPress
+run-name: Agendamento WordPress nativo após conferência das seis versões
+
+on:
+  workflow_dispatch:
+    inputs:
+      start_local:
+        description: "Início local America/Fortaleza YYYY-MM-DDTHH:MM; mínimo 10 min no futuro"
+        required: true
+        type: string
+        default: "2026-11-13T09:00"
+      confirm:
+        description: "Validar sem alterações ou agendar seis posts no WordPress?"
+        required: true
+        type: choice
+        default: "SOMENTE_VALIDAR"
+        options:
+          - SOMENTE_VALIDAR
+          - AGENDAR_SEIS
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mkt-owner-publication
+  cancel-in-progress: false
+
+jobs:
+  wordpress-native-schedule:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.ref == 'refs/heads/master' && github.actor == 'rmsports33' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dependências
+        run: python -m pip install requests==2.34.2
+      - name: Agendar uma só vez, sem cron no GitHub
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          LOCAL_START: ${{ inputs.start_local }}
+          CONFIRM: ${{ inputs.confirm }}
+        shell: bash
+        run: |
+          if [[ "$CONFIRM" == "AGENDAR_SEIS" ]]; then
+            python -m tools.schedule_owner_approved_wordpress --start-local "$LOCAL_START" --execute
+          else
+            python -m tools.schedule_owner_approved_wordpress --start-local "$LOCAL_START"
+          fi

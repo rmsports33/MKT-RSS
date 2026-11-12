@@ -72,10 +72,17 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
         # the SAME WordPress Gate, never caller-supplied human PASS fields.
         trusted = _get_json(session, f"{SITE}/wp-json/conexo/v1/editorial/owner-release/{post_id}",
                             (wp_user, wp_password), timeout)
+        owner_policy = (
+            (intent == "publish" and require_signed_seo is True)
+            or (intent == "schedule" and require_signed_seo is False)
+        )
+        # Existing canonical WP Gate protects future-post cron with a
+        # version-and-date-bound receipt. Native SEO finalize is *not*
+        # supported for future posts: schedule without claiming SEO finalized.
         if (trusted != package or trusted.get("schema") != "conexo-owner-release/1"
                 or payload.get("owner_id") != 3 or payload.get("review_mode") != "owner"
                 or payload.get("approval_reference") != publication_reference
-                or require_signed_seo is not True or intent != "publish"):
+                or not owner_policy):
             raise BrokerBlocked("OWNER_VERSION_NOT_AUTHENTICATED")
     else:
         core = load_core(core_root)
