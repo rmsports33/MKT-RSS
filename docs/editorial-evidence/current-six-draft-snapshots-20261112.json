@@ -1,0 +1,140 @@
+{
+  "schema": "conexo-draft-version-readback/1",
+  "date": "2026-11-12",
+  "method": "Live WordPress edit readback; SHA-256 over exact UTF-8 Gutenberg content, same algorithm as historical Turso body receipts; new metadata projection SHA-256 for evidence only",
+  "warning": "preapproval_projection_sha256 IS NOT a Gate-issued canonical snapshot; actual signed Gate version must be computed and compared by Gate before publication.",
+  "media_9812_caption_verified": true,
+  "source_turso_receipts": "docs/editorial-evidence/turso-batch-receipts.json",
+  "snapshots": [
+    {
+      "post_id": 9810,
+      "modified": "2026-11-12T10:46:34",
+      "status": "draft",
+      "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+      "previous_content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+      "body_changed_since_turso": false,
+      "preapproval_projection_sha256": "cfd2229f786077d296e1e09f64c267c3d6df9990ce701865d55852899af0e2ad",
+      "projection": {
+        "id": 9810,
+        "slug": "neo-home-robot-6001aae8ec40",
+        "title": "NEO da 1X: compra, assinatura e limites de privacidade",
+        "categories": [
+          437
+        ],
+        "featured_media": 9812,
+        "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6"
+      },
+      "gate_signed_approval": null,
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9813,
+      "modified": "2026-11-12T13:30:31",
+      "status": "draft",
+      "content_sha256": "9d67eea3e6b37d6c2749c38093865d0f928147967cc5dbd227b85c068459f742",
+      "previous_content_sha256": "d370b37d26aac5cd2c6b3405a68def9cc55466038fe94a1e2c7755218b676887",
+      "body_changed_since_turso": true,
+      "preapproval_projection_sha256": "6c22555e0fb316ab3bf210c9664efcdc8f96479706e50f4179a55533a04a76cd",
+      "projection": {
+        "id": 9813,
+        "slug": "optimus-producao-fremont-limites-2026",
+        "title": "Optimus: Tesla informa início de produção em Fremont",
+        "categories": [
+          10,
+          437
+        ],
+        "featured_media": 9812,
+        "content_sha256": "9d67eea3e6b37d6c2749c38093865d0f928147967cc5dbd227b85c068459f742"
+      },
+      "gate_signed_approval": null,
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9814,
+      "modified": "2026-11-12T13:30:37",
+      "status": "draft",
+      "content_sha256": "2ffed892a93b188977895b2fc319b186c3a0a9543b3f84fa6d6659499eb8705a",
+      "previous_content_sha256": "556ff4f07325b0f03cdf69d7335bd19645fd7d55bdcb40c1de42486871f87d3a",
+      "body_changed_since_turso": true,
+      "preapproval_projection_sha256": "cbe791b5a81731b72b795293ccbe6b75c4183856daecb464807622720f9de682",
+      "projection": {
+        "id": 9814,
+        "slug": "unitree-r1-g1-importacao-brasil-guia",
+        "title": "Unitree R1 e G1: como apurar o custo de importação",
+        "categories": [
+          8,
+          437
+        ],
+        "featured_media": 9812,
+        "content_sha256": "2ffed892a93b188977895b2fc319b186c3a0a9543b3f84fa6d6659499eb8705a"
+      },
+      "gate_signed_approval": null,
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9815,
+      "modified": "2026-11-12T13:30:43",
+      "status": "draft",
+      "content_sha256": "a1c70fbd09631aeea5e441d0cb345e972fc285b2341f26d20b8df22db49870ad",
+      "previous_content_sha256": "a1fae1374436f6b762c537ca2e0fd9148609ad7a31a2f23765ef18bc17ec26a7",
+      "body_changed_since_turso": true,
+      "preapproval_projection_sha256": "9e039b889a6791e483e6677ed6ccf7af85af8ff1ae7bc05814d694e5fb03982a",
+      "projection": {
+        "id": 9815,
+        "slug": "optimus-unitree-g1-comparativo-documental",
+        "title": "Optimus e Unitree G1: o que é possível comparar",
+        "categories": [
+          44,
+          437
+        ],
+        "featured_media": 9812,
+        "content_sha256": "a1c70fbd09631aeea5e441d0cb345e972fc285b2341f26d20b8df22db49870ad"
+      },
+      "gate_signed_approval": null,
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9816,
+      "modified": "2026-11-12T13:30:52",
+      "status": "draft",
+      "content_sha256": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226",
+      "previous_content_sha256": "2346e49de6eb4e1631f0852f6cca86d35fc040f4e36f28a74cb3edff71da1ec8",
+      "body_changed_since_turso": true,
+      "preapproval_projection_sha256": "cd6ebc17a70c60ee1f3b4ade416d9499ddf64b5edbe6ae0849ec9e1d43fb327a",
+      "projection": {
+        "id": 9816,
+        "slug": "figure-03-review-documental-helix",
+        "title": "Figure 03: avaliação documental das promessas domésticas",
+        "categories": [
+          437
+        ],
+        "featured_media": 9812,
+        "content_sha256": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226"
+      },
+      "gate_signed_approval": null,
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9817,
+      "modified": "2026-11-12T13:30:58",
+      "status": "draft",
+      "content_sha256": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb",
+      "previous_content_sha256": "57218ecc143835126a0fef515f162aff10a7786bf0ad4662379fba6964c19533",
+      "body_changed_since_turso": true,
+      "preapproval_projection_sha256": "9df4e44ff931c5c6f44d6da1572d8f6962053f04e2206e54e2f39f0a5bebe6ec",
+      "projection": {
+        "id": 9817,
+        "slug": "lg-cloid-rodas-nota-documental",
+        "title": "LG CLOiD: rodas também entram na robótica doméstica",
+        "categories": [
+          10,
+          437
+        ],
+        "featured_media": 9812,
+        "content_sha256": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb"
+      },
+      "gate_signed_approval": null,
+      "publication_authorized": false
+    }
+  ]
+}
