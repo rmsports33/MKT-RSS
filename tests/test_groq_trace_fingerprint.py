@@ -7,6 +7,16 @@ from unittest.mock import patch
 from mkt_flow_p0 import rewriter
 
 
+TEST_EDITORIAL_BRIEF = {
+    "genre": "noticia",
+    "reader": "Leitores que precisam interpretar documentação técnica disponível.",
+    "need": "Identificar consequências e limites dos fatos fornecidos nas fontes.",
+    "angle": "Distinguir informação documentada de hipótese ainda não demonstrada.",
+    "contribution": "Explicar critérios práticos sustentados pelos documentos fornecidos.",
+    "limits": "Não inventar testes próprios, preços, medições ou experiências de uso."
+}
+
+
 class GroqTraceFingerprintTests(unittest.TestCase):
     def test_exact_prompt_messages_are_fingerprinted(self):
         observed = {}
@@ -35,6 +45,7 @@ class GroqTraceFingerprintTests(unittest.TestCase):
             result = rewriter.reescrever_materia(
                 "Pauta sobre inteligência artificial",
                 " ".join(["texto"] * 110),
+                editorial_brief=TEST_EDITORIAL_BRIEF,
             )
         self.assertNotIn("erro", result)
         expected = hashlib.sha256(json.dumps(

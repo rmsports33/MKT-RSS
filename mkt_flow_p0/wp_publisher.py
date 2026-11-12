@@ -80,11 +80,32 @@ def publicar_no_wordpress(
             or (categoria_ids is not None and categoria_ids != wp.get("categories"))
             or tag_ids or imagem_url or rank_math):
         return {"erro": "escrita bloqueada: conteúdo/metadados divergem da revisão"}
+    # Validate supplied editorial evidence without breaking legacy callers.
+    # Missing evidence remains subject to trusted trace and canonical Gate.
+    assessment = None
+    assessment_data = pacote_editorial.get("editorial_assessment")
+    if assessment_data is not None:
+        from mkt_flow_p0.editorial_substance import assess_editorial_package
+        if not isinstance(assessment_data, dict):
+            return {"erro": "avaliação editorial inválida"}
+        try:
+            assessment = assess_editorial_package(
+                pacote_editorial, assessment_data.get("brief"),
+                assessment_data.get("review"), assessment_data.get("receipts"))
+        except (ValueError, TypeError, KeyError) as exc:
+            return {"erro": "avaliação editorial inválida", "reason": str(exc)}
+        if status_desejado == "publish" and assessment["status"] == "BLOCKED":
+            return {"erro": "qualidade editorial pendente",
+                    "pendencias": assessment["blockers"],
+                    "content_sha256": assessment["content_sha256"]}
     from mkt_flow_p0.editorial_transport import publish_package
-    return publish_package(pacote_editorial, core_root=core_root, wp_url=wp_url,
+    result = publish_package(pacote_editorial, core_root=core_root, wp_url=wp_url,
         wp_user=wp_user, wp_password=wp_app_password, actor_id=actor_id,
         intent=status_desejado, publication_reference=publication_reference,
         trace_run_id=trace_run_id, timeout=timeout)
+    if isinstance(result, dict) and assessment is not None:
+        result["editorial_diagnostic"] = assessment
+    return result
 
 
 def publicar_pagina(titulo: str, conteudo_html: str, slug: str, wp_url: str, wp_user: str,
@@ -217,13 +238,13 @@ def executar_ferramenta_mcp(wp_url: str, wp_user: str, wp_app_password: str,
 
 def publicar_comparativo(contrato: dict, wp_url: str, wp_user: str,
                          wp_app_password: str, timeout: int = 10) -> dict:
-    """Cria um COMPARATIVO como rascunho, via MCP create_comparativo.
+    """Valida comparativo legado, mas bloqueia escrita MCP direta.
 
     O contrato passa por `contrato_para_mcp`, que valida a estrutura E roda o
     gate de valor por produto (M04.17A). Contrato sem evidência por produto
     NAO chega ao WordPress: nem uma requisição é feita.
 
-    Retorna {"post_id":..., "status":"draft", "link":...} ou {"erro":...}.
+    Retorna erro explícito: o contrato assinado do Gate é obrigatório.
     Nunca levanta: contrato inválido vira {"erro"} com a lista de erros.
     """
     from mkt_flow_p0.comparativo_contract import ContratoInvalido, contrato_para_mcp
@@ -244,24 +265,7 @@ def publicar_comparativo(contrato: dict, wp_url: str, wp_user: str,
         return {"erro": "content com documento HTML completo: "
                         "o post receberia o documento inteiro, nao o corpo"}
 
-    resposta = executar_ferramenta_mcp(wp_url, wp_user, wp_app_password,
-                                        "create_comparativo", params, timeout)
-    if resposta.get("erro"):
-        return resposta
-
-    resultado = resposta.get("result") or {}
-    post_id = resultado.get("post_id")
-    status = resultado.get("status")
-    if not post_id:
-        return {"erro": "MCP nao devolveu post_id", "resposta": resultado}
-    if status != "draft":
-        # O MCP fixa draft; se vier outra coisa, e' erro NAO silencioso —
-        # e o post_id vai junto para o post poder ser inspecionado.
-        return {"erro": f"MCP devolveu status={status!r} (esperado draft)",
-                "post_id": post_id, "status": status}
-    return {
-        "post_id": post_id,
-        "status": status,
-        "link": resultado.get("edit_link"),
-        "fonte": "mcp:create_comparativo",
-    }
+    # O MCP direto e somente leitura. Nao simular sucesso de uma escrita
+    # proibida nem recorrer ao REST sem contrato editorial assinado.
+    return {"erro": "MCP direto de escrita bloqueado: criar rascunho pelo transporte editorial canônico assinado",
+            "status": "blocked", "retry_automatic": False}

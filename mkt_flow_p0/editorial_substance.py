@@ -123,3 +123,44 @@ def assess_substance(markdown, brief=None, review=None):
             "scores": scores if valid else {}, "content_sha256": content_hash(markdown),
             "review_valid": bool(valid), "assessment_scope": "supplied_judgment_with_textual_evidence",
             "factual_approval": False, "publication_authorized": False}
+
+
+def assess_editorial_release(markdown, brief=None, review=None, receipts=None):
+    """Combine the existing substantive assessment with version-bound receipts.
+
+    This is a diagnostic entry point for the executor, NOT an authorization
+    or a WordPress write. Missing receipts always block readiness.
+    """
+    from mkt_flow_p0.editorial_voice_adapter import editorial_readiness
+    substance = assess_substance(markdown, brief, review)
+    readiness = editorial_readiness(markdown, receipts if receipts is not None else {})
+    blockers = list(substance["pendencias"])
+    blockers.extend("comprovante_ausente_ou_invalido:" + name
+                    for name in readiness["missing_receipts"])
+    return {
+        "status": "REQUIRES_AUTHENTICATED_GATE" if not blockers else "BLOCKED",
+        "content_sha256": readiness["content_sha256"],
+        "blockers": blockers,
+        "substance": substance,
+        "readiness": readiness,
+        "publication_authorized": False,
+        "factual_approval": False,
+    }
+
+
+def assess_editorial_package(package, brief=None, review=None, receipts=None):
+    """Version-bound editorial diagnostics for a canonical package; never approval.
+
+    Fail closed if the manuscript differs from the reviewed package content.
+    The trusted release trace and canonical Gate are separate requirements.
+    """
+    if not isinstance(package, dict) or not isinstance(package.get("payload"), dict):
+        raise ValueError("pacote editorial inválido")
+    manuscript = package["payload"].get("content")
+    if not isinstance(manuscript, str) or not manuscript.strip():
+        raise ValueError("conteúdo editorial ausente")
+    result = assess_editorial_release(manuscript, brief, review, receipts)
+    result["package_version_sha256"] = package.get("version_sha256")
+    result["status"] = "BLOCKED" if result["blockers"] else "REQUIRES_AUTHENTICATED_GATE"
+    result["publication_authorized"] = False
+    return result

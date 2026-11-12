@@ -383,3 +383,48 @@ def markdown_table_structure_signals(markdown):
         "factual_approval": False,
         "publication_authorized": False,
     }
+
+
+# Advisory receipt consolidation only. The operational WordPress Gate is the
+# sole authority for authentication, version approval and publication.
+EDITORIAL_REQUIRED_RECEIPTS = (
+    "full_article", "introduction_review", "factual_review",
+    "source_review", "image_license", "independent_human_review",
+    "responsive_390", "responsive_1440", "wordpress_gate_test",
+)
+
+
+def editorial_readiness(markdown, receipts):
+    """Fail closed on missing/stale evidence, without authorizing publication.
+
+    Each receipt is bound to the exact content SHA and requires a recorded
+    reviewer, evidence reference and date. Authenticity is NOT verified here;
+    the operational Gate must validate trusted provenance separately.
+    """
+    import hashlib
+    if not isinstance(markdown, str) or not markdown.strip():
+        raise ValueError("artigo completo obrigatório")
+    if not isinstance(receipts, dict):
+        raise ValueError("comprovantes devem ser um objeto")
+    sha = hashlib.sha256(markdown.encode("utf-8")).hexdigest()
+    missing = []
+    for name in EDITORIAL_REQUIRED_RECEIPTS:
+        item = receipts.get(name)
+        if not isinstance(item, dict) or (
+            item.get("status") != "approved"
+            or item.get("content_sha256") != sha
+            or any(
+                not isinstance(item.get(field), str) or not item[field].strip()
+                for field in ("reviewer", "evidence", "date")
+            )
+        ):
+            missing.append(name)
+    return {
+        "schema": "conexo-editorial-readiness/1",
+        "content_sha256": sha,
+        "receipts_complete_unverified": not missing,
+        "ready_for_gate": False,
+        "missing_receipts": missing,
+        "publication_authorized": False,
+        "note": "Apenas diagnóstico: Gate operacional deve autenticar pareceres.",
+    }

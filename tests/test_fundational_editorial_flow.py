@@ -8,6 +8,16 @@ import pipeline_rss
 from mkt_flow_p0 import extractor, format as formatter, rewriter, seo
 
 
+TEST_EDITORIAL_BRIEF = {
+    "genre": "noticia",
+    "reader": "Leitores que precisam interpretar documentação técnica disponível.",
+    "need": "Identificar consequências e limites dos fatos fornecidos nas fontes.",
+    "angle": "Distinguir informação documentada de hipótese ainda não demonstrada.",
+    "contribution": "Explicar critérios práticos sustentados pelos documentos fornecidos.",
+    "limits": "Não inventar testes próprios, preços, medições ou experiências de uso."
+}
+
+
 @pytest.fixture(autouse=True)
 def no_network(monkeypatch):
     def forbidden(*args, **kwargs):
@@ -55,6 +65,7 @@ def test_source_to_final_html_keeps_wp_blocked(monkeypatch, extra, expected):
     result = pipeline_rss.processar_item({
         "titulo": "Notebook recebe atualização", "resumo": sentence,
         "fonte": "Fonte sintética", "link": "https://fonte.example/notebook",
+        "editorial_brief": TEST_EDITORIAL_BRIEF,
     })
     assert observed["html"].startswith("<p>")
     assert "Fonte original" in observed["html"]

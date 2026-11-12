@@ -106,5 +106,34 @@ class TraceReleaseTests(unittest.TestCase):
         self.assertIn("chave do executor ausente", result["reason"])
 
 
+    def test_signed_publish_blocks_without_opt_in_environment_flag(self):
+        class Validator:
+            HUMAN_PENDING = "human_pending"
+            def evaluate(self, *args, **kwargs):
+                return [], []
+        class Core:
+            def validator(self):
+                return Validator()
+        for intent in ("publish", "schedule"):
+            with self.subTest(intent=intent):
+                with patch.dict("os.environ", {
+                    "CONEXO_EDITORIAL_TRANSPORT": "signed",
+                    "CONEXO_REQUIRE_TRACE_FOR_PUBLICATION": "0",
+                }):
+                    with patch.object(editorial_transport, "load_core", return_value=Core()):
+                        with patch.object(editorial_transport.requests, "post") as post:
+                            with patch.object(editorial_transport.requests, "get") as get:
+                                result = editorial_transport.publish_package(
+                                    package(), core_root=".", actor_id=4,
+                                    wp_url="https://conexotech.com.br",
+                                    wp_user="test", wp_password="test",
+                                    intent=intent, trace_run_id=None)
+                self.assertEqual(result["erro"], "fluxo editorial bloqueado")
+                self.assertIn("trace_run_id_missing", result["reason"])
+                post.assert_not_called()
+                get.assert_not_called()
+
+
+
 if __name__ == "__main__":
     unittest.main()

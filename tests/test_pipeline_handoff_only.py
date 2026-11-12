@@ -13,6 +13,16 @@ import mkt_flow_p0
 from mkt_flow_p0.editorial_identity import criar_handoff_chatgpt
 
 
+TEST_EDITORIAL_BRIEF = {
+    "genre": "noticia",
+    "reader": "Leitores que precisam interpretar documentação técnica disponível.",
+    "need": "Identificar consequências e limites dos fatos fornecidos nas fontes.",
+    "angle": "Distinguir informação documentada de hipótese ainda não demonstrada.",
+    "contribution": "Explicar critérios práticos sustentados pelos documentos fornecidos.",
+    "limits": "Não inventar testes próprios, preços, medições ou experiências de uso."
+}
+
+
 URL = "https://example.org/noticia-android"
 ARTICLE = {
     "titulo_seo": "Android ganha novas integrações",
@@ -74,7 +84,7 @@ def test_handoff_only_does_not_write_wp_even_when_flag_enabled(monkeypatch):
     calls = _dependencies(monkeypatch)
     monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
     out = pipeline_rss.processar_item(
-        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "fonte": "Oficial"},
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "fonte": "Oficial", "editorial_brief": TEST_EDITORIAL_BRIEF},
         handoff_only=True)
     assert out["acao"] == "pacote_editorial_criado"
     assert out["escreveu"] is False
@@ -86,7 +96,7 @@ def test_invalid_handoff_is_blocked_before_write(monkeypatch):
     calls = _dependencies(monkeypatch, invalid_handoff=True)
     monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
     out = pipeline_rss.processar_item(
-        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "editorial_brief": TEST_EDITORIAL_BRIEF},
         handoff_only=True)
     assert out["acao"] == "falha"
     assert out["motivo"] == "handoff_editorial_invalido"
@@ -98,7 +108,7 @@ def test_legacy_explicit_draft_mode_remains_available(monkeypatch):
     calls = _dependencies(monkeypatch)
     monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
     out = pipeline_rss.processar_item(
-        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "editorial_brief": TEST_EDITORIAL_BRIEF},
         handoff_only=False)
     assert out["acao"] == "publicado_rascunho"
     assert out["status"] == "draft"
@@ -125,7 +135,7 @@ def test_cli_saves_one_handoff_without_marking_seen(monkeypatch, tmp_path, capsy
     import json
     from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt
     item = {"titulo": "Android e agentes", "resumo": "Pesquisa",
-            "link": URL, "fonte": "tecnoblog"}
+            "link": URL, "fonte": "tecnoblog", "editorial_brief": TEST_EDITORIAL_BRIEF}
     package = criar_handoff_chatgpt(ARTICLE, url_fonte=URL, fonte_nome="Fonte original")
     seen, processed = [], []
 
@@ -163,7 +173,7 @@ def test_handoff_only_does_not_download_external_image(monkeypatch):
     image_handler.preparar_capa = forbidden_image
     monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
     result = pipeline_rss.processar_item(
-        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "editorial_brief": TEST_EDITORIAL_BRIEF},
         handoff_only=True)
     assert result["acao"] == "pacote_editorial_criado"
     assert result["escreveu"] is False
@@ -186,7 +196,7 @@ def test_feed_fetch_failure_returns_nonzero_to_executor(monkeypatch, capsys):
 
 def test_article_generation_failure_returns_nonzero_to_executor(monkeypatch, capsys):
     """Missing LLM credentials must never look like a successful RSS cycle."""
-    item = {"titulo": "Android", "resumo": "Pesquisa", "link": URL, "fonte": "tecnoblog"}
+    item = {"titulo": "Android", "resumo": "Pesquisa", "link": URL, "fonte": "tecnoblog", "editorial_brief": TEST_EDITORIAL_BRIEF}
     _stub(monkeypatch, "rss_ingestor",
           FEEDS_PADRAO={"tecnoblog": "https://tecnoblog.net/feed/"},
           buscar_novidades=lambda *a, **kw: {"novos": [item]},
@@ -224,7 +234,7 @@ def test_draft_mode_rejects_invalid_handoff_before_write(monkeypatch):
     calls = _dependencies(monkeypatch, invalid_handoff=True)
     monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
     result = pipeline_rss.processar_item(
-        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "editorial_brief": TEST_EDITORIAL_BRIEF},
         handoff_only=False)
     assert result["acao"] == "falha"
     assert result["motivo"] == "handoff_editorial_invalido"
@@ -250,7 +260,7 @@ def test_draft_receives_media_operator_consent_and_quality_remains_human_pending
     calls = _dependencies(monkeypatch)
     monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
     result = pipeline_rss.processar_item(
-        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "editorial_brief": TEST_EDITORIAL_BRIEF},
         featured_media_id=9714, media_rights_confirmed=True)
     assert result["acao"] == "publicado_rascunho"
     assert len(calls) == 1
@@ -275,7 +285,7 @@ def test_optin_relevant_links_preserve_new_handoff_hash(monkeypatch):
     monkeypatch.setattr(related_posts, "buscar_relacionados_wordpress",
                         lambda *a, **k: related)
     output = pipeline_rss.processar_item(
-        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "editorial_brief": TEST_EDITORIAL_BRIEF},
         handoff_only=True)
     assert output["acao"] == "pacote_editorial_criado"
     m = output["editorial_handoff"]
@@ -301,7 +311,7 @@ def test_optin_research_feeds_supplies_sourced_context_without_second_writer(mon
         return previous(*a, **kw)
     monkeypatch.setattr(rewriter, "reescrever_materia", capture)
     result = pipeline_rss.processar_item(
-        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL},
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "editorial_brief": TEST_EDITORIAL_BRIEF},
         handoff_only=True)
     assert result["acao"] == "pacote_editorial_criado"
     assert used == [research]
@@ -322,7 +332,7 @@ def test_draft_mode_does_not_download_source_image_without_optin(monkeypatch):
     monkeypatch.delenv("CONEXO_RSS_PREVIEW_SOURCE_IMAGE", raising=False)
     monkeypatch.setenv("CONEXO_RSS_DRAFT", "1")
     r = pipeline_rss.processar_item(
-        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL})
+        {"titulo": "Android e agentes", "resumo": "Pesquisa", "link": URL, "editorial_brief": TEST_EDITORIAL_BRIEF})
     assert r["acao"] == "publicado_rascunho"
     assert r["qualidade_editorial"]["imagem_destacada_confirmada"] is False
     assert calls and calls[0]["featured_media_id"] is None
