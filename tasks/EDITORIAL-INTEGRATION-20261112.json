@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "OWNER_ACCEPTED_COVERS_DONE_BATCH_GUARD_MERGED_GATE_SIGNATURE_PENDING",
+  "status": "BOT_EDITOR_AUTHOR_SET_OWNER_GATE_FORMS_PENDING_BATCH_PUBLISH_READY",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -103,13 +103,23 @@
       "sha": "bcfdc48fc15ad2e736724ccefe715c6d79603681",
       "reference": "https://github.com/rmsports33/MKT-RSS/pull/98",
       "result": "PR #98 integrado à master, CI pytest e contrato editorial verdes. image_protocol usa reserva de imagens no lote; pipeline_rss impede reutilização de featured_media_id no mesmo run após escrita; sete testes de regressão incluídos."
+    },
+    {
+      "sha": "52d9557087722865eb9a5f50dda109b525e93279",
+      "reference": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
+      "result": "Seis posts WP agora autor Bot.editor ID4; Gate owner-revisor ID3 diferente do autor, hashes do corpo intactos, capas JPEG e drafts confirmados."
+    },
+    {
+      "sha": "9689c242af677f34846b6c292f91fc38cacd1141",
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/99",
+      "result": "Publicação em lote protegida por seis preflights Gate antes da primeira escrita; CI pytest e contrato editorial concluídos com sucesso."
     }
   ],
   "blockers": [
-    "Revisor WordPress autenticado distinto do autor ID3 assinar parecer e autorização por versão no Gate real; modo proprietário ID3 não representa revisor distinto.",
-    "Executar publicação pelo publicador MKT-RSS após assinatura e confirmar status publish/URLs; nenhum bypass direto via REST."
+    "Seis registros de revisão substantiva/SEO/visual devem ser preenchidos e enviados pelo administrador proprietário ID3 no Gate ativo, agora com autores de conta de serviço ID4.",
+    "Após seis recibos atuais do Gate, disparar workflow manual de publicação em lote e conferir readback. Não publicar sem assinatura."
   ],
-  "next_action": "Os seis rascunhos estão prontos com capas únicas. Revisor autenticado distinto do autor ID3 precisa conferir e assinar parecer/vigência de cada versão no Gate. Somente depois disparar publicador MKT-RSS com recibos Gate e verificar readback. Owner não precisa repetir aceite editorial.",
+  "next_action": "Nenhuma nova alteração de texto/imagem necessária. O administrador ID3 deve abrir Ferramentas > Revisao do proprietario no WordPress para IDs 9810,9813,9814,9815,9816,9817 e assinar cada versão. Depois uma execução de publish-owner-approved-batch-manual.yml com PUBLICAR_SEIS realiza preflight completo e publica somente releases válidos.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -175,14 +185,18 @@
     },
     "owner_editorial_acceptance": "ALL_SIX_ACCEPTED_2026_11_12",
     "owner_publication_requested": true,
-    "gate_signed_release": "PENDING_DIFFERENT_AUTHENTICATED_REVIEWER",
+    "gate_signed_release": "PENDING_OWNER_NATIVE_FORMS",
     "cover_optimization": "6 JPEG 1200x675, 79-119KB, current in WordPress",
     "image_pipeline_root_cause": "Six drafts previously shared Pexels media #9812; no topic-distinct generation/selection invoked for each article in the pilot. Corrected for this batch with unique AI illustrated JPEG media 9838-9843.",
     "image_pipeline_future_rule": "For each article first prefer a properly licensed topical free image; if no suitable image, generate original AI illustration with clear caption. Discourage repetition within the batch unless explicitly justified; do not present AI imagery as manufacturer photos.",
     "image_batch_uniqueness_implementation": "MERGED_MASTER_BCFDC48_CI_SUCCESS",
     "ai_generation_execution": "REQUEST_ONLY_NOT_BACKGROUND_AUTO_GENERATED",
     "wordPress_available_reviewers": "SITE_USERS_ID3_ADMIN_AND_ID4_EDITOR; SAME_DISPLAY_NAME; INDEPENDENT_REVIEW_NOT_ATTESTED",
-    "authenticated_gate_reviewer": "NOT_VERIFIED_FOR_CURRENT_VERSIONS"
+    "authenticated_gate_reviewer": "NOT_VERIFIED_FOR_CURRENT_VERSIONS",
+    "wordpress_authors_current": 4,
+    "owner_reviewer_id": 3,
+    "author_review_separation": "RESOLVED_AUTHORS_ID4_OWNER_ID3",
+    "batch_publication_workflow": "MERGED_MASTER_9689C24_CI_SUCCESS"
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
