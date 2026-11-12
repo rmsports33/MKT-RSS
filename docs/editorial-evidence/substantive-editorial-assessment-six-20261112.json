@@ -1,0 +1,191 @@
+{
+  "schema": "conexo-substantive-assessment/1",
+  "assessed_on": "2026-11-12",
+  "reviewer": "ChatGPT assisted assessment (NOT human independent editor, NOT Gate signer)",
+  "scope": "Six current WordPress drafts matched by SHA256 against current-six-draft-snapshots-20261112.json",
+  "criteria": [
+    "clarity",
+    "critical independent framing",
+    "voice",
+    "reader utility",
+    "source transparency",
+    "genre fit",
+    "faithful representation of uncertainty"
+  ],
+  "ratings_note": "Scores 1-10 are editorial prioritization, subjective; not a mechanical publishing license.",
+  "technical_verifications": {
+    "body_and_sources": "PASS",
+    "table_valid_gutenberg_markup": "PASS_9810_9814_9815",
+    "duplicate_image_credit": "REMOVED_FROM_FIVE_BODIES",
+    "image_caption": "VERIFIED_WP_MEDIA_9812_AND_PUBLIC_THEME_1_6_9",
+    "mobile_390_and_desktop_1440": "EXISTING_RECONSTRUCTED_12_AND_PUBLIC_THEME_PASS_NO_NEW_PRIVATE_SCREENSHOTS",
+    "original_media_license": "EXISTING_PEXELS_PROOF",
+    "production_gate": "EXISTING_RC5_32_CHECKS_ISOLATED_ONLY"
+  },
+  "design_issues": [
+    {
+      "issue": "All six draft posts feature the same legally evidenced illustrative robot photo",
+      "severity": "NON_BLOCKING_EDITORIAL_PRESENTATION",
+      "recommendation": "Publish progressively or select additional images from licensed free banks; do not treat shared image as a license/security failure"
+    },
+    {
+      "issue": "Native authenticated previews of current private drafts not obtained",
+      "severity": "LIMITATION",
+      "recommendation": "Before owner authorization, optional focused native glance at one of the three tables/featured caption if concerned; do not block unrelated steps or retry TinyFish 429 unchanged."
+    }
+  ],
+  "article_reviews": [
+    {
+      "post_id": 9810,
+      "wp_title": "NEO da 1X: compra, assinatura e limites de privacidade",
+      "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+      "metadata_projection_sha256": "cfd2229f786077d296e1e09f64c267c3d6df9990ce701865d55852899af0e2ad",
+      "genre": "analise",
+      "score": 8.5,
+      "verdict": "RECOMMEND_OWNER_ACCEPTANCE",
+      "strengths": [
+        "Abertura define claramente dilema de compra, assinatura e privacidade",
+        "Distingue preço do robô de reserva e de mensalidades, sem soma indevida",
+        "Discussão sobre teleoperação e terceiros torna análise relevante para leitores brasileiros"
+      ],
+      "limitations": [
+        "Preços e privacidade se baseiam predominantemente em páginas da fabricante 1X; não é ensaio de desempenho",
+        "Links internos atuais são amplos sobre IA, não especificamente robótica"
+      ],
+      "recommendation": "Apto a análise documental; não apresentar como teste de produto nem recomendação de compra.",
+      "editorial_priority": 9,
+      "technical_content_readback": "PASS_WP_DRAFT",
+      "independent_human_review": "NOT_PROVIDED",
+      "signed_gate_approval": "NOT_GRANTED",
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9813,
+      "wp_title": "Optimus: Tesla informa início de produção em Fremont",
+      "content_sha256": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d",
+      "metadata_projection_sha256": "b24528446e10c0952fe25b8811ddf79bd0d59839904bafc0fde3f69b4c514407",
+      "genre": "noticia",
+      "score": 8.1,
+      "verdict": "RECOMMEND_OWNER_ACCEPTANCE",
+      "strengths": [
+        "Fonte primária Tesla Q3/SEC e contraponto de cobertura externa",
+        "Não confunde início de produção e venda ao consumidor",
+        "Abertura atualizada para situar o anúncio em outubro de 2026"
+      ],
+      "limitations": [
+        "Não há dados auditados de quantidade de unidades ou desempenho doméstico",
+        "Evitar manchete/metadata que sugira notícia de última hora"
+      ],
+      "recommendation": "Apto a notícia contextualizada, sem anunciar disponibilidade no Brasil.",
+      "editorial_priority": 9,
+      "technical_content_readback": "PASS_WP_DRAFT",
+      "independent_human_review": "NOT_PROVIDED",
+      "signed_gate_approval": "NOT_GRANTED",
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9814,
+      "wp_title": "Unitree R1 e G1: como apurar o custo de importação",
+      "content_sha256": "b0a4919b8dbca2ec7502df26cd9eab86c988bc931229a8d4c9fb8f780ab9da46",
+      "metadata_projection_sha256": "df52a7a5d73ee10643dae21a723957d548e102128d08fc449004169560ed4175",
+      "genre": "guia",
+      "score": 8.3,
+      "verdict": "RECOMMEND_OWNER_ACCEPTANCE",
+      "strengths": [
+        "Sequência de checagem de configuração, custo total, importação e suporte é prática",
+        "Atualizado com controles Receita/Anatel 2026 e referência adicionada na bibliografia",
+        "Não inventa alíquotas ou classificação fiscal específica"
+      ],
+      "limitations": [
+        "O guia não é cotação comercial nem assessoria aduaneira para um modelo específico"
+      ],
+      "recommendation": "Apto a guia de diligência para importação; não divulgar percentuais tributários inferidos.",
+      "editorial_priority": 8,
+      "technical_content_readback": "PASS_WP_DRAFT",
+      "independent_human_review": "NOT_PROVIDED",
+      "signed_gate_approval": "NOT_GRANTED",
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9815,
+      "wp_title": "Optimus e Unitree G1: o que é possível comparar",
+      "content_sha256": "a1c70fbd09631aeea5e441d0cb345e972fc285b2341f26d20b8df22db49870ad",
+      "metadata_projection_sha256": "9e039b889a6791e483e6677ed6ccf7af85af8ff1ae7bc05814d694e5fb03982a",
+      "genre": "comparativo_documental",
+      "score": 7.6,
+      "verdict": "RECOMMEND_OWNER_ACCEPTANCE_WITH_FORMAT_NOTE",
+      "strengths": [
+        "Quadro explicita estágio de produção versus plataforma com catálogo",
+        "Não inventa medições comparativas ou um vencedor por falta de metodologia",
+        "Referência bibliográfica sem função foi retirada"
+      ],
+      "limitations": [
+        "O usuário que espera especificações e ensaio lado a lado encontrará comparação documental, não teste experimental",
+        "A repetição de ressalvas reduz um pouco a fluência"
+      ],
+      "recommendation": "Apto se apresentado com classificação 'comparativo documental'; preferir evitar chamar de disputa de desempenho.",
+      "editorial_priority": 7,
+      "technical_content_readback": "PASS_WP_DRAFT",
+      "independent_human_review": "NOT_PROVIDED",
+      "signed_gate_approval": "NOT_GRANTED",
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9816,
+      "wp_title": "Figure 03: avaliação documental das promessas domésticas",
+      "content_sha256": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226",
+      "metadata_projection_sha256": "cd6ebc17a70c60ee1f3b4ade416d9499ddf64b5edbe6ae0849ec9e1d43fb327a",
+      "genre": "review_documental",
+      "score": 8,
+      "verdict": "RECOMMEND_OWNER_ACCEPTANCE_WITH_FORMAT_NOTE",
+      "strengths": [
+        "Diferencia Figure 03 físico de gerações Helix e separa 2025 de 2026",
+        "Cita cobertura externa da TIME e não converte ensaio da fabricante em desempenho universal",
+        "Perguntas sobre generalização e limites são úteis para leitores"
+      ],
+      "limitations": [
+        "É avaliação documental, sem contato direto com o hardware"
+      ],
+      "recommendation": "Apto se a etiqueta 'avaliação documental' permanecer evidente; não apresentar como teste de bancada.",
+      "editorial_priority": 8,
+      "technical_content_readback": "PASS_WP_DRAFT",
+      "independent_human_review": "NOT_PROVIDED",
+      "signed_gate_approval": "NOT_GRANTED",
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9817,
+      "wp_title": "LG CLOiD: rodas também entram na robótica doméstica",
+      "content_sha256": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb",
+      "metadata_projection_sha256": "9df4e44ff931c5c6f44d6da1572d8f6962053f04e2206e54e2f39f0a5bebe6ec",
+      "genre": "nota_breve",
+      "score": 7.8,
+      "verdict": "RECOMMEND_OWNER_ACCEPTANCE",
+      "strengths": [
+        "Pergunta inicial sobre rodas versus pernas oferece voz editorial própria",
+        "Distingue apresentação CES 2026 de comprovação prática",
+        "Brevity appropriate to nota breve"
+      ],
+      "limitations": [
+        "Fato de origem é a CES de janeiro de 2026; posicionar como nota de análise, não notícia inédita em novembro",
+        "Pouca profundidade por definição do gênero"
+      ],
+      "recommendation": "Apto a nota breve retrospectiva, sem rotular como lançamento recente.",
+      "editorial_priority": 6,
+      "technical_content_readback": "PASS_WP_DRAFT",
+      "independent_human_review": "NOT_PROVIDED",
+      "signed_gate_approval": "NOT_GRANTED",
+      "publication_authorized": false
+    }
+  ],
+  "owner_decisions_pending": [
+    "Per-post substantive editorial acceptance of the identified current version (not this assistant's opinion alone)",
+    "Whether to publish with the one shared illustration or source differentiated licensed images; optional aesthetic choice",
+    "Selection of specific posts to schedule/publish and timing, if any"
+  ],
+  "gate_requirements": [
+    "On approval generate/reconcile Gate's own canonical snapshot including metadata; SHA256 projections here are evidence only, not HMAC approval",
+    "Independent trusted Gate approval per selected post/version and actual readback required before publishing or scheduling"
+  ],
+  "publication_authorized": false
+}
