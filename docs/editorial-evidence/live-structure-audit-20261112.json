@@ -1,0 +1,107 @@
+{
+  "schema": "conexo-live-wordpress-structural-audit/1",
+  "date": "2026-11-12",
+  "method": "WordPress authenticated posts_get context edit; read-only",
+  "posts": [
+    {
+      "id": 9810,
+      "title": "NEO da 1X: compra, assinatura e limites de privacidade",
+      "status": "draft",
+      "modified": "2026-11-12T10:46:34",
+      "words": 1,
+      "links": 0,
+      "tables": 0,
+      "headings": 0,
+      "featured_media": 9812,
+      "categories": [
+        437
+      ]
+    },
+    {
+      "id": 9813,
+      "title": "Optimus: Tesla informa início de produção em Fremont",
+      "status": "draft",
+      "modified": "2026-11-12T10:46:42",
+      "words": 1,
+      "links": 0,
+      "tables": 0,
+      "headings": 0,
+      "featured_media": 9812,
+      "categories": [
+        437,
+        10
+      ]
+    },
+    {
+      "id": 9814,
+      "title": "Unitree R1 e G1: como apurar o custo de importação",
+      "status": "draft",
+      "modified": "2026-11-12T10:46:50",
+      "words": 1,
+      "links": 0,
+      "tables": 0,
+      "headings": 0,
+      "featured_media": 9812,
+      "categories": [
+        437,
+        8
+      ]
+    },
+    {
+      "id": 9815,
+      "title": "Optimus e Unitree G1: o que é possível comparar",
+      "status": "draft",
+      "modified": "2026-11-12T10:46:57",
+      "words": 1,
+      "links": 0,
+      "tables": 0,
+      "headings": 0,
+      "featured_media": 9812,
+      "categories": [
+        44,
+        437
+      ]
+    },
+    {
+      "id": 9816,
+      "title": "Figure 03: avaliação documental das promessas domésticas",
+      "status": "draft",
+      "modified": "2026-11-12T10:47:05",
+      "words": 1,
+      "links": 0,
+      "tables": 0,
+      "headings": 0,
+      "featured_media": 9812,
+      "categories": [
+        437
+      ]
+    },
+    {
+      "id": 9817,
+      "title": "LG CLOiD: rodas também entram na robótica doméstica",
+      "status": "draft",
+      "modified": "2026-11-12T10:47:12",
+      "words": 1,
+      "links": 0,
+      "tables": 0,
+      "headings": 0,
+      "featured_media": 9812,
+      "categories": [
+        437,
+        10
+      ]
+    }
+  ],
+  "findings": [
+    "Six drafts confirmed with body, links and category metadata.",
+    "Native browser preview not certified by API readback.",
+    "Automated structure counts do not constitute factual, visual or independent human acceptance.",
+    "TinyFish profile signed_in_sites empty; do not retry blocked automation unchanged."
+  ],
+  "next": [
+    "Obtain native viewport screenshots via functioning authenticated owner browser, without recreating content.",
+    "Independent editorial/factual acceptance tied to current canonical snapshot.",
+    "Complete isolated backup restore and operational replay/rollback evidence before declaring full release."
+  ],
+  "publication_authorized": false
+}
