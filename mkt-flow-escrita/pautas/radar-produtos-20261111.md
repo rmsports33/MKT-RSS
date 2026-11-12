@@ -51,3 +51,23 @@ A página aberta do Google Trends Brasil exibiu tendências gerais das últimas 
 **BLOQUEIOS:** nenhuma afirmação técnica fica aprovada apenas por estar no ranking/propaganda. Sem apuração de fontes primárias, disponibilidade brasileira, licenças de imagens, preços recentes e revisão por versão, todas as pautas seguem **CANDIDATAS**. Não elevar nota editorial a publicação automática. Não copiar testes, fotos nem listas de terceiros; atribuir fontes e apurar independentemente.
 
 **Nota operacional:** a pesquisa não alimentou Turso/SQLite, WordPress ou agendamento do MKT-RSS; é o material de referência para selecionar pautas no banco existente, sem criar executor paralelo.
+
+
+## Consolidação complementar — issue #102 (12/11/2026)
+
+**Regra de união:** preservadas as dez pautas originais e acrescentados somente oito produtos que não constavam da lista. Motorola Signature 27 já estava presente (não duplicar). TCL C6K de 65″ é uma **variante** da pauta existente de 55″ (consolidar em um único guia, com SKU, preço e especificações separados). **Total: 18 pautas distintas**, não 20. Notas abaixo são prioridades editoriais preliminares da pesquisa, não medição de audiência nem autorização de publicação.
+
+| Produto novo | Nota editorial preliminar | Pergunta/ângulo | Estado |
+|---|---:|---|---|
+| Samsung Galaxy S26 FE | 9,5/10 | Vale a pena frente aos outros Galaxy S26? | CANDIDATA — confirmar fontes e variantes |
+| Hisense QD6SF Fire OS | 9,5/10 | Fire OS ou Google TV: o que muda na experiência? | CANDIDATA — confirmar versão brasileira |
+| Samsung Galaxy Book4 | 9/10 | Qual configuração vale a compra em 2026? | CONDICIONAL — confirmar SKU, RAM e oferta |
+| Moto Buds 2 Ultra | 9/10 | O que o áudio e os recursos de IA realmente entregam? | CANDIDATA — não alegar vendas disponíveis sem prova |
+| Amazfit Bip 6 | 8,5/10 | Vale a compra para exercícios e notificações? | CANDIDATA — conferir recursos por variante |
+| Samsung ViewFinity S7 32″ 4K | 8,5/10 | Monitor 4K de 32″ melhora a produtividade? | CANDIDATA — conferir especificações brasileiras |
+| Samsung Galaxy Tab S10 FE | 8,5/10 | Tablet substitui notebook para estudar? | CANDIDATA — comparar preços por armazenamento |
+| PlayStation 5 Slim Digital | 8/10 | Comprar na promoção ou esperar? | CANDIDATA — preços são datados, não atuais |
+
+**Ajuste na pauta TCL C6K existente:** ampliar o guia de 55″ para comparar também 65″, sem confundir preços, SKU ou especificações entre tamanhos.
+
+**Fontes e ressalvas preliminares:** https://github.com/rmsports33/MKT-RSS/issues/102 (registro de fontes datadas e limites da pesquisa). Não há ranking Google Trends de sete dias comprovado. A lista unificada é **documental**, não foi deduplicada contra toda a fila Turso ou todos os rascunhos WordPress. Nenhuma escrita operacional, geração ou publicação decorre desta união.
