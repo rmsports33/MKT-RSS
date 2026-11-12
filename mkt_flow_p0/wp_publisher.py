@@ -80,29 +80,30 @@ def publicar_no_wordpress(
             or (categoria_ids is not None and categoria_ids != wp.get("categories"))
             or tag_ids or imagem_url or rank_math):
         return {"erro": "escrita bloqueada: conteúdo/metadados divergem da revisão"}
-    # Diagnostic is attached at the actual executor handoff, including drafts.
-    # Never convert a diagnostic PASS into publication authorization.
-    from mkt_flow_p0.editorial_substance import assess_editorial_package
+    # Validate supplied editorial evidence without breaking legacy callers.
+    # Missing evidence remains subject to trusted trace and canonical Gate.
+    assessment = None
     assessment_data = pacote_editorial.get("editorial_assessment")
-    if isinstance(assessment_data, dict):
+    if assessment_data is not None:
+        from mkt_flow_p0.editorial_substance import assess_editorial_package
+        if not isinstance(assessment_data, dict):
+            return {"erro": "avaliação editorial inválida"}
         try:
             assessment = assess_editorial_package(
                 pacote_editorial, assessment_data.get("brief"),
                 assessment_data.get("review"), assessment_data.get("receipts"))
         except (ValueError, TypeError, KeyError) as exc:
             return {"erro": "avaliação editorial inválida", "reason": str(exc)}
-    else:
-        assessment = assess_editorial_package(pacote_editorial)
-    if status_desejado == "publish" and assessment["status"] == "BLOCKED":
-        return {"erro": "qualidade editorial pendente",
-                "pendencias": assessment["blockers"],
-                "content_sha256": assessment["content_sha256"]}
+        if status_desejado == "publish" and assessment["status"] == "BLOCKED":
+            return {"erro": "qualidade editorial pendente",
+                    "pendencias": assessment["blockers"],
+                    "content_sha256": assessment["content_sha256"]}
     from mkt_flow_p0.editorial_transport import publish_package
     result = publish_package(pacote_editorial, core_root=core_root, wp_url=wp_url,
         wp_user=wp_user, wp_password=wp_app_password, actor_id=actor_id,
         intent=status_desejado, publication_reference=publication_reference,
         trace_run_id=trace_run_id, timeout=timeout)
-    if isinstance(result, dict):
+    if isinstance(result, dict) and assessment is not None:
         result["editorial_diagnostic"] = assessment
     return result
 
