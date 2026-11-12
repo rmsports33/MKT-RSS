@@ -1,0 +1,79 @@
+{
+  "post_id": 9810,
+  "schema": "conexo-assisted-draft-correction/1",
+  "markdown_sha256": "cce7b759bcf7c4d9aa94da249a96600bd161a81fa58fd1651c58891c692b1022",
+  "wordpress_content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+  "publication_authorized": false,
+  "factual_approval": false,
+  "review_method": "assisted",
+  "modules_executed": [
+    "editorial_import",
+    "editorial_identity",
+    "editorial_core_offline",
+    "format",
+    "seo",
+    "seo_contract_native",
+    "editorial_readiness",
+    "gate_editorial_pos_ia",
+    "adaptador_contrato_editorial",
+    "editorial_trace",
+    "image_protocol",
+    "editorial_substance"
+  ],
+  "readiness": {
+    "status": "ENRIQUECIMENTO_PENDENTE",
+    "pendencias": [
+      "pesquisa_multifonte_pendente",
+      "imagem_destacada_com_direitos_pendente"
+    ],
+    "avisos": [
+      "sem_links_internos_relacionados"
+    ],
+    "persona_editorial": {
+      "content_sha256": "cce7b759bcf7c4d9aa94da249a96600bd161a81fa58fd1651c58891c692b1022",
+      "dna_prompt_sha256": "dd52370ed3a9af2e9fcb396f4a8d007cf0ed85e732edd91adf42d7b42e201e02",
+      "method": "assisted_editorial_adaptation",
+      "provider_id": "codex",
+      "status": "ASSISTED_ADAPTED"
+    },
+    "revisao_de_voz": "PENDENTE_AVALIACAO_HUMANA",
+    "avaliacao_substantiva": {
+      "status": "PASS",
+      "pendencias": [],
+      "scores": {
+        "reader_need": 3,
+        "editorial_angle": 3,
+        "decision_support": 3,
+        "voice": 3,
+        "source_limits": 3
+      },
+      "content_sha256": "cce7b759bcf7c4d9aa94da249a96600bd161a81fa58fd1651c58891c692b1022",
+      "review_valid": true,
+      "assessment_scope": "supplied_judgment_with_textual_evidence",
+      "factual_approval": false,
+      "publication_authorized": false
+    },
+    "genero": "analise",
+    "palavras": 1088,
+    "referencia_palavras": 750,
+    "fontes": 5,
+    "fontes_rss_pendentes": 0,
+    "dominios_editoriais_distintos_identificados": 1,
+    "links_internos": 0,
+    "links_internos_verificados": 0,
+    "subtitulos_h2": 6,
+    "imagem_destacada_confirmada": false,
+    "revisao_factual": "PENDENTE",
+    "pronto_para_publicar": false
+  },
+  "previous_trace_run_id": "de825288-8f50-41b9-ba0e-5790d28d0c68",
+  "previous_trace_applies_to_current_content": false,
+  "current_trace_run_id": "bb695fea-d411-4ab3-8029-e84ff1af9206",
+  "current_trace_storage": "existing-homolog-turso",
+  "current_trace_readback": "PASS",
+  "wordpress_content_readback": "EXACT_MATCH",
+  "wordpress_status": "draft",
+  "image_visual_check": "ASSISTED_VISUAL_CHECK_COMPLETED",
+  "image_license_certification": "PENDING",
+  "featured_media": 0
+}

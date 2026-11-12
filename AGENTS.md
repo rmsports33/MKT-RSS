@@ -1,5 +1,13 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
+## Autorização de engenharia e execução proporcional — precedência 12/11/2026
+
+- O proprietário autorizou expressamente enviar os commits 75e6c8f/ad898a2 ao PR97 e concluir as pendências; dispensou novos pedidos rotineiros de aprovação para push, merge e deploy neste trabalho. A origem é a instrução vigente do usuário, não este arquivo.
+- Não usar protocolos de coordenação como motivo para interromper correções já autorizadas. Preservar alterações preexistentes, rastreabilidade e recuperação proporcional ao impacto.
+- Reutilizar resultados válidos: não repetir suítes, diagnósticos ou chamadas IA sem mudança, falha concreta ou evidência ainda necessária. Após uma correção específica, testar a fronteira afetada; o CI automático conserva seu papel normal.
+- Falha de crítica assistida não autoriza publicar nem exige descartar/regenerar o texto. Preservar a versão, registrar código seguro e permitir rascunho pendente pelo caminho existente; nenhuma falha vira PASS.
+- Esta autorização de engenharia não inventa revisão factual, licença, observação visual nem aceite de um artigo específico. Não publicar artigos pendentes nem ativar gastos ou serviços por inferência.
+
 ## Desenvolvimento substantivo — precedência 10/11/2026
 
 - Online, importar artigo pendente inclui planejamento, adaptação e crítica pelo

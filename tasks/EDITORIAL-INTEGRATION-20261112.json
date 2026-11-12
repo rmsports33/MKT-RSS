@@ -19,31 +19,41 @@
     "Transporte com núcleo fixado é testado sem substituir aprovação real por fixtures."
   ],
   "restrictions": [
-    "Sem publicação, deploy, ativação de rotina, custos ou alteração de segredos.",
-    "Preservar aprovações da versão e alterações preexistentes."
+    "Evitar testes/chamadas repetitivos; autorização vigente do usuário cobre engenharia, push, merge e deploy neste trabalho.",
+    "Não declarar aprovação factual, licença, observação visual ou aceite humano inexistentes. Não publicar o rascunho pendente."
   ],
-  "authorizations": {
-    "push": false,
-    "merge": false,
-    "deploy": false,
-    "production": false,
-    "publication": false,
-    "costs": false,
-    "credentials": false
-  },
   "evidence": [
     {
       "sha": "75e6c8fb2c8155f891d116b7f9a5e3dd82cf8729",
       "reference": "docs/EDITORIAL_INTEGRATION_CHECKPOINT_20261112.md",
       "result": "1255 passed, 2 skipped, 13 subtests passed; fronteiras externas simuladas"
+    },
+    {
+      "sha": "4209377ec28984a5f7a15ab4d8335d0a5a38bdfe",
+      "reference": "https://github.com/rmsports33/MKT-RSS/pull/97",
+      "result": "Commits enviados, CI aprovado e merge confirmado."
+    },
+    {
+      "sha": "0faf210b1d5b7a63a224c96b9350394193cd85af",
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43203264586",
+      "result": "Geração real e rascunho #9810 entregues; revisão permanece pendente."
+    },
+    {
+      "reference": "tasks/evidence/EDITORIAL-INTEGRATION-20261112/ct006-correction-receipt.json",
+      "result": "Revisão assistida salva em blocos com leitura exata; nova trilha Turso bb695fea-d411-4ab3-8029-e84ff1af9206 verificada."
+    },
+    {
+      "sha": "ee342280b13516c346d38a61725c92a748fa3451",
+      "reference": "https://github.com/rmsports33/MKT-RSS/actions/runs/43204278757",
+      "result": "CI final de código concluído com success."
     }
   ],
   "blockers": [
-    "Acessos do executor IA/Turso/WordPress ainda não configurados no ambiente.",
-    "Homologação editorial, PHP remoto e aceite humano não executados.",
-    "Correções locais não enviadas ao PR; CI remoto desta revisão não executado."
+    "Faltam fontes independentes, imagem com direitos concluídos e apresentação real do #9810 em 390/1440px.",
+    "Os outros cinco gêneros ainda não têm artigos reais homologados.",
+    "Ponte PHP isolada e comprovações remotas completas de versão antiga/replay/rollback ainda pendentes."
   ],
-  "next_action": "Obter autorização concreta para enviar correção ao PR97 e concluir configuração de acessos já escolhida pelo usuário.",
+  "next_action": "Concluir evidências editoriais da versão corrigida do #9810, sem regeneração e sem novos pedidos rotineiros de autorização de engenharia.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -67,5 +77,6 @@
       "actor": "rmsports33",
       "reference": ""
     }
-  }
+  },
+  "tested_sha": "ee342280b13516c346d38a61725c92a748fa3451"
 }

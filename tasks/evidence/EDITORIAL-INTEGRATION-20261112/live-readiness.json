@@ -1,0 +1,13 @@
+{
+  "run_id": 43202146171,
+  "url": "https://github.com/rmsports33/MKT-RSS/actions/runs/43202146171",
+  "identity": "PASS",
+  "broker_allowlist": "PASS",
+  "broker_http_status": 422,
+  "candidate_snapshot": "PASS",
+  "seo_readiness_read": "PASS",
+  "strict_seo_ready": true,
+  "turso_homolog_read": "PASS",
+  "article_approval": "NOT_VERIFIED",
+  "publication_authorized": false
+}

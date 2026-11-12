@@ -1,0 +1,480 @@
+{
+  "schema": "conexo-bank-production-report/1",
+  "bank_id": "CT-006",
+  "run_id": "b6680397-139b-499f-81f6-b43d6271f1c1",
+  "post_id": 9810,
+  "publication_authorized": false,
+  "human_review": "PENDING",
+  "modules": [
+    {
+      "stage": "publisher_identity",
+      "module_id": "tools.wp_identity_preflight.check_identity",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:26.794882+00:00",
+      "finished_at": "2026-11-12T10:46:28.145896+00:00"
+    },
+    {
+      "stage": "priority",
+      "module_id": "mkt_flow_p0.prioridade_editorial.avaliar_pauta",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:28.754116+00:00",
+      "nota": 8,
+      "faixa": "ALTA",
+      "origem": "HEURISTICA_PROVISORIA",
+      "finished_at": "2026-11-12T10:46:28.754382+00:00"
+    },
+    {
+      "stage": "topic_filter",
+      "module_id": "mkt_flow_p0.content_filter.filtrar_por_tema",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:28.754390+00:00",
+      "veredito": "APROVADO",
+      "finished_at": "2026-11-12T10:46:28.754434+00:00"
+    },
+    {
+      "stage": "source_filter",
+      "module_id": "mkt_flow_p0.content_filter.filtrar_item_rss",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:28.754439+00:00",
+      "veredito": "APROVADO",
+      "finished_at": "2026-11-12T10:46:28.756307+00:00"
+    },
+    {
+      "stage": "source_extraction",
+      "module_id": "mkt_flow_p0.extractor.extrair_conteudo",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:28.756319+00:00",
+      "palavras": 884,
+      "qualidade_ok": true,
+      "origem": "trafilatura",
+      "finished_at": "2026-11-12T10:46:29.625956+00:00",
+      "source_url": "https://www.1x.tech/discover/neo-home-robot"
+    },
+    {
+      "stage": "source_capture",
+      "module_id": "mkt_flow_p0.captura_completa.criar_captura_completa",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.626331+00:00",
+      "palavras": 884,
+      "finished_at": "2026-11-12T10:46:29.626463+00:00"
+    },
+    {
+      "stage": "source_extraction",
+      "module_id": "mkt_flow_p0.extractor.extrair_conteudo",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.626469+00:00",
+      "palavras": 679,
+      "qualidade_ok": true,
+      "origem": "html_documento",
+      "finished_at": "2026-11-12T10:46:29.763945+00:00",
+      "source_url": "https://www.1x.tech/order"
+    },
+    {
+      "stage": "source_capture",
+      "module_id": "mkt_flow_p0.captura_completa.criar_captura_completa",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.764418+00:00",
+      "palavras": 679,
+      "finished_at": "2026-11-12T10:46:29.764525+00:00"
+    },
+    {
+      "stage": "source_extraction",
+      "module_id": "mkt_flow_p0.extractor.extrair_conteudo",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.764530+00:00",
+      "palavras": 1712,
+      "qualidade_ok": true,
+      "origem": "html_documento",
+      "finished_at": "2026-11-12T10:46:29.813445+00:00",
+      "source_url": "https://www.1x.tech/legal"
+    },
+    {
+      "stage": "source_capture",
+      "module_id": "mkt_flow_p0.captura_completa.criar_captura_completa",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.814117+00:00",
+      "palavras": 1712,
+      "finished_at": "2026-11-12T10:46:29.814342+00:00"
+    },
+    {
+      "stage": "source_extraction",
+      "module_id": "mkt_flow_p0.extractor.extrair_conteudo",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.814348+00:00",
+      "palavras": 1980,
+      "qualidade_ok": true,
+      "origem": "html_documento",
+      "finished_at": "2026-11-12T10:46:29.875859+00:00",
+      "source_url": "https://www.1x.tech/privacy-policy"
+    },
+    {
+      "stage": "source_capture",
+      "module_id": "mkt_flow_p0.captura_completa.criar_captura_completa",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.876642+00:00",
+      "palavras": 1980,
+      "finished_at": "2026-11-12T10:46:29.876910+00:00"
+    },
+    {
+      "stage": "source_extraction",
+      "module_id": "mkt_flow_p0.extractor.extrair_conteudo",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.876915+00:00",
+      "palavras": 356,
+      "qualidade_ok": true,
+      "origem": "html_documento",
+      "finished_at": "2026-11-12T10:46:29.924696+00:00",
+      "source_url": "https://www.1x.tech/about"
+    },
+    {
+      "stage": "source_capture",
+      "module_id": "mkt_flow_p0.captura_completa.criar_captura_completa",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.924993+00:00",
+      "palavras": 356,
+      "finished_at": "2026-11-12T10:46:29.925062+00:00"
+    },
+    {
+      "stage": "rss_research",
+      "module_id": "mkt_flow_p0.research_candidates.descobrir_fontes_candidatas",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:29.925067+00:00",
+      "finished_at": "2026-11-12T10:46:31.427980+00:00"
+    },
+    {
+      "stage": "keyword_research",
+      "module_id": "mkt_flow_p0.keyword_research.sugerir_keywords_review",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:31.427995+00:00",
+      "finished_at": "2026-11-12T10:46:31.650882+00:00"
+    },
+    {
+      "stage": "added_value_gate",
+      "module_id": "mkt_flow_p0.content_filter.gate_publicacao",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:31.651094+00:00",
+      "veredito": "BLOQUEADO",
+      "finished_at": "2026-11-12T10:46:31.674429+00:00"
+    },
+    {
+      "stage": "extracted_content_filter",
+      "module_id": "mkt_flow_p0.content_filter.filtrar_conteudo",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:31.674439+00:00",
+      "veredito": "APROVADO",
+      "finished_at": "2026-11-12T10:46:31.677156+00:00"
+    },
+    {
+      "stage": "editorial_planning",
+      "module_id": "mkt_flow_p0.editorial_development.plan_brief_with_provider",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:31.677163+00:00",
+      "finished_at": "2026-11-12T10:46:33.809649+00:00"
+    },
+    {
+      "stage": "generation",
+      "module_id": "mkt_flow_p0.rewriter.reescrever_materia",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:33.810254+00:00",
+      "palavras": 803,
+      "modelo": "openai/gpt-oss-120b",
+      "prompt_sha256": "979c1d9833f240982b07d6f347d53199a2abf8e799e3dfb19b55c06b47ecf6bd",
+      "uso_tokens": {
+        "prompt": 4827,
+        "completion": 4664,
+        "total": 9491
+      },
+      "finished_at": "2026-11-12T10:46:44.071622+00:00"
+    },
+    {
+      "stage": "generated_content_filter",
+      "module_id": "mkt_flow_p0.content_filter.filtrar_conteudo",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.071640+00:00",
+      "veredito": "APROVADO",
+      "finished_at": "2026-11-12T10:46:44.074219+00:00"
+    },
+    {
+      "stage": "source_attribution",
+      "module_id": "mkt_flow_p0.rewriter.adicionar_atribuicao",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.074229+00:00",
+      "finished_at": "2026-11-12T10:46:44.074238+00:00"
+    },
+    {
+      "stage": "internal_links",
+      "module_id": "mkt_flow_p0.related_posts.buscar_relacionados_wordpress",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.074242+00:00",
+      "finished_at": "2026-11-12T10:46:44.698329+00:00"
+    },
+    {
+      "stage": "internal_link_format",
+      "module_id": "mkt_flow_p0.related_posts.anexar_relacionados",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.698346+00:00",
+      "finished_at": "2026-11-12T10:46:44.698822+00:00"
+    },
+    {
+      "stage": "versioned_package",
+      "module_id": "mkt_flow_p0.editorial_identity.atualizar_handoff_revisao",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.698833+00:00",
+      "finished_at": "2026-11-12T10:46:44.699630+00:00"
+    },
+    {
+      "stage": "package_integrity",
+      "module_id": "mkt_flow_p0.editorial_identity.validar_handoff_chatgpt",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.699637+00:00",
+      "finished_at": "2026-11-12T10:46:44.699851+00:00"
+    },
+    {
+      "stage": "substantive_critique",
+      "module_id": "mkt_flow_p0.editorial_development.review_with_provider",
+      "status": "FAILED",
+      "started_at": "2026-11-12T10:46:44.700607+00:00",
+      "error_code": "PROVIDER_RATE_LIMIT"
+    },
+    {
+      "stage": "versioned_critique",
+      "module_id": "mkt_flow_p0.editorial_identity.vincular_avaliacao_substantiva",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.841475+00:00",
+      "finished_at": "2026-11-12T10:46:44.842200+00:00"
+    },
+    {
+      "stage": "html_format",
+      "module_id": "mkt_flow_p0.format.markdown_para_html",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.842209+00:00",
+      "finished_at": "2026-11-12T10:46:44.843552+00:00"
+    },
+    {
+      "stage": "seo_preview_quality",
+      "module_id": "mkt_flow_p0.seo.validar_seo_qualidade",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.843600+00:00",
+      "qualidade_ok": true,
+      "finished_at": "2026-11-12T10:46:44.843838+00:00"
+    },
+    {
+      "stage": "image_download",
+      "module_id": "mkt_flow_p0.image_handler.baixar_imagem",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.844617+00:00",
+      "finished_at": "2026-11-12T10:46:44.963513+00:00"
+    },
+    {
+      "stage": "image_processing",
+      "module_id": "mkt_flow_p0.image_handler.processar_capa",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:44.963523+00:00",
+      "finished_at": "2026-11-12T10:46:45.176327+00:00"
+    },
+    {
+      "stage": "post_generation_review",
+      "module_id": "mkt_flow_p0.gate_editorial_pos_ia.validar_saida",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:45.176576+00:00",
+      "veredito": "BLOQUEADO",
+      "motivos": [
+        "numeros_sem_correspondencia_na_fonte"
+      ],
+      "finished_at": "2026-11-12T10:46:45.180372+00:00"
+    },
+    {
+      "stage": "evidence_contract",
+      "module_id": "mkt_flow_p0.adaptador_contrato_editorial.avaliar_snapshot_editorial",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:45.180381+00:00",
+      "veredito": "BLOQUEADO",
+      "motivos": [
+        "snapshot_editorial_incompativel"
+      ],
+      "finished_at": "2026-11-12T10:46:45.180391+00:00"
+    },
+    {
+      "stage": "source_grounding",
+      "module_id": "mkt_flow_p0.lastro_offline_noticia.auditar_lastro_offline",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:45.180394+00:00",
+      "veredito": "BLOQUEADO",
+      "motivos": [
+        "contrato_invalido"
+      ],
+      "finished_at": "2026-11-12T10:46:45.180400+00:00"
+    },
+    {
+      "stage": "claim_coverage",
+      "module_id": "mkt_flow_p0.auditoria_cobertura_pos_ia.auditar_cobertura_pos_ia",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:45.180403+00:00",
+      "veredito": "BLOQUEADO",
+      "motivos": [
+        "lastro_insuficiente",
+        "contrato_invalido"
+      ],
+      "finished_at": "2026-11-12T10:46:45.180410+00:00"
+    },
+    {
+      "stage": "editorial_readiness",
+      "module_id": "mkt_flow_p0.editorial_readiness.avaliar_prontidao_editorial",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:45.180414+00:00",
+      "result_status": "ENRIQUECIMENTO_PENDENTE",
+      "pendencias": [
+        "avaliacao_substantiva_ausente_invalida_ou_desatualizada",
+        "pesquisa_multifonte_pendente",
+        "desenvolvimento_em_secoes_pendente",
+        "imagem_destacada_com_direitos_pendente"
+      ],
+      "palavras": 824,
+      "finished_at": "2026-11-12T10:46:45.184008+00:00"
+    },
+    {
+      "stage": "draft_delivery",
+      "module_id": "mkt_flow_p0.wp_draft_staging.stage_rss_draft",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:45.184029+00:00",
+      "result_status": "draft",
+      "finished_at": "2026-11-12T10:46:48.527007+00:00"
+    },
+    {
+      "stage": "trace_storage",
+      "module_id": "mkt_flow_p0.editorial_trace_turso.save_turso_trace",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:48.527638+00:00",
+      "finished_at": "2026-11-12T10:46:50.544807+00:00"
+    },
+    {
+      "stage": "trace_readback",
+      "module_id": "mkt_flow_p0.editorial_trace_turso.get_turso_trace",
+      "status": "RETURNED",
+      "started_at": "2026-11-12T10:46:50.544826+00:00",
+      "finished_at": "2026-11-12T10:46:51.193069+00:00"
+    }
+  ],
+  "not_applicable": {
+    "feed_collection": "Existing topic read from the official Drive bank; RSS is used for supplementary discovery only.",
+    "video_review": "Selected evidence consists of text pages; no video observation is claimed.",
+    "image_generation": "An existing free stock candidate was identified.",
+    "publication_and_signed_seo": "This request creates a draft; human approval and publication are separate."
+  },
+  "source_in_progress": "https://www.1x.tech/about",
+  "source_checks": [
+    {
+      "url": "https://www.1x.tech/discover/neo-home-robot",
+      "extraction_mode": "trafilatura",
+      "content_sha256": "3d7dfd18c0892615dd60d580457cec890de076107381fb783504b89cfeaf186e",
+      "missing_anchors": []
+    },
+    {
+      "url": "https://www.1x.tech/order",
+      "extraction_mode": "html_documento",
+      "content_sha256": "6ee931335a92022b58bfc069fcc2a3e1289aaa4e0e7a5314a9be7a86b3489dd5",
+      "missing_anchors": []
+    },
+    {
+      "url": "https://www.1x.tech/legal",
+      "extraction_mode": "html_documento",
+      "content_sha256": "526011c4a5f27d92caab1f838a774d9965a15f6203139bcbe1832a87beec2855",
+      "missing_anchors": []
+    },
+    {
+      "url": "https://www.1x.tech/privacy-policy",
+      "extraction_mode": "html_documento",
+      "content_sha256": "d5ac1167d31a23042524c63a934bd28620750637dad03505ba4ff324b2672ff2",
+      "missing_anchors": []
+    },
+    {
+      "url": "https://www.1x.tech/about",
+      "extraction_mode": "html_documento",
+      "content_sha256": "0d3f33892b711eb619bdeee3ea2f3320a19cb42b39bd2ec1c246bf8a340fd4ce",
+      "missing_anchors": []
+    }
+  ],
+  "rss_candidate_count": 0,
+  "keywords": [
+    "robo neo 1x",
+    "robô neo 1x technologies"
+  ],
+  "keywords_note": "Autocomplete may use built-in seeds; no search volume was measured.",
+  "related_urls": [
+    "https://conexotech.com.br/android-mcp-agentes-ia-conectar-aplicativos/",
+    "https://conexotech.com.br/ceo-da-anthropic-pede-freio-na-ia-e-alerta-risco-online/",
+    "https://conexotech.com.br/novos-relogios-apple-privacidade/"
+  ],
+  "review_failure_codes": [
+    "PROVIDER_RATE_LIMIT"
+  ],
+  "substantive_review": "PENDING",
+  "review_retry_automatic": false,
+  "wordpress_content_sha256": "8c3c32415da1878754c0622b2d4c85b699864cf67d0f4b9ef4c1c798780ad0bd",
+  "seo_preview_canonical": "https://conexotech.com.br/neo-home-robot-6001aae8ec40/",
+  "image_candidate": {
+    "source_url": "https://www.pexels.com/photo/close-up-shot-of-a-white-robot-6019019/",
+    "license_url": "https://www.pexels.com/license/",
+    "credit": "Laura Musikanski / Pexels",
+    "alt": "Robô branco com olhos iluminados em verde, em fotografia ilustrativa.",
+    "caption": "Imagem ilustrativa de robótica; não mostra o NEO da 1X. Foto: Laura Musikanski / Pexels.",
+    "human_visual_review": "PENDING",
+    "dimensions": [
+      1200,
+      675
+    ],
+    "sha256": "539bcef531892a99db49d93d040a1f17b8abbf8795a939c5a6a2dd0fed2d8543"
+  },
+  "readiness": {
+    "status": "ENRIQUECIMENTO_PENDENTE",
+    "pendencias": [
+      "avaliacao_substantiva_ausente_invalida_ou_desatualizada",
+      "pesquisa_multifonte_pendente",
+      "desenvolvimento_em_secoes_pendente",
+      "imagem_destacada_com_direitos_pendente"
+    ],
+    "avisos": [],
+    "persona_editorial": {
+      "status": "PROMPT_APPLIED",
+      "method": "mkt_flow_p0.rewriter.system_prompt",
+      "dna_prompt_sha256": "dd52370ed3a9af2e9fcb396f4a8d007cf0ed85e732edd91adf42d7b42e201e02",
+      "prompt_sha256": "979c1d9833f240982b07d6f347d53199a2abf8e799e3dfb19b55c06b47ecf6bd"
+    },
+    "revisao_de_voz": "PENDENTE_AVALIACAO_HUMANA",
+    "avaliacao_substantiva": {
+      "status": "PENDING",
+      "pendencias": [
+        "avaliacao_substantiva_ausente_invalida_ou_desatualizada"
+      ],
+      "scores": {},
+      "content_sha256": "3d893f2ff09012cb20681ea0912abfe8268f257ecb33185fc5909a8422b05dcb",
+      "review_valid": false,
+      "assessment_scope": "supplied_judgment_with_textual_evidence",
+      "factual_approval": false,
+      "publication_authorized": false
+    },
+    "genero": "analise",
+    "palavras": 824,
+    "referencia_palavras": 750,
+    "fontes": 5,
+    "fontes_rss_pendentes": 0,
+    "dominios_editoriais_distintos_identificados": 1,
+    "links_internos": 3,
+    "links_internos_verificados": 3,
+    "subtitulos_h2": 1,
+    "imagem_destacada_confirmada": false,
+    "revisao_factual": "PENDENTE",
+    "pronto_para_publicar": false
+  },
+  "version_sha256": "2a8490f684a7e172c40d49ac439353755f76285b8d586cde76f04db54a9a6cc2",
+  "source_hashes": {
+    "https://www.1x.tech/discover/neo-home-robot": "3d7dfd18c0892615dd60d580457cec890de076107381fb783504b89cfeaf186e",
+    "https://www.1x.tech/order": "6ee931335a92022b58bfc069fcc2a3e1289aaa4e0e7a5314a9be7a86b3489dd5",
+    "https://www.1x.tech/legal": "526011c4a5f27d92caab1f838a774d9965a15f6203139bcbe1832a87beec2855",
+    "https://www.1x.tech/privacy-policy": "d5ac1167d31a23042524c63a934bd28620750637dad03505ba4ff324b2672ff2",
+    "https://www.1x.tech/about": "0d3f33892b711eb619bdeee3ea2f3320a19cb42b39bd2ec1c246bf8a340fd4ce"
+  },
+  "trace_run_id": "de825288-8f50-41b9-ba0e-5790d28d0c68",
+  "outcome": "DRAFT_READY_FOR_RESEARCH_REVIEW",
+  "private_checkpoint": "ENCRYPTED"
+}
