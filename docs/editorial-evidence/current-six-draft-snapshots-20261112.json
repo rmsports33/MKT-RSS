@@ -2,18 +2,18 @@
   "schema": "conexo-draft-version-readback/2",
   "date": "2026-11-12",
   "method": "Live WordPress edit readback; SHA-256 over exact UTF-8 Gutenberg content, same algorithm as historical Turso body receipts; new metadata projection SHA-256 for evidence only",
-  "warning": "Hashes are verified WordPress readback and preapproval projection; not Gate-issued signed snapshot. Owner approval in ChatGPT is not an authenticated Gate reviewer signature.",
+  "warning": "Projection hash evidence only. Gate's canonical signed approval is separate and not minted. WordPress readback confirms 6 drafts and unchanged Gutenberg content.",
   "media_9812_caption_verified": true,
   "source_turso_receipts": "docs/editorial-evidence/turso-batch-receipts.json",
   "snapshots": [
     {
       "post_id": 9810,
-      "modified": "2026-11-12T13:56:03",
+      "modified": "2026-11-12T14:14:02",
       "status": "draft",
       "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
       "previous_content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
       "body_changed_since_turso": false,
-      "preapproval_projection_sha256": "37ad02b72de4e9d2fd147e8ba815be12f1897111fb46793b1450ff574799bd06",
+      "preapproval_projection_sha256": "1516e279a64a396929e617ddfb57278c479610b7257626a16de98741179cb222",
       "projection": {
         "id": 9810,
         "slug": "neo-home-robot-6001aae8ec40",
@@ -21,22 +21,23 @@
         "categories": [
           437
         ],
-        "featured_media": 9832,
+        "featured_media": 9838,
         "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "APPROVED_BY_USER_MESSAGE_2026-11-12",
-      "publication_requested": true
+      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "publication_requested": true,
+      "final_optimized_cover": true
     },
     {
       "post_id": 9813,
-      "modified": "2026-11-12T13:56:09",
+      "modified": "2026-11-12T14:14:09",
       "status": "draft",
       "content_sha256": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d",
       "previous_content_sha256": "d370b37d26aac5cd2c6b3405a68def9cc55466038fe94a1e2c7755218b676887",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "370f574af70be70b84a4055d5aa0d1c2373a196e207e74620749114b9757547d",
+      "preapproval_projection_sha256": "24b131a9def4822a5deb29d097625979770f731727ee31724dd3ae94d22c1619",
       "projection": {
         "id": 9813,
         "slug": "optimus-producao-fremont-limites-2026",
@@ -45,22 +46,23 @@
           10,
           437
         ],
-        "featured_media": 9833,
+        "featured_media": 9839,
         "content_sha256": "785188b5ad9984d5edc4a04295ece6f66339480205bf5a5a11c22f3d3f92030d"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "APPROVED_BY_USER_MESSAGE_2026-11-12",
-      "publication_requested": true
+      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "publication_requested": true,
+      "final_optimized_cover": true
     },
     {
       "post_id": 9814,
-      "modified": "2026-11-12T13:56:14",
+      "modified": "2026-11-12T14:14:14",
       "status": "draft",
       "content_sha256": "b0a4919b8dbca2ec7502df26cd9eab86c988bc931229a8d4c9fb8f780ab9da46",
       "previous_content_sha256": "556ff4f07325b0f03cdf69d7335bd19645fd7d55bdcb40c1de42486871f87d3a",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "9856227d74e936f5adf35c05fce75ceace039c29b54a3c7add293c52bf224e3d",
+      "preapproval_projection_sha256": "53039411e37df32d8660e586ffec0ebeb5611c58a029c3ab6e0b9711c43c5c14",
       "projection": {
         "id": 9814,
         "slug": "unitree-r1-g1-importacao-brasil-guia",
@@ -69,22 +71,23 @@
           8,
           437
         ],
-        "featured_media": 9834,
+        "featured_media": 9840,
         "content_sha256": "b0a4919b8dbca2ec7502df26cd9eab86c988bc931229a8d4c9fb8f780ab9da46"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "APPROVED_BY_USER_MESSAGE_2026-11-12",
-      "publication_requested": true
+      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "publication_requested": true,
+      "final_optimized_cover": true
     },
     {
       "post_id": 9815,
-      "modified": "2026-11-12T13:56:19",
+      "modified": "2026-11-12T14:14:19",
       "status": "draft",
       "content_sha256": "a1c70fbd09631aeea5e441d0cb345e972fc285b2341f26d20b8df22db49870ad",
       "previous_content_sha256": "a1fae1374436f6b762c537ca2e0fd9148609ad7a31a2f23765ef18bc17ec26a7",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "a979f6252ca9aed9c76cf95a1b2d55af43a927a3e4ea080a7ced320b6e8d1b4d",
+      "preapproval_projection_sha256": "54dc2df9e71d701a96570f1aa17c64ae498560de825061a37e13ff17535fc57c",
       "projection": {
         "id": 9815,
         "slug": "optimus-unitree-g1-comparativo-documental",
@@ -93,22 +96,23 @@
           44,
           437
         ],
-        "featured_media": 9835,
+        "featured_media": 9841,
         "content_sha256": "a1c70fbd09631aeea5e441d0cb345e972fc285b2341f26d20b8df22db49870ad"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "APPROVED_BY_USER_MESSAGE_2026-11-12",
-      "publication_requested": true
+      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "publication_requested": true,
+      "final_optimized_cover": true
     },
     {
       "post_id": 9816,
-      "modified": "2026-11-12T13:56:24",
+      "modified": "2026-11-12T14:14:24",
       "status": "draft",
       "content_sha256": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226",
       "previous_content_sha256": "2346e49de6eb4e1631f0852f6cca86d35fc040f4e36f28a74cb3edff71da1ec8",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "7bb79cb9771c68f69172a9241124984b8231a84bd4e91d0737d64aa3e5b5178d",
+      "preapproval_projection_sha256": "17d4185dab5b01d9e9715ca23a19b8b8d2717b3f8046a54a69ff01991a69dfbc",
       "projection": {
         "id": 9816,
         "slug": "figure-03-review-documental-helix",
@@ -116,22 +120,23 @@
         "categories": [
           437
         ],
-        "featured_media": 9836,
+        "featured_media": 9842,
         "content_sha256": "112953cb771886e48ff9b381bf392e8acc20e452a7873056ec7a8676df78e226"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "APPROVED_BY_USER_MESSAGE_2026-11-12",
-      "publication_requested": true
+      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "publication_requested": true,
+      "final_optimized_cover": true
     },
     {
       "post_id": 9817,
-      "modified": "2026-11-12T13:56:29",
+      "modified": "2026-11-12T14:14:28",
       "status": "draft",
       "content_sha256": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb",
       "previous_content_sha256": "57218ecc143835126a0fef515f162aff10a7786bf0ad4662379fba6964c19533",
       "body_changed_since_turso": true,
-      "preapproval_projection_sha256": "065352fc8e3e717c3795dabd2cd91270bc30a5a4c53d83a2213794d04940efe2",
+      "preapproval_projection_sha256": "60e85d32a822a5849d9a2d95e4d52a6c86597dc4d60ea81182900644787440a0",
       "projection": {
         "id": 9817,
         "slug": "lg-cloid-rodas-nota-documental",
@@ -140,24 +145,26 @@
           10,
           437
         ],
-        "featured_media": 9837,
+        "featured_media": 9843,
         "content_sha256": "6c2869bb985eca377e50114f90ce67ad41e53b3268a811eaec6cb758adc90afb"
       },
       "gate_signed_approval": null,
       "publication_authorized": false,
-      "owner_editorial_acceptance": "APPROVED_BY_USER_MESSAGE_2026-11-12",
-      "publication_requested": true
+      "owner_editorial_acceptance": "ACCEPTED_2026-11-12",
+      "publication_requested": true,
+      "final_optimized_cover": true
     }
   ],
   "owner_editorial_deliberation": "ACCEPTED_ALL_SIX_2026-11-12",
   "new_ai_cover_media_ids": {
-    "9810": 9832,
-    "9813": 9833,
-    "9814": 9834,
-    "9815": 9835,
-    "9816": 9836,
-    "9817": 9837
+    "9810": 9838,
+    "9813": 9839,
+    "9814": 9840,
+    "9815": 9841,
+    "9816": 9842,
+    "9817": 9843
   },
   "publication_requested": true,
-  "signed_gate_release": "PENDING"
+  "signed_gate_release": "PENDING_INDEPENDENT_REVIEWER",
+  "final_optimized_images": true
 }
