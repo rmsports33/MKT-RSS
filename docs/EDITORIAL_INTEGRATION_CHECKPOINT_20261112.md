@@ -38,16 +38,19 @@ O usuário autorizou o envio dos commits e dispensou novas confirmações rotine
 
 As credenciais existentes de GitHub Actions/rss-homolog foram suficientes. A ausência de segredos no ambiente de nuvem deixou de ser bloqueio operacional; não é necessário copiá-los para o chat. Nenhuma proteção de ambiente/Gate foi desativada, nenhum artigo foi publicado e nenhuma coleta/geração recorrente foi ativada. Os gatilhos de push usados nas operações pontuais foram retirados ao encerrar; os workflows voltam ao disparo manual.
 
-## Pendências reais e impacto
-**RESOLVER AGORA — qualidade antes de publicação:** o #9810 continua com pesquisa multifonte independente e imagem com direitos/proveniência final pendentes. As cinco páginas são da 1X, não cinco avaliações independentes. A candidata Pexels foi vista nesta sessão e é ilustrativa de outro robô, não do NEO; não foi anexada como se os direitos estivessem novamente certificados.
+## Atualização — seis artigos reais e evidências
+O #9810 teve corpo e SHA256 preservados. Pesquisa complementar de WIRED e TechRadar foi registrada em manifesto separado, sem alterar o texto. A prova da licença Pexels/Laura Musikanski6019019 foi versionada em10a263b antes da vinculação da mídia9812. Imagem explicitamente ilustrativa, não retrata os modelos analisados. O WordPress alterou os bytes do JPEG; hashes de origem e armazenamento estão separados nos recibos.
 
-**PENDENTE — homologação editorial:** apenas uma pauta real do gênero análise foi executada. Notícias, guia, comparativo, review e nota breve têm testes de integração por contrato, mas ainda não cinco artigos reais homologados. CI verde não supre essa evidência.
+As outras cinco pautas passaram pelos mesmos12 módulos existentes, com briefing por gênero, redação documental assistida e parecer vinculado ao hash: #9813 notícia/CT001, #9814 guia/CT004, #9815 comparativo/CT005, #9816 review documental/CT007 e #9817 nota breve/CT008. Todas permaneceram draft e tiveram conteúdo confirmado exatamente. Sem chamadas adicionais ao Groq e sem aprovação humana/factual presumida.
 
-**PENDENTE — apresentação e aceite:** conferir o tema autenticado em 390 e 1440 px, concluir licença/imagem, apuração factual e revisão/aceite da versão. A prévia offline e a leitura exata dos blocos não comprovam a apresentação real no tema.
+O run43207824274 releu os seis corpos reais no WordPress, conferiu os hashes, statusdraft e mídia9812 e salvou/leu de volta seis trilhas exatas no Turso existente. Recibos em docs/editorial-evidence/turso-batch-receipts.json. Nenhuma suíte repetida nesta etapa. Gatilho temporário retirado; workflow restaurado a manual.
 
-**PENDENTE — segurança operacional completa:** o preflight comprovou recusa de contrato inválido; não substitui homologação integral de expiração, assinatura, versão antiga, replay e rollback no PHP/WordPress isolado. As verificações offline existentes continuam aprovadas e não foram repetidas sem necessidade.
+Doze capturas em390/1440px, reconstruídas com CSS atual do tema, não apresentaram overflow horizontal e carregaram a imagem. Não são prévias autenticadas nativas; fontes remotas não carregadas. O tema não confirmou exibição da legenda destacada; crédito permanece nos metadados e nos corpos dos cinco textos novos.
 
-## Próxima ação útil e recomendação
-Concluir as evidências editoriais do #9810, preservando este conteúdo e seu hash em vez de regenerá-lo. Em seguida, usar o mesmo fluxo corrigido nas outras cinco pautas/gêneros. Uma recomendação concreta é anexar ao manifesto a prova da licença da candidata escolhida antes de vinculá-la como imagem destacada; isso elimina a pendência de mídia sem nova chamada de redação.
+## Pendências reais
+Conferência autenticada do tema e aceite editorial/factual das versões continuam pendentes. As evidências assistidas não representam testes físicos dos robôs ou revisão humana independente. A homologação integral do Gate PHP isolado continua fora desta entrega.
 
-O projeto não é declarado totalmente homologado. As pendências acima são resultados e evidências ainda ausentes, não exigências de nova aprovação para prosseguir com engenharia.
+O ZIP privado de manuscritos/capturas foi preparado localmente, mas NÃO enviado ao Drive: revisão automática rejeitou o upload por ausência de autorização específica do conteúdo privado para aquele destino. A pasta vazia criada não significa entrega do pacote.
+
+## Próxima ação concreta
+Revisar as versões salvas no WordPress usando a prévia nativa e registrar o aceite associado a cada hash; preservar os textos, sem nova geração. Para entregar o ZIP no Drive, obter autorização específica para o pacote e a pasta. Nenhum artigo foi publicado.

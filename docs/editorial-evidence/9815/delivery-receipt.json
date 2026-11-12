@@ -1,0 +1,93 @@
+{
+  "bank_id": "CT-005",
+  "genre": "comparativo",
+  "title": "Optimus e Unitree G1: o que é possível comparar",
+  "slug": "optimus-unitree-g1-comparativo-documental",
+  "source_url": "https://www.tesla.com/AI",
+  "authoring": "codex_assisted",
+  "external_provider_called": false,
+  "markdown_sha256": "14005fbbde1f78762e58cafc6d259bf7ded3f6f3105709fa362ea1ba197a96cd",
+  "content_sha256": "a1fae1374436f6b762c537ca2e0fd9148609ad7a31a2f23765ef18bc17ec26a7",
+  "featured_media": 9812,
+  "image_license_manifest": "docs/editorial-evidence/9810/image-license-proof.json",
+  "modules_executed": [
+    "editorial_import",
+    "editorial_identity",
+    "editorial_core_offline",
+    "format",
+    "seo",
+    "seo_contract_native",
+    "editorial_readiness",
+    "gate_editorial_pos_ia",
+    "adaptador_contrato_editorial",
+    "editorial_trace",
+    "image_protocol",
+    "editorial_substance"
+  ],
+  "readiness": {
+    "status": "PRONTO_PARA_REVISAO_HUMANA",
+    "pendencias": [],
+    "avisos": [
+      "sem_links_internos_relacionados"
+    ],
+    "persona_editorial": {
+      "content_sha256": "14005fbbde1f78762e58cafc6d259bf7ded3f6f3105709fa362ea1ba197a96cd",
+      "dna_prompt_sha256": "dd52370ed3a9af2e9fcb396f4a8d007cf0ed85e732edd91adf42d7b42e201e02",
+      "method": "assisted_editorial_adaptation",
+      "provider_id": "codex",
+      "status": "ASSISTED_ADAPTED"
+    },
+    "revisao_de_voz": "PENDENTE_AVALIACAO_HUMANA",
+    "avaliacao_substantiva": {
+      "status": "PASS",
+      "pendencias": [],
+      "scores": {
+        "reader_need": 3,
+        "editorial_angle": 3,
+        "decision_support": 3,
+        "voice": 3,
+        "source_limits": 3
+      },
+      "content_sha256": "14005fbbde1f78762e58cafc6d259bf7ded3f6f3105709fa362ea1ba197a96cd",
+      "review_valid": true,
+      "assessment_scope": "supplied_judgment_with_textual_evidence",
+      "factual_approval": false,
+      "publication_authorized": false
+    },
+    "genero": "comparativo",
+    "palavras": 929,
+    "referencia_palavras": 800,
+    "fontes": 4,
+    "fontes_rss_pendentes": 0,
+    "dominios_editoriais_distintos_identificados": 3,
+    "links_internos": 0,
+    "links_internos_verificados": 0,
+    "subtitulos_h2": 6,
+    "imagem_destacada_confirmada": true,
+    "revisao_factual": "PENDENTE",
+    "pronto_para_publicar": false
+  },
+  "publication_authorized": false,
+  "human_acceptance": "PENDING",
+  "factual_approval": false,
+  "post_id": 9815,
+  "wordpress_status": "draft",
+  "wordpress_readback": "EXACT_MATCH",
+  "package_sha256": "0c0ffa85597b3838999dc7c941b7ceb155e486382b45182bfa6efc186a6a58c9",
+  "media_evidence": {
+    "uploaded_sha256": "539bcef531892a99db49d93d040a1f17b8abbf8795a939c5a6a2dd0fed2d8543",
+    "stored_sha256": "846b4e1999de59ef2e67f5b7e395e4b1ebfb1e370c422d017c0815487bf218ca",
+    "server_bytes_changed": true,
+    "license_proof_commit": "10a263b",
+    "license_proof": "docs/editorial-evidence/9810/image-license-proof.json"
+  },
+  "turso_receipt": {
+    "post_id": 9815,
+    "run_id": "35fbf422-8bc4-4979-918c-37a0b3a21a1c",
+    "content_sha256": "a1fae1374436f6b762c537ca2e0fd9148609ad7a31a2f23765ef18bc17ec26a7",
+    "package_sha256": "0c0ffa85597b3838999dc7c941b7ceb155e486382b45182bfa6efc186a6a58c9",
+    "turso_readback": "EXACT_MATCH",
+    "publication_authorized": false
+  },
+  "evidence_workflow_run": 43207824274
+}

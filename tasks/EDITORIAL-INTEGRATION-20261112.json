@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "BLOCKED",
+  "status": "REVIEW",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -78,5 +78,22 @@
       "reference": ""
     }
   },
-  "tested_sha": "ee342280b13516c346d38a61725c92a748fa3451"
+  "tested_sha": "ee342280b13516c346d38a61725c92a748fa3451",
+  "editorial_delivery_20261112": {
+    "posts": [
+      9810,
+      9813,
+      9814,
+      9815,
+      9816,
+      9817
+    ],
+    "license_evidence_commit": "10a263b",
+    "turso_workflow_run": 43207824274,
+    "metadata_evidence": "docs/editorial-evidence/",
+    "native_preview": "PENDING",
+    "human_factual_acceptance": "PENDING",
+    "private_zip_drive_upload": "AUTO_REVIEW_REJECTED",
+    "publication_authorized": false
+  }
 }

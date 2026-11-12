@@ -1,0 +1,32 @@
+{
+  "bank_id": "CT-006",
+  "genre": "analise",
+  "post_id": 9810,
+  "title": "NEO da 1X: compra, assinatura e limites de privacidade",
+  "slug": "neo-home-robot-6001aae8ec40",
+  "source_url": "https://www.1x.tech/discover/neo-home-robot",
+  "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+  "featured_media": 9812,
+  "content_preserved": true,
+  "wordpress_status": "draft",
+  "publication_authorized": false,
+  "human_acceptance": "PENDING",
+  "factual_approval": false,
+  "media_evidence": {
+    "uploaded_sha256": "539bcef531892a99db49d93d040a1f17b8abbf8795a939c5a6a2dd0fed2d8543",
+    "stored_sha256": "846b4e1999de59ef2e67f5b7e395e4b1ebfb1e370c422d017c0815487bf218ca",
+    "server_bytes_changed": true,
+    "license_proof_commit": "10a263b",
+    "license_proof": "docs/editorial-evidence/9810/image-license-proof.json"
+  },
+  "package_sha256": "fd5b50c3611e7745287aaeb54562af46d5200af13ce9e0ebb2938dcb157b43e9",
+  "turso_receipt": {
+    "post_id": 9810,
+    "run_id": "ea1d1a2e-3944-4c24-a53a-533450c3479d",
+    "content_sha256": "10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+    "package_sha256": "fd5b50c3611e7745287aaeb54562af46d5200af13ce9e0ebb2938dcb157b43e9",
+    "turso_readback": "EXACT_MATCH",
+    "publication_authorized": false
+  },
+  "evidence_workflow_run": 43207824274
+}
