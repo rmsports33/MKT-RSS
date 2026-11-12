@@ -1,5 +1,5 @@
 import unittest
-from mkt_flow_p0.product_catalog import load, match, register_candidate
+from mkt_flow_p0.product_catalog import load, match, register_candidate, identify_in_headline
 
 class CatalogTests(unittest.TestCase):
     @classmethod
@@ -18,6 +18,12 @@ class CatalogTests(unittest.TestCase):
         new, result = register_candidate(self.catalog, p)
         self.assertEqual(len(new["products"]), 18)
         self.assertEqual(result["status"], "EXISTS")
+    def test_rss_headline_matches_known_product(self):
+        result = identify_in_headline("TCL C6K 65 ganha nova oferta", self.catalog)
+        self.assertEqual(result["product_id"], "tcl-c6k")
+        self.assertFalse(result["publication_authorized"])
+    def test_rss_unknown_headline_not_registered(self):
+        self.assertEqual(identify_in_headline("Novo roteador Wi-Fi", self.catalog)["status"], "NO_MATCH")
     def test_variants_preserved(self):
         p = next(p for p in self.catalog["products"] if p["id"] == "tcl-c6k")
         self.assertEqual({v["size_inches"] for v in p["variants"]}, {55, 65})
