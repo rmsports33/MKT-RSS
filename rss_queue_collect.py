@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from mkt_flow_p0.rss_ingestor import FEEDS_PADRAO, fetch_feed
 from mkt_flow_p0.fila_pautas import registrar, listar
 from mkt_flow_p0.opportunities import recent
+from mkt_flow_p0.product_catalog import load as load_product_catalog, identify_in_headline
 
 
 def coletar(fonte="", limite=5):
@@ -14,7 +15,13 @@ def coletar(fonte="", limite=5):
     if os.getenv("CONEXO_REQUIRE_CLOUD_PERSISTENCE") == "1":
         if not all(os.getenv(k, "").strip() for k in ("TURSO_DATABASE_URL", "TURSO_AUTH_TOKEN")):
             raise RuntimeError("PERSISTENCIA_CLOUD_AUSENTE: coleta cancelada antes da rede")
-    resultados = {"novas": 0, "duplicadas": 0, "falhas": [], "fora_da_janela": 0}
+    resultados = {"novas": 0, "duplicadas": 0, "falhas": [], "fora_da_janela": 0,
+                  "catalogo": {"correspondencias": 0, "sem_correspondencia": 0, "revisao": 0}}
+    try:
+        catalogo = load_product_catalog()
+    except (OSError, ValueError, KeyError, TypeError):
+        catalogo = None  # catálogo auxiliar jamais interrompe a coleta editorial
+        resultados["catalogo"]["indisponivel"] = True
     now = datetime.now(timezone.utc)
     for nome, feed_url in FEEDS_PADRAO.items():
         if fonte and nome != fonte:
@@ -27,6 +34,12 @@ def coletar(fonte="", limite=5):
             if not recent(item.get("published"), now, 168):
                 resultados["fora_da_janela"] += 1
                 continue
+            if catalogo is not None:
+                classification = identify_in_headline(item.get("titulo", ""), catalogo)
+                bucket = {"CANDIDATE_MATCH": "correspondencias",
+                          "NO_MATCH": "sem_correspondencia",
+                          "REVIEW": "revisao"}[classification["status"]]
+                resultados["catalogo"][bucket] += 1
             try:
                 status = registrar(item)
                 resultados["novas" if status["novo"] else "duplicadas"] += 1
