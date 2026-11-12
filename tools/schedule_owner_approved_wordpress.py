@@ -13,7 +13,6 @@ import hashlib
 import json
 import os
 import re
-import uuid
 from datetime import datetime, timedelta, timezone
 from zoneinfo import ZoneInfo
 
@@ -56,7 +55,7 @@ def _owner_receipt(post_id, session):
 
 def _start_at(local_iso, now):
     if not isinstance(local_iso, str) or not re.fullmatch(
-            r"20\\d{2}-\\d{2}-\\d{2}T\\d{2}:\\d{2}", local_iso):
+            r"20\d{2}-\d{2}-\d{2}T\d{2}:\d{2}", local_iso):
         raise BrokerBlocked("INVALID_LOCAL_DATETIME")
     try:
         start = datetime.strptime(local_iso, "%Y-%m-%dT%H:%M").replace(
