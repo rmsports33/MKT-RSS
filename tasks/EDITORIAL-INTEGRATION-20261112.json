@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "SIX_DRAFTS_ACCEPTED_NATIVE_WP_SCHEDULER_MERGED_AWAITING_AUTHENTICATED_GATE_APPROVAL",
+  "status": "WP_NATIVE_GATE_OWNER_BATCH_UI_LIVE_HUMAN_REVIEW_AND_REAL_SCHEDULING_PENDING",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -138,15 +138,24 @@
       "sha": "7488bc4da304d4a3eaaaa89110959732844bb48e",
       "reference": "docs/WORDPRESS_NATIVE_GATE_SCHEDULING_20261112.md",
       "result": "Documentação integrada de revisão única, WP-Cron, cron Hostinger opcional, cadência saudável e limitação SEO."
+    },
+    {
+      "sha": "bbd125a2d781a67f3518e685360bc2c6e01212f5",
+      "reference": "https://github.com/rmsports33/-site-conexotech/blob/master/docs/deployments/conexo-gate-agenda-nativa-20261112.md",
+      "result": "Conexo Gate Agenda Nativa 0.2.0 instalado e ativo em produção; formulário único de revisão humana autenticada e agendamento futuro direto; 15 verificações isoladas PASS; mantém Gate antigo intacto."
+    },
+    {
+      "sha": "5a8204c1f03d0b3a146343713afcb201ac880e40a798fa53df39be5bb14df30c",
+      "reference": "https://drive.google.com/file/d/1W2vZfMwnyAfsGD6JTZpfnvZroQp5X7G-/view?usp=drivesdk",
+      "result": "Arquivo implantado de plugin WordPress em ZIP, armazenado na pasta ConexoTech do Drive; SHA256 arquivado no manifesto."
     }
   ],
   "blockers": [
-    "Administrador WordPress ID3 precisa conferir e assinar os seis formulários da versão atual no Gate; IDs diferentes de contas não substituem revisão humana.",
-    "Confirmar no Gate que publicador autorizado está configurado como conta MKT-RSS ID4; acesso ao painel/option não foi comprovado nesta execução.",
-    "Depois das seis assinaturas, uma execução manual do workflow de agendamento nativo no WordPress (ainda não ocorreu). Confirmar 6 estados future e posterior publish via WP-Cron.",
-    "Checar SEO público depois da primeira publicação agendada; finalização SEO nativa assinada está implementada para publish imediato, não para schedule (limitação registrada)."
+    "Revisor proprietário autenticado WordPress ID3 precisa confirmar pessoalmente os critérios e registrar observação para cada versão na tela única do Gate: https://conexotech.com.br/wp-admin/tools.php?page=conexo-gate-revisar-lote. Não há assinatura humana criada no chat.",
+    "Após submissão autenticada, conferir readback de seis posts future e posteriormente publish pelo WP-Cron; nenhuma execução real de agendamento ocorreu até esta verificação.",
+    "Auditar SEO público na primeira publicação agendada; contrato Conexo Native SEO para posts future ainda não foi homologado (Rank Math segue ativo)."
   ],
-  "next_action": "Proprietário autenticado ID3 usa Ferramentas > Revisão do proprietário para conferir e assinar IDs 9813,9815,9814,9810,9816,9817, sem regenerar parecer. Com seis recibos válidos, executar UMA VEZ https://github.com/rmsports33/MKT-RSS/actions/workflows/schedule-wordpress-approved-batch-manual.yml com start_local futuro e AGENDAR_SEIS. WordPress WP-Cron (preferencialmente apoiado por cron Hostinger a cada 5 min) faz as publicações; GitHub não tem disparos recorrentes para o lote.",
+  "next_action": "Uma única ação humana no WordPress: abrir Ferramentas > Conexo — revisar e agendar lote; inspecionar as seis prévias, inserir observação por post, confirmar individualmente a verificação e escolher data inicial futura/intervalo. O Gate Único assina as seis versões e agenda diretamente via WP-Cron no mesmo envio. Não é mais necessário workflow GitHub para publicação do lote. Em seguida o sistema deve conferir status future/publish e SEO.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -231,12 +240,18 @@
     "staggered_release_queue": "docs/editorial-evidence/internal-links-and-release-queue-20261112.json",
     "owner_gate_signed_current_versions": "NOT_CONFIRMED",
     "followup_check": "AUTOMATION_2026_11_12_17_10_BRT",
-    "wordpress_native_schedule_code": "MERGED_MASTER_6CDC427_CI_PASSED",
-    "wordpress_native_schedule_execution": "NOT_EXECUTED_NO_GATE_RECEIPTS",
+    "wordpress_native_schedule_code": "MERGED_MASTER_6CDC427_CI_PASSED_MANUAL_FALLBACK",
+    "wordpress_native_schedule_execution": "NOT_EXECUTED_AWAITING_PERSONAL_OWNER_AUTHENTICATED_REVIEW",
     "github_recurring_six_slots": "REMOVED_FROM_MASTER",
     "hostinger_server_cron": "NOT_CONFIGURED_IN_CHAT",
     "native_seo_future_finalize": "NOT_IMPLEMENTED",
-    "current_post_status": "SIX_DRAFTS_WP_READBACK_VERIFIED_20261112"
+    "current_post_status": "SIX_DRAFTS_WP_READBACK_VERIFIED_20261112",
+    "wordpress_native_scheduler_plugin": "ACTIVE_PRODUCTION_CONEXO_GATE_AGENDA_NATIVA_0_2_0",
+    "wordpress_native_owner_review_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-gate-revisar-lote",
+    "wordpress_native_schedule_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-gate-agendar",
+    "wordpress_native_owner_batch_approval": "ACTIVE_UI_NOT_SUBMITTED_BY_OWNER",
+    "jetpack_monitor": "ENABLED_CONFIRMED_20261112",
+    "github_action_publication_per_post": "NOT_REQUIRED_WP_ADMIN_NATIVE_PREFERRED"
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
