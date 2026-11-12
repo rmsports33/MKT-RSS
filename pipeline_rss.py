@@ -113,8 +113,14 @@ def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", 
 
 def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None,
                    pacote_editorial=None, core_root=None, actor_id=None, contexto_complementar=None, handoff_only=False,
-                   featured_media_id=None, media_rights_confirmed=False) -> dict:
+                   featured_media_id=None, media_rights_confirmed=False,
+                   image_batch_used=None, image_batch_media_used=None) -> dict:
     """Processa RSS: rascunho WP, handoff offline ou bloqueio sem publicar."""
+    if (featured_media_id is not None and image_batch_media_used is not None
+            and featured_media_id in image_batch_media_used):
+        # A one-image CLI input must not silently become multiple article covers.
+        return {'acao':'bloqueado','motivo':'capa_repetida_no_lote',
+                'escreveu':False}
     if pacote_editorial is not None:
         if handoff_only:
             return {"acao": "bloqueado", "erro": "handoff-only não aceita pacote de publicação"}
@@ -298,8 +304,15 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
     plano_imagem = {"status": "PESQUISA_NAO_EXECUTADA",
                     "proxima_etapa": "BUSCAR_BANCO_GRATUITO"}
     # Handoff-only blocks WP writes, not free image research. Protocol always runs.
-    from mkt_flow_p0.image_protocol import plan_image
-    plano_imagem = plan_image(rw['titulo_seo'],offline=False)
+    from mkt_flow_p0.image_protocol import plan_image, reserve_image_candidate
+    if image_batch_used is None:
+        plano_imagem = plan_image(rw['titulo_seo'],offline=False)
+    else:
+        plano_imagem = plan_image(rw['titulo_seo'], offline=False,
+                                 used_image_identifiers=image_batch_used)
+        # Reserve only documented catalog resources. Pending stock candidates
+        # require license/content-fit checks; never treat them as approved media.
+        reserve_image_candidate(plano_imagem,image_batch_used)
     # Qualquer candidata permanece pendente de licença/atribuição e de
     # revisão 1440px desktop / 390px celular. Não altera hash do artigo.
     # Diagnostico de prontidao nao bloqueia o armazenamento de rascunhos;
@@ -687,6 +700,8 @@ def main():
         sys.exit(2)
     total = {"publicado_rascunho": 0, "pacote_editorial_criado": 0, "bloqueado": 0, "falha": 0, "feed_error": 0, "dry_run_ok": 0}
     contexto_usado = False
+    batch_image_used = set()
+    batch_media_used = set()
     from mkt_flow_p0.rss_ingestor import marcar_visto
     for fonte, url in alvos.items():
         # dry-run nunca marca como visto (não gasta a pauta do dia)
@@ -709,7 +724,11 @@ def main():
                                contexto_complementar=enriquecimento,
                                handoff_only=args.handoff_only,
                                featured_media_id=args.featured_media_id,
-                               media_rights_confirmed=args.confirm_media_rights)
+                               media_rights_confirmed=args.confirm_media_rights,
+                               image_batch_used=batch_image_used,
+                               image_batch_media_used=batch_media_used)
+            if r.get('escreveu') is True and args.featured_media_id is not None:
+                batch_media_used.add(args.featured_media_id)
             if args.handoff_dir and isinstance(r.get("editorial_handoff"), dict):
                 from mkt_flow_p0.editorial_identity import salvar_handoff_chatgpt
                 try:
