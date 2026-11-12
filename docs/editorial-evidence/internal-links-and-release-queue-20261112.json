@@ -1,0 +1,174 @@
+{
+  "schema": "conexo-interlink-staggered-queue/1",
+  "date": "2026-11-12",
+  "timezone": "America/Fortaleza",
+  "start_local": "16:00",
+  "interval_minutes": 10,
+  "utc_offset": "-03:00",
+  "publication_mechanism": "GitHub scheduled action on master, calls authenticated Gate owner-release + verified MKT-RSS publisher. GitHub timing best-effort, slots expire after 9min.",
+  "workflow": "https://github.com/rmsports33/MKT-RSS/actions/workflows/publish-owner-approved-slots-20261112.yml",
+  "workflow_merge_commit": "14f7a36af32bb0cac8e6e21e97d7b48d0584db44",
+  "interlink_rule_merge_commit": "4273d8e1f028a355f13b2822810a89f8cabb45ab",
+  "editorial_owner_accepted": true,
+  "formal_gate_signed_approvals": "NOT_CONFIRMED",
+  "posts": [
+    {
+      "id": 9813,
+      "title": "Tesla Optimus — início de produção",
+      "url": "https://conexotech.com.br/optimus-producao-fremont-limites-2026/",
+      "wp_status_verified": "draft",
+      "author_id": 4,
+      "featured_media_id": 9839,
+      "time_local": "16:00",
+      "time_utc": "19:00",
+      "related_posts": [
+        {
+          "id": 9815,
+          "url": "https://conexotech.com.br/optimus-unitree-g1-comparativo-documental/"
+        },
+        {
+          "id": 9814,
+          "url": "https://conexotech.com.br/unitree-r1-g1-importacao-brasil-guia/"
+        },
+        {
+          "id": 9816,
+          "url": "https://conexotech.com.br/figure-03-review-documental-helix/"
+        }
+      ],
+      "owner_review_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-owner-review&post_id=9813"
+    },
+    {
+      "id": 9815,
+      "title": "Optimus × Unitree G1 — comparativo",
+      "url": "https://conexotech.com.br/optimus-unitree-g1-comparativo-documental/",
+      "wp_status_verified": "draft",
+      "author_id": 4,
+      "featured_media_id": 9841,
+      "time_local": "16:10",
+      "time_utc": "19:10",
+      "related_posts": [
+        {
+          "id": 9813,
+          "url": "https://conexotech.com.br/optimus-producao-fremont-limites-2026/"
+        },
+        {
+          "id": 9814,
+          "url": "https://conexotech.com.br/unitree-r1-g1-importacao-brasil-guia/"
+        },
+        {
+          "id": 9816,
+          "url": "https://conexotech.com.br/figure-03-review-documental-helix/"
+        }
+      ],
+      "owner_review_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-owner-review&post_id=9815"
+    },
+    {
+      "id": 9814,
+      "title": "Unitree R1/G1 — importação",
+      "url": "https://conexotech.com.br/unitree-r1-g1-importacao-brasil-guia/",
+      "wp_status_verified": "draft",
+      "author_id": 4,
+      "featured_media_id": 9840,
+      "time_local": "16:20",
+      "time_utc": "19:20",
+      "related_posts": [
+        {
+          "id": 9815,
+          "url": "https://conexotech.com.br/optimus-unitree-g1-comparativo-documental/"
+        },
+        {
+          "id": 9813,
+          "url": "https://conexotech.com.br/optimus-producao-fremont-limites-2026/"
+        },
+        {
+          "id": 9810,
+          "url": "https://conexotech.com.br/neo-home-robot-6001aae8ec40/"
+        }
+      ],
+      "owner_review_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-owner-review&post_id=9814"
+    },
+    {
+      "id": 9810,
+      "title": "NEO da 1X — compra e privacidade",
+      "url": "https://conexotech.com.br/neo-home-robot-6001aae8ec40/",
+      "wp_status_verified": "draft",
+      "author_id": 4,
+      "featured_media_id": 9838,
+      "time_local": "16:30",
+      "time_utc": "19:30",
+      "related_posts": [
+        {
+          "id": 9816,
+          "url": "https://conexotech.com.br/figure-03-review-documental-helix/"
+        },
+        {
+          "id": 9814,
+          "url": "https://conexotech.com.br/unitree-r1-g1-importacao-brasil-guia/"
+        },
+        {
+          "id": 9817,
+          "url": "https://conexotech.com.br/lg-cloid-rodas-nota-documental/"
+        }
+      ],
+      "owner_review_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-owner-review&post_id=9810"
+    },
+    {
+      "id": 9816,
+      "title": "Figure 03 — autonomia doméstica",
+      "url": "https://conexotech.com.br/figure-03-review-documental-helix/",
+      "wp_status_verified": "draft",
+      "author_id": 4,
+      "featured_media_id": 9842,
+      "time_local": "16:40",
+      "time_utc": "19:40",
+      "related_posts": [
+        {
+          "id": 9810,
+          "url": "https://conexotech.com.br/neo-home-robot-6001aae8ec40/"
+        },
+        {
+          "id": 9817,
+          "url": "https://conexotech.com.br/lg-cloid-rodas-nota-documental/"
+        },
+        {
+          "id": 9815,
+          "url": "https://conexotech.com.br/optimus-unitree-g1-comparativo-documental/"
+        }
+      ],
+      "owner_review_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-owner-review&post_id=9816"
+    },
+    {
+      "id": 9817,
+      "title": "LG CLOiD — rodas",
+      "url": "https://conexotech.com.br/lg-cloid-rodas-nota-documental/",
+      "wp_status_verified": "draft",
+      "author_id": 4,
+      "featured_media_id": 9843,
+      "time_local": "16:50",
+      "time_utc": "19:50",
+      "related_posts": [
+        {
+          "id": 9816,
+          "url": "https://conexotech.com.br/figure-03-review-documental-helix/"
+        },
+        {
+          "id": 9810,
+          "url": "https://conexotech.com.br/neo-home-robot-6001aae8ec40/"
+        },
+        {
+          "id": 9815,
+          "url": "https://conexotech.com.br/optimus-unitree-g1-comparativo-documental/"
+        }
+      ],
+      "owner_review_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-owner-review&post_id=9817"
+    }
+  ],
+  "known_limitations": [
+    "The six content versions were edited after the earlier approvals; owner must sign current Gate snapshot per article.",
+    "Crosslinks to future posts in this coordinated rollout may be 404 until target posts publish; owner must explicitly assess the temporary reader-experience risk.",
+    "GitHub schedule is not minute-exact and releases are not retried automatically after an expired slot.",
+    "The release runner refuses any post without owner-release, and refuses subsequent posts if previous was not confirmed published at least 10 minutes earlier.",
+    "If owner approval misses 16:00, the 16:00 slot will not publish, and the later slots remain blocked by predecessor checks; rescheduling will be required."
+  ],
+  "automatic_publications_performed_as_of_receipt": 0
+}
