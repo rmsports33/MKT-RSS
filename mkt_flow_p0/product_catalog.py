@@ -47,3 +47,25 @@ def register_candidate(catalog, product):
     updated["products"] = catalog["products"] + [product]
     return updated, {"status": "ADDED_IN_MEMORY", "product_id": product["id"],
                      "requires_review": True, "publication_authorized": False}
+
+def identify_in_headline(headline, catalog):
+    """Classify an RSS headline without modifying the RSS queue or product catalog.
+
+    Exact alias phrases only. Multiple candidates require editorial review.
+    """
+    title = normalize(headline)
+    found = []
+    for product in catalog["products"]:
+        aliases = product["aliases"] + [product["brand"] + " " + product["model"]]
+        for alias in aliases:
+            phrase = normalize(alias)
+            if phrase and re.search(r"(?<![a-z0-9])" + re.escape(phrase) + r"(?![a-z0-9])", title):
+                found.append(product["id"])
+                break
+    unique = sorted(set(found))
+    if not unique:
+        return {"status": "NO_MATCH", "publication_authorized": False}
+    if len(unique) != 1:
+        return {"status": "REVIEW", "candidate_ids": unique, "publication_authorized": False}
+    return {"status": "CANDIDATE_MATCH", "product_id": unique[0],
+            "requires_editorial_confirmation": True, "publication_authorized": False}
