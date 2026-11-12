@@ -79,5 +79,6 @@ jobs:
           path: |
             work/bank-production/module-report.json
             work/bank-production/cover-candidate.jpg
+            work/bank-production-private-checkpoint.enc.json
           if-no-files-found: ignore
           retention-days: 30

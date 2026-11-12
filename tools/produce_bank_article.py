@@ -78,8 +78,12 @@ class ObservedModules:
         self.events.append(event)
         try:
             result = function(*args, **kwargs)
-        except Exception:
+        except Exception as exc:
             event['status'] = 'FAILED'
+            # Only stable provider codes are public; never log exception text.
+            from mkt_flow_p0.editorial_development import ReviewProviderFailure
+            if isinstance(exc, ReviewProviderFailure):
+                event['error_code'] = exc.code
             raise ProductionBlocked('MODULE_EXECUTION_FAILED') from None
         event['status'] = 'RETURNED'
         if isinstance(result, dict):
@@ -225,7 +229,17 @@ def produce(brief, output_dir, *, execute_draft=False):
         handoff = observed.call('versioned_package', atualizar_handoff_revisao,
                                 generated['editorial_handoff'], markdown, related_articles=related)
         observed.call('package_integrity', validar_handoff_chatgpt, handoff)
-        critique = observed.call('substantive_critique', review_with_provider, markdown, editorial_brief)
+        # Persist the generated version before a downstream provider can fail.
+        # Drafts may remain review-pending; no failure can become approval.
+        (output / 'private-handoff.json').write_text(json.dumps(handoff, ensure_ascii=False), encoding='utf-8')
+        (output / 'private-sources.json').write_text(json.dumps(captures, ensure_ascii=False), encoding='utf-8')
+        try:
+            critique = observed.call('substantive_critique', review_with_provider, markdown, editorial_brief)
+        except ProductionBlocked:
+            critique = None
+            report['review_failure_codes'] = [observed.events[-1].get('error_code', 'REVIEW_MODULE_EXCEPTION')]
+            report['substantive_review'] = 'PENDING'
+            report['review_retry_automatic'] = False
         handoff = observed.call('versioned_critique', vincular_avaliacao_substantiva,
                                 handoff, editorial_brief, critique)
         html = observed.call('html_format', markdown_para_html, markdown)
@@ -297,6 +311,16 @@ def produce(brief, output_dir, *, execute_draft=False):
         raise
     finally:
         # Report never contains the draft, prompts, raw source bodies or secrets.
+        if (output / 'private-handoff.json').is_file():
+            # Reuse the established encrypted handoff format and owner public key.
+            # Public Actions artifacts must never contain raw drafts/sources.
+            try:
+                from scripts.handoff_live_once import seal_directory
+                seal_directory(output, Path('data/homolog/handoff-live-public.pem').read_bytes(),
+                               output.parent / 'bank-production-private-checkpoint.enc.json')
+                report['private_checkpoint'] = 'ENCRYPTED'
+            except Exception:
+                report['private_checkpoint'] = 'ENCRYPTION_UNAVAILABLE_NO_RAW_EXPORT'
         (output / 'module-report.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
 
 

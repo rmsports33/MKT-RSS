@@ -93,8 +93,9 @@ def test_exception_details_do_not_leak_to_public_report():
     assert observed.events[0]['status'] == 'FAILED'
 
 
+@pytest.mark.parametrize('review_failure', [False, True])
 @pytest.mark.parametrize('order_mode', ['server', 'rendered', 'unavailable'])
-def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp_path, order_mode):
+def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp_path, order_mode, review_failure):
     from mkt_flow_p0 import (extractor, research_candidates, keyword_research, rewriter,
         related_posts, image_handler, wp_draft_staging, editorial_trace_turso)
     from mkt_flow_p0.editorial_identity import criar_handoff_chatgpt
@@ -107,7 +108,11 @@ def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp
     planned['genre'] = load_brief(BRIEF)['genre']
     monkeypatch.setattr(editorial_development, 'plan_brief_with_provider', lambda *a, **kw: planned)
     # The repeated fixture is a pending draft, never a substantive PASS.
-    monkeypatch.setattr(editorial_development, 'review_with_provider', lambda *a, **kw: None)
+    def critique(*args, **kwargs):
+        if review_failure:
+            raise editorial_development.ReviewProviderFailure('PROVIDER_RATE_LIMIT')
+        return None
+    monkeypatch.setattr(editorial_development, 'review_with_provider', critique)
     brief = load_brief(BRIEF)
     private = 'PRIVATE ARTICLE BODY '
     body = ('Fonte completa para pesquisa. ' * 130
@@ -168,7 +173,14 @@ def test_production_integrates_private_draft_and_metadata_trace(monkeypatch, tmp
     assert report['publication_authorized'] is False
     assert report['human_review'] == 'PENDING'
     assert report['outcome'] == 'DRAFT_READY_FOR_RESEARCH_REVIEW'
+    assert len(generations) == 1
     assert (tmp_path / 'private-handoff.json').is_file()
+    assert report['private_checkpoint'] == 'ENCRYPTED'
+    assert (tmp_path.parent / 'bank-production-private-checkpoint.enc.json').is_file()
+    if review_failure:
+        assert report['review_failure_codes'] == ['PROVIDER_RATE_LIMIT']
+        assert report['substantive_review'] == 'PENDING'
+        assert report['review_retry_automatic'] is False
     public_report = (tmp_path / 'module-report.json').read_text()
     assert private not in public_report
     assert body not in public_report

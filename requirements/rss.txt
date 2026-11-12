@@ -7,3 +7,6 @@ trafilatura==2.2.0
 groq==1.6.0
 python-dotenv==1.2.3
 Pillow==12.3.0
+
+# Reuse authenticated encryption for private draft checkpoints in public Actions.
+cryptography>=42.0.0
