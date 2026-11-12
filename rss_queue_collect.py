@@ -35,11 +35,15 @@ def coletar(fonte="", limite=5):
                 resultados["fora_da_janela"] += 1
                 continue
             if catalogo is not None:
-                classification = identify_in_headline(item.get("titulo", ""), catalogo)
-                bucket = {"CANDIDATE_MATCH": "correspondencias",
-                          "NO_MATCH": "sem_correspondencia",
-                          "REVIEW": "revisao"}[classification["status"]]
-                resultados["catalogo"][bucket] += 1
+                try:
+                    classification = identify_in_headline(item.get("titulo", ""), catalogo)
+                    bucket = {"CANDIDATE_MATCH": "correspondencias",
+                              "NO_MATCH": "sem_correspondencia",
+                              "REVIEW": "revisao"}[classification["status"]]
+                    resultados["catalogo"][bucket] += 1
+                except (ValueError, KeyError, TypeError, AttributeError):
+                    resultados["catalogo"]["revisao"] += 1
+                    # Falha auxiliar nunca bloqueia a fila RSS.
             try:
                 status = registrar(item)
                 resultados["novas" if status["novo"] else "duplicadas"] += 1
