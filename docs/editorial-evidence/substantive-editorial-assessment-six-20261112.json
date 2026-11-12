@@ -57,7 +57,8 @@
       "technical_content_readback": "PASS_WP_DRAFT",
       "independent_human_review": "NOT_PROVIDED",
       "signed_gate_approval": "NOT_GRANTED",
-      "publication_authorized": false
+      "publication_authorized": false,
+      "wp_author_id": 3
     },
     {
       "post_id": 9813,
@@ -81,7 +82,8 @@
       "technical_content_readback": "PASS_WP_DRAFT",
       "independent_human_review": "NOT_PROVIDED",
       "signed_gate_approval": "NOT_GRANTED",
-      "publication_authorized": false
+      "publication_authorized": false,
+      "wp_author_id": 3
     },
     {
       "post_id": 9814,
@@ -104,7 +106,8 @@
       "technical_content_readback": "PASS_WP_DRAFT",
       "independent_human_review": "NOT_PROVIDED",
       "signed_gate_approval": "NOT_GRANTED",
-      "publication_authorized": false
+      "publication_authorized": false,
+      "wp_author_id": 3
     },
     {
       "post_id": 9815,
@@ -128,7 +131,8 @@
       "technical_content_readback": "PASS_WP_DRAFT",
       "independent_human_review": "NOT_PROVIDED",
       "signed_gate_approval": "NOT_GRANTED",
-      "publication_authorized": false
+      "publication_authorized": false,
+      "wp_author_id": 3
     },
     {
       "post_id": 9816,
@@ -151,7 +155,8 @@
       "technical_content_readback": "PASS_WP_DRAFT",
       "independent_human_review": "NOT_PROVIDED",
       "signed_gate_approval": "NOT_GRANTED",
-      "publication_authorized": false
+      "publication_authorized": false,
+      "wp_author_id": 3
     },
     {
       "post_id": 9817,
@@ -175,7 +180,8 @@
       "technical_content_readback": "PASS_WP_DRAFT",
       "independent_human_review": "NOT_PROVIDED",
       "signed_gate_approval": "NOT_GRANTED",
-      "publication_authorized": false
+      "publication_authorized": false,
+      "wp_author_id": 3
     }
   ],
   "owner_decisions_pending": [
@@ -185,7 +191,8 @@
   ],
   "gate_requirements": [
     "On approval generate/reconcile Gate's own canonical snapshot including metadata; SHA256 projections here are evidence only, not HMAC approval",
-    "Independent trusted Gate approval per selected post/version and actual readback required before publishing or scheduling"
+    "Independent trusted Gate approval per selected post/version and actual readback required before publishing or scheduling",
+    "Verified WordPress author id=3 for all six posts. Existing Gate rc5 refuses author self-approval: final signer must be an authorized reviewer who is not site author 3; approval in ChatGPT alone is not Gate HMAC."
   ],
   "publication_authorized": false
 }
