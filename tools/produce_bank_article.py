@@ -14,6 +14,7 @@ from pathlib import Path
 import re
 import unicodedata
 import uuid
+import time
 
 SITE = 'https://conexotech.com.br'
 HOMOLOG = 'mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io'
@@ -68,6 +69,19 @@ def require_credentials():
         raise ProductionBlocked('PRODUCTION_TARGET_MISMATCH')
 
 
+def minute_quota_delay(result):
+    """Honor a proven transient limit; do not infer daily/unknown capacity."""
+    if (not isinstance(result, dict) or result.get('error_code') != 'PROVIDER_RATE_LIMIT'
+            or result.get('limit_scope') not in {'tokens_per_minute', 'requests_per_minute'}):
+        return None
+    wait = result.get('retry_after_seconds')
+    if wait is None:
+        return 60
+    if type(wait) is int and 0 <= wait <= 65:
+        return max(1, wait)
+    return None
+
+
 class ObservedModules:
     def __init__(self):
         self.events = []
@@ -93,6 +107,10 @@ class ObservedModules:
                     event[key if key != 'status' else 'result_status'] = result[key]
             if 'erro' in result:
                 event['result_status'] = 'ERROR'
+                if result.get('error_code') == 'PROVIDER_RATE_LIMIT':
+                    event['error_code'] = 'PROVIDER_RATE_LIMIT'
+                    event['limit_scope'] = result.get('limit_scope', 'unknown')
+                    event['retry_after_seconds'] = result.get('retry_after_seconds')
         event['finished_at'] = datetime.now(timezone.utc).isoformat()
         return result
 
@@ -211,10 +229,22 @@ def produce(brief, output_dir, *, execute_draft=False):
             raise ProductionBlocked('EXTRACTED_SOURCE_FILTER_BLOCKED')
         editorial_brief = observed.call('editorial_planning', plan_brief_with_provider,
             brief['title'], original, genre=brief['genre'], research=context)
-        generated = observed.call('generation', reescrever_materia, brief['title'], original,
-                                  fonte_nome=brief['source_name'], url_fonte=brief['source_url'],
-                                  keywords=keywords, contexto_complementar=context, editorial_brief=editorial_brief, max_tokens=5000,
-                                  timeout=90, temperature=0.3)
+        (output / 'private-sources.json').write_text(json.dumps(captures, ensure_ascii=False), encoding='utf-8')
+        (output / 'private-brief.json').write_text(json.dumps(editorial_brief, ensure_ascii=False), encoding='utf-8')
+        def generate():
+            return observed.call('generation', reescrever_materia, brief['title'], original,
+                                 fonte_nome=brief['source_name'], url_fonte=brief['source_url'],
+                                 keywords=keywords, contexto_complementar=context,
+                                 editorial_brief=editorial_brief, max_tokens=5000,
+                                 timeout=90, temperature=0.3)
+        generated = generate()
+        # One bounded recovery only for an explicitly identified minute quota.
+        # Daily/unknown limits never trigger another request or paid fallback.
+        delay = minute_quota_delay(generated)
+        if delay is not None:
+            report['minute_quota_recovery'] = {'wait_seconds': delay, 'max_retries': 1}
+            time.sleep(delay)
+            generated = generate()
         if generated.get('erro'):
             raise ProductionBlocked('GENERATION_NOT_CONFIRMED')
         content_verdict = observed.call('generated_content_filter', filtrar_conteudo,
@@ -311,7 +341,7 @@ def produce(brief, output_dir, *, execute_draft=False):
         raise
     finally:
         # Report never contains the draft, prompts, raw source bodies or secrets.
-        if (output / 'private-handoff.json').is_file():
+        if (output / 'private-sources.json').is_file():
             # Reuse the established encrypted handoff format and owner public key.
             # Public Actions artifacts must never contain raw drafts/sources.
             try:

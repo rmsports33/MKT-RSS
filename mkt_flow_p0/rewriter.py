@@ -233,7 +233,26 @@ def reescrever_materia(
         if "401" in msg or "invalid_api_key" in msg.lower():
             return {"erro": "GROQ_API_KEY inválida — gere outra em console.groq.com"}
         if "429" in msg or "rate" in msg.lower():
-            return {"erro": "Limite Groq atingido (429) — aguarde 1-2 min e tente de novo (tier grátis)."}
+            # Export only bounded diagnostics, never response bodies or secrets.
+            import math
+            detail = msg.casefold()
+            scope = next((name for name, marker in (
+                ("tokens_per_day", "tokens per day"),
+                ("requests_per_day", "requests per day"),
+                ("tokens_per_minute", "tokens per minute"),
+                ("requests_per_minute", "requests per minute"),
+            ) if marker in detail), "unknown")
+            wait = None
+            try:
+                raw_wait = getattr(getattr(e, "response", None), "headers", {}).get("retry-after")
+                value = float(raw_wait)
+                if math.isfinite(value) and 0 <= value <= 86400:
+                    wait = math.ceil(value)
+            except (ValueError, TypeError, AttributeError):
+                pass
+            return {"erro": "Limite Groq atingido (429); preservar insumos e respeitar a quota gratuita.",
+                    "error_code": "PROVIDER_RATE_LIMIT", "limit_scope": scope,
+                    "retry_after_seconds": wait}
         logger.warning("rewriter Groq falhou: tipo=%s, status=%s",
                        type(e).__name__, getattr(e, "status_code", None))
         return {"erro": "Falha Groq: provider_error (detalhes privados omitidos)"}
