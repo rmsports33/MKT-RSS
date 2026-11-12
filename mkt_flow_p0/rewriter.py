@@ -177,6 +177,7 @@ def reescrever_materia(
     contexto_complementar: dict = None,
     editorial_brief: dict = None,
     editorial_feedback=None,
+    genre: str = None,
 ) -> dict:
     """
     Reescreve 1 matéria. Gate de entrada: texto <100 palavras = {"erro"}
@@ -189,8 +190,14 @@ def reescrever_materia(
     if palavras_in < MIN_PALAVRAS_ENTRADA:
         return {"erro": f"Texto curto demais ({palavras_in} palavras, mínimo {MIN_PALAVRAS_ENTRADA}) — extraia o corpo completo antes."}
 
-    # Bloqueie contratos malformados antes de qualquer chamada ao provedor.
+    # New generation requires a valid briefing, even when a caller bypasses RSS.
+    # Previewing prompts and importing legacy drafts remain separate operations.
     try:
+        from mkt_flow_p0.editorial_substance import normalize_brief
+        from mkt_flow_p0.editorial_prompt_contract import prepare_editorial_prompt
+        editorial_brief = normalize_brief(editorial_brief)
+        system_prompt = prepare_editorial_prompt(
+            SYSTEM_PROMPT, editorial_brief, genre=editorial_brief["genre"] if genre is None else genre)
         prompt = montar_prompt(titulo_original, texto_original, fonte_nome, keywords,
                               evidencias_aprovadas=evidencias_aprovadas,
                               contexto_complementar=contexto_complementar, editorial_brief=editorial_brief,
@@ -206,7 +213,7 @@ def reescrever_materia(
     # an approximation of the prompt. Never store raw prompt in telemetry.
     import hashlib
     messages = [
-        {"role": "system", "content": SYSTEM_PROMPT},
+        {"role": "system", "content": system_prompt},
         {"role": "user", "content": prompt},
     ]
     prompt_sha256 = hashlib.sha256(json.dumps(

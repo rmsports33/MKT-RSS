@@ -143,6 +143,9 @@ def adapt_imported_article(payload, *, writer=None, reviewer=None, planner=None,
     brief = (normalize_brief(payload["editorial_brief"]) if payload.get("editorial_brief") is not None
              else (planner or plan_brief_with_provider)(payload["article"]["titulo_seo"],
                  payload["article"]["texto_markdown"],genre=genre,research=payload["research"]))
+    brief = normalize_brief(brief)
+    if brief["genre"] != genre:
+        raise ValueError("gênero do briefing diverge do artigo")
     writer, reviewer = writer or reescrever_materia, reviewer or review_with_provider
     current = copy.deepcopy(payload)
     current["editorial_brief"] = brief

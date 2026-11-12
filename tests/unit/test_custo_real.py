@@ -9,6 +9,16 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 import pipeline_rss as P
 
 
+TEST_EDITORIAL_BRIEF = {
+    "genre": "noticia",
+    "reader": "Leitores que precisam interpretar documentação técnica disponível.",
+    "need": "Identificar consequências e limites dos fatos fornecidos nas fontes.",
+    "angle": "Distinguir informação documentada de hipótese ainda não demonstrada.",
+    "contribution": "Explicar critérios práticos sustentados pelos documentos fornecidos.",
+    "limits": "Não inventar testes próprios, preços, medições ou experiências de uso."
+}
+
+
 def test_custo_gravado(tmp_path, monkeypatch):
     monkeypatch.setattr(P, "DB_PATH", tmp_path / "c.db")
     ext = {"titulo": "T", "texto": "corpo " * 500, "palavras": 500, "qualidade_ok": True, "imagem": ""}
@@ -26,7 +36,7 @@ def test_custo_gravado(tmp_path, monkeypatch):
         monkeypatch.setenv("WP_URL", "https://example.com")
         monkeypatch.setenv("WP_USER", "tester")
         monkeypatch.setenv("WP_APP_PASSWORD", "test-only")
-        r = P.processar_item({"titulo": "T", "resumo": "t", "link": "https://x", "fonte": "blog"})
+        r = P.processar_item({"titulo": "T", "resumo": "t", "link": "https://x", "fonte": "blog", "editorial_brief": TEST_EDITORIAL_BRIEF})
         assert r["acao"] == "bloqueado" and r["escreveu"] is False
         assert r["custo_usd"] == 0.0015 and r["tokens"] == 1234
     # C19: custo real permanece no resultado; nao registrar como publicacao.

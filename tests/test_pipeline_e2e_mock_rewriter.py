@@ -5,6 +5,16 @@ from mkt_flow_p0 import content_filter, extractor, rewriter, seo, format as fmt
 from test_post_ai_claim_coverage import dados
 
 
+TEST_EDITORIAL_BRIEF = {
+    "genre": "noticia",
+    "reader": "Leitores que precisam interpretar documentação técnica disponível.",
+    "need": "Identificar consequências e limites dos fatos fornecidos nas fontes.",
+    "angle": "Distinguir informação documentada de hipótese ainda não demonstrada.",
+    "contribution": "Explicar critérios práticos sustentados pelos documentos fornecidos.",
+    "limits": "Não inventar testes próprios, preços, medições ou experiências de uso."
+}
+
+
 def test_mocked_rewriter_propagates_claims_and_never_calls_wp(monkeypatch):
     contract, captures = dados()
     generated = "The product got an update."
@@ -43,7 +53,7 @@ def test_mocked_rewriter_propagates_claims_and_never_calls_wp(monkeypatch):
     result = pipeline_rss.processar_item({
         "titulo": "Atualização Android", "resumo": "Anúncio", "link": "https://example.org/source",
         "fonte": "Fonte Exemplo",
-    }, capturas_aprovadas=captures)
+     "editorial_brief": TEST_EDITORIAL_BRIEF}, capturas_aprovadas=captures)
     assert events == ["redator"]
     assert result["auditoria_cobertura"]["veredito"] == "REVISAO_SEMANTICA_PENDENTE"
     assert result["auditoria_cobertura"]["sem_referencia"] == 0
@@ -72,6 +82,6 @@ def test_no_mapping_from_mocked_rewriter_stays_blocked(monkeypatch):
     result = pipeline_rss.processar_item({
         "titulo": "Atualização Android", "resumo": "Anúncio",
         "link": "https://example.org/source", "fonte": "Fonte",
-    }, capturas_aprovadas=captures)
+     "editorial_brief": TEST_EDITORIAL_BRIEF}, capturas_aprovadas=captures)
     assert result["auditoria_cobertura"]["veredito"] == "BLOQUEADO"
     assert result["acao"] == "bloqueado" and result["escreveu"] is False

@@ -515,9 +515,8 @@ def gerar_comparativo(modelos: list, categoria: str = "celular", price_history: 
     system = montar_system_prompt(categoria)
     # Editorial direction reaches the actual LLM before text generation.
     # A supplied brief must be valid; no silent downgrade to generic writing.
-    if editorial_brief is not None:
-        from mkt_flow_p0.editorial_prompt_contract import prepare_editorial_prompt
-        system = prepare_editorial_prompt(system, editorial_brief, genre="comparativo")
+    from mkt_flow_p0.editorial_prompt_contract import prepare_editorial_prompt
+    system = prepare_editorial_prompt(system, editorial_brief, genre="comparativo")
     payload = {"modelos": [m.get("nome") for m in modelos], "categoria": categoria,
                "specs_PASS": specs_pass, "price_history": price_history or {},
                "unknown_fields": unknown_fields or [], "video_review": video or {},

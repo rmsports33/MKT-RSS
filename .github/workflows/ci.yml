@@ -45,6 +45,33 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Identificar núcleo editorial fixado por hash
+        id: editorial-core
+        env:
+          CORE_READ_TOKEN: ${{ secrets.CONEXO_CORE_READ_TOKEN }}
+        run: |
+          if [ -z "$CORE_READ_TOKEN" ]; then
+            echo "::warning::Integração com núcleo privado não executada: configure CONEXO_CORE_READ_TOKEN com acesso somente leitura ao conexo-os."
+            exit 0
+          fi
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          python3 - <<'PYCORE' >> "$GITHUB_OUTPUT"
+          import json
+          from pathlib import Path
+          lock = json.loads(Path("mkt_flow_p0/editorial_core.lock.json").read_text())
+          print("repository=" + lock["origin_repository"])
+          print("commit=" + lock["commit"])
+          PYCORE
+
+      - uses: actions/checkout@v4
+        if: steps.editorial-core.outputs.enabled == 'true'
+        with:
+          token: ${{ secrets.CONEXO_CORE_READ_TOKEN }}
+          persist-credentials: false
+          repository: ${{ steps.editorial-core.outputs.repository }}
+          ref: ${{ steps.editorial-core.outputs.commit }}
+          path: .conexo-test-core
+
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
@@ -60,6 +87,8 @@ jobs:
           pip install 'python-telegram-bot>=21,<23'
 
       - name: Rodar suíte (núcleo + legado + redator)
+        env:
+          CONEXO_TEST_CORE_ROOT: ${{ steps.editorial-core.outputs.enabled == 'true' && format('{0}/.conexo-test-core', github.workspace) || '' }}
         run: |
           python -m pytest tests -q
           python -m pytest redator-artigo-blogs/tests -q

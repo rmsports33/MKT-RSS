@@ -13,6 +13,16 @@ from src.generator.render import (
 from src.generator.prompt import montar_system_prompt
 
 
+TEST_EDITORIAL_BRIEF = {
+    "genre": "comparativo",
+    "reader": "Leitores que precisam interpretar documentação técnica disponível.",
+    "need": "Identificar consequências e limites dos fatos fornecidos nas fontes.",
+    "angle": "Distinguir informação documentada de hipótese ainda não demonstrada.",
+    "contribution": "Explicar critérios práticos sustentados pelos documentos fornecidos.",
+    "limits": "Não inventar testes próprios, preços, medições ou experiências de uso."
+}
+
+
 def _modelos():
     return [
         {"nome": "Fone A", "specs": {"bateria.mah": "5000", "peso.g": "200"}, "fonte": "fab A"},
@@ -144,7 +154,7 @@ def test_gerar_comparativo_injetado():
     def fake_llm(system, payload):
         assert "specs_PASS" in payload
         return "## TL;DR\nFone A tem bateria maior. [fonte: fab A]"
-    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm)
+    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert "Fone A vs Fone B" in r["titulo"] and r["provedor"] == "injetado"
     assert r["auditoria"]["fontes"] == ["fab A", "fab B"]
 
@@ -205,7 +215,7 @@ def test_gerar_comparativo_com_video_registra_auditoria():
     def fake_llm(system, payload):
         assert payload["video_review"]["youtube_id"] == "dQw4w9WgXcQ"
         return "## Resumo\nTexto. [fonte: fab A]"
-    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm, video=_video_ok())
+    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm, video=_video_ok(), editorial_brief=TEST_EDITORIAL_BRIEF)
     assert r["auditoria"]["video_id"] == "dQw4w9WgXcQ"
     assert "video-review" in r["html"]
 
@@ -225,7 +235,7 @@ def test_prompt_regras_p0p1():
 def test_gate_bloqueia_spec_fora_da_ficha():
     def fake_llm(system, payload):
         return "## Resumo\nCom GPU 4-core e Adreno 618. [fonte: fab A]"
-    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm)
+    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert "erro" in r and "BLOQUEADO" in r["erro"]
     assert "html" not in r and r["bloqueio_specs"]
 
@@ -233,14 +243,14 @@ def test_gate_bloqueia_spec_fora_da_ficha():
 def test_gate_override_forcar_libera_com_registro():
     def fake_llm(system, payload):
         return "## Resumo\nCom GPU 4-core. [fonte: fab A]"
-    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm, forcar=True)
+    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm, forcar=True, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert "html" in r and r["auditoria"]["forcar"] is True
 
 
 def test_gate_texto_limpo_passa():
     def fake_llm(system, payload):
         return "## Resumo\nBateria maior e preço R$ 1.709 em 19/09/2026. [fonte: fab A]"
-    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm)
+    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert "html" in r and "erro" not in r
 
 
@@ -263,7 +273,7 @@ def test_video_automatico_vem_da_ficha():
     def fake_llm(system, payload):
         assert payload["video_review"]["youtube_id"] == "dQw4w9WgXcQ"
         return "## Resumo\nTexto. [fonte: fab A]"
-    r = gerar_comparativo(_modelos_com_video(), "audio", chamar_llm=fake_llm)
+    r = gerar_comparativo(_modelos_com_video(), "audio", chamar_llm=fake_llm, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert r["auditoria"]["video_id"] == "dQw4w9WgXcQ"
     assert "video-review" in r["html"] and "Canal Tech" in r["html"]
 
@@ -272,7 +282,7 @@ def test_video_explicito_vence_o_da_ficha():
     def fake_llm(system, payload):
         return "## Resumo\nTexto. [fonte: fab A]"
     outro = {"youtube_id": "ABCDEFGHIJK", "titulo": "Outro", "canal": "Outro Canal"}
-    r = gerar_comparativo(_modelos_com_video(), "audio", chamar_llm=fake_llm, video=outro)
+    r = gerar_comparativo(_modelos_com_video(), "audio", chamar_llm=fake_llm, video=outro, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert r["auditoria"]["video_id"] == "ABCDEFGHIJK"
     assert "Outro Canal" in r["html"]
 
@@ -281,7 +291,7 @@ def test_ficha_sem_video_nao_cria_bloco():
     def fake_llm(system, payload):
         assert payload["video_review"] == {}
         return "## Resumo\nTexto. [fonte: fab A]"
-    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm)
+    r = gerar_comparativo(_modelos(), "audio", chamar_llm=fake_llm, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert r["auditoria"]["video_id"] == ""
     assert "video-review" not in r["html"]
 
@@ -295,7 +305,7 @@ def test_datas_lancamento_vai_ao_payload_e_nao_vaza_na_tabela():
     def fake_llm(system, payload):
         assert payload["datas_lancamento"] == {"Fone A": "2024-01"}
         return "## Resumo\nTexto. [fonte: fab A]"
-    r = gerar_comparativo(modelos, "audio", chamar_llm=fake_llm)
+    r = gerar_comparativo(modelos, "audio", chamar_llm=fake_llm, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert "html" in r and "2024-01" not in r["html"]
 
 

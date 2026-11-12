@@ -13,8 +13,18 @@ import pytest
 
 import pipeline_rss as P
 
+
+TEST_EDITORIAL_BRIEF = {
+    "genre": "noticia",
+    "reader": "Leitores que precisam interpretar documentação técnica disponível.",
+    "need": "Identificar consequências e limites dos fatos fornecidos nas fontes.",
+    "angle": "Distinguir informação documentada de hipótese ainda não demonstrada.",
+    "contribution": "Explicar critérios práticos sustentados pelos documentos fornecidos.",
+    "limits": "Não inventar testes próprios, preços, medições ou experiências de uso."
+}
+
 ENV_FLAG = "GATE_PUBLICACAO_ENABLED"
-ITEM = {"titulo": "Novo notebook", "resumo": "Review", "link": "https://x/n", "fonte": "blog"}
+ITEM = {"titulo": "Novo notebook", "resumo": "Review", "link": "https://x/n", "fonte": "blog", "editorial_brief": TEST_EDITORIAL_BRIEF}
 EXT = {"titulo": "Notebook X", "texto": "corpo " * 500, "palavras": 500,
        "qualidade_ok": True, "imagem": ""}
 RW = {"titulo_seo": "Titulo SEO", "meta_description": "m", "slug": "s", "tags": ["t"],

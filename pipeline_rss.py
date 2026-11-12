@@ -202,7 +202,18 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
                 ext["texto"], genre=item.get("genero", "noticia"), research=contexto_pesquisa)
             planning = "PLANNED_WITH_PROVIDER"
         except ValueError:
-            logger.warning("Briefing específico pendente; candidato não será declarado pronto")
+            logger.warning("Briefing específico pendente; nova geração bloqueada")
+    # Planning failure is not permission to spend a second call on unbriefed prose.
+    from mkt_flow_p0.editorial_substance import normalize_brief
+    try:
+        brief = normalize_brief(brief)
+        if brief["genre"] != item.get("genero", "noticia"):
+            raise ValueError("gênero divergente")
+    except (ValueError, TypeError):
+        from mkt_flow_p0.editorial_trace import make_trace
+        reason = "Briefing editorial ausente, inválido ou de gênero divergente; geração bloqueada"
+        return {"acao": "falha", "motivo": reason, "url": url_fonte,
+                "editorial_trace": make_trace(url_fonte, "", error=reason)}
     editorial_attempts = []
     feedback = None
     relacionados = []
@@ -211,7 +222,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
                                 fonte_nome=item.get("fonte", ""), url_fonte=url_fonte,
                                 keywords=kws, evidencias_aprovadas=evidencias_aprovadas,
                                 contexto_complementar=contexto_pesquisa,
-                                editorial_brief=brief, editorial_feedback=feedback)
+                                editorial_brief=brief, editorial_feedback=feedback,
+                                genre=item.get("genero", "noticia"))
         if "erro" in rw:
             from mkt_flow_p0.editorial_trace import make_trace
             trace = make_trace(url_fonte, "", error=rw["erro"])

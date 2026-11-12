@@ -4,6 +4,16 @@ from types import SimpleNamespace
 from mkt_flow_p0 import rewriter
 
 
+TEST_EDITORIAL_BRIEF = {
+    "genre": "noticia",
+    "reader": "Leitores que precisam interpretar documentação técnica disponível.",
+    "need": "Identificar consequências e limites dos fatos fornecidos nas fontes.",
+    "angle": "Distinguir informação documentada de hipótese ainda não demonstrada.",
+    "contribution": "Explicar critérios práticos sustentados pelos documentos fornecidos.",
+    "limits": "Não inventar testes próprios, preços, medições ou experiências de uso."
+}
+
+
 def fake_client(payload):
     message = SimpleNamespace(content=json.dumps(payload))
     response = SimpleNamespace(choices=[SimpleNamespace(message=message)], usage=None)
@@ -20,7 +30,7 @@ def test_rewriter_preserves_optional_references_without_any_network(monkeypatch)
         "referencias_traducao": {sentence.casefold(): ["c1"]},
     }
     monkeypatch.setattr(rewriter, "_get_client", lambda: (fake_client(payload), ""))
-    result = rewriter.reescrever_materia("Teste", " ".join(["original"] * 110))
+    result = rewriter.reescrever_materia("Teste", " ".join(["original"] * 110), editorial_brief=TEST_EDITORIAL_BRIEF)
     assert "erro" not in result
     assert result["referencias_traducao"] == {}  # without approved claim IDs, all references are rejected
     assert "contrato_editorial" in result
@@ -32,7 +42,7 @@ def test_rewriter_invalid_references_are_not_passed(monkeypatch):
         "referencias_traducao": {"texto válido.": ["c1", 2], "": ["c1"]},
     }
     monkeypatch.setattr(rewriter, "_get_client", lambda: (fake_client(payload), ""))
-    result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110))
+    result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110), editorial_brief=TEST_EDITORIAL_BRIEF)
     assert result["referencias_traducao"] == {}
 
 def test_only_supplied_claim_ids_reach_output_and_prompt(monkeypatch):
@@ -57,7 +67,7 @@ def test_only_supplied_claim_ids_reach_output_and_prompt(monkeypatch):
                                       "alegação inventada.": ["fake"]}}
     monkeypatch.setattr(rewriter, "_get_client", lambda: (capture_client(output), ""))
     result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110),
-                                         evidencias_aprovadas=contract)
+                                         evidencias_aprovadas=contract, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert result["referencias_traducao"] == {"texto traduzido.": ["c1"]}
     assert '"id": "c1"' in seen["prompt"]
     assert "Original claim." in seen["prompt"]
@@ -71,7 +81,7 @@ def test_invalid_contract_fails_before_provider(monkeypatch):
                         lambda: (_ for _ in ()).throw(AssertionError("provider invoked")))
     result = rewriter.reescrever_materia(
         "Teste", " ".join(["origem"] * 110),
-        evidencias_aprovadas={"claims": [{"id": "fake", "status": "PASS"}]})
+        evidencias_aprovadas={"claims": [{"id": "fake", "status": "PASS"}]}, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert "erro" in result
 
 
@@ -89,7 +99,7 @@ def test_snapshot_preserved_but_translation_not_automatically_certified(monkeypa
               "referencias_traducao": {translated.casefold(): ["c1"]}}
     monkeypatch.setattr(rewriter, "_get_client", lambda: (fake_client(output), ""))
     result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110),
-                                         evidencias_aprovadas=contract)
+                                         evidencias_aprovadas=contract, editorial_brief=TEST_EDITORIAL_BRIEF)
     assert result["contrato_editorial"] == contract
     assert result["contrato_editorial"] is not contract
     capture = {"s1": {"url": "https://example.org/source",
@@ -110,7 +120,7 @@ def test_provider_error_is_redacted_from_return_and_public_logs(monkeypatch, cap
     client = SimpleNamespace(chat=SimpleNamespace(completions=FailingCompletions()))
     monkeypatch.setattr(rewriter, "_get_client", lambda: (client, ""))
     with caplog.at_level("WARNING"):
-        result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110))
+        result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110), editorial_brief=TEST_EDITORIAL_BRIEF)
     assert "erro" in result
     assert secret not in str(result)
     assert secret not in caplog.text
@@ -124,6 +134,6 @@ def test_malformed_provider_json_never_leaks_response_body(monkeypatch):
     client = SimpleNamespace(chat=SimpleNamespace(
         completions=SimpleNamespace(create=lambda **kwargs: payload)))
     monkeypatch.setattr(rewriter, "_get_client", lambda: (client, ""))
-    result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110))
+    result = rewriter.reescrever_materia("Teste", " ".join(["origem"] * 110), editorial_brief=TEST_EDITORIAL_BRIEF)
     assert "erro" in result
     assert secret not in str(result)

@@ -125,8 +125,26 @@ class TransportTests(unittest.TestCase):
 
     def test_authorized_publish_and_readback(self):
         self.p["stage"]="ready";self.f.approve()
-        with patch.object(transport.requests,"get",side_effect=self.get_mock),patch.object(transport.requests,"post",side_effect=self.post_mock):
-            r=self.call(intent="publish",publication_reference="ordem sintética")
+        # Synthetic trusted lookup exercises the real trace preflight. This is
+        # an offline test double, never a Turso receipt or editorial acceptance.
+        import hashlib
+        from mkt_flow_p0.editorial_trace_gate import require_release_trace, REQUIRED
+        run_id = "synthetic-transport-trace"
+        packet = {
+            "schema": "conexo-editorial-executor-events/1", "run_id": run_id,
+            "article_id": self.p["payload"]["article_id"], "post_id": 9711,
+            "content_sha256": hashlib.sha256(self.p["payload"]["content"].encode()).hexdigest(),
+            "publication_authorized": False,
+            "events": [{"stage": stage, "status": "PASS", "evidence_ref": "synthetic:" + stage}
+                       for stage in REQUIRED],
+        }
+        def preflight(package, trace_run_id):
+            return require_release_trace(package, trace_run_id,
+                lookup=lambda _: {"ok": True, "trace": packet})
+        with patch("mkt_flow_p0.editorial_trace_gate.require_release_trace", side_effect=preflight), \
+             patch.object(transport.requests,"get",side_effect=self.get_mock), \
+             patch.object(transport.requests,"post",side_effect=self.post_mock):
+            r=self.call(intent="publish",publication_reference="ordem sintética", trace_run_id=run_id)
         self.assertNotIn("erro",r,r);self.assertEqual(r["status"],"publish")
 
     def test_rss_source_must_match_apuration_before_transport(self):

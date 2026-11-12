@@ -13,6 +13,16 @@ from mkt_flow_p0.rewriter import (
 )
 
 
+TEST_EDITORIAL_BRIEF = {
+    "genre": "noticia",
+    "reader": "Leitores que precisam interpretar documentação técnica disponível.",
+    "need": "Identificar consequências e limites dos fatos fornecidos nas fontes.",
+    "angle": "Distinguir informação documentada de hipótese ainda não demonstrada.",
+    "contribution": "Explicar critérios práticos sustentados pelos documentos fornecidos.",
+    "limits": "Não inventar testes próprios, preços, medições ou experiências de uso."
+}
+
+
 def test_slug():
     assert gerar_slug("Melhor Headphone em 2026: 10 Modelos!") == "melhor-headphone-em-2026-10-modelos"
     assert gerar_slug("") == "materia"
@@ -62,7 +72,7 @@ def test_rewrite_mockado(monkeypatch):
         chat = FakeChat()
 
     monkeypatch.setattr(R, "_get_client", lambda: (FakeClient(), ""))
-    r = reescrever_materia("Original", corpo, fonte_nome="Adrenaline", url_fonte="https://x")
+    r = reescrever_materia("Original", corpo, fonte_nome="Adrenaline", url_fonte="https://x", editorial_brief=TEST_EDITORIAL_BRIEF)
     assert r["slug"] == "titulo-seo-teste"
     assert r["palavras"] >= 200
     assert r["uso_tokens"]["total"] == 300
