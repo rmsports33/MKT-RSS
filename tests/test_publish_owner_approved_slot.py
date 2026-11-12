@@ -13,7 +13,7 @@ def t(minute, second=5):
 
 def reader(post_id):
     if post_id == 9813:
-        return {"id": 9813, "status": "publish", "date_gmt": "2026-11-12T19:00:01"}
+        return {"id": 9813, "status": "publish", "modified_gmt": "2026-11-12T19:00:01"}
     return {"id": post_id, "status": "draft", "author": 4, "featured_media": 9841}
 
 
@@ -71,7 +71,7 @@ def test_previous_publication_requires_ten_full_minutes():
     def recent(post_id):
         if post_id == 9813:
             return {"id": 9813, "status": "publish",
-                    "date_gmt": "2026-11-12T19:05:00"}
+                    "modified_gmt": "2026-11-12T19:05:00"}
         return reader(post_id)
     result = run_slot(SLOTS[1][0], now=t(10), read_post=recent,
                       lookup=lambda _: VERSION, publisher=publisher,
