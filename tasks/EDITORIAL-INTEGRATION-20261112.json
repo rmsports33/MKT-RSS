@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "REVIEW",
+  "status": "BLOCKED_EXTERNAL_REVIEW",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -54,14 +54,18 @@
     {
       "reference": "https://github.com/rmsports33/-site-conexotech/actions/runs/43003300959",
       "result": "Evidência existente reconciliada: 32 verificações rc5 em WordPress/MySQL, 0 falhas; sem repetição."
+    },
+    {
+      "reference": "WordPress connected posts_get edit 2026-11-12",
+      "result": "Leitura direta dos IDs 9810,9813,9814,9815,9816,9817: todos draft, mídia destacada 9812, categorias conforme recibos; nenhuma escrita ou publicação."
     }
   ],
   "blockers": [
-    "Prévia nativa9810 desktop confirmada parcialmente pela captura; tabela/mobile e prévias completas dos outros cinco ainda não verificadas. TinyFish continua com bloqueio429.",
-    "Aceite editorial/factual humano das seis versões permanece pendente; nenhuma aprovação fabricada.",
-    "Restauração de backup e provas remotas de replay/rollback não são cobertas pelo ensaio isolado existente."
+    "Prévia nativa integral dos seis rascunhos, incluindo celular e tabelas, ainda não comprovada; apenas topo desktop do #9810 confirmado pelo proprietário.",
+    "Parecer editorial e factual humano independente por versão/hash ainda pendente.",
+    "Gate rc5 validado em WordPress/MySQL isolado; restauração de backup e replay/rollback operacional ainda não comprovados."
   ],
-  "next_action": "Resolver limitação HTTP429 do navegador autorizado ou conferir prévias com o proprietário; não repetir a mesma tentativa sem mudança. Preservar corpos e hashes.",
+  "next_action": "Não repetir TinyFish 429 nem regenerar textos. Obter conferência nativa completa dos seis rascunhos via sessão autenticada funcional, com evidência mobile/tabelas, seguida de parecer factual/editorial independente por hash; só depois homologar autorização real do Gate e recuperação operacional.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -106,6 +110,7 @@
     "private_package_receipt": "docs/editorial-evidence/private-package-delivery.json",
     "native_preview_evidence": "docs/editorial-evidence/native-preview-attempt.json",
     "category_corrections": "APPLIED_BODY_HASHES_PRESERVED",
-    "featured_caption": "DEPLOYED_THEME_1.6.9_PUBLIC_RESPONSIVE_VERIFIED"
+    "featured_caption": "DEPLOYED_THEME_1.6.9_PUBLIC_RESPONSIVE_VERIFIED",
+    "wordpress_live_readback": "SIX_DRAFTS_CONFIRMED_2026-11-12"
   }
 }
