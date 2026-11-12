@@ -1,0 +1,43 @@
+name: Publicacao ConexoTech 16h-16h50 BRT (2026-11-12)
+on:
+  schedule:
+    # UTC, America/Fortaleza UTC-3. Year 2026 is checked inside the runner.
+    - cron: '0 19 12 11 *'
+    - cron: '10 19 12 11 *'
+    - cron: '20 19 12 11 *'
+    - cron: '30 19 12 11 *'
+    - cron: '40 19 12 11 *'
+    - cron: '50 19 12 11 *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mkt-owner-publication
+  cancel-in-progress: false
+
+jobs:
+  publish-slot:
+    if: ${{ github.event_name == 'schedule' && github.repository == 'rmsports33/MKT-RSS' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.34.2
+      - name: Exigir Gate autentico e dez minutos entre posts
+        env:
+          CONEXO_SCHEDULE_CRON: ${{ github.event.schedule }}
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          python -m tools.publish_owner_approved_slot
