@@ -171,12 +171,15 @@
     "owner_editorial_acceptance": "ALL_SIX_ACCEPTED_2026_11_12",
     "owner_publication_requested": true,
     "gate_signed_release": "PENDING_DIFFERENT_AUTHENTICATED_REVIEWER",
-    "cover_optimization": "6 JPEG 1200x675, 79-119KB, current in WordPress"
+    "cover_optimization": "6 JPEG 1200x675, 79-119KB, current in WordPress",
+    "image_pipeline_root_cause": "Six drafts previously shared Pexels media #9812; no topic-distinct generation/selection invoked for each article in the pilot. Corrected for this batch with unique AI illustrated JPEG media 9838-9843.",
+    "image_pipeline_future_rule": "For each article first prefer a properly licensed topical free image; if no suitable image, generate original AI illustration with clear caption. Discourage repetition within the batch unless explicitly justified; do not present AI imagery as manufacturer photos."
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
     "Restauração de backup e replay/rollback: trilha separada de resiliência.",
     "Mesma imagem #9812 nos seis rascunhos: opcional diversificar capas antes de publicação.",
-    "Prévia nativa dos rascunhos não certificada; evidência visual reconstruída e responsividade pública já reutilizadas."
+    "Prévia nativa dos rascunhos não certificada; evidência visual reconstruída e responsividade pública já reutilizadas.",
+    "Codificar/verificar seleção automática de capa temática por artigo em futuros lotes (sem duplicar imagens sem justificativa); correção do lote atual concluída, runtime recorrente ainda não atualizado."
   ]
 }
