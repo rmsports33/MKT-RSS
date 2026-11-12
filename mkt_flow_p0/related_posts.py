@@ -10,9 +10,11 @@ from urllib.parse import urlsplit
 
 import requests
 
-ALLOWED_SITES = frozenset({"https://conexotech.com.br", "https://staging.conexotech.com.br"})
+ALLOWED_SITES = frozenset({"https://conexotech.com.br"})
 _STOP = {"de", "da", "do", "das", "dos", "e", "a", "o", "as", "os", "com",
-         "para", "por", "como", "um", "uma", "em", "que", "qual", "se", "ou", "mais"}
+         "para", "por", "como", "um", "uma", "em", "que", "qual", "se", "ou", "mais",
+         "brasil", "2026", "2025", "2024", "novo", "novos", "guia", "analise",
+         "noticia", "artigo", "preco", "tecnologia", "digital"}
 
 
 def _tokens(s):
@@ -73,6 +75,63 @@ def buscar_relacionados_wordpress(titulo, wp_url, *, request_client=requests, li
         return []
 
 
+
+_PROTECTED_MARKDOWN = re.compile(r'(\[[^\]\n]+\]\(https?://[^)\s]+\)|https?://[^\s)]+|<[^>\n]+>)')
+
+
+def inserir_links_contextuais(markdown, relacionados, *, limite=2):
+    """Contextualize terms from published headlines, without rewriting factual claims.
+
+    Only use candidates returned by the verified published-post selector.
+    Existing markdown links, URL text, HTML, headers, code and lists are protected.
+    """
+    if not isinstance(markdown, str) or not isinstance(relacionados, list):
+        return markdown
+    if not 0 <= limite <= 3:
+        raise ValueError("LINK_LIMIT_INVALID")
+    lines = markdown.splitlines(keepends=True)
+    added, seen, fenced = 0, set(), False
+    for i, line in enumerate(lines):
+        stripped = line.lstrip()
+        if stripped.startswith(chr(96) * 3) or stripped.startswith("~~~"):
+            fenced = not fenced
+            continue
+        if (fenced or not stripped.strip() or chr(96) in stripped or
+                stripped.startswith(("#", ">", "-", "*", "|", "<", "1. "))):
+            continue
+        for related in relacionados:
+            if added >= limite:
+                return "".join(lines)
+            url = related.get("url") if isinstance(related, dict) else None
+            title = related.get("title") if isinstance(related, dict) else None
+            if not isinstance(url, str) or not isinstance(title, str) or url in seen:
+                continue
+            terms = [word for word in re.findall(r"[^\W_]+", html.unescape(title))
+                     if len(word) >= 5 and _tokens(word) and
+                     not _tokens(word).isdisjoint(_tokens(title))]
+            terms.sort(key=lambda word: (-len(word), word.casefold()))
+            segments = _PROTECTED_MARKDOWN.split(line)
+            inserted = False
+            for word in terms:
+                pattern = re.compile(r"(?<!\w)(" + re.escape(word) + r")(?!\w)", re.I)
+                for position in range(0, len(segments), 2):
+                    if pattern.search(segments[position]):
+                        segments[position] = pattern.sub(
+                            lambda m: "[" + m.group(1) + "](" + url + ")",
+                            segments[position], count=1)
+                        inserted = True
+                        break
+                if inserted:
+                    break
+            if inserted:
+                line = "".join(segments)
+                lines[i] = line
+                seen.add(url)
+                added += 1
+                break
+    return "".join(lines)
+
+
 def anexar_relacionados(markdown, relacionados):
     """Conserva o texto original; URLs de saida validadas pelo selecionador."""
     if not isinstance(markdown, str) or not relacionados:
@@ -98,4 +157,7 @@ def anexar_relacionados(markdown, relacionados):
         clean = re.sub(r"<[^>]*>", "", clean)
         clean = re.sub(r"[\[\]<>()\r\n]", "", clean)[:130]
         output.append("- [" + clean + "](" + link + ")")
-    return markdown.rstrip() + "\n\n## Leia também\n\n" + "\n".join(output) + "\n"
+    body = inserir_links_contextuais(markdown, relacionados)
+    if re.search(r"(?m)^## Leia também\s*$", body):
+        return body
+    return body.rstrip() + "\n\n## Leia também\n\n" + "\n".join(output) + "\n"
