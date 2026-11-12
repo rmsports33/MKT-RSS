@@ -1,0 +1,55 @@
+name: Publicar seis rascunhos aprovados pelo Gate (lote)
+run-name: Publicacao unica com preflight de seis aprovacoes autenticas
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: "Executar apenas quando TODOS os seis posts tiverem parecer vigente no Gate"
+        required: true
+        type: choice
+        default: NAO_PUBLICAR
+        options:
+          - NAO_PUBLICAR
+          - PUBLICAR_SEIS
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mkt-owner-publication
+  cancel-in-progress: false
+
+jobs:
+  publish-batch:
+    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.ref == 'refs/heads/master' }}
+    runs-on: ubuntu-latest
+    environment: rss-homolog
+    timeout-minutes: 15
+    steps:
+      - name: Recusar execucao sem confirmacao explicita
+        shell: bash
+        env:
+          CONFIRM: ${{ inputs.confirm }}
+        run: |
+          if [[ "$CONFIRM" != 'PUBLICAR_SEIS' ]]; then
+            echo '::error::A publicacao nao foi autorizada neste workflow.'
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install requests==2.34.2
+      - name: Conferir as seis aprovacoes assinadas antes de escrever, publicar sequencialmente e verificar
+        env:
+          WP_URL: ${{ secrets.WP_URL }}
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+        run: |
+          python -m tools.publish_owner_approved_batch \
+            --post-ids 9810 9813 9814 9815 9816 9817 --execute
