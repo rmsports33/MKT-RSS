@@ -1,0 +1,13 @@
+{
+ "schema":"conexo-editorial-evidence-manifest/1",
+ "post_id":9810,
+ "status":"DRAFT_EVIDENCE_ENRICHMENT",
+ "content_sha256":"10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+ "content_policy":"Preserve the exact WordPress body; no regeneration",
+ "image_license_proof":"image-license-proof.json",
+ "supplementary_sources":"supplementary-source-review.json",
+ "image_attachment_status":"LICENSE_RECORDED_BEFORE_ATTACHMENT",
+ "featured_media":null,
+ "human_acceptance":"PENDING",
+ "publication_authorized":false
+}

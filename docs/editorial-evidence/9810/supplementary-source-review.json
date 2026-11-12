@@ -1,0 +1,14 @@
+{
+ "schema":"conexo-supplementary-source-review/1",
+ "post_id":9810,
+ "content_sha256":"10d1385096fa93ae811f61a96d6e2af3db8ddc08b636d4fff5b9063e296993a6",
+ "verified_on":"2026-11-12",
+ "scope":"Evidence supplement only; existing article body and source count statements are unchanged",
+ "method":"assisted_documentary_cross_check",
+ "sources":[
+  {"url":"https://www.wired.com/story/the-1x-neo-robot-has-freaky-fast-fingers/","publisher":"WIRED","author":"Boone Ashworth","published":"2026-07-09","updated":"2026-07-13","supports":["Distinction between autonomous and human-operated demonstrations","Human remote assistance has privacy implications","Announced functions are not proof of performance in every home"],"limits":"Independent reporting, not a controlled long-term product test; manufacturer statements remain attributed"},
+  {"url":"https://www.techradar.com/ai-platforms-assistants/neo-robot-sounds-like-the-answer-to-our-home-chore-prayers-but-also-a-potential-privacy-nightmare","publisher":"TechRadar","supports":["Purchase and monthly rental are alternative commercial routes","Remote operation raises household privacy questions"],"limits":"Contextual coverage; not used to assert current Brazilian availability or independent measured performance"}
+ ],
+ "findings":["No new quantitative product claims added","Existing text remains a documentary analysis of the five primary pages","Supplementary publishers are distinct from 1X","Source review does not grant human or factual release approval"],
+ "publication_authorized":false
+}

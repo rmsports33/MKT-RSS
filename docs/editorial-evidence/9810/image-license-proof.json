@@ -1,0 +1,20 @@
+{
+ "schema":"conexo-image-license-evidence/1",
+ "verified_on":"2026-11-12",
+ "method":"assisted_read_of_individual_source_and_license",
+ "asset":"Pexels photo 6019019, processed crop 1200x675",
+ "author":"Laura Musikanski",
+ "individual_source_url":"https://www.pexels.com/photo/close-up-shot-of-a-white-robot-6019019/",
+ "license_url":"https://www.pexels.com/license/",
+ "commercial_use_confirmation_url":"https://help.pexels.com/hc/en-us/articles/360042295214-Can-I-use-the-photos-and-videos-for-a-commercial-project",
+ "license_name":"Pexels License",
+ "license_excerpt":"All photos and videos on Pexels are free to use.",
+ "permissions_checked":{"editorial_blog_use":true,"commercial_use":true,"cropping":true,"attribution_legally_required":false},
+ "restrictions_observed":["No implied manufacturer endorsement","Not sold or redistributed as standalone stock","Not used as a trademark","Not represented as the NEO, Optimus, Unitree, Figure or LG robot"],
+ "asset_sha256":"539bcef531892a99db49d93d040a1f17b8abbf8795a939c5a6a2dd0fed2d8543",
+ "width":1200,"height":675,
+ "alt":"Robô branco com olhos verdes; imagem ilustrativa de robótica.",
+ "caption":"Imagem ilustrativa de robótica; não retrata os modelos analisados. Foto: Laura Musikanski / Pexels.",
+ "visual_review":"ASSISTED_VISUAL_CHECK_COMPLETED",
+ "publication_authorized":false
+}
