@@ -1,5 +1,8 @@
 name: Produzir pauta CT-006 - modulos MKT-RSS
 on:
+  push:
+    branches: [master]
+    paths: [.github/workflows/produce-bank-article-manual.yml]
   workflow_dispatch:
     inputs:
       action:
@@ -17,14 +20,14 @@ concurrency:
   cancel-in-progress: false
 jobs:
   produce:
-    if: ${{ github.event_name == 'workflow_dispatch' && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.ref == 'refs/heads/master' }}
+    if: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'push') && github.repository == 'rmsports33/MKT-RSS' && github.actor == 'rmsports33' && github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     environment: rss-homolog
     timeout-minutes: 15
     steps:
       - name: Confirmar somente a producao de rascunho
         env:
-          ACTION: ${{ inputs.action }}
+          ACTION: ${{ github.event_name == 'push' && 'GERAR_RASCUNHO' || inputs.action }}
         run: |
           if [ "$ACTION" != 'GERAR_RASCUNHO' ]; then
             echo '::error::Selecione GERAR_RASCUNHO em uma nova execucao.'
