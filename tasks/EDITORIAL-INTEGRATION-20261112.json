@@ -57,11 +57,11 @@
     }
   ],
   "blockers": [
-    "Prévia nativa dos seis rascunhos aguarda login do usuário no perfil TinyFish Default; configuração iniciada a pedido do usuário.",
+    "Prévia nativa bloqueada: navegador TinyFish recebeu HTTP429 persistente e falha de conexão; usuário salvou o perfil, mas autenticação não pôde ser verificada.",
     "Aceite editorial/factual humano das seis versões permanece pendente; nenhuma aprovação fabricada.",
     "Restauração de backup e provas remotas de replay/rollback não são cobertas pelo ensaio isolado existente."
   ],
-  "next_action": "Após o usuário salvar o perfil autenticado, conferir as seis prévias nativas e anexar as evidências, sem alterar o conteúdo do #9810.",
+  "next_action": "Resolver limitação HTTP429 do navegador autorizado ou conferir prévias com o proprietário; não repetir a mesma tentativa sem mudança. Preservar corpos e hashes.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -99,10 +99,11 @@
     "license_evidence_commit": "10a263b",
     "turso_workflow_run": 43207824274,
     "metadata_evidence": "docs/editorial-evidence/",
-    "native_preview": "AWAITING_USER_BROWSER_LOGIN",
+    "native_preview": "BLOCKED_HTTP_429",
     "human_factual_acceptance": "PENDING",
     "private_zip_drive_upload": "DELIVERED_VERIFIED",
     "publication_authorized": false,
-    "private_package_receipt": "docs/editorial-evidence/private-package-delivery.json"
+    "private_package_receipt": "docs/editorial-evidence/private-package-delivery.json",
+    "native_preview_evidence": "docs/editorial-evidence/native-preview-attempt.json"
   }
 }

@@ -57,3 +57,6 @@ Revisar as versões salvas no WordPress usando a prévia nativa e registrar o ac
 
 ## Reconciliação de evidência existente — sem repetir testes
 Run43003300959 do site, SHA5f549f2a2c6da6cc6f2eb92d5e3bef7658cffe5a: job e logs relidos nesta sessão confirmaram32 verificações,0 falhas, contra os quatro arquivos rc5 cujos hashes foram conferidos. Inclui HMAC inválido/expirado, versão divergente/obsoleta, bloqueio de escrita direta, publicação assinada sintética, invalidação por edição e agendamento/cron. Não cobre restauração de backup, replay/rollback em produção nem aceite dos artigos. Prova em docs/editorial-evidence/gate-existing-proof.json. Nenhuma nova execução do ensaio foi necessária.
+
+## Tentativa de prévia nativa após perfil salvo
+O usuário apresentou captura confirmando Profile saved. A execução TinyFish8d0c4c43-e63d-41a2-b9c2-1f3e842ece2d terminou após295s/41 passos com HTTP429 persistente e falha de conexão. Nenhuma prévia ou autenticação foi confirmada; nenhum conteúdo foi escrito. Não significa indisponibilidade global do site. Recibo em docs/editorial-evidence/native-preview-attempt.json. Não repetir a tentativa sem mudança; resolver a limitação na origem do navegador autorizado ou conferir com o proprietário. O pacote privado já entregue permanece válido para os textos e capturas reconstruídas; não contém evidências nativas inexistentes.

@@ -1,0 +1,26 @@
+{
+  "schema": "conexo-native-preview-evidence/1",
+  "date": "2026-11-12",
+  "run_id": "8d0c4c43-e63d-41a2-b9c2-1f3e842ece2d",
+  "run_url": "https://agent.tinyfish.ai/runs/8d0c4c43-e63d-41a2-b9c2-1f3e842ece2d",
+  "profile_id": "prof_76d00374520b4fd7",
+  "user_setup_evidence": "User screenshot confirms Profile saved. Tool profile metadata does not record a signed-in site; authentication itself could not be verified.",
+  "posts": [
+    9810,
+    9813,
+    9814,
+    9815,
+    9816,
+    9817
+  ],
+  "automation_status": "completed",
+  "verification_status": "BLOCKED_HTTP_429",
+  "duration_seconds": 295,
+  "steps": 41,
+  "findings": "Persistent HTTP429 for browser origin followed by connection refused/reset. No draft or native preview inspected. This does not establish global site outage.",
+  "native_previews_checked": [],
+  "writes_performed": false,
+  "human_acceptance": "PENDING",
+  "publication_authorized": false,
+  "next_action": "Resolve rate limiting for authorized browser through hosting/security controls or use owner native preview. Do not repeat automated attempts unchanged or disable protections globally."
+}
