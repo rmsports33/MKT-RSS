@@ -74,9 +74,11 @@ def run_slot(cron, *, now=None, read_post=None, lookup=None, publisher=None,
             return _blocked("PREVIOUS_READBACK_UNAVAILABLE", post_id=post_id)
         if previous.get("id") != prev_id or previous.get("status") != "publish":
             return _blocked("PREVIOUS_POST_NOT_PUBLISHED", post_id=post_id)
-        when = previous.get("date_gmt")
+        # WordPress may preserve the draft creation date_gmt on publication.
+        # modified_gmt is the trustworthy later transition/readback timestamp.
+        when = previous.get("modified_gmt")
         if not isinstance(when, str) or not when:
-            return _blocked("PREVIOUS_PUBLICATION_DATE_MISSING", post_id=post_id)
+            return _blocked("PREVIOUS_PUBLICATION_MODIFIED_GMT_MISSING", post_id=post_id)
         try:
             at = datetime.fromisoformat(when.replace("Z", "+00:00"))
             if at.tzinfo is None:
