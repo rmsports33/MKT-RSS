@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "EDITORIAL_ACCEPTANCE_PENDING",
+  "status": "READY_FOR_OWNER_EDITORIAL_DELIBERATION",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -73,14 +73,23 @@
       "sha": "598d5bec83838d2d011e9c1ac6ff1c52d43525a3",
       "reference": "docs/editorial-evidence/final-acceptance-matrix-20261112.json",
       "result": "Matriz de aceite atualizada; novas versões #9814/#9815 requerem snapshot canônico antes de qualquer aprovação."
+    },
+    {
+      "sha": "0af7c7cfd196006990e921657f0a463bcab66c2c",
+      "reference": "docs/editorial-evidence/substantive-editorial-assessment-six-20261112.json",
+      "result": "Parecer editorial substantivo assistido de todos os seis artigos com notas, fortes/fracos e recomendações; não substitui aprovação humana."
+    },
+    {
+      "sha": "9fb94a78488cf7a71440a0defb8b4474db8f4d2a",
+      "reference": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
+      "result": "Hashes SHA256 verificados de todo conteúdo Gutenberg e projeção auditável com título/categorias/imagem após correções; projeção não é recibo assinado Gate."
     }
   ],
   "blockers": [
-    "Uma revisão substantiva por versão dos seis artigos, cobrindo fatos, fontes, gênero, imagem e qualidade editorial; não duplicar pareceres.",
-    "Conferência visual direcionada apenas aos riscos ainda não cobertos pelas evidências existentes (especialmente tabelas e legenda), sem exigir doze capturas nativas.",
-    "Aprovação assinada por versão pelo Gate real antes de publicar ou agendar; não necessária para salvar/manter rascunhos."
+    "Aprovação editorial substantiva do proprietário ou revisor autorizado para cada versão, sem fingir aceite humano.",
+    "Liberação assinada pelo Gate real somente para posts que forem explicitamente aprovados para publicação/agendamento."
   ],
-  "next_action": "Não repetir auditoria factual dos quatro artigos: concluída com ajustes. Prosseguir só com parecer editorial substantivo por versão, inspeção visual pontual de risco, snapshot atualizado 9814/9815 e Gate de aprovação real antes de publicar.",
+  "next_action": "Solicitar deliberação do proprietário sobre os seis artigos com scores e hashes no pacote de avaliação; depois emitir recibos autênticos via Gate, sem aprovação falsa e sem publicar automaticamente.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -132,10 +141,15 @@
       9814,
       9815
     ],
-    "version_snapshot_9814_9815": "REFRESH_REQUIRED_BEFORE_GATE_APPROVAL"
+    "version_snapshot_9814_9815": "UPDATED_PREAPPROVAL_HASHES; GATE_CANONICAL_PENDING",
+    "current_snapshot_receipt": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
+    "assisted_editorial_review": "SIX_COMPLETED_OWNER_DECISION_PENDING",
+    "wordpress_latest_status": "SIX_DRAFTS_NO_PUBLISH"
   },
   "nonblocking_followups": [
-    "HTTP429 TinyFish: rota opcional indisponível; usar API WordPress e inspeção pontual pelo proprietário.",
-    "Restauração de backup e replay/rollback: trilha separada de resiliência operacional; não impede aceite editorial nem manutenção dos rascunhos."
+    "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
+    "Restauração de backup e replay/rollback: trilha separada de resiliência.",
+    "Mesma imagem #9812 nos seis rascunhos: opcional diversificar capas antes de publicação.",
+    "Prévia nativa dos rascunhos não certificada; evidência visual reconstruída e responsividade pública já reutilizadas."
   ]
 }
