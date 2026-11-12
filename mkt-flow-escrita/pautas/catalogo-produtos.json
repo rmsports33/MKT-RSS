@@ -1,0 +1,291 @@
+{
+  "schema": "conexo-product-catalog/1",
+  "updated_at": "2026-11-12",
+  "scope": "editorial-reference-only",
+  "products": [
+    {
+      "id": "motorola-signature-27",
+      "brand": "Motorola",
+      "model": "Signature 27",
+      "aliases": [
+        "Motorola Signature 27"
+      ],
+      "editorial_score_preliminary": 10,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "xiaomi-17t-pro",
+      "brand": "Xiaomi",
+      "model": "17T Pro",
+      "aliases": [
+        "Xiaomi 17T Pro"
+      ],
+      "editorial_score_preliminary": 9,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "motorola-edge-70",
+      "brand": "Motorola",
+      "model": "Edge 70",
+      "aliases": [
+        "Motorola Edge 70"
+      ],
+      "editorial_score_preliminary": 9,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "ring-drone-cam",
+      "brand": "Ring",
+      "model": "Drone Cam",
+      "aliases": [
+        "Ring Drone Cam"
+      ],
+      "editorial_score_preliminary": 9,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "samsung-galaxy-a57",
+      "brand": "Samsung",
+      "model": "Galaxy A57",
+      "aliases": [
+        "Samsung Galaxy A57"
+      ],
+      "editorial_score_preliminary": 9,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "poco-x8-pro",
+      "brand": "POCO",
+      "model": "X8 Pro",
+      "aliases": [
+        "Xiaomi POCO X8 Pro",
+        "POCO X8 Pro"
+      ],
+      "editorial_score_preliminary": 8,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "apple-iphone-17",
+      "brand": "Apple",
+      "model": "iPhone 17",
+      "aliases": [
+        "Apple iPhone 17",
+        "iPhone 17"
+      ],
+      "editorial_score_preliminary": 8,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "lenovo-ideapad-slim-3",
+      "brand": "Lenovo",
+      "model": "IdeaPad Slim 3",
+      "aliases": [
+        "Lenovo IdeaPad Slim 3"
+      ],
+      "editorial_score_preliminary": 8,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "tcl-c6k",
+      "brand": "TCL",
+      "model": "C6K",
+      "aliases": [
+        "TCL C6K",
+        "TCL C6K 55",
+        "TCL C6K 65"
+      ],
+      "editorial_score_preliminary": 8,
+      "status": "CANDIDATA",
+      "variants": [
+        {
+          "id": "55-pol",
+          "size_inches": 55
+        },
+        {
+          "id": "65-pol",
+          "size_inches": 65
+        }
+      ],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "ugreen-hub-usbc-10-em-1",
+      "brand": "UGREEN",
+      "model": "Hub USB-C 10 em 1",
+      "aliases": [
+        "Hub USB-C UGREEN 10 em 1"
+      ],
+      "editorial_score_preliminary": 7,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "samsung-galaxy-s26-fe",
+      "brand": "Samsung",
+      "model": "Galaxy S26 FE",
+      "aliases": [
+        "Samsung Galaxy S26 FE"
+      ],
+      "editorial_score_preliminary": 9.5,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "hisense-qd6sf",
+      "brand": "Hisense",
+      "model": "QD6SF",
+      "aliases": [
+        "Hisense QD6SF Fire OS"
+      ],
+      "editorial_score_preliminary": 9.5,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "samsung-galaxy-book4",
+      "brand": "Samsung",
+      "model": "Galaxy Book4",
+      "aliases": [
+        "Samsung Galaxy Book4"
+      ],
+      "editorial_score_preliminary": 9,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "motorola-moto-buds-2-ultra",
+      "brand": "Motorola",
+      "model": "Moto Buds 2 Ultra",
+      "aliases": [
+        "Moto Buds 2 Ultra"
+      ],
+      "editorial_score_preliminary": 9,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "amazfit-bip-6",
+      "brand": "Amazfit",
+      "model": "Bip 6",
+      "aliases": [
+        "Amazfit Bip 6"
+      ],
+      "editorial_score_preliminary": 8.5,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "samsung-viewfinity-s7",
+      "brand": "Samsung",
+      "model": "ViewFinity S7",
+      "aliases": [
+        "Samsung ViewFinity S7 32 4K"
+      ],
+      "editorial_score_preliminary": 8.5,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "samsung-galaxy-tab-s10-fe",
+      "brand": "Samsung",
+      "model": "Galaxy Tab S10 FE",
+      "aliases": [
+        "Samsung Galaxy Tab S10 FE"
+      ],
+      "editorial_score_preliminary": 8.5,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    },
+    {
+      "id": "sony-ps5-slim-digital",
+      "brand": "Sony",
+      "model": "PlayStation 5 Slim Digital",
+      "aliases": [
+        "PlayStation 5 Slim Digital",
+        "PS5 Slim Digital"
+      ],
+      "editorial_score_preliminary": 8,
+      "status": "CANDIDATA",
+      "variants": [],
+      "source_pautas": [
+        "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
+      ],
+      "article_ids": []
+    }
+  ]
+}
