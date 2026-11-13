@@ -187,6 +187,13 @@ def validate_prepared_manifest(manifest, *, base_dir):
     resource=validate_resource(manifest['resource'])
     if manifest.get('visual_review')!='ASSISTED_VISUAL_CHECK_COMPLETED':raise ValueError('IMAGE_VISUAL_REVIEW_PENDING')
     if manifest.get('content_fit_review')!='PASS':raise ValueError('IMAGE_CONTENT_FIT_NOT_APPROVED')
+    # A marca de um veículo de origem não comprova licença nem adequação editorial.
+    # Exigir inspeção explícita da imagem FINAL, nos recortes desktop e móvel.
+    # Ausência de laudo ou qualquer marca suspeita mantém a entrega bloqueada.
+    if manifest.get('third_party_branding_review') != 'PASS_NO_THIRD_PARTY_BRANDING':
+        raise ValueError('IMAGE_THIRD_PARTY_BRANDING_REVIEW_PENDING')
+    if manifest.get('visible_third_party_branding') is not False:
+        raise ValueError('IMAGE_THIRD_PARTY_BRANDING_REJECTED')
     base=Path(base_dir).resolve()
     for name in ('desktop','mobile'):
         item=manifest['assets'][name];p=(base/item['path']).resolve()
