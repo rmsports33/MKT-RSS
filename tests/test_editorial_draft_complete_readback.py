@@ -40,11 +40,10 @@ def test_external_sources_missing():
             '<a href="https://conexotech.com.br/tecnologia/">Interna</a></p>'}
     assert "external_sources_missing" in validate_complete_editorial_draft(data).errors
 
-def test_internal_link_missing_requires_owner_exception():
+def test_internal_link_is_optional_without_justification():
     data = {**BASE, "content": BASE["content"].replace(
         '<a href="https://conexotech.com.br/tecnologia/">Relacionada</a>', "")}
-    assert "internal_link_or_owner_exception_required" in validate_complete_editorial_draft(data).errors
-    assert validate_complete_editorial_draft({**data, "internal_link_exception": True}).ready
+    assert validate_complete_editorial_draft(data).ready
 
 def test_missing_document_fails_closed():
     assert not validate_complete_editorial_draft(None).ready
