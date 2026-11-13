@@ -13,15 +13,15 @@ class ProductFirstRealProofTests(unittest.TestCase):
                 "TURSO_DATABASE_URL": "libsql://queue.turso.io",
                 "TURSO_AUTH_TOKEN": "offline-mock",
                 "CONEXO_PRODUCT_LINKS_ENABLED": "1",
-             }), \\
+             }), \
              patch("scripts.catalog_first_real_link_proof.fetch_feed",
-                   return_value={"itens": [item]}), \\
-             patch("scripts.catalog_first_real_link_proof.recent", return_value=True), \\
+                   return_value={"itens": [item]}), \
+             patch("scripts.catalog_first_real_link_proof.recent", return_value=True), \
              patch("scripts.catalog_first_real_link_proof.registrar",
-                   return_value={"id": "queue-123", "novo": True}) as registrar, \\
+                   return_value={"id": "queue-123", "novo": True}) as registrar, \
              patch("scripts.catalog_first_real_link_proof.link_pauta",
                    return_value={"status": "LINKED",
-                                 "publication_authorized": False}) as linked, \\
+                                 "publication_authorized": False}) as linked, \
              patch("scripts.catalog_first_real_link_proof.cloud_db.turso_execute",
                    side_effect=[
                        {"rows": [["queue-123", "https://example.org/moto-signature",
@@ -51,14 +51,14 @@ class ProductFirstRealProofTests(unittest.TestCase):
                 "TURSO_DATABASE_URL": "libsql://queue.turso.io",
                 "TURSO_AUTH_TOKEN": "offline-mock",
                 "CONEXO_PRODUCT_LINKS_ENABLED": "1",
-             }), \\
+             }), \
              patch("scripts.catalog_first_real_link_proof.fetch_feed",
-                   return_value={"itens": [item]}), \\
-             patch("scripts.catalog_first_real_link_proof.recent", return_value=True), \\
+                   return_value={"itens": [item]}), \
+             patch("scripts.catalog_first_real_link_proof.recent", return_value=True), \
              patch("scripts.catalog_first_real_link_proof.registrar",
-                   return_value={"id": "queue-123", "novo": True}), \\
+                   return_value={"id": "queue-123", "novo": True}), \
              patch("scripts.catalog_first_real_link_proof.link_pauta",
-                   return_value={"status": "LINKED", "publication_authorized": False}), \\
+                   return_value={"status": "LINKED", "publication_authorized": False}), \
              patch("scripts.catalog_first_real_link_proof.cloud_db.turso_execute",
                    return_value={"rows": []}):
             with self.assertRaisesRegex(RuntimeError, "readback not confirmed"):
