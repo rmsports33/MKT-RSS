@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from mkt_flow_p0.product_links import link_pauta, link_verified_draft, list_links
+from mkt_flow_p0.product_links import link_pauta, link_verified_draft, list_links, verify_draft_link
 from mkt_flow_p0.fila_pautas import registrar
 from mkt_flow_p0.product_catalog import load, identify_in_headline
 import rss_queue_collect
@@ -62,6 +62,51 @@ class TestProductLinks(unittest.TestCase):
                              "SKIPPED_NOT_VERIFIED_DRAFT")
         self.assertIsNone(list_links("motorola-signature-27", self.db)[0]["wp_post_id"])
         self.assertFalse(link_pauta("motorola-signature-27", row["id"], self.a["link"], self.db)["publication_authorized"])
+
+    def test_readback_after_confirmed_draft(self):
+        row = registrar(self.a, db_path=self.db)
+        link_pauta("motorola-signature-27", row["id"], self.a["link"], self.db)
+        result = link_verified_draft(self.a["link"],
+                 {"acao": "publicado_rascunho", "post_id": 9001,
+                  "status": "draft", "wp_link": "https://conexotech.com.br/?p=9001"},
+                 self.db)
+        self.assertEqual(result["status"], "DRAFT_LINKED")
+        self.assertEqual(
+            verify_draft_link(self.a["link"], 9001, self.db)["status"],
+            "DRAFT_LINK_CONFIRMED")
+        self.assertFalse(result["publication_authorized"])
+
+    def test_readback_mismatch_never_claims_success(self):
+        row = registrar(self.a, db_path=self.db)
+        link_pauta("motorola-signature-27", row["id"], self.a["link"], self.db)
+        from mkt_flow_p0 import product_links
+        real_exec = product_links._exec
+        def misleading_write(sql, args=(), db_path=None):
+            if sql.lstrip().startswith("UPDATE rss_product_links"):
+                return [], 1  # simula ACK sem persistência
+            return real_exec(sql, args, db_path)
+        with patch("mkt_flow_p0.product_links._exec", side_effect=misleading_write):
+            result = link_verified_draft(self.a["link"],
+                 {"acao": "publicado_rascunho", "post_id": 9001, "status": "draft"},
+                 self.db)
+        self.assertEqual(result["status"], "LINK_READBACK_PENDING")
+        self.assertFalse(result["publication_authorized"])
+        self.assertIsNone(list_links("motorola-signature-27", self.db)[0]["wp_post_id"])
+
+    def test_post_readback_connection_failure_propagates(self):
+        row = registrar(self.a, db_path=self.db)
+        link_pauta("motorola-signature-27", row["id"], self.a["link"], self.db)
+        from mkt_flow_p0 import product_links
+        real_exec = product_links._exec
+        def fail_readback(sql, args=(), db_path=None):
+            if "SELECT l.wp_post_id, l.wp_status" in sql:
+                raise RuntimeError("TURSO_READBACK_UNAVAILABLE")
+            return real_exec(sql, args, db_path)
+        with patch("mkt_flow_p0.product_links._exec", side_effect=fail_readback):
+            with self.assertRaisesRegex(RuntimeError, "TURSO_READBACK_UNAVAILABLE"):
+                link_verified_draft(self.a["link"],
+                    {"acao": "publicado_rascunho", "post_id": 9001, "status": "draft"},
+                    self.db)
 
     def test_connection_failure_is_not_silently_recovered(self):
         row = registrar(self.a, db_path=self.db)
