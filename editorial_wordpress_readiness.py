@@ -92,10 +92,8 @@ def validate_complete_editorial_draft(post: dict, *, expected_category_id: int =
     internal = [u for u in urls if urlparse(u).hostname in (expected_site, "www."+expected_site)]
     if not external:
         errors.append("external_sources_missing")
-    # A human may justify no relevant internal destination; never fabricate one.
-    if not internal and post.get("internal_link_exception") is not True:
-        errors.append("internal_link_or_owner_exception_required")
-    # Exception is not owner approval. The Gate must independently verify it.
+    # Internal links are editorial recommendations, not delivery blockers.
+    # Never manufacture a link or demand an exception for its absence.
     return Readiness(not errors, tuple(dict.fromkeys(errors)))
 
 
