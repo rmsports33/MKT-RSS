@@ -37,7 +37,7 @@ class ImageProtocolTests(unittest.TestCase):
         raw=io.BytesIO();Image.new('RGB',(1800,1000),'navy').save(raw,format='JPEG')
         result=prepare_assets(resource,raw.getvalue())
         with tempfile.TemporaryDirectory() as folder:
-            root=Path(folder);manifest={'resource':resource,'assets':{},'visual_review':'ASSISTED_VISUAL_CHECK_COMPLETED','content_fit_review':'PASS'}
+            root=Path(folder);manifest={'resource':resource,'assets':{},'visual_review':'ASSISTED_VISUAL_CHECK_COMPLETED','content_fit_review':'PASS','third_party_branding_review':'PASS_NO_THIRD_PARTY_BRANDING','visible_third_party_branding':False}
             for name,item in result['assets'].items():
                 path=root/(name+'.jpg');path.write_bytes(item['bytes'])
                 manifest['assets'][name]={'path':path.name,'sha256':item['sha256'],'width':item['width'],'height':item['height']}
@@ -50,6 +50,18 @@ class ImageProtocolTests(unittest.TestCase):
             self.assertIn('<picture>',preview);self.assertIn('assets/cover-mobile.jpg',preview)
             self.assertNotEqual(result_flow['version_sha256'],'')
             self.assertNotEqual(result_flow['image_research'],'NOT_RUN')
+            manifest['third_party_branding_review']='PENDING'
+            with self.assertRaisesRegex(ValueError,'IMAGE_THIRD_PARTY_BRANDING_REVIEW_PENDING'):
+                validate_prepared_manifest(manifest,base_dir=root)
+            manifest['third_party_branding_review']='PASS_NO_THIRD_PARTY_BRANDING'
+            manifest['visible_third_party_branding']=True
+            with self.assertRaisesRegex(ValueError,'IMAGE_THIRD_PARTY_BRANDING_REJECTED'):
+                validate_prepared_manifest(manifest,base_dir=root)
+            manifest['visible_third_party_branding']=False
+            manifest.pop('visible_third_party_branding')
+            with self.assertRaisesRegex(ValueError,'IMAGE_THIRD_PARTY_BRANDING_REJECTED'):
+                validate_prepared_manifest(manifest,base_dir=root)
+            manifest['visible_third_party_branding']=False
             manifest['visual_review']='PENDING'
             with self.assertRaises(ValueError):validate_prepared_manifest(manifest,base_dir=root)
             manifest['visual_review']='ASSISTED_VISUAL_CHECK_COMPLETED';(root/'desktop.jpg').write_bytes(b'tampered')
