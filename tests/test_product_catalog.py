@@ -1,5 +1,6 @@
 import unittest
 from mkt_flow_p0.product_catalog import load, match, register_candidate, identify_in_headline
+from scripts.product_catalog_triage import triage
 
 class CatalogTests(unittest.TestCase):
     @classmethod
@@ -24,6 +25,14 @@ class CatalogTests(unittest.TestCase):
         self.assertFalse(result["publication_authorized"])
     def test_rss_unknown_headline_not_registered(self):
         self.assertEqual(identify_in_headline("Novo roteador Wi-Fi", self.catalog)["status"], "NO_MATCH")
+    def test_offline_batch(self):
+        result = triage(["TCL C6K 55", "TCL C6K 65", "Produto desconhecido"], self.catalog)
+        self.assertEqual([r["status"] for r in result],
+                         ["EXISTS", "EXISTS", "NEW_CANDIDATE"])
+        self.assertEqual(result[0]["product_id"], result[1]["product_id"])
+        self.assertTrue(all(r["publication_authorized"] is False for r in result))
+    def test_offline_batch_invalid(self):
+        self.assertEqual(triage([{"produto": ""}], self.catalog)[0]["status"], "REVIEW")
     def test_variants_preserved(self):
         p = next(p for p in self.catalog["products"] if p["id"] == "tcl-c6k")
         self.assertEqual({v["size_inches"] for v in p["variants"]}, {55, 65})
