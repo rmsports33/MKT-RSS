@@ -45,8 +45,8 @@ class PriceEvidenceTests(unittest.TestCase):
                  "nome": product, "vendedor": "Loja A", "moeda": "BRL",
                  "preco": "492.78", "data_captura": "13/11/2026",
                  "url": "https://loja.example/item/123"}
-        with patch("mkt_flow_p0.price_collector._CREDS.tem_amazon", return_value=True), \\
-             patch("mkt_flow_p0.price_collector._salvar_evidencia", return_value=True) as save, \\
+        with patch("mkt_flow_p0.price_collector._CREDS.tem_amazon", return_value=True), \
+             patch("mkt_flow_p0.price_collector._salvar_evidencia", return_value=True) as save, \
              patch("mkt_flow_p0.price_collector._coletar_amazon", return_value=valid):
             found = coletar_preco_produto(product, asin="B123456789")
             self.assertTrue(found["ok"])
@@ -60,9 +60,9 @@ class PriceEvidenceTests(unittest.TestCase):
                    {"url": "http://loja.example/item/123"},
                    {"moeda": "USD"}, {"preco": "1.234.56"}]
         for changes in invalid:
-            with self.subTest(changes=changes), \\
-                 patch("mkt_flow_p0.price_collector._CREDS.tem_amazon", return_value=True), \\
-                 patch("mkt_flow_p0.price_collector._salvar_evidencia") as save, \\
+            with self.subTest(changes=changes), \
+                 patch("mkt_flow_p0.price_collector._CREDS.tem_amazon", return_value=True), \
+                 patch("mkt_flow_p0.price_collector._salvar_evidencia") as save, \
                  patch("mkt_flow_p0.price_collector._coletar_amazon",
                        return_value={**valid, **changes}):
                 result = coletar_preco_produto(product, asin="B123456789")
