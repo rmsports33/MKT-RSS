@@ -37,6 +37,7 @@ def coletar(fonte="", limite=5, dry_run=False):
             if not recent(item.get("published"), now, 168):
                 resultados["fora_da_janela"] += 1
                 continue
+            classification = None
             if catalogo is not None:
                 try:
                     classification = identify_in_headline(item.get("titulo", ""), catalogo)
@@ -53,6 +54,17 @@ def coletar(fonte="", limite=5, dry_run=False):
             try:
                 status = registrar(item)
                 resultados["novas" if status["novo"] else "duplicadas"] += 1
+                if (classification and classification["status"] == "CANDIDATE_MATCH"
+                        and status.get("id")):
+                    # Exige a MESMA URL da pauta persistida: duplicata por titulo
+                    # semelhante pode referir outra notícia legítima.
+                    from mkt_flow_p0.product_links import link_pauta
+                    try:
+                        link_pauta(classification["product_id"], status["id"], item["link"])
+                        resultados["catalogo"]["vinculos"] = resultados["catalogo"].get("vinculos", 0) + 1
+                    except (ValueError, RuntimeError, OSError) as exc:
+                        # Persistência auxiliar não reverte a pauta já registrada.
+                        resultados["catalogo"]["vinculo_pendente"] = resultados["catalogo"].get("vinculo_pendente", 0) + 1
             except (ValueError, RuntimeError, OSError) as exc:
                 resultados["falhas"].append({"fonte": nome, "motivo": str(exc)})
     return resultados
