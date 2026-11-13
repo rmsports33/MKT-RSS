@@ -364,7 +364,9 @@
     "published_content_backup": "docs/editorial-evidence/published-six-wordpress-content-snapshot-20261113.json",
     "published_content_backup_commit": "fa880ca0e5200faad1973c383b7d9c17dcb919a0",
     "published_content_backup_verified": "SIX_COMPLETE_BODIES_AND_META_GET_FROM_PUBLISH_WORDPRESS_READBACK",
-    "backup_note": "Content-level recovery snapshot in GitHub plus versioned ZIP in Drive; UpdraftPlus full restore not tested, do not claim it."
+    "backup_note": "Content-level recovery snapshot in GitHub plus versioned ZIP in Drive; UpdraftPlus full restore not tested, do not claim it.",
+    "public_viewport_capture": "WORDPRESS_MSHOTS_READY_390_AND_1440_FOR_9814_AND_9810_IMAGES_NOT_VISUALLY_INSPECTED",
+    "public_seo_six_page_checks": "ALL_SIX_PUBLIC_PAGES_ACCESSIBLE_METADATA_TITLE_DESC_CANONICAL_ROBOTS_OG_LEIA_TAMBEM"
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
@@ -381,7 +383,7 @@
     "Native SEO assinado específico para future->publish ainda não homologado; output público atual (Rank Math) está correto."
   ],
   "residual_validation": [
-    "Visual inspection of authenticated WordPress admin 390px/1440px not completed: browser not logged in; isolated UI mock passed.",
+    "Visual inspection of the authenticated editor at 390px and 1440px not completed (no logged-in browser); public WordPress screenshots are generated at both widths for Unitree/NEO but image content was not inspectable here.",
     "Exact physical execution of WP-Cron without an external timer is not guaranteed; six actual publishes 13s–23m06s late. No Hostinger cron per owner.",
     "Conexo Native SEO version-signed future->publish internal contract not proven; public SEO on all six articles is correct under current active Rank Math bridge.",
     "Full database/files restore not performed: versioned plugin ZIP rollback available, Updraft backups exist with sampled archive CRC integrity PASS; use isolated environment for full restore."
