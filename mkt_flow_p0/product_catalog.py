@@ -48,6 +48,10 @@ def register_candidate(catalog, product):
     return updated, {"status": "ADDED_IN_MEMORY", "product_id": product["id"],
                      "requires_review": True, "publication_authorized": False}
 
+# Sufixos comerciais que distinguem modelos. Não inferir que o modelo base
+# corresponde à edição Pro/Plus/Ultra mencionada imediatamente após o nome.
+VARIANT_SUFFIXES = frozenset({"pro", "max", "plus", "ultra", "mini", "lite", "air"})
+
 def identify_in_headline(headline, catalog):
     """Classify an RSS headline without modifying the RSS queue or product catalog.
 
@@ -59,9 +63,14 @@ def identify_in_headline(headline, catalog):
         aliases = product["aliases"] + [product["brand"] + " " + product["model"]]
         for alias in aliases:
             phrase = normalize(alias)
-            if phrase and re.search(r"(?<![a-z0-9])" + re.escape(phrase) + r"(?![a-z0-9])", title):
-                found.append(product["id"])
-                break
+            if phrase:
+                hit = re.search(r"(?<![a-z0-9])" + re.escape(phrase) + r"(?![a-z0-9])", title)
+                if hit:
+                    tail = title[hit.end():].strip().split(" ", 1)[0]
+                    if tail in VARIANT_SUFFIXES:
+                        continue  # ex.: iPhone 17 Pro != iPhone 17
+                    found.append(product["id"])
+                    break
     unique = sorted(set(found))
     if not unique:
         return {"status": "NO_MATCH", "publication_authorized": False}

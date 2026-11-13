@@ -413,11 +413,23 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             featured_media_id=featured_media_id,
             media_rights_confirmed=media_rights_confirmed,
         )
+        # Vínculo auxiliar somente após readback positivo pelo adaptador WP.
+        # Não tenta criar pauta nem permite publicação. Falha é auditável,
+        # sem alterar recibo WordPress já confirmado.
+        try:
+            from mkt_flow_p0.product_links import link_verified_draft
+            staged_link = (link_verified_draft(url_fonte, staged)
+                           if os.getenv("CONEXO_PRODUCT_LINKS_ENABLED") == "1"
+                           else {"status": "DISABLED", "publication_authorized": False})
+        except (ValueError, RuntimeError, OSError, TypeError):
+            staged_link = {"status": "LINK_PERSISTENCE_PENDING",
+                           "publication_authorized": False}
         staged_trace = make_trace(
             url_fonte, texto_final, generated=rw, readiness=qualidade_editorial,
             post_id=staged.get("post_id") if type(staged.get("post_id")) is int else None,
             wp_readback=confirmar_readback_trilha(staged))
         return {**staged,
+                "product_link": staged_link,
                 "editorial_trace": staged_trace,
                 "qualidade_editorial": qualidade_editorial,
                 "editorial_handoff": rw.get("editorial_handoff"),
