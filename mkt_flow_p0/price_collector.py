@@ -26,8 +26,6 @@ Requisitos:
 - Fallback claro: sem credencial = não coleta daquele marketplace
 - Evidência persistida com rastreabilidade (sem expor segredos)
 """
-from __future__ import annotations
-
 import os
 import json
 import time
@@ -36,7 +34,7 @@ import logging
 from datetime import datetime
 from decimal import Decimal
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 from urllib.parse import urlparse
 
 import requests
@@ -73,7 +71,7 @@ class _Credenciais:
     def tem_shopee(self) -> bool:
         return all(self.shopee.values())
     
-    def marketplaces_disponiveis(self) -> list[str]:
+    def marketplaces_disponiveis(self) -> List[str]:
         disp = []
         if self.tem_amazon(): disp.append("amazon")
         if self.tem_mercadolivre(): disp.append("mercadolivre")
