@@ -249,6 +249,48 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                 "status": snapshot["post_status"], "categories": snapshot["post_category"],
                 "featured_media": snapshot["meta_input"]["_thumbnail_id"], "link": link},
                 expected_category_id=wp.get("news_category_id", 10))
+        # Only a persisted, authenticated WordPress readback may mark a draft
+        # ready for the owner's queue. Staging remains allowed to be partial.
+        # No new service account, scheduler, or publication action is created.
+        if intent in {"stage", "draft"} and package.get("payload", {}).get("editorial_ready_for_review") is True:
+            if not post_id or not isinstance(snapshot, dict):
+                raise ValueError("editorial_draft_incomplete: saved WordPress post required")
+            draft_response = requests.get(
+                f"{SITE}/wp-json/wp/v2/posts/{post_id}",
+                params={"context": "edit"}, auth=auth, timeout=timeout,
+                allow_redirects=False)
+            if draft_response.status_code != 200:
+                raise ValueError("editorial_draft_incomplete: authenticated post readback unavailable")
+            draft = draft_response.json()
+            if not isinstance(draft, dict) or draft.get("id") != post_id:
+                raise ValueError("editorial_draft_incomplete: WordPress post identity mismatch")
+            media_id = draft.get("featured_media")
+            media_caption = ""
+            if type(media_id) is int and media_id > 0:
+                media_response = requests.get(
+                    f"{SITE}/wp-json/wp/v2/media/{media_id}",
+                    params={"context": "edit"}, auth=auth, timeout=timeout,
+                    allow_redirects=False)
+                if media_response.status_code != 200:
+                    raise ValueError("editorial_draft_incomplete: image metadata unavailable")
+                media = media_response.json()
+                if not isinstance(media, dict) or media.get("id") != media_id:
+                    raise ValueError("editorial_draft_incomplete: image identity mismatch")
+                media_caption = media.get("caption", {}).get("raw", "") if isinstance(media.get("caption"), dict) else ""
+            from editorial_wordpress_readiness import require_complete_editorial_draft
+            content = draft.get("content", {})
+            excerpt = draft.get("excerpt", {})
+            title = draft.get("title", {})
+            require_complete_editorial_draft({
+                "id": draft["id"], "status": draft.get("status"),
+                "title": title.get("raw", "") if isinstance(title, dict) else "",
+                "content": content.get("raw", "") if isinstance(content, dict) else "",
+                "excerpt": excerpt.get("raw", "") if isinstance(excerpt, dict) else "",
+                "slug": draft.get("slug"), "categories": draft.get("categories"),
+                "featured_media": media_id, "image_caption": media_caption,
+                "link": draft.get("link"),
+                "internal_link_exception": False,
+            }, expected_category_id=wp.get("news_category_id", 10))
         envelope = core.prepare_write(package, core_root, intent=intent, actor_id=actor_id,
             key=secret, snapshot=snapshot, publication_reference=publication_reference, nonce=nonce)
         claim = json.loads(base64.urlsafe_b64decode(envelope["receipt"] + "=" * (-len(envelope["receipt"]) % 4)))
