@@ -168,6 +168,7 @@ jobs:
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
           CONEXO_RSS_DRAFT: '1'
           CONEXO_RSS_DRAFT_STAGING: '0'
+          CONEXO_PRODUCT_LINKS_ENABLED: '1'
           CONEXO_RSS_RESEARCH_FEEDS: '1'
           CONEXO_RSS_RELATED_LINKS: '1'
           FEATURED_MEDIA_ID: ${{ inputs.featured_media_id }}
