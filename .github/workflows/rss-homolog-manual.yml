@@ -169,6 +169,8 @@ jobs:
           CONEXO_RSS_DRAFT: '1'
           CONEXO_RSS_DRAFT_STAGING: '0'
           CONEXO_PRODUCT_LINKS_ENABLED: '1'
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
           CONEXO_RSS_RESEARCH_FEEDS: '1'
           CONEXO_RSS_RELATED_LINKS: '1'
           FEATURED_MEDIA_ID: ${{ inputs.featured_media_id }}
