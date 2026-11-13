@@ -229,12 +229,83 @@ def _coletar_mercadolivre(item_id: str) -> Optional[dict]:
 
 
 def _coletar_shopee(item_id: str, shop_id: str) -> Optional[dict]:
-    """Coleta preço via Shopee Affiliate API. Requer credenciais."""
+    """Consulta autenticada READ-ONLY; sem credenciais/variante inequívoca => None.
+
+    productOfferV2 e os campos devem ser homologados no Explorer da conta
+    antes da primeira execução real. Não gera links nem publica artigos.
+    """
     if not _CREDS.tem_shopee():
         return None
-    # TODO: implementar Shopee Affiliate API
-    logger.debug("Shopee Affiliate API não implementada (sem credenciais)")
-    return None
+    if not str(item_id).isdigit() or not str(shop_id).isdigit():
+        return None
+    import hashlib
+    from datetime import timezone
+    creds = _CREDS.shopee
+    payload = json.dumps({"query": (
+        "{ productOfferV2(itemId: " + str(int(item_id)) +
+        ", shopId: " + str(int(shop_id)) +
+        ", page: 1, limit: 10) { nodes { itemId shopId productName "
+        "productLink offerLink priceMin priceMax shopName } } }"
+    )}, ensure_ascii=False, separators=(",", ":"))
+    timestamp = int(time.time())
+    signature = hashlib.sha256(
+        (str(creds["partner_id"]) + str(timestamp) + payload +
+         str(creds["partner_key"])).encode("utf-8")
+    ).hexdigest()
+    headers = {
+        "Authorization": (
+            "SHA256 Credential=" + str(creds["partner_id"]) +
+            ", Timestamp=" + str(timestamp) + ", Signature=" + signature
+        ),
+        "Content-Type": "application/json",
+    }
+    try:
+        response = requests.post(
+            "https://open-api.affiliate.shopee.com.br/graphql",
+            data=payload.encode("utf-8"), headers=headers, timeout=15,
+        )
+        response.raise_for_status()
+        result = response.json()
+    except (requests.RequestException, ValueError):
+        logger.warning("Shopee: consulta indisponível; nenhuma evidência aceita")
+        return None
+    if not isinstance(result, dict) or result.get("errors"):
+        logger.warning("Shopee: erro GraphQL; nenhuma evidência aceita")
+        return None
+    container = (result.get("data") or {}).get("productOfferV2") or {}
+    nodes = container.get("nodes") or []
+    matches = [
+        n for n in nodes if isinstance(n, dict)
+        and str(n.get("itemId")) == str(int(item_id))
+        and str(n.get("shopId")) == str(int(shop_id))
+    ]
+    if len(matches) != 1:
+        return None
+    node = matches[0]
+    if not node.get("productName") or not node.get("shopName"):
+        return None
+    price_min, price_max = (
+        normalizar_preco(node.get("priceMin")),
+        normalizar_preco(node.get("priceMax")),
+    )
+    if not price_min or price_min != price_max:
+        return None  # preços por variante => revisão humana obrigatória
+    try:
+        from decimal import Decimal
+        numeric = Decimal(price_min[3:].replace(".", "").replace(",", "."))
+    except Exception:
+        return None
+    url = str(node.get("productLink") or "")
+    if not url.startswith("https://"):
+        return None
+    return {
+        "status": "VERIFICADO_NA_PAGINA", "nome": node["productName"],
+        "vendedor": node["shopName"], "moeda": "BRL",
+        "preco": str(numeric), "url": url,
+        "data_captura": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
+        "origem": "api_oficial_shopee", "item_id": str(item_id),
+        "shop_id": str(shop_id),
+    }
 
 
 # --- API pública ------------------------------------------------------------
