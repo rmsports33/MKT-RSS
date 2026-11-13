@@ -55,3 +55,51 @@ def require_wordpress_readiness(post: dict, **kwargs) -> None:
     result = validate_wordpress_readiness(post, **kwargs)
     if not result.ready:
         raise ValueError("wordpress_not_ready: " + ", ".join(result.errors))
+
+
+def validate_complete_editorial_draft(post: dict, *, expected_category_id: int = 10,
+                                      expected_site: str = "conexotech.com.br") -> Readiness:
+    """Strict readback contract for marking a saved WordPress draft ready for owner review.
+
+    Never generates approvals, makes network calls, or changes WordPress status.
+    Missing information is a concrete correction task, not an assumed PASS.
+    """
+    import re
+    from html import unescape
+
+    base = validate_wordpress_readiness(
+        post, expected_category_id=expected_category_id, expected_site=expected_site)
+    errors = list(base.errors)
+    if not isinstance(post, dict):
+        return Readiness(False, tuple(errors))
+    title = post.get("title")
+    content = post.get("content")
+    excerpt = post.get("excerpt")
+    plain = re.sub(r"<[^>]*>", " ", content) if isinstance(content, str) else ""
+    plain = unescape(plain)
+    if not isinstance(title, str) or len(title.strip()) < 15:
+        errors.append("title_incomplete")
+    if len(plain.strip()) < 1000:
+        errors.append("article_incomplete")
+    if not isinstance(excerpt, str) or len(unescape(re.sub(r"<[^>]*>", " ", excerpt)).strip()) < 60:
+        errors.append("seo_excerpt_missing_or_short")
+    credit = post.get("image_caption")
+    if not isinstance(credit, str) or len(credit.strip()) < 12:
+        errors.append("image_credit_missing")
+    urls = re.findall(r"https?://[^\\s\\\"'<>]+", content or "") if isinstance(content, str) else []
+    from urllib.parse import urlparse
+    external = [u for u in urls if urlparse(u).hostname not in (expected_site, "www."+expected_site)]
+    internal = [u for u in urls if urlparse(u).hostname in (expected_site, "www."+expected_site)]
+    if not external:
+        errors.append("external_sources_missing")
+    # A human may justify no relevant internal destination; never fabricate one.
+    if not internal and post.get("internal_link_exception") is not True:
+        errors.append("internal_link_or_owner_exception_required")
+    # Exception is not owner approval. The Gate must independently verify it.
+    return Readiness(not errors, tuple(dict.fromkeys(errors)))
+
+
+def require_complete_editorial_draft(post: dict, **kwargs) -> None:
+    result = validate_complete_editorial_draft(post, **kwargs)
+    if not result.ready:
+        raise ValueError("editorial_draft_incomplete: " + ", ".join(result.errors))
