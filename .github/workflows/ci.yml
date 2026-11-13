@@ -92,33 +92,3 @@ jobs:
         run: |
           python -m pytest tests -q
           python -m pytest redator-artigo-blogs/tests -q
-
-      - name: Diagnóstico real do catálogo RSS sem escrita (homologação pontual)
-        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'chore/catalogo-homologacao-live-20261113' }}
-        env:
-          CONEXO_REQUIRE_CLOUD_PERSISTENCE: '1'
-          TURSO_DATABASE_URL: ''
-          TURSO_AUTH_TOKEN: ''
-        run: |
-          python -m pip install 'feedparser>=6.0.0'
-          python rss_queue_collect.py --fonte gsmarena --limit 10 --dry-run > /tmp/catalog-diagnostic.json
-          python - <<'PY'
-          import json, os
-          with open('/tmp/catalog-diagnostic.json', encoding='utf-8') as source:
-              d = json.load(source)
-          assert d.get('modo') == 'DIAGNOSTICO_SEM_ESCRITA', d
-          assert d['novas'] == 0 and d['duplicadas'] == 0, d
-          assert d.get('analisadas', 0) > 0, d
-          assert not d['falhas'], d
-          c = d['catalogo']
-          assert c['correspondencias'] + c['sem_correspondencia'] + c['revisao'] == d['analisadas'], d
-          print('PASS: diagnóstico feed real, nenhum registro, contadores coerentes')
-          print(json.dumps(d, ensure_ascii=False, sort_keys=True))
-          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as summary:
-              summary.write('### Catálogo — coleta real sem escrita\\n')
-              summary.write(f"- Itens analisados: {d['analisadas']}\\n")
-              summary.write(f"- Correspondências: {c['correspondencias']}\\n")
-              summary.write(f"- Sem correspondência: {c['sem_correspondencia']}\\n")
-              summary.write(f"- Revisão: {c['revisao']}\\n")
-              summary.write('- Escritas na fila: 0 (dry-run)\\n')
-          PY
