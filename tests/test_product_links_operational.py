@@ -18,7 +18,7 @@ class TestProductLinks(unittest.TestCase):
         self.a = {"titulo": "Motorola Signature 27 recebe atualização de bateria",
                   "link": "https://example.org/a", "fonte": "fixture",
                   "published": "2026-11-13"}
-        self.b = {"titulo": "Motorola Signature 27 recebe atualização de câmera",
+        self.b = {"titulo": "Nova falha de câmera afeta proprietários do Motorola Signature 27",
                   "link": "https://example.org/b", "fonte": "fixture",
                   "published": "2026-11-13"}
 
