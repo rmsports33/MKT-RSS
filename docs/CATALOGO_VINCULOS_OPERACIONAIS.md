@@ -40,3 +40,12 @@ A gravação de vínculos é **desativada por padrão**. Requer `CONEXO_PRODUCT_
 - A prova utilizou `registrar()` e `link_pauta()` existentes, sem IA/Groq, WordPress, publicação, agendamento ou novo executor.
 - Foram removidos workflow/script/teste temporários da prova após a coleta dos registros; o mecanismo operacional de vínculos permanece ativo no fluxo RSS.
 - **Escopo:** comprova `RSS real → pauta Turso → vínculo Turso → readback`. Não comprova `readback WordPress → vínculo com wp_post_id`, que depende de um rascunho válido produzido no fluxo editorial normal.
+
+## Consolidação de persistência sem Actions (13/11/2026)
+
+- `link_pauta` exige `SELECT` posterior à tentativa de inserção; não devolve `LINKED` quando a linha não existe ou a URL é diferente.
+- `link_verified_draft` preserva todas as pré-condições de readback WP do adaptador e, após o `UPDATE`, invoca `verify_draft_link` no **mesmo banco da fila**. Somente evidência SQL de `wp_post_id` exato e `wp_status=draft` em todas as linhas correspondentes devolve `DRAFT_LINKED`.
+- Se o SQL devolve ACK mas não persiste, retorna `LINK_READBACK_PENDING`, nunca sucesso falso. Exceções de acesso ao Turso são tratadas pelo chamador como pendência auditável, sem repetir o POST do WordPress. `verify_draft_link` é consulta SQL de vínculo e **não** substitui a leitura autenticada do próprio WP.
+- `list_links` exige explicitamente Turso quando não recebe `db_path`, impedindo interpretação enganosa de SQLite local vazio como o banco de produção.
+- O teste isolado offline executado fora do GitHub cobriu sete cenários: dois eventos distintos/duplicação, URL incompatível, criação/reuso, publicação proibida, falta de credenciais, falsa confirmação de persistência e falha no banco. Três regressões equivalentes foram registradas em `tests/test_product_links_operational.py`. **A suíte completa não foi reexecutada após esta mudança**, para preservar a franquia.
+- Não houve escrita no WordPress nem no Turso real nesta consolidação. A comprovação operacional final requer rascunho legítimo com URL de origem idêntica à da pauta já existente e credenciais autenticadas no executor já autorizado, com readback WP + Turso. Não acionar CI/GitHub Actions para fabricar prova.
