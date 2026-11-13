@@ -66,7 +66,9 @@ def proof():
     count = cloud_db.turso_execute(
         "SELECT COUNT(*) FROM rss_product_links WHERE product_id=? AND pauta_id=?",
         (EXPECTED_PRODUCT, pauta_id))
-    if count.get("erro") or count.get("rows") != [[1]]:
+    if (count.get("erro") or not count.get("rows")
+            or len(count["rows"]) != 1 or len(count["rows"][0]) != 1
+            or str(count["rows"][0][0]) != "1"):
         raise RuntimeError("BLOCKED: idempotent unique product-pauta link not confirmed")
     return {
         "result": "PASS",
