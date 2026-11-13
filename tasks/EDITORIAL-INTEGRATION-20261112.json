@@ -182,6 +182,11 @@
       "reference": "https://github.com/rmsports33/-site-conexotech/blob/master/docs/deployments/conexo-gate-agenda-nativa-20261112.md",
       "sha": "1e80ec2ba2cdcbe18797683eeca53838418a29cc",
       "result": "Public SEO audit, no Hostinger cron, Updraft CRC and known remaining real limitations."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/blob/master/docs/editorial-evidence/published-six-wordpress-content-snapshot-20261113.json",
+      "sha": "fa880ca0e5200faad1973c383b7d9c17dcb919a0",
+      "result": "Six published complete bodies and metadata snapshot, WordPress authenticated readback; assists recovery but not full database backup."
     }
   ],
   "blockers": [],
@@ -355,7 +360,11 @@
     "backup_wp_updraftplus": "UPDRAFT_SET_20261111_SIX_ARCHIVES_PRESENT_DB_20261112_GZIP_CRC_PASS_MU_PLUGIN_ZIP_CRC_PASS_NO_RESTORE",
     "backup_agenda_versioned": "DRIVE_V022_ZIP_AND_V021_ROLLBACK_ZIP_VERIFIED",
     "github_released_agenda_source": "https://github.com/rmsports33/-site-conexotech/pull/72",
-    "live_responsive_editor": "NOT_CONFIRMED_AUTHENTICATED_UI_ONLY_MOCK_TESTS"
+    "live_responsive_editor": "NOT_CONFIRMED_AUTHENTICATED_UI_ONLY_MOCK_TESTS",
+    "published_content_backup": "docs/editorial-evidence/published-six-wordpress-content-snapshot-20261113.json",
+    "published_content_backup_commit": "fa880ca0e5200faad1973c383b7d9c17dcb919a0",
+    "published_content_backup_verified": "SIX_COMPLETE_BODIES_AND_META_GET_FROM_PUBLISH_WORDPRESS_READBACK",
+    "backup_note": "Content-level recovery snapshot in GitHub plus versioned ZIP in Drive; UpdraftPlus full restore not tested, do not claim it."
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
