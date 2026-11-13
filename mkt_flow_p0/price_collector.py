@@ -96,12 +96,12 @@ def normalizar_preco(valor) -> str:
     if isinstance(valor, (int, float, Decimal)):
         raw = str(valor)
     elif isinstance(valor, str):
-        raw = re.sub(r"^R\\$\\s*", "", valor.strip(), flags=re.IGNORECASE)
-        if re.fullmatch(r"\\d{1,3}(?:\\.\\d{3})+(?:,\\d{1,2})?", raw):
+        raw = re.sub(r"^R\$\s*", "", valor.strip(), flags=re.IGNORECASE)
+        if re.fullmatch(r"\d{1,3}(?:\.\d{3})+(?:,\d{1,2})?", raw):
             raw = raw.replace(".", "").replace(",", ".")
-        elif re.fullmatch(r"\\d+(?:,\\d{1,2})", raw):
+        elif re.fullmatch(r"\d+(?:,\d{1,2})", raw):
             raw = raw.replace(",", ".")
-        elif not re.fullmatch(r"\\d+(?:\\.\\d{1,2})?", raw):
+        elif not re.fullmatch(r"\d+(?:\.\d{1,2})?", raw):
             return ""
     else:
         return ""
