@@ -33,6 +33,28 @@ class CatalogTests(unittest.TestCase):
         self.assertTrue(all(r["publication_authorized"] is False for r in result))
     def test_offline_batch_invalid(self):
         self.assertEqual(triage([{"produto": ""}], self.catalog)[0]["status"], "REVIEW")
+    def test_link_statuses_are_explicit_and_distinct(self):
+        by_id = {p["id"]: p for p in self.catalog["products"]}
+        review = by_id["samsung-galaxy-a57"]["content_links"][0]
+        draft = by_id["apple-iphone-17"]["content_links"][0]
+        mention = by_id["lenovo-ideapad-slim-3"]["content_links"][0]
+        self.assertEqual((review["status"], review["relation"], review["source"]),
+                         ("publicado", "review_dedicado", "site_publico"))
+        self.assertEqual((draft["post_id"], draft["status"], draft["relation"]),
+                         (9589, "draft", "artigo_dedicado"))
+        self.assertEqual((mention["post_id"], mention["relation"]),
+                         (9251, "mencao_em_guia"))
+        self.assertEqual(by_id["apple-iphone-17"]["article_ids"], [])
+        self.assertEqual(by_id["samsung-galaxy-a57"]["article_ids"], [])
+
+    def test_content_links_do_not_autorize_publication(self):
+        for product in self.catalog["products"]:
+            for link in product.get("content_links", []):
+                self.assertIn(link["source"], {"wordpress", "site_publico"})
+                self.assertIn(link["status"], {"draft", "publicado"})
+                self.assertTrue(link["url"].startswith("https://conexotech.com.br/"))
+                self.assertNotIn("publication_authorized", link)
+
     def test_variants_preserved(self):
         p = next(p for p in self.catalog["products"] if p["id"] == "tcl-c6k")
         self.assertEqual({v["size_inches"] for v in p["variants"]}, {55, 65})

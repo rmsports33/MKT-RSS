@@ -30,3 +30,15 @@ python -m scripts.product_catalog_triage produtos-novos.json --output triagem.js
 - A etapa temporária foi removida do CI após a coleta da evidência, sem criar workflow agendado ou gasto recorrente.
 - **Escopo homologado:** acesso ao RSS real, parsing, janela temporal, classificação do catálogo e saída JSON coerente, com testes que impedem chamadas a `registrar` no modo diagnóstico.
 - **Não homologado aqui:** persistência autenticada do Turso na coleta normal, reconciliar toda a fila histórica e liberação de publicação WordPress. Essas operações exigem validação separada e não são pré-requisitos para triagem offline.
+
+## Reconciliação WordPress/site público (13/11/2026)
+
+Leitura autenticada do WordPress de produção via MCP, **sem modificações**, retornou 26 posts publicados, 149 rascunhos, zero agendados, pendentes ou privados. Listagens verificadas em duas páginas para rascunhos. A busca WordPress de conteúdo pode retornar correspondências amplas; links abaixo passaram por inspeção do conteúdo.
+
+- `samsung-galaxy-a57`: review dedicado publicado no site (`/reviews/samsung-galaxy-a57-5g-vale-a-pena-em-2026/`), confirmado por leitura pública e link interno em post WordPress #9711. **Não consta na lista de posts retornada pelo MCP**, portanto ID de post WordPress não atribuído.
+- `apple-iphone-17`: post WordPress **rascunho** #9589, com título sobre Black Friday e conteúdo referente ao iPhone 17. Não tratar como publicação existente.
+- `lenovo-ideapad-slim-3`: **menção** no guia de notebook, rascunho WordPress #9251; não é review dedicado.
+- `samsung-galaxy-tab-s10-fe`: título de rascunho #9445 menciona **FE Plus**; por ser variante diferente e não constar do catálogo, não vinculado como artigo do FE simples.
+- `apple-iphone-17`: comparação #9595 trata do **iPhone 17 Pro**, não do modelo base; não vinculada como artigo dedicado.
+
+Esses vínculos ficam no campo `content_links` com `source`, `relation`, `status`, `url` e, quando confirmado, `post_id`. O campo legado `article_ids` permanece sem alteração para não confundir rascunhos, URLs públicas e artigos dedicados. Os vínculos não alteram WordPress, Gate nem a fila Turso. Não inferir ausência de qualquer outro conteúdo fora das listagens/consultas verificadas.
