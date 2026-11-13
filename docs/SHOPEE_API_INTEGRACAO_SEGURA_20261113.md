@@ -29,3 +29,26 @@ Arquivo `mkt_flow_p0/price_collector.py`: `_coletar_shopee(item_id, shop_id)` ag
 - Portal oficial autenticado: https://affiliate.shopee.com.br/open_api
 - Explorer oficial: https://open-api.affiliate.shopee.com.br/explorer/v2
 - Contrato público ilustrativo (terceiro, não autoridade): https://www.affiliateshopee.com.br/documentacao
+
+## Atualização de homologação — Explorer real em 13/11/2026
+
+O proprietário demonstrou com captura de tela que a sua conta Shopee tem status **Meu API Válido** e que a consulta read-only `productOfferV2` executou com **HTTP 200** e retorno `data.productOfferV2.nodes`. O schema do Explorer autenticado confirma filtros opcionais `itemId: Int64`, `shopId: Int64`, `page: Int`, `limit: Int`, além de `price: String`, `priceMin: String`, `priceMax: String`, `shopName`, `productName`, `productLink` e `offerLink`. Portanto, a frase anterior “schema precisa ser confirmado” foi superada **para esses campos**.
+
+No registro visível, item ID `58217601055`, loja ID `728389176`, vendedor `MAQ TOOLS`, `price=priceMin=priceMax=95.99`, link de produto oficial. Esses são **dados de exemplo observado no Explorer**, não prova de que o MKT-RSS recebeu a resposta com suas próprias credenciais.
+
+O módulo `mkt_flow_p0/price_collector.py` foi corrigido para selecionar `price` e exigir igualdade com `priceMin` e `priceMax`. Seu status de procedência passou a `VERIFICADO_API_OFICIAL`. A validação genérica aceita esse status além de `VERIFICADO_NA_PAGINA`; permanece exigindo nome do produto exato, loja identificada e URL HTTPS. Uma divergência bloqueia gravação de evidência.
+
+Foi criado `scripts/shopee_readonly_preflight.py`, um **teste interativo de uma única chamada** que importa o módulo real do MKT-RSS, pede App ID e senha via `getpass` sem eco nem flags de CLI, e imprime somente dados públicos da oferta. Não escreve WordPress, Turso, Drive ou SQLite. Deve rodar somente num terminal privado autorizado, com Python e `requests` já disponíveis, **fora de public_html**, sem GitHub Actions, sem salvar transcrição do terminal. Exemplo:
+
+```sh
+python scripts/shopee_readonly_preflight.py --item-id 58217601055 --shop-id 728389176
+```
+
+Para ser executado, o diretório precisa conter clone do repositório `MKT-RSS` com o script e seu módulo importável; nenhum deploy foi realizado. **Não publicar credenciais em mensagens, repositórios, terminal com histórico de comandos ou capturas**. Se a autenticação da API falhar, não tentar repetidamente; verificar a conta e o schema.
+
+Regressões locais offline após atualização do coletor: **9/9 testes PASS** (consulta assinada simulada, incoerência e ausência de `price`, IDs incorretos, GraphQL error, sem credenciais) e `py_compile` do módulo/testes/script PASS. Nova regressão baseada na forma da resposta do Explorer acrescentada depois, ainda requer execução conjunta para ser declarada PASS.
+
+### Aceite — distinguir três níveis
+- **API Shopee na conta: CONFIRMADA.** HTTP 200 e resultado real no Explorer.
+- **Adaptador MKT-RSS: PREPARADO E TESTADO COM MOCK.** Nenhuma execução real autenticada do próprio Python MKT-RSS foi feita.
+- **Conexão MKT-RSS ↔ Shopee: PENDENTE DE HOMOLOGAÇÃO REAL.** Falta execução de um preflight em terminal autorizado com credenciais inseridas diretamente pelo proprietário e saída pública correspondente; implantação de rotina/armazenamento somente depois, sem bloquear o Gate.
