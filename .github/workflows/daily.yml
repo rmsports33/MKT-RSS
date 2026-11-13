@@ -39,7 +39,6 @@ jobs:
         env:
           TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-          CONEXO_REQUIRE_CLOUD_PERSISTENCE: '1'
           CONEXO_PRODUCT_LINKS_ENABLED: '1'
           INPUT_LIMIT: ${{ inputs.limit }}
         run: |
