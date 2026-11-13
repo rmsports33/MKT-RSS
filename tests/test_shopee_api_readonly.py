@@ -13,7 +13,7 @@ class ShopeeReadOnlyTests(unittest.TestCase):
             "itemId": 777, "shopId": 42, "productName": "Redmi Watch 6 Lite",
             "productLink": "https://shopee.com.br/product/42/777",
             "offerLink": "https://s.shopee.com.br/example",
-            "priceMin": "492.78", "priceMax": "492.78", "shopName": "Loja Teste",
+            "price": "492.78", "priceMin": "492.78", "priceMax": "492.78", "shopName": "Loja Teste",
         }
 
     def _run(self, nodes=None, errors=None):
@@ -35,7 +35,7 @@ class ShopeeReadOnlyTests(unittest.TestCase):
         self.assertEqual(result["preco"], "492.78")
         self.assertEqual(result["nome"], "Redmi Watch 6 Lite")
         self.assertEqual(result["vendedor"], "Loja Teste")
-        self.assertEqual(result["status"], "VERIFICADO_NA_PAGINA")
+        self.assertEqual(result["status"], "VERIFICADO_API_OFICIAL")
         self.assertEqual(post.call_count, 1)
         self.assertEqual(post.call_args.kwargs["timeout"], 15)
         self.assertIn(b"productOfferV2", post.call_args.kwargs["data"])
@@ -52,6 +52,14 @@ class ShopeeReadOnlyTests(unittest.TestCase):
 
     def test_variable_price_rejected(self):
         result, _ = self._run([dict(self.node, priceMax="600.00")])
+        self.assertIsNone(result)
+
+    def test_inconsistent_current_price_rejected(self):
+        result, _ = self._run([dict(self.node, price="490.00")])
+        self.assertIsNone(result)
+
+    def test_missing_current_price_rejected(self):
+        result, _ = self._run([dict(self.node, price=None)])
         self.assertIsNone(result)
 
     def test_graphql_error_rejected(self):
