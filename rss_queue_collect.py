@@ -54,7 +54,8 @@ def coletar(fonte="", limite=5, dry_run=False):
             try:
                 status = registrar(item)
                 resultados["novas" if status["novo"] else "duplicadas"] += 1
-                if (classification and classification["status"] == "CANDIDATE_MATCH"
+                if (os.getenv("CONEXO_PRODUCT_LINKS_ENABLED") == "1"
+                        and classification and classification["status"] == "CANDIDATE_MATCH"
                         and status.get("id")):
                     # Exige a MESMA URL da pauta persistida: duplicata por titulo
                     # semelhante pode referir outra notícia legítima.
