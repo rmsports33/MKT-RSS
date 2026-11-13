@@ -4,9 +4,8 @@ name: Keepalive (anti-pausa 60 dias)
 # O GitHub pausa crons sem commits por 60 dias. Este workflow garante 1 commit/mês
 # sem mexer em código de produção — só atualiza .github/keepalive.txt.
 
+# Execução manual somente enquanto despesas do Actions são reduzidas.
 on:
-  schedule:
-    - cron: "0 10 1 * *" # dia 1, 10h UTC (07h BRT)
   workflow_dispatch:
 
 permissions:
