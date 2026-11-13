@@ -245,7 +245,7 @@ def _coletar_shopee(item_id: str, shop_id: str) -> Optional[dict]:
         "{ productOfferV2(itemId: " + str(int(item_id)) +
         ", shopId: " + str(int(shop_id)) +
         ", page: 1, limit: 10) { nodes { itemId shopId productName "
-        "productLink offerLink priceMin priceMax shopName } } }"
+        "productLink offerLink price priceMin priceMax shopName } } }"
     )}, ensure_ascii=False, separators=(",", ":"))
     timestamp = int(time.time())
     signature = hashlib.sha256(
@@ -284,12 +284,13 @@ def _coletar_shopee(item_id: str, shop_id: str) -> Optional[dict]:
     node = matches[0]
     if not node.get("productName") or not node.get("shopName"):
         return None
-    price_min, price_max = (
+    price_min, price_max, price_current = (
         normalizar_preco(node.get("priceMin")),
         normalizar_preco(node.get("priceMax")),
+        normalizar_preco(node.get("price")),
     )
-    if not price_min or price_min != price_max:
-        return None  # preços por variante => revisão humana obrigatória
+    if not price_min or not price_current or price_min != price_max or price_min != price_current:
+        return None  # sem preço único e coerente => revisão humana obrigatória
     try:
         from decimal import Decimal
         numeric = Decimal(price_min[3:].replace(".", "").replace(",", "."))
@@ -299,7 +300,7 @@ def _coletar_shopee(item_id: str, shop_id: str) -> Optional[dict]:
     if not url.startswith("https://"):
         return None
     return {
-        "status": "VERIFICADO_NA_PAGINA", "nome": node["productName"],
+        "status": "VERIFICADO_API_OFICIAL", "nome": node["productName"],
         "vendedor": node["shopName"], "moeda": "BRL",
         "preco": str(numeric), "url": url,
         "data_captura": datetime.now(timezone.utc).strftime("%Y-%m-%d"),
@@ -374,7 +375,7 @@ def coletar_preco_produto(
     # a evidência deve trazer data, produto, vendedor e fonte confirmados.
     r = resultados[0]
     if (not isinstance(r, dict)
-            or r.get("status") != "VERIFICADO_NA_PAGINA"
+            or r.get("status") not in ("VERIFICADO_NA_PAGINA", "VERIFICADO_API_OFICIAL")
             or r.get("nome") != nome_produto
             or not str(r.get("vendedor") or "").strip()
             or r.get("moeda") != "BRL"):
