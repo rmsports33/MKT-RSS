@@ -10,7 +10,13 @@ import json
 import os
 import secrets
 import sys
+from pathlib import Path
 from urllib.parse import urlparse
+
+# Running a file under ops/hostinger does not automatically place the repo root
+# on sys.path. Resolve it explicitly without relying on the caller's cwd.
+REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(REPO_ROOT))
 
 import requests
 
