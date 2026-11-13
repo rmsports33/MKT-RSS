@@ -44,6 +44,7 @@ set +a
 [[ -z "${WP_APP_PASSWORD:-}" && -z "${WP_USER:-}" ]] \
   || die "WordPress credentials must not be present in this queue runner"
 [[ -z "${GROQ_API_KEY:-}" ]] || die "LLM credentials not needed in queue-only mode"
+export CONEXO_REQUIRE_CLOUD_PERSISTENCE=1
 [[ "$MODE" == "--run" ]] || { printf 'PASS: private runner prerequisites and configuration checks; no network/write performed\n'; exit 0; }
 
 [[ "${CONEXO_RSS_CRON_ACTIVE:-}" == "1" ]] || die "schedule not activated"
