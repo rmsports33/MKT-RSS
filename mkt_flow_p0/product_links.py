@@ -38,6 +38,12 @@ def link_pauta(product_id, pauta_id, source_url, db_path=None):
     _ensure(db_path)
     _exec("""INSERT OR IGNORE INTO rss_product_links(product_id,pauta_id,source_url)
              VALUES (?,?,?)""", (product_id, pauta_id, canonical), db_path)
+    # INSERT OR IGNORE pode não gravar: nunca declarar sucesso sem readback.
+    observed, _ = _exec(
+        "SELECT source_url FROM rss_product_links WHERE product_id=? AND pauta_id=?",
+        (product_id, pauta_id), db_path)
+    if len(observed) != 1 or observed[0][0] != canonical:
+        return {"status": "LINK_READBACK_PENDING", "publication_authorized": False}
     return {"status": "LINKED", "product_id": product_id,
             "pauta_id": pauta_id, "publication_authorized": False}
 
@@ -77,12 +83,37 @@ def link_verified_draft(source_url, staged, db_path=None):
                wp_link=?, updated_at=CURRENT_TIMESTAMP
                WHERE product_id=? AND pauta_id=? AND (wp_post_id IS NULL OR wp_post_id=?)""",
             (post_id, link, product_id, pauta_id, post_id), db_path)
-    return {"status": "DRAFT_LINKED", "count": len(rows),
-            "publication_authorized": False}
+    # Evidência posterior independente do UPDATE: o recibo WP sozinho
+    # não comprova que o vínculo foi realmente persistido no Turso.
+    evidence = verify_draft_link(canonical, post_id, db_path=db_path)
+    if evidence["status"] != "DRAFT_LINK_CONFIRMED":
+        return evidence
+    return {"status": "DRAFT_LINKED", "count": evidence["count"],
+            "post_id": post_id, "publication_authorized": False}
+
+
+def verify_draft_link(source_url, post_id, db_path=None):
+    """Readback do vínculo no banco da fila; não consulta nem aprova WordPress."""
+    if type(post_id) is not int or post_id <= 0:
+        raise ValueError("WP_POST_ID_INVALID")
+    _require_persistence(db_path)
+    canonical = _url(source_url)
+    rows, _ = _exec(
+        """SELECT l.wp_post_id, l.wp_status FROM rss_product_links l
+           JOIN rss_pautas p ON p.id=l.pauta_id
+           WHERE l.source_url=? AND p.url=?""", (canonical, canonical), db_path)
+    if not rows:
+        return {"status": "SKIPPED_NO_QUEUE_LINK", "publication_authorized": False}
+    if any(str(row[0]) != str(post_id) or row[1] != "draft" for row in rows):
+        return {"status": "LINK_READBACK_PENDING", "publication_authorized": False}
+    return {"status": "DRAFT_LINK_CONFIRMED", "count": len(rows),
+            "post_id": post_id, "publication_authorized": False}
+
 
 def list_links(product_id, db_path=None):
     if not isinstance(product_id, str) or not product_id:
         raise ValueError("PRODUCT_ID_INVALID")
+    _require_persistence(db_path)
     _ensure(db_path)
     rows, _ = _exec(
         """SELECT pauta_id, wp_post_id, wp_status FROM rss_product_links
