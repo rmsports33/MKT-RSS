@@ -4,6 +4,7 @@ O reconhecimento não autoriza publicação. Nenhuma consulta WordPress aqui.
 As rotinas requerem a pauta existente e a mesma URL canônica; falha fechada
 quando a fila é indisponível. Sem segundo banco/executor.
 """
+import os
 from mkt_flow_p0.fila_pautas import _exec, _url
 from mkt_flow_p0 import cloud_db
 
@@ -20,6 +21,9 @@ SCHEMA = """CREATE TABLE IF NOT EXISTS rss_product_links (
  FOREIGN KEY (pauta_id) REFERENCES rss_pautas(id))"""
 
 def _ensure(db_path=None):
+    if os.getenv("CONEXO_RSS_SCHEMA_PREEXISTS") == "1":
+        _exec("SELECT product_id FROM rss_product_links LIMIT 0", db_path=db_path)
+        return
     _exec(SCHEMA, db_path=db_path)
 
 def _require_persistence(db_path):
