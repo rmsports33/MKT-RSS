@@ -10,7 +10,7 @@ from urllib.parse import urlsplit, unquote
 
 import requests
 
-ALLOWED_SITES = frozenset(("https://conexotech.com.br", "https://staging.conexotech.com.br"))
+# Staging was permanently retired from Conexo OS. Draft transport targets production only.\nALLOWED_SITES = frozenset(("https://conexotech.com.br",))
 
 
 def _slug(title, source_url):
