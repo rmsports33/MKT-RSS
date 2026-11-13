@@ -1,0 +1,48 @@
+name: Product catalog - readonly Turso audit
+on:
+  issues:
+    types: [opened]
+permissions:
+  contents: read
+jobs:
+  audit:
+    if: >-
+      github.repository == 'rmsports33/MKT-RSS' &&
+      github.event.sender.login == github.repository_owner &&
+      github.event.issue.title == '[catalogo-turso] auditoria somente leitura'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Testar auditoria offline
+        run: python -m unittest discover -s tests -p 'test_catalog_turso_reconcile.py' -v
+      - name: Instalar cliente HTTP existente
+        run: python -m pip install 'requests>=2.31.0'
+      - name: Reconciliar fila real via SELECT, sem segredo em logs
+        env:
+          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
+          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
+          WP_APP_PASSWORD: ''
+          GROQ_API_KEY: ''
+        run: |
+          python -m scripts.catalog_turso_reconcile_readonly > /tmp/catalog-audit.json
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          d = json.loads(Path('/tmp/catalog-audit.json').read_text())
+          assert d['mode'] == 'READ_ONLY' and d['queue_modified'] is False
+          print(json.dumps(d, ensure_ascii=False, sort_keys=True))
+          with open(os.environ['GITHUB_STEP_SUMMARY'], 'a', encoding='utf-8') as out:
+              out.write('### Reconciliação Turso — leitura apenas\n')
+              out.write(f"- Linhas: {d['total_rows']}\n")
+              out.write(f"- Produtos com pautas: {d['products_with_pautas']} / 18\n")
+              out.write(f"- Produtos sem pautas: {d['products_without_pautas']}\n")
+              out.write(f"- Candidatos adicionais para revisão: {d['duplicate_product_pauta_candidates']}\n")
+              out.write(f"- Ambiguidades: {d['ambiguous_rows']}\n")
+              out.write('- Escritas na fila: nenhuma\n')
+          PY
