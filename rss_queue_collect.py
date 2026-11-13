@@ -60,8 +60,9 @@ def coletar(fonte="", limite=5, dry_run=False):
                     # semelhante pode referir outra notícia legítima.
                     from mkt_flow_p0.product_links import link_pauta
                     try:
-                        link_pauta(classification["product_id"], status["id"], item["link"])
-                        resultados["catalogo"]["vinculos"] = resultados["catalogo"].get("vinculos", 0) + 1
+                        link_result = link_pauta(classification["product_id"], status["id"], item["link"])
+                        key = "vinculos" if link_result["status"] == "LINKED" else "vinculo_ignorado"
+                        resultados["catalogo"][key] = resultados["catalogo"].get(key, 0) + 1
                     except (ValueError, RuntimeError, OSError) as exc:
                         # Persistência auxiliar não reverte a pauta já registrada.
                         resultados["catalogo"]["vinculo_pendente"] = resultados["catalogo"].get("vinculo_pendente", 0) + 1
