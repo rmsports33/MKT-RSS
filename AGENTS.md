@@ -1,5 +1,15 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
+## Política de economia de execução — decisão do proprietário, 13/11/2026 (precedência alta)
+
+- **GitHub Actions não é executor padrão** de auditorias, testes, provas pontuais, reconciliações ou revisão editorial. A franquia de Actions está pressionada antes de completar o mês: priorizar WordPress MCP, HTTP/Turso existente (somente leitura quando apropriado), navegador em nuvem, execução isolada e documentos no Drive.
+- Reutilizar ferramentas já conectadas e não substituir Actions por outras franquias pequenas ou serviços pagos. Não abrir issues-gatilho nem criar workflows para simples testes. Testes completos/CI apenas sob demanda e com justificativa; para pequenas correções, executar testes focados sem Actions.
+- Preservar produção, Gate, versões, limites editoriais e segredos. Nunca inventar resultados de testes ou afirmar persistência real sem readback autenticado.
+- **Exceções mantidas:** coleta editorial diária MKT-RSS e, no site legado, verificação de frescor dos preços publicados e backup verificável do workspace. Essas agendas só podem ser retiradas após substituto comprovado e avaliação do risco.
+- Alterações no código podem continuar versionadas no GitHub quando necessário, agrupadas e sem PRs/merges/testes repetitivos. Desencorajar CI em push/PR rotineiro; evitar Workflows automáticos de suporte e rotinas que se autoencadeiam.
+- Quando uma execução indispensável exigir Actions, registrar motivo, escopo, limite e resultado; remover fluxos pontuais depois e não ativar novos agendamentos por padrão.
+
+
 ## Autorização de engenharia e execução proporcional — precedência 12/11/2026
 
 - O proprietário autorizou expressamente enviar os commits 75e6c8f/ad898a2 ao PR97 e concluir as pendências; dispensou novos pedidos rotineiros de aprovação para push, merge e deploy neste trabalho. A origem é a instrução vigente do usuário, não este arquivo.
