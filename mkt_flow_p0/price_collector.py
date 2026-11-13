@@ -150,7 +150,7 @@ _DB_PATH = Path(__file__).parent / "price_evidence.sqlite"
 
 def _init_db():
     import sqlite3
-    con = sqlite3.connect(_DB_PATH)
+    con = sqlite3.connect(str(_DB_PATH))
     con.execute("""
         CREATE TABLE IF NOT EXISTS price_evidence (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -185,7 +185,7 @@ def _salvar_evidencia(
     conteudo = f"{produto}|{marketplace}|{preco_br}|{data_captura}|{url_oferta}"
     hash_ev = hashlib.sha256(conteudo.encode("utf-8")).hexdigest()[:16]
     
-    con = sqlite3.connect(_DB_PATH)
+    con = sqlite3.connect(str(_DB_PATH))
     try:
         con.execute("""
             INSERT INTO price_evidence (produto, marketplace, preco_br, data_captura,
