@@ -1,8 +1,6 @@
 name: Conexo OS editorial validation (manual pilot)
 on:
-  workflow_dispatch:
-  pull_request:
-    branches: [fix/m05-c19-rss-failclosed, master]
+  workflow_dispatch: # validação editorial apenas sob demanda
 
 permissions:
   contents: read
