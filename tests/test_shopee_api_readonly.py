@@ -42,6 +42,30 @@ class ShopeeReadOnlyTests(unittest.TestCase):
         self.assertNotIn(b"segredo-mock", post.call_args.kwargs["data"])
         self.assertTrue(post.call_args.kwargs["headers"]["Authorization"].startswith("SHA256 Credential="))
 
+    def test_real_explorer_response_shape_without_credentials(self):
+        # Exemplo público anonimizado do Explorer em 13/11/2026:
+        # produto/loja e preços da resposta real; SEM segredo/API token.
+        sample = {
+            "itemId": 58217601055, "shopId": 728389176,
+            "productName": "Parafusadeira Furadeira 1X Bateria 25V Nakasaki",
+            "shopName": "MAQ TOOLS", "price": "95.99",
+            "priceMin": "95.99", "priceMax": "95.99",
+            "productLink": "https://shopee.com.br/product/728389176/58217601055",
+            "offerLink": "https://s.shopee.com.br/public-example",
+        }
+        response = type("Response", (), {
+            "raise_for_status": lambda self: None,
+            "json": lambda self: {"data": {"productOfferV2": {
+                "nodes": [sample]}}},
+        })()
+        with patch.object(pc._CREDS, "shopee", self.creds), \
+             patch.object(pc._CREDS, "tem_shopee", return_value=True), \
+             patch.object(pc.requests, "post", return_value=response) as post:
+            result = pc._coletar_shopee(str(sample["itemId"]), str(sample["shopId"]))
+        self.assertEqual(result["preco"], "95.99")
+        self.assertEqual(result["origem"], "api_oficial_shopee")
+        post.assert_called_once()
+
     def test_wrong_item_rejected(self):
         result, _ = self._run([dict(self.node, itemId=888)])
         self.assertIsNone(result)
