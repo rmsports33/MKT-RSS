@@ -86,7 +86,7 @@ def validate_complete_editorial_draft(post: dict, *, expected_category_id: int =
     credit = post.get("image_caption")
     if not isinstance(credit, str) or len(credit.strip()) < 12:
         errors.append("image_credit_missing")
-    urls = re.findall(r"https?://[^\\s\\\"'<>]+", content or "") if isinstance(content, str) else []
+    urls = re.findall(r"https?://[^\s\"'<>]+", content or "") if isinstance(content, str) else []
     from urllib.parse import urlparse
     external = [u for u in urls if urlparse(u).hostname not in (expected_site, "www."+expected_site)]
     internal = [u for u in urls if urlparse(u).hostname in (expected_site, "www."+expected_site)]
