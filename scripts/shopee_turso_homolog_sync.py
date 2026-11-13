@@ -4,6 +4,7 @@ import argparse
 import getpass
 import json
 import os
+import sqlite3
 import sys
 from pathlib import Path
 
@@ -61,5 +62,4 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    import sqlite3
     sys.exit(main())
