@@ -27,3 +27,16 @@ A gravação de vínculos é **desativada por padrão**. Requer `CONEXO_PRODUCT_
 - `.github/workflows/rss-homolog-manual.yml` fornece as credenciais Turso existentes apenas no passo de criação/reutilização de rascunho privado. Não permite publicar nem aciona chamadas de IA além das já previstas no modo manual.
 - `product_links.py` **não usa SQLite por engano** quando executado sem `db_path` explícito e sem credenciais Turso; nesse caso informa vínculo pendente. SQLite continua possível apenas em testes isolados que passam `db_path`.
 - O código e os testes podem ser integrados antes da primeira coleta operacional; esta integração **não comprova** uma escrita/readback real de vínculo no Turso nem um novo rascunho WordPress. Essas provas exigem execução autenticada da respectiva rotina e conferência posterior.
+
+## Primeira prova operacional real (13/11/2026)
+
+- Resultado: **PASS** na execução GitHub Actions https://github.com/rmsports33/MKT-RSS/actions/runs/43429868861
+- Gatilho pontual autorizado: issue https://github.com/rmsports33/MKT-RSS/issues/117
+- Fonte RSS real: GSMArena, notícia https://www.gsmarena.com/motorola_signature_27_battery_capacity_germany-news-75468.php
+- Produto canônico: `motorola-signature-27`
+- Pauta gravada no Turso existente: `db04160bd336123bbb3046654060a27d`, estado `DESCOBERTA`, `queue_new=true`
+- Vínculo `product_id + pauta_id`: 1 registro com chave única, confirmado por duas consultas SQL SELECT de leitura posterior autenticada
+- Resultado: `authenticated_turso_readback=true`, `publication_authorized=false`, `wordpress_modified=false`, `wp_post_id=null`
+- A prova utilizou `registrar()` e `link_pauta()` existentes, sem IA/Groq, WordPress, publicação, agendamento ou novo executor.
+- Foram removidos workflow/script/teste temporários da prova após a coleta dos registros; o mecanismo operacional de vínculos permanece ativo no fluxo RSS.
+- **Escopo:** comprova `RSS real → pauta Turso → vínculo Turso → readback`. Não comprova `readback WordPress → vínculo com wp_post_id`, que depende de um rascunho válido produzido no fluxo editorial normal.
