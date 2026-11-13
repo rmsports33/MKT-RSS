@@ -26,6 +26,8 @@ Requisitos:
 - Fallback claro: sem credencial = não coleta daquele marketplace
 - Evidência persistida com rastreabilidade (sem expor segredos)
 """
+from __future__ import annotations
+
 import os
 import json
 import time
