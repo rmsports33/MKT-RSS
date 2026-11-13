@@ -3,15 +3,8 @@ name: Dashboard Pages
 # Publica dashboard_p1.html em GitHub Pages (acesso no celular sem PC).
 # Ative em Settings → Pages → Source: GitHub Actions (uma vez).
 
+# Publicação do dashboard apenas manual; evita build/deploy diário.
 on:
-  push:
-    branches: [master]
-    paths:
-      - "mkt_flow_p0/dashboard.py"
-      - "mkt_flow_p0.db"
-      - ".github/workflows/pages.yml"
-  schedule:
-    - cron: "15 12 * * *" # 09:15 BRT, logo após o daily
   workflow_dispatch:
 
 permissions:
