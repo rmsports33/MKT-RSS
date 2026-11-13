@@ -1,6 +1,6 @@
 {
   "schema": "conexo-product-catalog/1",
-  "updated_at": "2026-11-12",
+  "updated_at": "2026-11-13",
   "scope": "editorial-reference-only",
   "products": [
     {
@@ -76,7 +76,17 @@
       "source_pautas": [
         "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
       ],
-      "article_ids": []
+      "article_ids": [],
+      "content_links": [
+        {
+          "source": "site_publico",
+          "relation": "review_dedicado",
+          "status": "publicado",
+          "url": "https://conexotech.com.br/reviews/samsung-galaxy-a57-5g-vale-a-pena-em-2026/",
+          "verified_on": "2026-11-13",
+          "note": "Página pública confirmada; não foi localizado ID de post na listagem WordPress MCP."
+        }
+      ]
     },
     {
       "id": "poco-x8-pro",
@@ -108,7 +118,18 @@
       "source_pautas": [
         "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
       ],
-      "article_ids": []
+      "article_ids": [],
+      "content_links": [
+        {
+          "source": "wordpress",
+          "relation": "artigo_dedicado",
+          "status": "draft",
+          "post_id": 9589,
+          "url": "https://conexotech.com.br/?p=9589",
+          "verified_on": "2026-11-13",
+          "note": "Rascunho sobre iPhone 17 na Black Friday; não é publicação."
+        }
+      ]
     },
     {
       "id": "lenovo-ideapad-slim-3",
@@ -123,7 +144,18 @@
       "source_pautas": [
         "mkt-flow-escrita/pautas/radar-produtos-20261111.md"
       ],
-      "article_ids": []
+      "article_ids": [],
+      "content_links": [
+        {
+          "source": "wordpress",
+          "relation": "mencao_em_guia",
+          "status": "draft",
+          "post_id": 9251,
+          "url": "https://conexotech.com.br/?p=9251",
+          "verified_on": "2026-11-13",
+          "note": "O modelo é citado como exemplo; o guia não é dedicado ao produto."
+        }
+      ]
     },
     {
       "id": "tcl-c6k",
