@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "SIX_REAL_PUBLICATIONS_VERIFIED_GATE_AGENDA_0_2_2_DYNAMIC_PRODUCTION_ACTIVE",
+  "status": "IMMEDIATE_WORDPRESS_PUBLICATION_STANDARD_GATE_0_3_0_ACTIVE_NO_SCHEDULING",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -187,10 +187,18 @@
       "reference": "https://github.com/rmsports33/MKT-RSS/blob/master/docs/editorial-evidence/published-six-wordpress-content-snapshot-20261113.json",
       "sha": "fa880ca0e5200faad1973c383b7d9c17dcb919a0",
       "result": "Six published complete bodies and metadata snapshot, WordPress authenticated readback; assists recovery but not full database backup."
+    },
+    {
+      "reference": "https://github.com/rmsports33/-site-conexotech/pull/73",
+      "result": "Plugin v0.3.0 reuses signed Gate intent=publish; replaces scheduling UI; 33 offline regressions PASS; CI green; installed active."
+    },
+    {
+      "reference": "docs/EDITORIAL-IMMEDIATE-PUBLICATION-POLICY-20261113.md",
+      "result": "Owner decision registered: immediate publish after review, client-side 390/1440 QA, no restoration, backups in UpdraftPlus/Drive."
     }
   ],
   "blockers": [],
-  "next_action": "Lote de seis concluído e publicamente verificado; NÃO reagendar/republicar. Agenda Nativa 0.2.2 em produção sem IDs fixos. Futuras pautas: proprietário faz review no WP, escolhe IDs dinâmicos, prévia antes de assinar, WP-Cron nativo sem cron Hostinger. Inspecionar visualmente admin 390/1440 em sessão autenticada e executar restauração apenas em ambiente isolado se necessária; registrar atrasos de cron como risco sem garantia de 10min.",
+  "next_action": "Para novos artigos completos: MKT-RSS cria draft autor ID4; proprietário ID3 abre Ferramentas > Conexo — revisar e publicar, executa prévias autenticadas 390/1440, confirma critérios reais e a mesma confirmação chama Gate assinado publish imediato. Sem agendar, sem cron Hostinger e sem GitHub Actions por artigo. Observar primeira publicação futura real para homologação ponta a ponta da versão 0.3.0; não criar testes com falso parecer.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -245,7 +253,7 @@
     "version_snapshot_9814_9815": "UPDATED_PREAPPROVAL_HASHES; GATE_CANONICAL_PENDING",
     "current_snapshot_receipt": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
     "assisted_editorial_review": "SIX_COMPLETED_OWNER_DECISION_PENDING",
-    "wordpress_latest_status": "6_OF_6_PUBLISHED_ACTOR_WP_CRON_SITE_ACTIVITY_2026_11_13",
+    "wordpress_latest_status": "SIX_OLD_POSTS_PUBLISHED_ZERO_FUTURE_POSTS_CONFIRMED_2026_11_13",
     "featured_media_by_post": {
       "9810": 9838,
       "9813": 9839,
@@ -276,17 +284,17 @@
     "owner_gate_signed_current_versions": "PAST_PUBLISH_COMPLETED_BY_PROTECTED_GATE; PRIVATE_RECORDS_NOT_AUDITED",
     "followup_check": "AUTOMATION_2026_11_12_17_10_BRT",
     "wordpress_native_schedule_code": "MERGED_MASTER_6CDC427_CI_PASSED_MANUAL_FALLBACK",
-    "wordpress_native_schedule_execution": "SIX_PREVIOUS_WP_NATIVE_FUTURE_POSTS_PUBLISHED_BY_WP_CRON",
+    "wordpress_native_schedule_execution": "RETIRED_HISTORICAL_SIX_POSTS_ALREADY_PUBLISHED",
     "github_recurring_six_slots": "REMOVED_FROM_MASTER",
-    "hostinger_server_cron": "REMOVED_PER_OWNER_NO_RECREATE",
+    "hostinger_server_cron": "NONE_PER_OWNER_DECISION",
     "native_seo_future_finalize": "NOT_IMPLEMENTED",
     "current_post_status": "ALL_SIX_PUBLISHED",
-    "wordpress_native_scheduler_plugin": "ACTIVE_PRODUCTION_CONEXO_GATE_AGENDA_NATIVA_0_2_2",
+    "wordpress_native_scheduler_plugin": "REPLACED_BY_CONEXO_GATE_PUBLICACAO_IMEDIATA_0_3_0_SAME_SLUG_ACTIVE",
     "wordpress_native_owner_review_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-gate-revisar-lote",
     "wordpress_native_schedule_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-gate-agendar",
     "wordpress_native_owner_batch_approval": "OWNER_BULK_SCHEDULED_AT_2026_11_12_19_28_BRT; SIX_FUTURE_TO_PUBLISH",
     "jetpack_monitor": "ACTIVE_SITE_UP_2026_11_12",
-    "github_action_publication_per_post": "NOT_REQUIRED_WP_ADMIN_NATIVE_PREFERRED",
+    "github_action_publication_per_post": "NOT_REQUIRED_NO_MANUAL_SCHEDULER",
     "batch_plug_in_live": "GATE_RC5_AND_AGENDA_0_2_2_ACTIVE",
     "plugin_package_drive_verified": "DRIVE_FILE_1W2vZfMwnyAfsGD6JTZpfnvZroQp5X7G- ZIP_8170_BYTES_HASH_LOCAL_MATCH_DOC",
     "production_file_hash_readback": "UNAVAILABLE_HOSTINGER_CONTENT_API_EMPTY_RESPONSE",
@@ -366,7 +374,15 @@
     "published_content_backup_verified": "SIX_COMPLETE_BODIES_AND_META_GET_FROM_PUBLISH_WORDPRESS_READBACK",
     "backup_note": "Content-level recovery snapshot in GitHub plus versioned ZIP in Drive; UpdraftPlus full restore not tested, do not claim it.",
     "public_viewport_capture": "WORDPRESS_MSHOTS_READY_390_AND_1440_FOR_9814_AND_9810_IMAGES_NOT_VISUALLY_INSPECTED",
-    "public_seo_six_page_checks": "ALL_SIX_PUBLIC_PAGES_ACCESSIBLE_METADATA_TITLE_DESC_CANONICAL_ROBOTS_OG_LEIA_TAMBEM"
+    "public_seo_six_page_checks": "ALL_SIX_PUBLIC_PAGES_ACCESSIBLE_METADATA_TITLE_DESC_CANONICAL_ROBOTS_OG_LEIA_TAMBEM",
+    "new_publication_policy": "COMPLETED_APPROVAL_GATED_IMMEDIATE_PUBLISH_NO_FUTURE_NO_CRON",
+    "visual_qa_390_1440": "IN_PLUGIN_SAME_ORIGIN_IFRAMES_AUTO_OVERFLOW_TABLE_IMAGE_SCANNER_HUMAN_CONFIRMS",
+    "backup_policy": "KEEP_UPDRAFTPLUS_AND_GOOGLE_DRIVE_BACKUPS_NO_FULL_RESTORE_REQUESTED",
+    "immediate_plugin_pull_request": "https://github.com/rmsports33/-site-conexotech/pull/73",
+    "immediate_plugin_version": "0.3.0",
+    "immediate_release_zip_sha256": "b6d2750e9121df0baa4ad1e8626f3f4d7c1f550c6da007adc31b756eb46d072d",
+    "immediate_plugin_tests": "33_OFFLINE_PHP_TESTS_PASS_CI_PASS",
+    "visual_qa_authenticated_readback": "NOT_YET_VERIFIED_IN_LIVE_EDITOR_OWNER_SESSION"
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
@@ -375,17 +391,13 @@
     "A IA em GitHub Actions continua solicitação de imagem, não renderização automática sem serviço autorizado. Planejamento único e deduplicação por lote já estão na master.",
     "Cadência normal: 1-2 matérias/dia (09h e 17h); lote atual interligado pode ser liberado uma só vez em janela de 50min após seis revisões, evitando links de rascunhos por dias.",
     "O contrato Native SEO de post future não é finalizado pelo broker atual; priorizar verificação pública de tags no primeiro post após o cron.",
-    "Conservar o agendamento WP nativo sem cron Hostinger, conforme decisão explícita do usuário; validar publicações reais, pois future não garante pontualidade do WP-Cron.",
-    "Não reativar cron Hostinger: usar WP-Cron nativo e monitorar atrasos.",
     "Publicação já concluída: seis artigos em publish, SEO básico e links públicos verificáveis. Atrasos de 13 segundos a 23m06 por WP-Cron sob baixo tráfego sem cron externo; manter decisão do usuário.",
     "Inspeção da UI autenticada WordPress em 390 e 1440px ainda não comprovada; testes isolados de fluxo passaram.",
-    "Rollback da extensão via ZIP 0.2.1 e conjunto UpdraftPlus identificado; restauração integral sem ambiente isolado NÃO foi testada.",
-    "Native SEO assinado específico para future->publish ainda não homologado; output público atual (Rank Math) está correto."
+    "Rollback da extensão via ZIP 0.2.1 e conjunto UpdraftPlus identificado; restauração integral sem ambiente isolado NÃO foi testada."
   ],
   "residual_validation": [
-    "Visual inspection of the authenticated editor at 390px and 1440px not completed (no logged-in browser); public WordPress screenshots are generated at both widths for Unitree/NEO but image content was not inspectable here.",
-    "Exact physical execution of WP-Cron without an external timer is not guaranteed; six actual publishes 13s–23m06s late. No Hostinger cron per owner.",
-    "Conexo Native SEO version-signed future->publish internal contract not proven; public SEO on all six articles is correct under current active Rank Math bridge.",
-    "Full database/files restore not performed: versioned plugin ZIP rollback available, Updraft backups exist with sampled archive CRC integrity PASS; use isolated environment for full restore."
+    "Primeira nova publicação real sob Gate 0.3.0 deve comprovar nonce/HMAC, status publish, URL e SEO (nenhum novo post foi publicado artificialmente nesta implantação).",
+    "Verificação visual automática 390/1440 integrada à UI autenticada; medições reais dependem de navegador do proprietário com iframe same-origin, podendo exigir avaliação humana se navegador bloquear.",
+    "Contratos Conexo Native SEO assinados são finalizados apenas com signer disponível; Rank Math continua sendo saída pública."
   ]
 }
