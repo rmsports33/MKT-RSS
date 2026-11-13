@@ -1,6 +1,9 @@
 """Regressões isoladas para consulta Shopee: sem rede ou segredos reais."""
 import json
+import sqlite3
+import tempfile
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from mkt_flow_p0 import price_collector as pc
@@ -65,6 +68,24 @@ class ShopeeReadOnlyTests(unittest.TestCase):
         self.assertEqual(result["preco"], "95.99")
         self.assertEqual(result["origem"], "api_oficial_shopee")
         post.assert_called_once()
+
+    def test_sqlite_pathlib_works_on_legacy_python(self):
+        # sqlite3 do Python 3.6 do servidor requer str em vez de Path.
+        with tempfile.TemporaryDirectory() as directory:
+            db = Path(directory) / "price_evidence.sqlite"
+            with patch.object(pc, "_DB_PATH", db):
+                inserted = pc._salvar_evidencia(
+                    produto="Exemplo", marketplace="shopee",
+                    preco_br="R$ 95,99", data_captura="13/11/2026",
+                    url_oferta="https://shopee.com.br/product/42/777",
+                    payload_bruto={"item_id": "777", "shop_id": "42"},
+                )
+            self.assertTrue(inserted)
+            with sqlite3.connect(str(db)) as connection:
+                rows = connection.execute(
+                    "SELECT preco_br, marketplace FROM price_evidence"
+                ).fetchall()
+            self.assertEqual(rows, [("R$ 95,99", "shopee")])
 
     def test_wrong_item_rejected(self):
         result, _ = self._run([dict(self.node, itemId=888)])
