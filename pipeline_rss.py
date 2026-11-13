@@ -418,7 +418,9 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         # sem alterar recibo WordPress já confirmado.
         try:
             from mkt_flow_p0.product_links import link_verified_draft
-            staged_link = link_verified_draft(url_fonte, staged)
+            staged_link = (link_verified_draft(url_fonte, staged)
+                           if os.getenv("CONEXO_PRODUCT_LINKS_ENABLED") == "1"
+                           else {"status": "DISABLED", "publication_authorized": False})
         except (ValueError, RuntimeError, OSError, TypeError):
             staged_link = {"status": "LINK_PERSISTENCE_PENDING",
                            "publication_authorized": False}
