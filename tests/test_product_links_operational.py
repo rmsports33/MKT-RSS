@@ -102,6 +102,16 @@ class TestProductLinks(unittest.TestCase):
         link.assert_not_called()
         self.assertEqual(result["novas"], 1)
 
+    def test_no_sqlite_fallback_without_cloud_credentials(self):
+        with patch("mkt_flow_p0.product_links.cloud_db.turso_enabled",
+                   return_value=False):
+            with self.assertRaisesRegex(RuntimeError, "PRODUCT_LINK_CLOUD_CREDENTIALS_MISSING"):
+                link_pauta("motorola-signature-27", "pauta1",
+                           "https://example.org/a")
+            with self.assertRaisesRegex(RuntimeError, "PRODUCT_LINK_CLOUD_CREDENTIALS_MISSING"):
+                link_verified_draft("https://example.org/a",
+                    {"acao": "publicado_rascunho", "post_id": 9001, "status": "draft"})
+
     def test_recognition_is_conservative(self):
         result = identify_in_headline(self.a["titulo"], load())
         self.assertEqual(result["product_id"], "motorola-signature-27")
