@@ -46,7 +46,7 @@ python scripts/shopee_readonly_preflight.py --item-id 58217601055 --shop-id 7283
 
 Para ser executado, o diretório precisa conter clone do repositório `MKT-RSS` com o script e seu módulo importável; nenhum deploy foi realizado. **Não publicar credenciais em mensagens, repositórios, terminal com histórico de comandos ou capturas**. Se a autenticação da API falhar, não tentar repetidamente; verificar a conta e o schema.
 
-Regressões locais offline após atualização do coletor: **9/9 testes PASS** (consulta assinada simulada, incoerência e ausência de `price`, IDs incorretos, GraphQL error, sem credenciais) e `py_compile` do módulo/testes/script PASS. Nova regressão baseada na forma da resposta do Explorer acrescentada depois, ainda requer execução conjunta para ser declarada PASS.
+Regressões locais offline após atualização do coletor: **9/9 testes PASS** (consulta assinada simulada, incoerência e ausência de `price`, IDs incorretos, GraphQL error, sem credenciais) e `py_compile` do módulo/testes/script PASS. A regressão adicional com os campos públicos observados no Explorer foi reexecutada junto das demais: **10/10 testes PASS**, sem rede e sem segredos (13/11/2026).
 
 ### Aceite — distinguir três níveis
 - **API Shopee na conta: CONFIRMADA.** HTTP 200 e resultado real no Explorer.
