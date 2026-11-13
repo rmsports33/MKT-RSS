@@ -69,6 +69,39 @@ class TestProductLinks(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "TURSO_UNAVAILABLE"):
                 link_pauta("motorola-signature-27", row["id"], self.a["link"], self.db)
 
+    def test_rss_collector_links_only_after_registration_opt_in(self):
+        feed = {"itens": [self.a]}
+        from unittest.mock import patch
+        with patch.dict(rss_queue_collect.FEEDS_PADRAO,
+                        {"fixture": "https://example.invalid/feed"}, clear=True), \\
+             patch.dict(rss_queue_collect.os.environ,
+                        {"CONEXO_PRODUCT_LINKS_ENABLED": "1"}), \\
+             patch.object(rss_queue_collect, "fetch_feed", return_value=feed), \\
+             patch.object(rss_queue_collect, "recent", return_value=True), \\
+             patch.object(rss_queue_collect, "registrar",
+                          return_value={"id": "pauta1", "novo": True}), \\
+             patch("mkt_flow_p0.product_links.link_pauta",
+                   return_value={"status": "LINKED"}) as link:
+            result = rss_queue_collect.coletar(limite=1)
+        link.assert_called_once_with("motorola-signature-27",
+                                     "pauta1", "https://example.org/a")
+        self.assertEqual(result["catalogo"]["vinculos"], 1)
+
+    def test_rss_collector_no_link_without_opt_in(self):
+        with patch.dict(rss_queue_collect.FEEDS_PADRAO,
+                        {"fixture": "https://example.invalid/feed"}, clear=True), \\
+             patch.dict(rss_queue_collect.os.environ,
+                        {"CONEXO_PRODUCT_LINKS_ENABLED": "0"}), \\
+             patch.object(rss_queue_collect, "fetch_feed",
+                          return_value={"itens": [self.a]}), \\
+             patch.object(rss_queue_collect, "recent", return_value=True), \\
+             patch.object(rss_queue_collect, "registrar",
+                          return_value={"id": "pauta1", "novo": True}), \\
+             patch("mkt_flow_p0.product_links.link_pauta") as link:
+            result = rss_queue_collect.coletar(limite=1)
+        link.assert_not_called()
+        self.assertEqual(result["novas"], 1)
+
     def test_recognition_is_conservative(self):
         result = identify_in_headline(self.a["titulo"], load())
         self.assertEqual(result["product_id"], "motorola-signature-27")
