@@ -84,24 +84,39 @@ def _tem_credencial(marketplace: str) -> bool:
 # --- Normalizadores ---------------------------------------------------------
 
 def normalizar_preco(valor) -> str:
-    """1500.5 -> 'R$ 1.500,00'; '1.600,00' -> 'R$ 1.600,00'; inválido -> ''."""
+    """Converte apenas valores positivos BRL sem ambiguidade.
+
+    Aceita 1234.56, "1234.56", "1.234,56" e "R$ 1.234,56".
+    Nunca interpreta 1234.56 como 123456, nem aceita NaN/Infinity.
+    """
+    import re
+    from decimal import Decimal, InvalidOperation
     if valor is None or isinstance(valor, bool):
         return ""
-    if isinstance(valor, (int, float)):
-        try:
-            return "R$ " + f"{float(valor):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-        except (TypeError, ValueError):
+    if isinstance(valor, (int, float, Decimal)):
+        raw = str(valor)
+    elif isinstance(valor, str):
+        raw = re.sub(r"^R\\$\\s*", "", valor.strip(), flags=re.IGNORECASE)
+        if re.fullmatch(r"\\d{1,3}(?:\\.\\d{3})+(?:,\\d{1,2})?", raw):
+            raw = raw.replace(".", "").replace(",", ".")
+        elif re.fullmatch(r"\\d+(?:,\\d{1,2})", raw):
+            raw = raw.replace(",", ".")
+        elif not re.fullmatch(r"\\d+(?:\\.\\d{1,2})?", raw):
             return ""
-    texto = str(valor).strip()
-    if not texto:
+    else:
         return ""
-    texto = re.sub(r"^R\$", "", texto, flags=re.IGNORECASE).strip()
-    if re.match(r"^\d{1,3}(\.\d{3})*,\d{2}$", texto):
-        return "R$ " + texto
-    numero = texto.replace(".", "").replace(",", ".")
     try:
-        return "R$ " + f"{float(numero):,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
-    except (TypeError, ValueError):
+        d = Decimal(raw)
+        if not d.is_finite() or d <= 0 or d >= Decimal("10000000"):
+            return ""
+        d = d.quantize(Decimal("0.01"))
+        inteiro, centavos = f"{d:.2f}".split(".")
+        grupos = []
+        while inteiro:
+            grupos.insert(0, inteiro[-3:])
+            inteiro = inteiro[:-3]
+        return "R$ " + ".".join(grupos) + "," + centavos
+    except (InvalidOperation, ValueError):
         return ""
 
 
