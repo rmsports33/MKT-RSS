@@ -16,3 +16,7 @@ Implementação no próprio MKT-RSS, sem outro banco, executor ou agendamento.
 A implementação foi preparada para a coleta e para o estágio de rascunhos do executor já existente. Nenhum backfill automático de pautas ou artigos foi executado. O catálogo não sincroniza arquivos JSON a cada evento; a tabela operacional guarda os vínculos. Antes da homologação real, testar criação/idempotência/conflito/indisponibilidade com SQLite isolado, executar regressões do MKT-RSS e uma homologação autenticada em ambiente autorizado e sem publicação.
 
 O campo `wp_status` da tabela atualmente representa apenas o estado `draft` confirmado no readback; atualização futura para `publish` ou `future` exige fonte autenticada, Gate e validação separados. Nunca inferir publicação da simples existência de um post ID.
+
+## Ativação controlada
+
+A gravação de vínculos é **desativada por padrão**. Requer `CONEXO_PRODUCT_LINKS_ENABLED=1` no executor existente; não habilitar a variável antes de testes de regressão, homologação em base isolada e confirmação da identidade do banco. No modo desativado, a classificação RSS permanece disponível e nenhuma tabela de vínculo é criada por esses caminhos. O opt-in não autoriza publicação, não habilita WP por si e não executa backfill.
