@@ -4,9 +4,8 @@ name: Backup semanal (Drive)
 # Requer secrets GOOGLE_DRIVE_CLIENT_ID/SECRET + token.json já autorizado
 # na primeira execução local (ver docs/PUBLICAR_BACKUP.md).
 
+# Execução manual somente enquanto despesas do Actions são reduzidas.
 on:
-  schedule:
-    - cron: "0 13 * * 0" # domingo 10h BRT (13h UTC)
   workflow_dispatch:
 
 permissions:
