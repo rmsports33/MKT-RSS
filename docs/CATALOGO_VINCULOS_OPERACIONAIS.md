@@ -20,3 +20,10 @@ O campo `wp_status` da tabela atualmente representa apenas o estado `draft` conf
 ## Ativação controlada
 
 A gravação de vínculos é **desativada por padrão**. Requer `CONEXO_PRODUCT_LINKS_ENABLED=1` no executor existente; não habilitar a variável antes de testes de regressão, homologação em base isolada e confirmação da identidade do banco. No modo desativado, a classificação RSS permanece disponível e nenhuma tabela de vínculo é criada por esses caminhos. O opt-in não autoriza publicação, não habilita WP por si e não executa backfill.
+
+## Uso pelos fluxos já existentes
+
+- `.github/workflows/daily.yml` ativa `CONEXO_PRODUCT_LINKS_ENABLED=1` durante a coleta diária **somente** com `CONEXO_REQUIRE_CLOUD_PERSISTENCE=1`; a coleta é cancelada sem credenciais de Turso antes da rede.
+- `.github/workflows/rss-homolog-manual.yml` fornece as credenciais Turso existentes apenas no passo de criação/reutilização de rascunho privado. Não permite publicar nem aciona chamadas de IA além das já previstas no modo manual.
+- `product_links.py` **não usa SQLite por engano** quando executado sem `db_path` explícito e sem credenciais Turso; nesse caso informa vínculo pendente. SQLite continua possível apenas em testes isolados que passam `db_path`.
+- O código e os testes podem ser integrados antes da primeira coleta operacional; esta integração **não comprova** uma escrita/readback real de vínculo no Turso nem um novo rascunho WordPress. Essas provas exigem execução autenticada da respectiva rotina e conferência posterior.
