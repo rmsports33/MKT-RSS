@@ -1,0 +1,148 @@
+{
+  "schema": "conexo-six-publication-reconciliation/1",
+  "checked_on": "2026-11-13",
+  "source": "Authenticated WordPress MCP post GET, WP site activity log, public TinyFish fetch_content page_metadata (all six URLs)",
+  "publication_count": 6,
+  "records": [
+    {
+      "id": 9813,
+      "title": "Optimus: Tesla informa início de produção em Fremont",
+      "wordpress_status": "publish",
+      "scheduled_utc": "2026-11-12T23:40:00Z",
+      "wp_cron_published_event_utc": "2026-11-12T23:56:41Z",
+      "delay_seconds": 1001,
+      "permalink": "https://conexotech.com.br/optimus-producao-fremont-limites-2026/",
+      "featured_media_id": 9839,
+      "public_webpage_readback": {
+        "accessible": true,
+        "canonical_matches_permalink": true,
+        "robots_index_follow": true,
+        "meta_description_present": true,
+        "open_graph_title_description_image_present": true,
+        "related_section_present": true
+      },
+      "author_id": 4
+    },
+    {
+      "id": 9815,
+      "title": "Optimus e Unitree G1: o que é possível comparar",
+      "wordpress_status": "publish",
+      "scheduled_utc": "2026-11-12T23:50:00Z",
+      "wp_cron_published_event_utc": "2026-11-12T23:56:41Z",
+      "delay_seconds": 401,
+      "permalink": "https://conexotech.com.br/optimus-unitree-g1-comparativo-documental/",
+      "featured_media_id": 9841,
+      "public_webpage_readback": {
+        "accessible": true,
+        "canonical_matches_permalink": true,
+        "robots_index_follow": true,
+        "meta_description_present": true,
+        "open_graph_title_description_image_present": true,
+        "related_section_present": true
+      },
+      "author_id": 4
+    },
+    {
+      "id": 9814,
+      "title": "Unitree R1 e G1: como apurar o custo de importação",
+      "wordpress_status": "publish",
+      "scheduled_utc": "2026-11-13T00:00:00Z",
+      "wp_cron_published_event_utc": "2026-11-13T00:10:10Z",
+      "delay_seconds": 610,
+      "permalink": "https://conexotech.com.br/unitree-r1-g1-importacao-brasil-guia/",
+      "featured_media_id": 9840,
+      "public_webpage_readback": {
+        "accessible": true,
+        "canonical_matches_permalink": true,
+        "robots_index_follow": true,
+        "meta_description_present": true,
+        "open_graph_title_description_image_present": true,
+        "related_section_present": true
+      },
+      "author_id": 4
+    },
+    {
+      "id": 9810,
+      "title": "NEO da 1X: compra, assinatura e limites de privacidade",
+      "wordpress_status": "publish",
+      "scheduled_utc": "2026-11-13T00:10:00Z",
+      "wp_cron_published_event_utc": "2026-11-13T00:10:13Z",
+      "delay_seconds": 13,
+      "permalink": "https://conexotech.com.br/neo-home-robot-6001aae8ec40/",
+      "featured_media_id": 9838,
+      "public_webpage_readback": {
+        "accessible": true,
+        "canonical_matches_permalink": true,
+        "robots_index_follow": true,
+        "meta_description_present": true,
+        "open_graph_title_description_image_present": true,
+        "related_section_present": true
+      },
+      "author_id": 4
+    },
+    {
+      "id": 9816,
+      "title": "Figure 03: avaliação documental das promessas domésticas",
+      "wordpress_status": "publish",
+      "scheduled_utc": "2026-11-13T00:20:00Z",
+      "wp_cron_published_event_utc": "2026-11-13T00:43:06Z",
+      "delay_seconds": 1386,
+      "permalink": "https://conexotech.com.br/figure-03-review-documental-helix/",
+      "featured_media_id": 9842,
+      "public_webpage_readback": {
+        "accessible": true,
+        "canonical_matches_permalink": true,
+        "robots_index_follow": true,
+        "meta_description_present": true,
+        "open_graph_title_description_image_present": true,
+        "related_section_present": true
+      },
+      "author_id": 4
+    },
+    {
+      "id": 9817,
+      "title": "LG CLOiD: rodas também entram na robótica doméstica",
+      "wordpress_status": "publish",
+      "scheduled_utc": "2026-11-13T00:30:00Z",
+      "wp_cron_published_event_utc": "2026-11-13T00:43:07Z",
+      "delay_seconds": 787,
+      "permalink": "https://conexotech.com.br/lg-cloid-rodas-nota-documental/",
+      "featured_media_id": 9843,
+      "public_webpage_readback": {
+        "accessible": true,
+        "canonical_matches_permalink": true,
+        "robots_index_follow": true,
+        "meta_description_present": true,
+        "open_graph_title_description_image_present": true,
+        "related_section_present": true
+      },
+      "author_id": 4
+    }
+  ],
+  "wp_cron_execution": "YES_SITE_ACTIVITY_ACTOR_CRON",
+  "hostinger_extra_cron": "NOT_CONFIGURED_PER_USER_DECISION",
+  "github_actions_per_article": "NOT_REQUIRED",
+  "seo_observation": "Six public pages expose one canonical value each, index-follow, descriptions and Open Graph images. The public extraction does not prove uniqueness of every head tag. A separate browser report made contradictory plugin claims (Yoast/AIOSEO not seen in authoritative WP installed plugin inventory) and is not accepted as duplication evidence.",
+  "actual_timing": "Event times rather than the post date_gmt fields (which preserve scheduled time). WP-Cron triggered 3 groups of near-simultaneous publications, so a 10-minute scheduled gap did not ensure 10-minute effective gap.",
+  "links_status": "All six interlinked destinations now published and resolve in public content extraction.",
+  "agenda_release": {
+    "version": "0.2.2",
+    "installed_active": true,
+    "commit": "bff2180cfa4ccd8e4850662d1dd1be8825d805c2",
+    "url": "https://github.com/rmsports33/-site-conexotech/pull/72",
+    "zip_sha256": "81fb515234290c5e16b6854780033ed33e474220a6f1ecfc025db017547a9913"
+  },
+  "backup": {
+    "v022_zip_on_drive": true,
+    "v021_rollback_zip_on_drive": true,
+    "updraft_database_20261112": "GZIP_CRC_PASS",
+    "updraft_mu_plugins_20261111": "ZIP_CRC_PASS",
+    "full_site_restore": "NOT_TESTED",
+    "wordpress_revisions": "CONFIRMED_ALL_SIX"
+  },
+  "remaining": [
+    "Visual QA of authenticated editor at 390px and 1440px not live-verified; mock tests pass.",
+    "Precise publish timing cannot be guaranteed by visit-triggered WP-Cron without an independent external scheduler; user opted against Hostinger cron.",
+    "Native SEO signed contract for future posts is not proven, though public output is correct under current Rank Math bridge."
+  ]
+}
