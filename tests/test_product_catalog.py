@@ -55,6 +55,22 @@ class CatalogTests(unittest.TestCase):
                 self.assertTrue(link["url"].startswith("https://conexotech.com.br/"))
                 self.assertNotIn("publication_authorized", link)
 
+    def test_commercial_variants_are_not_model_base(self):
+        cases = [
+            "Comparativo Apple iPhone 17 Pro e concorrentes",
+            "Oferta Galaxy Tab S10 FE Plus",
+            "Análise Apple iPhone 17 Pro Max",
+        ]
+        for headline in cases:
+            with self.subTest(headline=headline):
+                self.assertEqual(identify_in_headline(headline, self.catalog)["status"], "NO_MATCH")
+
+    def test_base_models_still_match(self):
+        self.assertEqual(identify_in_headline("iPhone 17 recebe atualização", self.catalog)["product_id"],
+                         "apple-iphone-17")
+        self.assertEqual(identify_in_headline("Galaxy Tab S10 FE chega ao varejo", self.catalog)["product_id"],
+                         "samsung-galaxy-tab-s10-fe")
+
     def test_variants_preserved(self):
         p = next(p for p in self.catalog["products"] if p["id"] == "tcl-c6k")
         self.assertEqual({v["size_inches"] for v in p["variants"]}, {55, 65})
