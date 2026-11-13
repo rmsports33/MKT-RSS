@@ -52,3 +52,22 @@ Regressões locais offline após atualização do coletor: **9/9 testes PASS** (
 - **API Shopee na conta: CONFIRMADA.** HTTP 200 e resultado real no Explorer.
 - **Adaptador MKT-RSS: PREPARADO E TESTADO COM MOCK.** Nenhuma execução real autenticada do próprio Python MKT-RSS foi feita.
 - **Conexão MKT-RSS ↔ Shopee: PENDENTE DE HOMOLOGAÇÃO REAL.** Falta execução de um preflight em terminal autorizado com credenciais inseridas diretamente pelo proprietário e saída pública correspondente; implantação de rotina/armazenamento somente depois, sem bloquear o Gate.
+
+## Atualização operacional — 13/11/2026
+
+O proprietário executou via SSH na Hostinger (Python 3.6.8) o script do próprio repositório `scripts/shopee_readonly_preflight.py` com as credenciais informadas somente no terminal e recebeu `"resultado": "API_SHOPEE_READBACK_OK"`. Isso confirma **autenticação e leitura real do adaptador MKT-RSS**. A captura textual enviada estava truncada após a linha de sucesso; dados de preço e item são confirmados pela validação do módulo, mas nenhum comprovante completo foi arquivado nessa etapa. Não confundir com execução agendada.
+
+Foram corrigidos os erros de importação causados por uso de `list[str]` e `from __future__ import annotations` incompatíveis com Python 3.6.8, usando `typing.List` no commit `ce5a8b18ec780f709f30a35a093d642af8e1315f`. O usuário confirmou `MODULO OK`.
+
+Para a próxima etapa, o preflight recebeu uma opção explícita `--save-evidence`: consulta UMA oferta autenticada, usa validadores do coletor, grava **somente dados públicos** no SQLite em `~/.local/share/mkt-rss/price_evidence.sqlite` (fora do clone público e de `public_html`; umask 077 e diretório 0700), realiza leitura posterior de confirmação e marca `evidencia_persistida=true`. Registros idênticos no mesmo dia são deduplicados pelo hash já existente. A opção não cria cron nem armazena App ID/Secret; credenciais continuam digitadas em TTY, sem eco, em cada teste. Sem `--save-evidence`, o teste original segue somente leitura, sem gravações.
+
+Comando para o proprietário no terminal da Hostinger:
+
+```sh
+cd ~/mkt-rss-shopee-check
+git pull --ff-only
+python3 -m py_compile scripts/shopee_readonly_preflight.py
+python3 scripts/shopee_readonly_preflight.py --item-id 58217601055 --shop-id 728389176 --save-evidence
+```
+
+NÃO executar `--save-evidence` antes de confirmar que a pasta é privada e de auditar que `~/.local/share/mkt-rss` está fora da raiz web. A gravação e o readback **ainda precisam ser comprovados no SSH real**; alterações estão no GitHub, não implantadas automaticamente. Embora privado, SQLite local não é o mesmo que Turso ou Drive; selecionar e homologar sincronização com banco persistente existente antes de declarar automação permanente. Python 3.6 está obsoleto e não deve ser executor definitivo. Não publicar preços automaticamente nem executar GitHub Actions.
