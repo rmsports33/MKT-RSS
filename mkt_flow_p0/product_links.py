@@ -5,6 +5,7 @@ As rotinas requerem a pauta existente e a mesma URL canônica; falha fechada
 quando a fila é indisponível. Sem segundo banco/executor.
 """
 from mkt_flow_p0.fila_pautas import _exec, _url
+from mkt_flow_p0 import cloud_db
 
 SCHEMA = """CREATE TABLE IF NOT EXISTS rss_product_links (
  product_id TEXT NOT NULL,
@@ -21,11 +22,16 @@ SCHEMA = """CREATE TABLE IF NOT EXISTS rss_product_links (
 def _ensure(db_path=None):
     _exec(SCHEMA, db_path=db_path)
 
+def _require_persistence(db_path):
+    if db_path is None and not cloud_db.turso_enabled():
+        raise RuntimeError("PRODUCT_LINK_CLOUD_CREDENTIALS_MISSING")
+
 def link_pauta(product_id, pauta_id, source_url, db_path=None):
     """Associa apenas correspondência conservadora com pauta/URL verificadas."""
     if not isinstance(product_id, str) or not product_id or not isinstance(pauta_id, str) or not pauta_id:
         raise ValueError("PRODUCT_LINK_INVALID")
     canonical = _url(source_url)
+    _require_persistence(db_path)
     rows, _ = _exec("SELECT url FROM rss_pautas WHERE id=?", (pauta_id,), db_path)
     if len(rows) != 1 or rows[0][0] != canonical:
         return {"status": "SKIPPED_UNVERIFIED_QUEUE", "publication_authorized": False}
@@ -46,6 +52,7 @@ def link_verified_draft(source_url, staged, db_path=None):
             or staged["post_id"] <= 0):
         return {"status": "SKIPPED_NOT_VERIFIED_DRAFT", "publication_authorized": False}
     canonical = _url(source_url)
+    _require_persistence(db_path)
     _ensure(db_path)
     rows, _ = _exec(
         """SELECT l.product_id, l.pauta_id FROM rss_product_links l
