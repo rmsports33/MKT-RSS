@@ -10,7 +10,12 @@ Por que existe: o gate de valor (M04.17D) exige `price_history` com:
 Hoje o redator NÃO produz price_history — os coletores dele BLOQUEIAM
 marketplaces, e no MKT-RSS o marketplaces.json não é usado por nenhum .py.
 
-Este módulo implementa a coleta via APIs OFICIAIS gratuitas:
+ATENÇÃO: os provedores de rede abaixo ainda são STUBS (TODO).
+Nenhuma captura oficial pode ser declarada operacional só por existir
+credencial. A PA-API 5 da Amazon foi descontinuada; utilizar Creators API
+apenas quando houver acesso autorizado e integração testada.
+
+Originalmente planejado para APIs oficiais:
   - Amazon Product Advertising API (PA-API 5.0) — requer ACCESS_KEY/SECRET_KEY/ASSOCIATE_TAG
   - Mercado Livre API — requer APP_ID/CLIENT_SECRET (fluxo Client Credentials)
   - Shopee Affiliate API — requer PARTNER_ID/PARTNER_KEY
@@ -294,19 +299,26 @@ def coletar_preco_produto(
     if not resultados:
         return {"ok": False, "erros": erros or ["nenhum marketplace configurado com credenciais válidas"]}
     
-    # Pega o primeiro resultado válido (melhor preço poderia ser lógica futura)
+    # Nunca transformar o horário da execução em "data capturada":
+    # a evidência deve trazer data, produto, vendedor e fonte confirmados.
     r = resultados[0]
+    if (not isinstance(r, dict)
+            or r.get("status") != "VERIFICADO_NA_PAGINA"
+            or r.get("nome") != nome_produto
+            or not str(r.get("vendedor") or "").strip()
+            or r.get("moeda") != "BRL"):
+        return {"ok": False, "erro": "fonte_produto_variante_ou_vendedor_nao_verificado"}
     preco_br = normalizar_preco(r.get("preco"))
-    data_captura = normalizar_data_captura(r.get("data_captura") or datetime.now().isoformat())
+    data_captura = normalizar_data_captura(r.get("data_captura"))
     url_oferta = r.get("url") or r.get("link") or ""
-    
-    if not preco_br or not data_captura or not _eh_url(url_oferta):
-        return {"ok": False, "erro": "dados insuficientes do marketplace"}
-    
+    if (not preco_br or not data_captura or not isinstance(url_oferta, str)
+            or not url_oferta.startswith("https://")):
+        return {"ok": False, "erro": "preco_data_ou_url_nao_verificados"}
+
     # Salva evidência local
     payload_bruto = {k: v for k, v in r.items() if k not in ("preco", "data", "url", "link")}
     _salvar_evidencia(
-        produto=r.get("nome") or "produto",
+        produto=nome_produto,
         marketplace=r.get("marketplace", "desconhecido"),
         preco_br=preco_br,
         data_captura=data_captura,
