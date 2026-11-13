@@ -80,3 +80,36 @@ Python; não registrar conteúdo novo no banco de produção durante o shadow.
 - As URLs de read-only PHP são sondas auxiliares; **não** são o novo pipeline.
 - Dependência real de GitHub Actions permanece ATIVA até cutover controlado.
 - Nenhum impacto em WordPress, Turso, Hostinger Cron e Gate nesta etapa.
+
+## Marco P1 — autorização por tabela (preparado, ainda não ativado)
+O runner agora define `CONEXO_RSS_SCHEMA_PREEXISTS=1`. No modo protegido, `init_queue`
+e `_reserve_writer` deixam de emitir DDL e exigem as tabelas já existentes.
+O adaptador de vínculos também faz SELECT em vez de CREATE TABLE.
+A nomenclatura do Turso para INSERT é **`data_add`**, não `data_insert`.
+Pelo código inspecionado, a rotina `--queue-only` precisa:
+- `all:data_read`: ler fila, mutex, notas e vínculos;
+- `rss_pautas:data_add`: inserir descobertas;
+- `rss_queue_mutex:data_add,data_update,data_delete`: adquirir e liberar exclusividade;
+- `rss_product_links:data_add`: vínculo opcional de produto (sem atualizar WP).
+Não conceder `schema_add`, `schema_update`, `schema_delete` ou acesso em grupo.
+O esquema das quatro tabelas precisa estar íntegro antecipadamente.
+**Atenção:** as regras de autorização do Turso devem ser efetivamente homologadas
+com esse token e os resultados realimentados; a inspeção de código, sozinha,
+não comprova que uma operação autorizada funciona.
+
+CLI (NÃO EXECUTAR ANTES DE PASSAR NOS TESTES E DEFINIR O PLANO DE CORTE):
+```bash
+turso db tokens create mkt-rss --expiration 7d \\
+  -p all:data_read \\
+  -p rss_pautas:data_add \\
+  -p rss_queue_mutex:data_add,data_update,data_delete \\
+  -p rss_product_links:data_add
+```
+**Nunca imprimir token em terminal nem chat;** redirecionar para arquivo privado de
+permissão 600, conferir status do comando e o tamanho antes de ativar.
+O token de leitura atual expira em sete dias e não pode servir de escritor.
+
+Testes locais do ramo (não executados na Hostinger ainda):
+`./.venv/bin/python -m unittest tests.test_hostinger_no_schema_writes -v`.
+A migração só pode prosseguir com testes PASS, prova de escrita e readback sem
+duplicação, e corte do schedule GitHub antes de ativar o Cron.
