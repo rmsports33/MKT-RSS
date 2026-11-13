@@ -8,7 +8,7 @@
   "owner": "Codex",
   "coordinator": "Codex",
   "reviewer": "rmsports33",
-  "status": "SIX_WP_FUTURE_SCHEDULES_PRESERVED_GATE_AGENDA_0_2_1_ACTIVE",
+  "status": "SIX_REAL_PUBLICATIONS_VERIFIED_GATE_AGENDA_0_2_2_DYNAMIC_PRODUCTION_ACTIVE",
   "scope": [
     "Corrigir geração sem briefing nos caminhos existentes e validar integração offline.",
     "Registrar separadamente homologação real e pendências de acesso."
@@ -167,14 +167,25 @@
       "reference": "https://github.com/rmsports33/-site-conexotech/blob/master/docs/deployments/conexo-gate-agenda-nativa-20261112.md",
       "sha": "506ed6f34d6d0680c79955b190486c6c5b3e17f3",
       "result": "Agenda Nativa 0.2.1 ativa; default 15 minutos arredondado, prévia de seis horários local/UTC com HMAC e segunda confirmação; 36 testes PASS; seis future intactos."
+    },
+    {
+      "reference": "https://github.com/rmsports33/MKT-RSS/blob/master/docs/editorial-evidence/six-publication-verification-20261113.json",
+      "sha": "40974e07ba8679cbced3790e6dadb90969c83fc3",
+      "result": "Six WordPress published by WP-Cron, all self-canonical, index/follow, meta desc, OG and live related pages. Actual activity times recorded; 0-23min delays."
+    },
+    {
+      "reference": "https://github.com/rmsports33/-site-conexotech/pull/72",
+      "sha": "bff2180cfa4ccd8e4850662d1dd1be8825d805c2",
+      "result": "Dynamic 0.2.2 selected 1–12 eligible drafts, CI PASS and 21 isolated tests, installed production and backed up Drive."
+    },
+    {
+      "reference": "https://github.com/rmsports33/-site-conexotech/blob/master/docs/deployments/conexo-gate-agenda-nativa-20261112.md",
+      "sha": "1e80ec2ba2cdcbe18797683eeca53838418a29cc",
+      "result": "Public SEO audit, no Hostinger cron, Updraft CRC and known remaining real limitations."
     }
   ],
-  "blockers": [
-    "P0: Comprovar seis posts publish após WP-Cron e conferir URLs, horários reais, SEO/canonical e links internos; schedules future preservados.",
-    "P1: Prévia Agenda 0.2.1 passou testes isolados e plugin está ativo, mas tela autenticada não foi conferida visualmente no WP real.",
-    "P1: Saída pública Conexo Native SEO em future→publish ainda sem homologação; Rank Math permanece ativo."
-  ],
-  "next_action": "O lote de seis já está future e não deve ser reagendado nem reaprovado. Verificar publicação real às 20h40–21h30 BRT com status publish, URLs, SEO e links; correção Agenda Nativa 0.2.1 vale para próximas programações. Validar prévia autenticada no celular sem submeter. Não recriar cron Hostinger.",
+  "blockers": [],
+  "next_action": "Lote de seis concluído e publicamente verificado; NÃO reagendar/republicar. Agenda Nativa 0.2.2 em produção sem IDs fixos. Futuras pautas: proprietário faz review no WP, escolhe IDs dinâmicos, prévia antes de assinar, WP-Cron nativo sem cron Hostinger. Inspecionar visualmente admin 390/1440 em sessão autenticada e executar restauração apenas em ambiente isolado se necessária; registrar atrasos de cron como risco sem garantia de 10min.",
   "gates": {
     "G0": "PASSOU",
     "G1": "PASSOU",
@@ -215,12 +226,12 @@
     "native_preview": "9810_DESKTOP_TOP_CONFIRMED_BY_USER_SCREENSHOT; SIX_FULL_PREVIEWS_PENDING",
     "human_factual_acceptance": "PENDING",
     "private_zip_drive_upload": "DELIVERED_VERIFIED",
-    "publication_authorized": "WP_NATIVE_SCHEDULE_ACCEPTED_GUARDED_BY_INSTALLED_GATE; FUTURE_PUBLISH_NOT_YET_READBACK",
+    "publication_authorized": "PAST_OWNER_GATE_SCHEDULE_COMPLETED; AUTHENTICATED_PRIVATE_GATE_RECEIPTS_NOT_DIRECTLY_READ",
     "private_package_receipt": "docs/editorial-evidence/private-package-delivery.json",
     "native_preview_evidence": "docs/editorial-evidence/native-preview-attempt.json",
     "category_corrections": "APPLIED_BODY_HASHES_PRESERVED",
     "featured_caption": "DEPLOYED_THEME_1.6.9_PUBLIC_RESPONSIVE_VERIFIED",
-    "wordpress_live_readback": "SIX_DRAFTS_CONFIRMED_2026-11-12",
+    "wordpress_live_readback": "SIX_REAL_PUBLISHED_DIRECT_WORDPRESS_GET_AND_PUBLIC_METADATA",
     "four_draft_factual_source_audit": "COMPLETED_ASSISTED",
     "wordpress_corrections_20261112": [
       9814,
@@ -229,7 +240,7 @@
     "version_snapshot_9814_9815": "UPDATED_PREAPPROVAL_HASHES; GATE_CANONICAL_PENDING",
     "current_snapshot_receipt": "docs/editorial-evidence/current-six-draft-snapshots-20261112.json",
     "assisted_editorial_review": "SIX_COMPLETED_OWNER_DECISION_PENDING",
-    "wordpress_latest_status": "SIX_FUTURE_ARTICLES_AND_ORIGINAL_DATES_CONFIRMED_AFTER_PLUGIN_0_2_1",
+    "wordpress_latest_status": "6_OF_6_PUBLISHED_ACTOR_WP_CRON_SITE_ACTIVITY_2026_11_13",
     "featured_media_by_post": {
       "9810": 9838,
       "9813": 9839,
@@ -240,14 +251,14 @@
     },
     "owner_editorial_acceptance": "ALL_SIX_ACCEPTED_2026_11_12",
     "owner_publication_requested": true,
-    "gate_signed_release": "PENDING_OWNER_NATIVE_FORMS",
+    "gate_signed_release": "PAST_SIGNED_GATE_WRITER_PATH_INFERRED_FROM_ACTOR_AND_SQL_GUARDS_NOT_DIRECTLY_RETRIEVED",
     "cover_optimization": "6 JPEG 1200x675, 79-119KB, current in WordPress",
     "image_pipeline_root_cause": "Six drafts previously shared Pexels media #9812; no topic-distinct generation/selection invoked for each article in the pilot. Corrected for this batch with unique AI illustrated JPEG media 9838-9843.",
     "image_pipeline_future_rule": "For each article first prefer a properly licensed topical free image; if no suitable image, generate original AI illustration with clear caption. Discourage repetition within the batch unless explicitly justified; do not present AI imagery as manufacturer photos.",
     "image_batch_uniqueness_implementation": "MERGED_MASTER_BCFDC48_CI_SUCCESS",
     "ai_generation_execution": "REQUEST_ONLY_NOT_BACKGROUND_AUTO_GENERATED",
     "wordPress_available_reviewers": "SITE_USERS_ID3_ADMIN_AND_ID4_EDITOR; SAME_DISPLAY_NAME; INDEPENDENT_REVIEW_NOT_ATTESTED",
-    "authenticated_gate_reviewer": "NOT_VERIFIED_FOR_CURRENT_VERSIONS",
+    "authenticated_gate_reviewer": "OWNER_WP3_SCHEDULE_ACTIVITY_CONFIRMED; INDIVIDUAL_GATE_RECORDS_NOT_DIRECTLY_READ",
     "wordpress_authors_current": 4,
     "owner_reviewer_id": 3,
     "author_review_separation": "RESOLVED_AUTHORS_ID4_OWNER_ID3",
@@ -257,21 +268,21 @@
     "seo_excerpts_factual": "FIVE_DRAFTS_UPDATED_SEO_EXCERPTS",
     "staggered_release_workflow": "MERGED_MASTER_14F7A36_16_00_16_50_BRT_SIGNED_GATE_ONLY",
     "staggered_release_queue": "docs/editorial-evidence/internal-links-and-release-queue-20261112.json",
-    "owner_gate_signed_current_versions": "NOT_CONFIRMED",
+    "owner_gate_signed_current_versions": "PAST_PUBLISH_COMPLETED_BY_PROTECTED_GATE; PRIVATE_RECORDS_NOT_AUDITED",
     "followup_check": "AUTOMATION_2026_11_12_17_10_BRT",
     "wordpress_native_schedule_code": "MERGED_MASTER_6CDC427_CI_PASSED_MANUAL_FALLBACK",
-    "wordpress_native_schedule_execution": "SIX_WP_FUTURE_POSTS_CONFIRMED_DIRECT_READBACK_20261112",
+    "wordpress_native_schedule_execution": "SIX_PREVIOUS_WP_NATIVE_FUTURE_POSTS_PUBLISHED_BY_WP_CRON",
     "github_recurring_six_slots": "REMOVED_FROM_MASTER",
     "hostinger_server_cron": "REMOVED_PER_OWNER_NO_RECREATE",
     "native_seo_future_finalize": "NOT_IMPLEMENTED",
-    "current_post_status": "SIX_DRAFTS_WP_READBACK_VERIFIED_20261112",
-    "wordpress_native_scheduler_plugin": "ACTIVE_PRODUCTION_CONEXO_GATE_AGENDA_NATIVA_0_2_1",
+    "current_post_status": "ALL_SIX_PUBLISHED",
+    "wordpress_native_scheduler_plugin": "ACTIVE_PRODUCTION_CONEXO_GATE_AGENDA_NATIVA_0_2_2",
     "wordpress_native_owner_review_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-gate-revisar-lote",
     "wordpress_native_schedule_url": "https://conexotech.com.br/wp-admin/tools.php?page=conexo-gate-agendar",
-    "wordpress_native_owner_batch_approval": "ACTIVE_UI_NOT_SUBMITTED_BY_OWNER",
+    "wordpress_native_owner_batch_approval": "OWNER_BULK_SCHEDULED_AT_2026_11_12_19_28_BRT; SIX_FUTURE_TO_PUBLISH",
     "jetpack_monitor": "ACTIVE_SITE_UP_2026_11_12",
     "github_action_publication_per_post": "NOT_REQUIRED_WP_ADMIN_NATIVE_PREFERRED",
-    "batch_plug_in_live": "GATE_RC5_AND_NATIVE_AGENDA_0_2_0_ACTIVE",
+    "batch_plug_in_live": "GATE_RC5_AND_AGENDA_0_2_2_ACTIVE",
     "plugin_package_drive_verified": "DRIVE_FILE_1W2vZfMwnyAfsGD6JTZpfnvZroQp5X7G- ZIP_8170_BYTES_HASH_LOCAL_MATCH_DOC",
     "production_file_hash_readback": "UNAVAILABLE_HOSTINGER_CONTENT_API_EMPTY_RESPONSE",
     "owner_gate_approval_signal": "USER_REPORTED_APPROVED; SIX_STATUS_FUTURE_CONFIRMED; PRIVATE_HMAC_RECORDS_NOT_READ",
@@ -308,10 +319,43 @@
       }
     ],
     "next_verify_automation_id": "Automation_09ec821d7c1081918ef7acb0fa8e953f",
-    "scheduler_default_ux": "15_MIN_LEAD_ROUNDED_UP_TO_5MIN",
-    "scheduler_preview_ui": "SIX_LOCAL_BRT_AND_UTC_SLOTS_SEALED_BY_USER_BOUND_HMAC_SECOND_CONFIRM_REQUIRED",
-    "scheduler_regression": "PHP_LINT_PASS_36_ISOLATED_CHECKS_PASS",
-    "scheduler_release_sha256": "388a9534089b40df5ad4486143761b19c7e113f9b47404d16861f6bbe55bc0e9"
+    "scheduler_default_ux": "15MIN_ROUNDED; DYNAMIC_DRAFT_PICKER_NO_PRESELECTION_1_12_POSTS",
+    "scheduler_preview_ui": "DYNAMIC_SELECT_THEN_REVIEW_THEN_PREVIEW_AND_EXPLICIT_CONFIRM",
+    "scheduler_regression": "PHP_LINT_PASS_21_NEW_DYNAMIC_ISOLATED_TESTS_PASS; PREVIOUS_36_RELEASE_TESTS_PASS",
+    "scheduler_release_sha256": "81fb515234290c5e16b6854780033ed33e474220a6f1ecfc025db017547a9913",
+    "issues_old_static_ids": "RESOLVED_MERGED_PR72_SOURCE_AND_WP_PLUGIN_0_2_2",
+    "seo_public_validation": "SIX_PUBLIC_SELF_CANONICAL_INDEX_FOLLOW_META_DESCRIPTION_OG_IMAGE_AND_LEIA_TAMBEM_CONFIRMED",
+    "publication_reconciliation": "docs/editorial-evidence/six-publication-verification-20261113.json",
+    "publication_actual_utc": [
+      {
+        "id": 9813,
+        "at": "2026-11-12T23:56:41Z"
+      },
+      {
+        "id": 9815,
+        "at": "2026-11-12T23:56:41Z"
+      },
+      {
+        "id": 9814,
+        "at": "2026-11-13T00:10:10Z"
+      },
+      {
+        "id": 9810,
+        "at": "2026-11-13T00:10:13Z"
+      },
+      {
+        "id": 9816,
+        "at": "2026-11-13T00:43:06Z"
+      },
+      {
+        "id": 9817,
+        "at": "2026-11-13T00:43:07Z"
+      }
+    ],
+    "backup_wp_updraftplus": "UPDRAFT_SET_20261111_SIX_ARCHIVES_PRESENT_DB_20261112_GZIP_CRC_PASS_MU_PLUGIN_ZIP_CRC_PASS_NO_RESTORE",
+    "backup_agenda_versioned": "DRIVE_V022_ZIP_AND_V021_ROLLBACK_ZIP_VERIFIED",
+    "github_released_agenda_source": "https://github.com/rmsports33/-site-conexotech/pull/72",
+    "live_responsive_editor": "NOT_CONFIRMED_AUTHENTICATED_UI_ONLY_MOCK_TESTS"
   },
   "nonblocking_followups": [
     "TinyFish HTTP429; não repetir automaticamente, conector WordPress funcional.",
@@ -321,10 +365,16 @@
     "Cadência normal: 1-2 matérias/dia (09h e 17h); lote atual interligado pode ser liberado uma só vez em janela de 50min após seis revisões, evitando links de rascunhos por dias.",
     "O contrato Native SEO de post future não é finalizado pelo broker atual; priorizar verificação pública de tags no primeiro post após o cron.",
     "Conservar o agendamento WP nativo sem cron Hostinger, conforme decisão explícita do usuário; validar publicações reais, pois future não garante pontualidade do WP-Cron.",
-    "P2: substituir IDs fixos em formulário de revisão em lote por lista dinâmica de rascunhos elegíveis.",
-    "P2: arquivar ZIP 0.2.1 no Drive/GitHub com SHA, preservando 0.2.0 histórico.",
-    "P2: validar backup restaurável e rollback da extensão após primeiro uso real.",
-    "P2: evitar nos próximos lotes links internos para destinos não publicados.",
-    "Não reativar cron Hostinger: usar WP-Cron nativo e monitorar atrasos."
+    "Não reativar cron Hostinger: usar WP-Cron nativo e monitorar atrasos.",
+    "Publicação já concluída: seis artigos em publish, SEO básico e links públicos verificáveis. Atrasos de 13 segundos a 23m06 por WP-Cron sob baixo tráfego sem cron externo; manter decisão do usuário.",
+    "Inspeção da UI autenticada WordPress em 390 e 1440px ainda não comprovada; testes isolados de fluxo passaram.",
+    "Rollback da extensão via ZIP 0.2.1 e conjunto UpdraftPlus identificado; restauração integral sem ambiente isolado NÃO foi testada.",
+    "Native SEO assinado específico para future->publish ainda não homologado; output público atual (Rank Math) está correto."
+  ],
+  "residual_validation": [
+    "Visual inspection of authenticated WordPress admin 390px/1440px not completed: browser not logged in; isolated UI mock passed.",
+    "Exact physical execution of WP-Cron without an external timer is not guaranteed; six actual publishes 13s–23m06s late. No Hostinger cron per owner.",
+    "Conexo Native SEO version-signed future->publish internal contract not proven; public SEO on all six articles is correct under current active Rank Math bridge.",
+    "Full database/files restore not performed: versioned plugin ZIP rollback available, Updraft backups exist with sampled archive CRC integrity PASS; use isolated environment for full restore."
   ]
 }
