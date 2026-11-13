@@ -73,13 +73,13 @@ class TestProductLinks(unittest.TestCase):
         feed = {"itens": [self.a]}
         from unittest.mock import patch
         with patch.dict(rss_queue_collect.FEEDS_PADRAO,
-                        {"fixture": "https://example.invalid/feed"}, clear=True), \\
+                        {"fixture": "https://example.invalid/feed"}, clear=True), \
              patch.dict(rss_queue_collect.os.environ,
-                        {"CONEXO_PRODUCT_LINKS_ENABLED": "1"}), \\
-             patch.object(rss_queue_collect, "fetch_feed", return_value=feed), \\
-             patch.object(rss_queue_collect, "recent", return_value=True), \\
+                        {"CONEXO_PRODUCT_LINKS_ENABLED": "1"}), \
+             patch.object(rss_queue_collect, "fetch_feed", return_value=feed), \
+             patch.object(rss_queue_collect, "recent", return_value=True), \
              patch.object(rss_queue_collect, "registrar",
-                          return_value={"id": "pauta1", "novo": True}), \\
+                          return_value={"id": "pauta1", "novo": True}), \
              patch("mkt_flow_p0.product_links.link_pauta",
                    return_value={"status": "LINKED"}) as link:
             result = rss_queue_collect.coletar(limite=1)
@@ -89,14 +89,14 @@ class TestProductLinks(unittest.TestCase):
 
     def test_rss_collector_no_link_without_opt_in(self):
         with patch.dict(rss_queue_collect.FEEDS_PADRAO,
-                        {"fixture": "https://example.invalid/feed"}, clear=True), \\
+                        {"fixture": "https://example.invalid/feed"}, clear=True), \
              patch.dict(rss_queue_collect.os.environ,
-                        {"CONEXO_PRODUCT_LINKS_ENABLED": "0"}), \\
+                        {"CONEXO_PRODUCT_LINKS_ENABLED": "0"}), \
              patch.object(rss_queue_collect, "fetch_feed",
-                          return_value={"itens": [self.a]}), \\
-             patch.object(rss_queue_collect, "recent", return_value=True), \\
+                          return_value={"itens": [self.a]}), \
+             patch.object(rss_queue_collect, "recent", return_value=True), \
              patch.object(rss_queue_collect, "registrar",
-                          return_value={"id": "pauta1", "novo": True}), \\
+                          return_value={"id": "pauta1", "novo": True}), \
              patch("mkt_flow_p0.product_links.link_pauta") as link:
             result = rss_queue_collect.coletar(limite=1)
         link.assert_not_called()
