@@ -29,3 +29,15 @@ Ação: validar manifesto da fotografia Unsplash previamente conferida em 1440/3
 - O ChatGPT com conector GitHub altera somente `remote_request.json` com **novo job_id** e ação permitida.
 - Hostinger Cron lê o comando e executa em ambiente privado; ChatGPT consulta o recibo do Cron no conector Hostinger.
 - Isso resolve **o acionamento remoto dessas duas ações**, não ainda toda a orquestração editorial, que requer integração segura com os passos de Gate e WordPress.
+
+## Evidência operacional recebida em 14/11/2026
+
+O operador executou na Hostinger `git pull --ff-only` e depois
+`.venv/bin/python ops/hostinger/remote_controller.py`.
+O terminal retornou:
+
+```json
+{"job_id":"binance-image-review-20261114-v1","status":"PASS","steps":2,"receipt":"/home/u401421381/.local/state/conexo-os/remote-control-receipt.json"}
+```
+
+**Comprovado:** controlador executado manualmente até concluir as duas ações permitidas e registrar recibo privado. **Ainda não comprovado:** que o Cron automático tenha executado, pois a API oficial `hosting_cron-jobs_output` retornou saída vazia mesmo após cadastro. Os detalhes internos do recibo (hash do novo pacote e caminho da prévia) ainda não foram inspecionados nesta sessão. Não equivale a revisão humana de layout ou autorização para WordPress.
