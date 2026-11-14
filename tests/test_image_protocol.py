@@ -22,6 +22,27 @@ class ImageProtocolTests(unittest.TestCase):
             raw=copy.deepcopy(resource);raw[key]=value
             with self.assertRaises(ValueError):validate_resource(raw)
 
+    def test_documented_unsplash_license_credits_actual_provider_without_auto_approval(self):
+        from mkt_flow_p0.image_protocol import image_figure
+        resource = {
+            'id': 'unsplash-kevin-ache-test', 'source_type': 'free_stock',
+            'source_page': 'https://unsplash.com/photos/a-rack-of-servers-in-a-server-room-2JJ3wBHu4_0',
+            'image_url': 'https://images.unsplash.com/photo-example',
+            'author': 'Kevin Ache', 'license': 'Unsplash License',
+            'license_url': 'https://unsplash.com/license',
+            'checked_at': '2026-11-14',
+            'alt': 'Servidores', 'caption': 'Imagem ilustrativa',
+            'credit': 'Kevin Ache / Unsplash',
+            'rights_review': 'DOCUMENTED_SOURCE_CHECK',
+        }
+        self.assertEqual(validate_resource(resource)['license'], 'Unsplash License')
+        html = image_figure(resource, 'assets/cover-desktop.jpg', 'assets/cover-mobile.jpg')
+        self.assertIn('Unsplash', html)
+        self.assertNotIn('Wikimedia Commons', html)
+        bad = dict(resource, rights_review='PENDING')
+        with self.assertRaises(ValueError):
+            validate_resource(bad)
+
     def test_editable_delivery_keeps_credit_without_duplicate_featured_image(self):
         from mkt_flow_p0.wordpress_blocks import serialize_blocks
         resource=plan_image('teclado do iPhone')['resource']
