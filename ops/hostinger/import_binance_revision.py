@@ -21,8 +21,8 @@ SOURCES = [
      "facts": ["Em 14/11, Reuters atribuiu a Binance cobertura de 95% e indicou que as retiradas ainda eram reabertas progressivamente."]},
     {"name": "Reuters 31/10", "url": "https://www.fidelity.com/news/article/company-news/202610311134RTRSNEWSCOMBINED_L6N46H03L_1",
      "facts": ["Em 31/10, a empresa disse ter reposto 90% dos ativos desviados e buscar tokens de menor liquidez."]},
-    {"name": "AP ataque", "url": "https://apnews.com/article/39cda8ceb8095e036334a18549d3d20d",
-     "facts": ["A Binance investigou comprometimento de equipamento ligado ao setor DevOps, informou suspensão de retiradas e disse que trabalhava com autoridades."]},
+    {"name": "AP análise do ataque", "url": "https://apnews.com/article/550e9b876550f71f07098494fe735beb",
+     "facts": ["A AP informou que o ataque atingiu aproximadamente US$ 6,36 bilhões, com congelamento de aproximadamente US$ 3 bilhões, segundo as informações disponíveis na época."]},
     {"name": "Tecnoblog 14/11", "url": SOURCE,
      "facts": ["Tecnoblog divulgou que a Binance anunciou cobrir 100% dos ativos afetados e publicou prova de reservas."]},
 ]
