@@ -37,3 +37,15 @@ Fonte: https://apnews.com/article/fbi-binance-cryptocurrency-theft-north-korea-4
 ## Fronteiras mantidas
 
 O `PASS` da revisão substantiva atesta uma avaliação textual assistida; não concede certificação factual, direitos de mídia WordPress ou permissão de publicação. Evitar novas importações privadas para mera atualização do resumo de pendências.
+
+## Consolidação editorial final (14/11) — atualização AP verificada
+
+A matéria em `docs/ARTIGO_BINANCE_REVISAO_2026-11-14.md` recebeu a notícia AP de 12/11: congelamento de **mais de US$ 2,7 bilhões** e, **dentro desse valor**, autorização judicial de apreensão/restrição sobre **mais de US$ 1,2 bilhão**. Esses montantes não são cumulativos nem comprovam devolução aos clientes. Fonte original: https://apnews.com/article/41be4834083e596a8facfd719f851cae ; cobertura AP republicada: https://abcnews.com/Technology/wireStory/fbi-us-seized-12-billion-worth-cryptocurrency-stolen-138094651 .
+
+- Novo SHA256 **exato do corpo Markdown** (após remoção do título e do aviso operacional): `1969799ce2c4a1b6ad629eec62c39095ac58418695bab2f3f53efefe57448b60`.
+- O parecer assistido vinculado a esse SHA foi atualizado apenas no critério de suporte à decisão e limites das fontes; **não há parecer humano, aprovação factual ou autorização de publicação**.
+- O importador usará a AP de 12/11 como uma das quatro fontes indicativas, com o claim respectivo **PENDING**; três links internos publicados foram confirmados por consulta autenticada ao WordPress.
+- Teste focado alterado para exigir a distinção jurídica entre os valores; executar somente `tests/test_binance_review_integration.py`, não a regressão geral.
+- Mídia: manter a capa Unsplash já preparada em `~/.local/share/conexo-os/imagens/binance`; os dois crops têm hashes documentados. **Não usar a mídia antiga 9746 sem verificação de direitos.**
+- O plugin Gate empacotado disponibiliza `conexo/v1/editorial/write`, mas o conector WordPress disponível não expõe esse endpoint arbitrário. **Não contornar o Gate com `wpcom_mcp_posts_create`** enquanto os 4 claims estiverem pendentes.
+- Resultado esperado de importação: **uma única nova pasta privada**, não atualização do pacote v2 `binance-revisao-ce674e255211`. A publicação no WordPress permanece bloqueada até contratos e aprovação da versão.
