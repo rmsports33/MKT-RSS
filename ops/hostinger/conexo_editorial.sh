@@ -41,6 +41,25 @@ print(json.dumps({
 }, ensure_ascii=False, indent=2, default=str))
 PY
     ;;
+  --show-article)
+    # Read the saved article only; do not expose credentials, private env or trace files.
+    "$PY" - "$HANDOFF_DIR" <<'PY'
+import json, sys
+from pathlib import Path
+base = Path(sys.argv[1])
+files = sorted(base.glob('rss_*.json'), key=lambda p: p.stat().st_mtime, reverse=True)
+if not files:
+    print("BLOCKED: no saved editorial package")
+    sys.exit(2)
+d = json.loads(files[0].read_text(encoding='utf-8'))
+markdown = d.get('markdown')
+if not isinstance(markdown, str) or not markdown.strip() or len(markdown) > 100000:
+    print("BLOCKED: article missing or too large")
+    sys.exit(2)
+print("=== ARTIGO PARA REVISAO (NAO APROVADO) ===")
+print(markdown)
+PY
+    ;;
   --handoff-one)
     [[ -s "$GROQ_TOKEN" && ! -L "$GROQ_TOKEN" ]] || { echo "BLOCKED: private Groq credential missing"; exit 2; }
     [[ "$(stat -c '%a' "$GROQ_TOKEN")" == 600 ]] || { echo "BLOCKED: credential permissions"; exit 2; }
@@ -53,7 +72,7 @@ PY
     "$PY" pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-only --handoff-dir "$HANDOFF_DIR"
     ;;
   *)
-    echo "Usage: bash ops/hostinger/conexo_editorial.sh --inspect|--handoff-one"
+    echo "Usage: bash ops/hostinger/conexo_editorial.sh --inspect|--show-article|--handoff-one"
     exit 2
     ;;
 esac
