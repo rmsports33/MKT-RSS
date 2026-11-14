@@ -20,6 +20,11 @@ class BinanceReviewedImportTests(unittest.TestCase):
 
     def test_review_bound_to_real_edit_and_with_no_human_approval(self):
         self.assertEqual(hashlib.sha256(self.body.encode()).hexdigest(), MANUSCRIPT_SHA)
+        # Targeted regression only: AP 12/11 seizure is a subset of frozen funds.
+        self.assertIn("mais de US$ 2,7 bilhões", self.body)
+        self.assertIn("mais de US$ 1,2 bilhão", self.body)
+        self.assertIn("Dentro desse total — e não como um valor adicional", self.body)
+        self.assertIn("https://apnews.com/article/41be4834083e596a8facfd719f851cae", self.body)
         research = {"sources":[{"url":"https://example.org/news","facts":["Fato candidato pendente de revisão."]}]}
         payload = {"article": {"texto_markdown": self.body}, "research":research}
         enriched = enrich_review_payload(payload)
