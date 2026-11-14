@@ -39,6 +39,9 @@ class ImageProtocolTests(unittest.TestCase):
         html = image_figure(resource, 'assets/cover-desktop.jpg', 'assets/cover-mobile.jpg')
         self.assertIn('Unsplash', html)
         self.assertNotIn('Wikimedia Commons', html)
+        legacy = dict(resource, caption='Imagem ilustrativa. Foto: Kevin Ache/Unsplash.')
+        legacy_html = image_figure(legacy, 'assets/cover-desktop.jpg')
+        self.assertEqual(legacy_html.count('Kevin Ache'), 1)
         bad = dict(resource, rights_review='PENDING')
         with self.assertRaises(ValueError):
             validate_resource(bad)
