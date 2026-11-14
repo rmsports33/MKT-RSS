@@ -17,7 +17,7 @@ from mkt_flow_p0.editorial_identity import (
 def _preparar_handoff(payload):
     """Validate an editor/provider input without side effects."""
     required_payload = {"source_url", "source_name", "article", "research"}
-    optional_payload = {"editorial_voice_application", "editorial_brief", "editorial_substance_review"}
+    optional_payload = {"editorial_voice_application", "editorial_brief", "editorial_substance_review", "editorial_contract"}
     if (not isinstance(payload, dict)
             or not required_payload.issubset(payload)
             or set(payload) - required_payload - optional_payload):
@@ -37,7 +37,8 @@ def _preparar_handoff(payload):
         fonte_nome=source_name, contexto_complementar=payload["research"],
         voice_application=payload.get("editorial_voice_application"),
         editorial_brief=payload.get("editorial_brief"),
-        editorial_review=payload.get("editorial_substance_review"))
+        editorial_review=payload.get("editorial_substance_review"),
+        editorial_contract=payload.get("editorial_contract"))
     return handoff
 
 
