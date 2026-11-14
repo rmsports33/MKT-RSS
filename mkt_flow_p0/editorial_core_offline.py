@@ -128,7 +128,7 @@ def gerar_corpo_wordpress(article, markdown):
     # Restrict table width inside mobile cards instead of allowing horizontal
     # document overflow. Each table remains fully scrollable and readable.
     body = re.sub(
-        r'(<table\\b[^>]*>.*?</table>)',
+        r'(<table\b[^>]*>.*?</table>)',
         lambda m: '<div class="conexo-table-scroll" style="max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch">'
                   + m.group(1).replace('<table', '<table style="min-width:590px;width:100%;border-collapse:collapse"', 1)
                   + '</div>',
@@ -144,8 +144,8 @@ def gerar_corpo_wordpress(article, markdown):
     )
     # The finished Markdown can already carry sourced citations and related
     # links. Do not inject second identical sections into the WordPress body.
-    has_sources = bool(re.search(r'\\*\\*Fontes principais:\\*\\*|^##\\s+Fontes\\b', markdown, re.I | re.M))
-    has_related = bool(re.search(r'^##\\s+Leia também\\b', markdown, re.I | re.M))
+    has_sources = bool(re.search(r'\*\*Fontes principais:\*\*|^##\s+Fontes\b', markdown, re.I | re.M))
+    has_related = bool(re.search(r'^##\s+Leia também\b', markdown, re.I | re.M))
     items = [body]
     if not has_sources:
         items.append("<h2>Fontes</h2><ul>" + fontes + "</ul>")
