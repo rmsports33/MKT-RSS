@@ -90,7 +90,17 @@ def main():
         "preview_path": report.get("preview_path"),
         "image_research_status": (report.get("image_research") or {}).get("status"),
         "content_sha256": hashlib.sha256(body.encode()).hexdigest(),
-        "pending": ["substantive_review", "image_licensed_and_visual_review", "human_factual_approval"],
+        # Derive blockers from the actual full report. Never carry over
+        # hard-coded pre-review flags after a successful substantive critique.
+        "pending": list(dict.fromkeys([
+            *(report.get("readiness", {}).get("pendencias") or []),
+            *([] if report.get("substantive_review", {}).get("status") == "PASS"
+              else ["substantive_review"]),
+            *([] if report.get("image_research", {}).get("status") == "PREPARED_LICENSED_IMAGE_INSTALLED"
+              else ["image_package_not_prepared"]),
+            "human_factual_approval",
+            "authenticated_wordpress_gate_and_human_version_acceptance",
+        ])),
     }
     print(json.dumps(summary, ensure_ascii=False, indent=2))
 
