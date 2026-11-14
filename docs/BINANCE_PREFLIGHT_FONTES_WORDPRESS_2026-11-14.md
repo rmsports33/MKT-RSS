@@ -49,3 +49,28 @@ A matéria em `docs/ARTIGO_BINANCE_REVISAO_2026-11-14.md` recebeu a notícia AP 
 - Mídia: manter a capa Unsplash já preparada em `~/.local/share/conexo-os/imagens/binance`; os dois crops têm hashes documentados. **Não usar a mídia antiga 9746 sem verificação de direitos.**
 - O plugin Gate empacotado disponibiliza `conexo/v1/editorial/write`, mas o conector WordPress disponível não expõe esse endpoint arbitrário. **Não contornar o Gate com `wpcom_mcp_posts_create`** enquanto os 4 claims estiverem pendentes.
 - Resultado esperado de importação: **uma única nova pasta privada**, não atualização do pacote v2 `binance-revisao-ce674e255211`. A publicação no WordPress permanece bloqueada até contratos e aprovação da versão.
+
+## Comprovação operacional — importação final de 14/11/2026
+
+Execução relatada diretamente pelo operador em PowerShell/SSH Hostinger:
+
+```text
+Ran 2 tests in 0.018s
+OK
+status: REVIEW_ONLY_IMPORT_CREATED
+path: /home/u401421381/.local/share/conexo-os/handoffs/binance-revisao-48f1ea5be313
+version_sha256: d2ccb99e2dbe0dbc999a4b8e1fdd49d089c9299c679f5cb6200edc5db6e00fd2
+content_sha256: 1969799ce2c4a1b6ad629eec62c39095ac58418695bab2f3f53efefe57448b60
+editorial_readiness_status: ENRIQUECIMENTO_PENDENTE
+substantive_review_status: PASS
+voice_application_status: ASSISTED_ADAPTED
+image_research_status: PREPARED_LICENSED_IMAGE_INSTALLED
+wordpress_written: false
+publication_authorized: false
+pending:
+  - imagem_destacada_com_direitos_pendente
+  - human_factual_approval
+  - authenticated_wordpress_gate_and_human_version_acceptance
+```
+
+A importação foi concluída e os dois testes focados passaram. **A lista de pendências resumida não prova que os quatro claims foram aprovados:** o contrato de evidências permanece sujeito ao Gate e à revisão humana. Não reimportar apenas para corrigir relatórios, não modificar post 9708 nem post publicado 9744, e não publicar sem autorização específica para este hash.
