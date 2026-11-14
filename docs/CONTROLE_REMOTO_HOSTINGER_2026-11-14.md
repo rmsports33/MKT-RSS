@@ -64,3 +64,14 @@ OK
 ```
 
 **Homologado:** teste focado de integração 2/2 e execução manual do controlador com resultado PASS. **Não confirmado ainda:** o hash/caminho final do novo pacote, os detalhes de `pipeline-report.json`, a revisão factual humana e a execução autônoma do Cron (API Hostinger segue retornando saída vazia). A versão anterior não recebe aprovação implícita; publicação segue bloqueada.
+
+## Diagnóstico discriminado — recibo v2
+
+Resultado extraído do `pipeline-report.json` em `binance-revisao-ce674e255211`, informado pela execução SSH:
+- `substantive_review.status = PASS`, `voice = ASSISTED_ADAPTED`.
+- Prontidão: somente `links_internos_nao_verificados` e `imagem_destacada_com_direitos_pendente`.
+- Contrato editorial: `BLOQUEADO` por `status_contrato`, `fonte_nao_aprovada`, `claim_nao_aprovado`, `claim_sem_evidencia_aprovada`.
+- Quatro claims `extra_1_1` a `extra_4_1`: `evidence_ids=[]`, `texto_localizado=false`, `evidencia_aprovada=false`. A correspondência textual não pode ser simulada por simples associação de URL.
+- `related_links=NOT_VERIFIED` por ausência de parâmetro verificado no importador, **não** por erro dos URLs. As três páginas de artigos publicados foram localizadas publicamente em 14/11/2026; correção no importador: `verified_related_urls` inclui somente estas três páginas.
+- `human_acceptance=PENDING`; a foto está preparada em manifesto privado, mas falta `featured_media_id` de mídia existente no WordPress e liberação de direitos no Gate autenticado.
+- Não reproduzir nem sobrescrever o pacote v2 só para ajustar o diagnóstico. A correção da prontidão dos links aplica-se a uma **futura** importação quando houver uma razão editorial real para gerar nova versão.
