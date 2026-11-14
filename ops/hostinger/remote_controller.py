@@ -19,6 +19,7 @@ LAUNCHER = ROOT / "ops/hostinger/conexo_editorial.sh"
 ALLOWED = {
     "image_technical_check": ["--image-check"],
     "binance_image_review_package": ["--image-stage", "--import-binance-image"],
+    "binance_substantive_review": ["--import-binance-reviewed"],
 }
 REPOSITORY = "https://github.com/rmsports33/MKT-RSS.git"
 BRANCH = "feat/hostinger-runtime-independente-20261113"
