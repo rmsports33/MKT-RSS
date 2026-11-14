@@ -9,7 +9,8 @@ from urllib.parse import urlsplit
 CATALOG = Path(__file__).resolve().parents[1] / 'data/licensed-image-catalog.json'
 LICENSES = {'CC0-1.0': 'https://creativecommons.org/publicdomain/zero/1.0/',
             'CC-BY-4.0': 'https://creativecommons.org/licenses/by/4.0/',
-            'CC-BY-SA-4.0': 'https://creativecommons.org/licenses/by-sa/4.0/'}
+            'CC-BY-SA-4.0': 'https://creativecommons.org/licenses/by-sa/4.0/',
+            'Unsplash License': 'https://unsplash.com/license'}
 
 
 def validate_resource(resource):
@@ -207,6 +208,7 @@ def image_figure(resource, desktop, mobile=None):
     if resource.get('source_type') == 'ai_generated':
         attribution=e(resource['credit'])
     else:
+        provider = 'Unsplash' if resource.get('license') == 'Unsplash License' else 'Wikimedia Commons'
         attribution=('Foto: <a href="'+e(resource['source_page'])+'">'+e(resource['author'])+
-                     '</a> / Wikimedia Commons. <a href="'+e(resource['license_url'])+'">'+e(resource['license'])+'</a>.')
+                     '</a> / '+provider+'. <a href="'+e(resource['license_url'])+'">'+e(resource['license'])+'</a>.')
     return '<figure>'+picture+'<figcaption>'+e(resource['caption'])+' '+attribution+'</figcaption></figure>'
