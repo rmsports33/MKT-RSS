@@ -59,7 +59,39 @@ def enrich_review_payload(payload):
     result = assess_substance(body, BRIEF, review)
     if not result["review_valid"] or result["status"] != "PASS":
         raise ValueError("BLOCKED: text-bound substantive critique inconsistent")
+    # Document every supplied source and claim as PENDING, not as verified.
+    # This eliminates the *missing-contract* error without granting the
+    # source/claim PASS bits that only a trusted editorial review can provide.
+    supplied_sources = payload["research"]["sources"]
+    pending_contract = {
+        "contract_version": "1.0",
+        "content_type": "noticia",
+        "status": "PENDING",
+        "sources": [
+            {
+                "id": "binance-src-" + str(i),
+                "url": source["url"],
+                "status": "PENDING",
+                "pending": True,
+                "retrieved_at": None,
+            }
+            for i, source in enumerate(supplied_sources, 1)
+        ],
+        "claims": [
+            {
+                "id": "extra_" + str(i) + "_" + str(j),
+                "text": fact,
+                "status": "PENDING",
+                "pending": True,
+                "heuristic": False,
+                "evidence_ids": [],
+            }
+            for i, source in enumerate(supplied_sources, 1)
+            for j, fact in enumerate(source["facts"], 1)
+        ],
+    }
     payload.update({
+        "editorial_contract": pending_contract,
         "editorial_brief": dict(BRIEF),
         "editorial_substance_review": review,
         "editorial_voice_application": {
