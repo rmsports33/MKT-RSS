@@ -52,3 +52,15 @@ O terminal retornou:
 - Teste focado adicionado: `tests/test_binance_review_integration.py`; ainda depende de execução no checkout Hostinger.
 - Como o controlador instalado faz **fetch de solicitações, não pull de código executável**, a nova ação NÃO se torna disponível na hospedagem até atualização supervisionada do checkout. Não afirmar execução ou promoção da nova versão antes do recibo PASS.
 - WordPress, escritor RSS/Turso e produção permanecem sem escrita por este fluxo. Não reusar o aceite da versão `afd94d...` no novo conteúdo.
+
+## Comprovação da segunda operação (14/11/2026)
+
+Após atualização do checkout na Hostinger, o operador relatou:
+
+```text
+Ran 2 tests in 0.021s
+OK
+{"job_id":"binance-substantive-review-20261114-v2","status":"PASS","steps":1,"receipt":"/home/u401421381/.local/state/conexo-os/remote-control-receipt.json"}
+```
+
+**Homologado:** teste focado de integração 2/2 e execução manual do controlador com resultado PASS. **Não confirmado ainda:** o hash/caminho final do novo pacote, os detalhes de `pipeline-report.json`, a revisão factual humana e a execução autônoma do Cron (API Hostinger segue retornando saída vazia). A versão anterior não recebe aprovação implícita; publicação segue bloqueada.
