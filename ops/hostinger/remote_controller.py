@@ -15,7 +15,6 @@ from pathlib import Path
 
 ROOT = Path.home() / "mkt-rss-runner"
 STATE = Path.home() / ".local/state/conexo-os"
-REQUEST = ROOT / "ops/hostinger/remote_request.json"
 LAUNCHER = ROOT / "ops/hostinger/conexo_editorial.sh"
 ALLOWED = {
     "image_technical_check": ["--image-check"],
@@ -38,8 +37,8 @@ def invoke(argv, timeout=120):
 
 
 def main():
-    if not REQUEST.is_file() or not LAUNCHER.is_file() or REQUEST.is_symlink():
-        raise SystemExit("BLOCKED: request/launcher missing or symlinked")
+    if not LAUNCHER.is_file() or LAUNCHER.is_symlink():
+        raise SystemExit("BLOCKED: trusted local launcher missing")
     # Execute exactly the checked-out code. The cron does NOT pull updates:
     # only the operator can update the trusted checkout.
     remote = subprocess.run(["git", "remote", "get-url", "origin"], cwd=ROOT,
@@ -51,7 +50,17 @@ def main():
     os.umask(0o077)
     with (STATE/"remote-control.lock").open("a+") as lock:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
-        data = json.loads(REQUEST.read_text(encoding="utf-8"))
+        fetched = subprocess.run(
+            ["git","fetch","--no-tags","origin","refs/heads/"+BRANCH],
+            cwd=ROOT,capture_output=True,text=True,timeout=45)
+        if fetched.returncode:
+            raise SystemExit("BLOCKED: remote request fetch failed")
+        requested = subprocess.run(
+            ["git","show","FETCH_HEAD:ops/hostinger/remote_request.json"],
+            cwd=ROOT,capture_output=True,text=True,timeout=15)
+        if requested.returncode:
+            raise SystemExit("BLOCKED: remote request missing on trusted branch")
+        data = json.loads(requested.stdout)
         if not isinstance(data,dict) or set(data)!={"schema","job_id","action","article_ref"}:
             raise SystemExit("BLOCKED: invalid remote request")
         if data["schema"]!="conexo-remote-request/1" or data["article_ref"]!="binance-revisao-6e8da0b05713":
