@@ -34,6 +34,15 @@ C. Homologar uma operação autenticada somente de correção, com readback.
 D. Revisar mecanismo de seleção/associação de imagem e qualidade factual do #9705.
 E. Reavaliar fila e evidências; nenhuma publicação sem aceite humano.
 
+## Descoberta de retomada em 14/11 — separação de executores
+
+- Confirmado no GitHub (branch `feat/hostinger-runtime-independente-20261113`): `ops/hostinger/run_rss_queue.sh` usa `$CONEXO_RUNNER_ROOT/.venv/bin/python`, exige Python **3.11–3.14**, modo `--preflight` somente de leitura e modo `--run` condicionado à ativação explícita. **Rejeita `WP_USER` e `WP_APP_PASSWORD`**, pois é escritor único de fila RSS/Turso e NÃO é executor de geração ou correção WordPress.
+- A API Hostinger `hosting_cron-jobs_list` retornou `[]` novamente; não existe agendamento de conta identificável por essa API. Não criar cron antes de verificar a arquitetura e a autorização operacional.
+- `mkt_flow_p0/conexo_remediation.py` é cliente **separado** de correção limitada do Gate (excerpt). Depende de `CONEXO_WP_USER` e `CONEXO_WP_APP_PASSWORD`; não deve compartilhar processo/arquivo de configuração do `run_rss_queue.sh` sob risco de violar segregação de credenciais.
+- WordPress reconfirmou #9705 em `draft` com featured_media #9888. Gate `rc10.4` reconfirmado ativo.
+- **Revisar o plano**: primeira confirmação agora é se o host tem um processo já existente de *geração WordPress*, diferente de `run_rss_queue.sh`. Se não houver, limitar a homologação a execução única manual do cliente de correção no checkout privado, não fingir que ligar `CONEXO_GATE_REMEDIATION_AUTO=1` no coletor o tornará executor editorial.
+- Sem shell SSH programático disponível nesta sessão, não declarar `.venv` verificado, teste Python no host executado, nem credencial instalada.
+
 ## Restrições permanentes
 Cloud-first, preferência por Hostinger/Turso/WordPress/GitHub existentes, sem gastos, sem Actions, sem staging, sem duplicar serviços, sem segredos nos chats, sem publicação automática não aprovada. Revisão humana uma vez, sobre artigo completo e versionado.
 
