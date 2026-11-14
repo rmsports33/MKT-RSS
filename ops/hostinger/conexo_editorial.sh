@@ -60,6 +60,21 @@ print("=== ARTIGO PARA REVISAO (NAO APROVADO) ===")
 print(markdown)
 PY
     ;;
+  --image-stage)
+    # Verified Unsplash provenance and chat-reviewed crop -> private immutable manifest.
+    # Not WordPress, publication or a human approval.
+    unset WP_USER WP_APP_PASSWORD CONEXO_WP_USER CONEXO_WP_APP_PASSWORD
+    unset TURSO_AUTH_TOKEN GROQ_API_KEY CONEXO_RSS_DRAFT CONEXO_RSS_DRAFT_STAGING
+    unset CONEXO_GATE_REMEDIATION_AUTO
+    "$PY" ops/hostinger/prepare_binance_visual_manifest.py
+    ;;
+  --import-binance-image)
+    # New reviewed version with licensed assets and HTML preview. Remains pending human acceptance.
+    unset WP_USER WP_APP_PASSWORD CONEXO_WP_USER CONEXO_WP_APP_PASSWORD
+    unset TURSO_AUTH_TOKEN GROQ_API_KEY CONEXO_RSS_DRAFT CONEXO_RSS_DRAFT_STAGING
+    unset CONEXO_GATE_REMEDIATION_AUTO
+    "$PY" ops/hostinger/import_binance_revision.py --with-image
+    ;;
   --image-check)
     # One-shot local QA + contact sheet. No approval or WordPress changes.
     unset WP_USER WP_APP_PASSWORD CONEXO_WP_USER CONEXO_WP_APP_PASSWORD
@@ -87,7 +102,7 @@ PY
     "$PY" pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-only --handoff-dir "$HANDOFF_DIR"
     ;;
   *)
-    echo "Usage: bash ops/hostinger/conexo_editorial.sh --inspect|--show-article|--image-check|--import-binance|--handoff-one"
+    echo "Usage: bash ops/hostinger/conexo_editorial.sh --inspect|--show-article|--image-check|--image-stage|--import-binance-image|--import-binance|--handoff-one"
     exit 2
     ;;
 esac
