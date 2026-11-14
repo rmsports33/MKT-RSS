@@ -11,6 +11,7 @@ from pathlib import Path
 from urllib.request import Request, urlopen
 from urllib.error import HTTPError, URLError
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 from ops.hostinger.gate_stage_preflight import detect_file, DOMAIN
 
 FUNCTIONS = ("cxeg_write", "cxeg_permission")
