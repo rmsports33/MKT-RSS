@@ -28,7 +28,7 @@ A corretora afirmou que os clientes não arcariam com o impacto financeiro do at
 
 ## Recuperação dos ativos: o que já foi anunciado
 
-Há também um avanço que não aparecia adequadamente na primeira versão deste artigo. Em 13 de novembro, autoridades dos Estados Unidos anunciaram a apreensão ou restrição judicial de mais de US$ 1,2 bilhão em criptoativos associados ao roubo; segundo a Associated Press, órgãos públicos e parceiros privados haviam congelado coletivamente mais de US$ 2,7 bilhões. Esses números não devem ser somados automaticamente, pois as categorias e os conjuntos de ativos podem se sobrepor. Tampouco significam que os valores já tenham sido definitivamente devolvidos à Binance ou a cada cliente. [Associated Press, 13/11](https://apnews.com/article/41be4834083e596a8facfd719f851cae).
+Segundo reportagens da Reuters publicadas logo após o ataque, a Binance informou que trabalhava com parceiros para congelar ou localizar cerca de US$ 3 bilhões em ativos ligados à operação criminosa. Esse número é uma informação de estágio inicial da investigação e não comprova devolução definitiva à empresa ou a seus clientes. A situação posterior dos ativos congelados exige documentação atualizada das autoridades. [Reuters, 30/10](https://www.investing.com/news/economy-news/analysts-react-as-binance-freezes-assets-after-63-billion-security-breach-4985760).
 
 Esse é o ponto central do caso: **cobertura de prejuízo**, **congelamento de ativos** e **recuperação jurídica e financeira** são processos diferentes. A notícia de que a plataforma consegue responder financeiramente ao ataque é relevante, mas não encerra a investigação nem elimina o risco operacional.
 
@@ -46,8 +46,14 @@ Persistem três questões relevantes: a reconciliação entre os percentuais de 
 
 A reação financeira da Binance é parte importante da história, mas sua avaliação depende de uma distinção simples: **repor o saldo prometido aos clientes não prova que o roubo foi desfeito**.
 
+## Leia também no ConexoTech
+
+- [Binance sofre ataque de US$ 6,36 bilhões; grupo ligado à Coreia do Norte é suspeito](https://conexotech.com.br/binance-ataque-hacker-636-bilhoes-coreia-do-norte/)
+- [Como hackers roubam criptomoedas — até de carteiras físicas e grandes corretoras](https://conexotech.com.br/como-hackers-roubam-criptomoedas-carteiras-corretoras/)
+- [Brasil registra 99 incidentes cibernéticos no sistema financeiro até setembro](https://conexotech.com.br/banco-central-99-incidentes-ciberneticos-financeiros-2026/)
+
 ---
 
-**Fontes principais:** [Tecnoblog, 14/11/2026](https://tecnoblog.net/noticias/r-34-bilhoes-binance-cobriu-100-do-prejuizo-do-maior-roubo-de-cripto-da-historia/); [Reuters, 14/11/2026](https://www.reuters.com/legal/government/binance-targets-full-reopening-withdrawals-by-next-week-2026-11-14/); [Reuters, 31/10/2026](https://www.marketscreener.com/news/binance-says-it-has-covered-90-of-losses-from-6-3-billion-hack-so-far-ce785fd8db8cf425); [Associated Press, 13/11/2026](https://apnews.com/article/41be4834083e596a8facfd719f851cae); [Reuters, 3/11/2026](https://www.investing.com/news/economy-news/binance-says-hackers-used-fake-job-interview-to-compromise-computer-before-63-billion-attack-4995603).
+**Fontes principais:** [Tecnoblog, 14/11/2026](https://tecnoblog.net/noticias/r-34-bilhoes-binance-cobriu-100-do-prejuizo-do-maior-roubo-de-cripto-da-historia/); [Reuters, 14/11/2026](https://www.reuters.com/legal/government/binance-targets-full-reopening-withdrawals-by-next-week-2026-11-14/); [Reuters, 31/10/2026](https://www.marketscreener.com/news/binance-says-it-has-covered-90-of-losses-from-6-3-billion-hack-so-far-ce785fd8db8cf425); [Reuters, 30/10/2026](https://www.investing.com/news/economy-news/analysts-react-as-binance-freezes-assets-after-63-billion-security-breach-4985760); [Reuters, 3/11/2026](https://www.investing.com/news/economy-news/binance-says-hackers-used-fake-job-interview-to-compromise-computer-before-63-billion-attack-4995603).
 
 > **Estado editorial:** versão corrigida para revisão, não aprovada. Antes do WordPress, validar cada fonte e reivindicação no Gate, escolher imagem licenciada com créditos e alt, conferir o layout em 390/1440 px e acrescentar artigos internos relacionados que existam de fato.
