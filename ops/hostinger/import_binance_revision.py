@@ -31,6 +31,7 @@ SOURCES = [
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--with-image', action='store_true')
+    parser.add_argument('--editorial-review', action='store_true')
     args = parser.parse_args()
     from mkt_flow_p0.editorial_import import processar_artigo_importado
     if not ARTICLE.is_file():
@@ -53,6 +54,9 @@ def main():
         },
         "research": {"sources": SOURCES},
     }
+    if args.editorial_review:
+        from ops.hostinger.binance_editorial_review import enrich_review_payload
+        payload = enrich_review_payload(payload)
     BASE.mkdir(parents=True, exist_ok=True, mode=0o700)
     image_manifest = None
     image_base = None
@@ -79,6 +83,10 @@ def main():
         "source_count": len(payload["research"]["sources"]),
         "research_claims": sum(len(s["facts"]) for s in SOURCES),
         "image_manifest_applied": bool(args.with_image),
+        "assisted_editorial_review_applied": bool(args.editorial_review),
+        "editorial_readiness_status": (report.get("readiness") or {}).get("status"),
+        "substantive_review_status": (report.get("substantive_review") or {}).get("status"),
+        "voice_application_status": (report.get("editorial_voice_application") or {}).get("status"),
         "preview_path": report.get("preview_path"),
         "image_research_status": (report.get("image_research") or {}).get("status"),
         "content_sha256": hashlib.sha256(body.encode()).hexdigest(),
