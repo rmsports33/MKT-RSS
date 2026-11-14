@@ -125,6 +125,15 @@ def gerar_corpo_wordpress(article, markdown):
     if first is not None and lines[first].strip() == "# " + article["title"].strip():
         lines.pop(first)
     body = _renderizar_markdown_editorial("\n".join(lines))
+    # Restrict table width inside mobile cards instead of allowing horizontal
+    # document overflow. Each table remains fully scrollable and readable.
+    body = re.sub(
+        r'(<table\\b[^>]*>.*?</table>)',
+        lambda m: '<div class="conexo-table-scroll" style="max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch">'
+                  + m.group(1).replace('<table', '<table style="min-width:590px;width:100%;border-collapse:collapse"', 1)
+                  + '</div>',
+        body, flags=re.S | re.I,
+    )
     fontes = "\n".join(
         '<li><a rel="noopener noreferrer" href="' + html.escape(s["url"], quote=True) +
         '">' + html.escape(s.get("name") or s["url"]) + '</a></li>' for s in article["sources"]
@@ -133,12 +142,18 @@ def gerar_corpo_wordpress(article, markdown):
         '<li><a rel="noopener noreferrer" href="' + html.escape(r["url"], quote=True) +
         '">' + html.escape(r.get("title") or r["url"]) + '</a></li>' for r in article.get("related_articles", [])
     )
-    items = [body, "<h2>Fontes</h2><ul>" + fontes + "</ul>"]
+    # The finished Markdown can already carry sourced citations and related
+    # links. Do not inject second identical sections into the WordPress body.
+    has_sources = bool(re.search(r'\\*\\*Fontes principais:\\*\\*|^##\\s+Fontes\\b', markdown, re.I | re.M))
+    has_related = bool(re.search(r'^##\\s+Leia também\\b', markdown, re.I | re.M))
+    items = [body]
+    if not has_sources:
+        items.append("<h2>Fontes</h2><ul>" + fontes + "</ul>")
     if article.get('image_resource'):
         from mkt_flow_p0.image_protocol import image_figure
         resource=article['image_resource'];assets=resource['preview_assets']
         items.insert(0,image_figure(resource,assets['desktop'],assets['mobile']))
-    if related:
+    if related and not has_related:
         items.append("<h2>Leia também</h2><ul>" + related + "</ul>")
     return "\n".join(items)
 
@@ -153,6 +168,13 @@ def gerar_html(article, markdown):
         '<meta name="robots" content="noindex,nofollow">',
         '<meta name="viewport" content="width=device-width,initial-scale=1">',
         "<title>" + html.escape(seo["title"]) + "</title>",
+        '<style>body{font:18px/1.7 system-ui,sans-serif;margin:0;color:#20242a;background:#f8f9fb}'
+        'main{max-width:920px;padding:30px 22px;margin:auto;background:#fff}'
+        'article{min-width:0}h1{font-size:clamp(1.75rem,4vw,2.75rem);line-height:1.2}'
+        'h2{line-height:1.3;margin-top:1.8em}img{max-width:100%;height:auto}'
+        'figure{margin:0 0 1.5rem}figcaption{font-size:.85rem;color:#525960}'
+        'a{overflow-wrap:anywhere}th,td{border:1px solid #ddd;padding:12px;text-align:left}'
+        '@media(max-width:600px){body{font-size:16px}main{padding:20px 14px}}</style>',
         '<meta name="description" content="' + html.escape(seo["description"], quote=True) + '">',
         "</head><body><main><article>",
         "<h1>" + html.escape(article["title"]) + "</h1>",
