@@ -4,6 +4,7 @@
 No Groq, Turso, WordPress writes, factual approval or secret handling.
 The generated handoff has distinct identity/version and pending review flags.
 """
+import argparse
 import hashlib
 import json
 import re
@@ -28,6 +29,9 @@ SOURCES = [
 ]
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--with-image', action='store_true')
+    args = parser.parse_args()
     from mkt_flow_p0.editorial_import import processar_artigo_importado
     if not ARTICLE.is_file():
         raise SystemExit("BLOCKED: reviewed Markdown absent from checkout")
@@ -50,8 +54,21 @@ def main():
         "research": {"sources": SOURCES},
     }
     BASE.mkdir(parents=True, exist_ok=True, mode=0o700)
+    image_manifest = None
+    image_base = None
+    if args.with_image:
+        image_base = Path.home() / ".local/share/conexo-os/imagens/binance"
+        manifest_path = image_base / "image-manifest.json"
+        if not manifest_path.is_file():
+            raise SystemExit("BLOCKED: reviewed image manifest missing; run --image-stage first")
+        image_manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        from mkt_flow_p0.image_protocol import validate_prepared_manifest
+        validate_prepared_manifest(image_manifest, base_dir=image_base)
     target = BASE / ("binance-revisao-" + uuid.uuid4().hex[:12])
-    report = processar_artigo_importado(payload, target, genero="noticia", offline=True)
+    report = processar_artigo_importado(
+        payload, target, genero="noticia", offline=True,
+        image_manifest=image_manifest, image_base=image_base)
+
     summary = {
         "status": "REVIEW_ONLY_IMPORT_CREATED",
         "path": str(target),
@@ -61,6 +78,9 @@ def main():
         "publication_authorized": report.get("publication_authorized"),
         "source_count": len(payload["research"]["sources"]),
         "research_claims": sum(len(s["facts"]) for s in SOURCES),
+        "image_manifest_applied": bool(args.with_image),
+        "preview_path": report.get("preview_path"),
+        "image_research_status": (report.get("image_research") or {}).get("status"),
         "content_sha256": hashlib.sha256(body.encode()).hexdigest(),
         "pending": ["substantive_review", "image_licensed_and_visual_review", "human_factual_approval"],
     }
