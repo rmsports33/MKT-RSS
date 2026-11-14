@@ -31,14 +31,14 @@ print(json.dumps({
     "words":len(body.split()), "sources":len(sources), "claims":len(claims),
     "version_sha256_present":bool(d.get("version_sha256")),
     "wordpress_written":d.get("wordpress_written"),
-    "needs": [
-      "substantive_review" if not m.get("review",{}).get("approved") else None,
-      "multisource_research" if len(sources)<2 else None,
-      "evidence_mapping" if not claims else None,
-      "image_license_and_desktop_mobile_review",
-      "human_approval"
-    ]
-}, ensure_ascii=False, indent=2, default=str).replace('null,\n','').replace('null\n',''))
+    "needs": [need for need, pending in [
+      ("substantive_review", not m.get("review",{}).get("approved")),
+      ("multisource_research", len(sources)<2),
+      ("evidence_mapping", not claims),
+      ("image_license_and_desktop_mobile_review", True),
+      ("human_approval", True)
+    ] if pending]
+}, ensure_ascii=False, indent=2, default=str))
 PY
     ;;
   --handoff-one)
