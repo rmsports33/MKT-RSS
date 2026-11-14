@@ -42,7 +42,14 @@ def _ensure_env():
 
 
 def _modelo() -> str:
-    return os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile")
+    provider = os.getenv("AI_PROVIDER", "groq").strip().lower()
+    names = {
+        "groq": ("GROQ_MODEL", "llama-3.3-70b-versatile"),
+        "gemini": ("GEMINI_MODEL", "gemini-2.0-flash"),
+        "openrouter": ("OPENROUTER_MODEL", ""),
+    }
+    env, default = names.get(provider, names["groq"])
+    return os.getenv(env, default)
 
 
 def _custos() -> tuple:
@@ -67,16 +74,19 @@ SYSTEM_PROMPT = DNA_EDITORIAL_PROMPT
 def _get_client():
     _ensure_env()
     try:
-        from groq import Groq
+        from mkt_flow_p0.ai_providers import get_client, ProviderConfigurationError
+        client, _model = get_client()
+    except ProviderConfigurationError as exc:
+        provider = os.getenv("AI_PROVIDER", "groq").strip().lower()
+        if provider == "groq" and "GROQ_API_KEY" in str(exc):
+            return None, "GROQ_API_KEY ausente no .env — obtenha em https://console.groq.com"
+        return None, str(exc)
     except ImportError:
         return None, "groq não instalado — rode: pip install groq"
-    api_key = (os.getenv("GROQ_API_KEY") or "").strip()
-    if not api_key:
-        return None, "GROQ_API_KEY ausente no .env — obtenha em https://console.groq.com"
     try:
-        return Groq(api_key=api_key, max_retries=0), ""
+        return client, ""
     except Exception as e:
-        return None, "Falha ao inicializar Groq (detalhes privados omitidos)"
+        return None, "Falha ao inicializar provedor (detalhes privados omitidos)"
 
 
 def gerar_slug(titulo: str) -> str:
