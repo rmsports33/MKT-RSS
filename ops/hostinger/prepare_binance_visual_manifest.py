@@ -52,7 +52,7 @@ def main():
         "license_url": "https://unsplash.com/license",
         "checked_at": "2026-11-14",
         "alt": "Racks de servidores com cabos de rede em um centro de dados.",
-        "caption": "Imagem ilustrativa de infraestrutura digital. Foto: Kevin Ache/Unsplash.",
+        "caption": "Imagem ilustrativa de infraestrutura digital.",
         "credit": "Kevin Ache / Unsplash",
         "rights_review": "DOCUMENTED_SOURCE_CHECK",
         "content_fit_review": "PASS",
