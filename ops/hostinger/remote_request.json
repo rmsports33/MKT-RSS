@@ -1,6 +1,6 @@
 {
   "schema": "conexo-remote-request/1",
-  "job_id": "binance-image-review-20261114-v1",
-  "action": "binance_image_review_package",
+  "job_id": "binance-substantive-review-20261114-v2",
+  "action": "binance_substantive_review",
   "article_ref": "binance-revisao-6e8da0b05713"
 }
