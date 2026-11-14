@@ -155,7 +155,8 @@ def normalizar_fontes_complementares(contexto):
 
 
 def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_complementar=None,
-                          voice_application=None, editorial_brief=None, editorial_review=None):
+                          voice_application=None, editorial_brief=None, editorial_review=None,
+                          editorial_contract=None):
     """Entrega metadata+Markdown compatíveis com editorial_core_offline.
 
     Não altera o conteúdo, não promove stage e não aproveita aceite prévio.
@@ -202,6 +203,12 @@ def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_compl
         metadata["editorial_brief"] = normalize_brief(editorial_brief)
     if editorial_review is not None:
         metadata["editorial_substance_review"] = copy.deepcopy(editorial_review)
+    if editorial_contract is not None:
+        from mkt_flow_p0.adaptador_contrato_editorial import normalizar_snapshot_editorial
+        contract = normalizar_snapshot_editorial(editorial_contract)
+        if contract is None:
+            raise ValueError("snapshot editorial inválido")
+        metadata["contrato_editorial"] = contract
     digest = hashlib.sha256(json.dumps(
         {"metadata": metadata, "markdown": markdown}, sort_keys=True,
         ensure_ascii=False, separators=(",", ":")

@@ -1,5 +1,6 @@
 """Fila editorial RSS P0. Sem LLM, WordPress, rede nem agendamento próprios."""
 import hashlib
+import os
 import re
 import sqlite3
 import uuid
@@ -79,7 +80,8 @@ MUTEX_SCHEMA = """CREATE TABLE IF NOT EXISTS rss_queue_mutex (
 
 def _reserve_writer(db_path=None):
     """Single-writer lease across SQLite/Turso; fail closed on contention."""
-    _exec(MUTEX_SCHEMA, db_path=db_path)
+    if os.getenv("CONEXO_RSS_SCHEMA_PREEXISTS") != "1":
+        _exec(MUTEX_SCHEMA, db_path=db_path)
     owner = uuid.uuid4().hex
     now = int(time.time())
     _, affected = _exec(
@@ -100,6 +102,13 @@ def _release_writer(owner, db_path=None):
 
 
 def init_queue(db_path=None):
+    """Normal mode supports schema creation; hardened runner only verifies existing schema."""
+    if os.getenv("CONEXO_RSS_SCHEMA_PREEXISTS") == "1":
+        for table, columns in (("rss_pautas", "id"),
+                               ("rss_notas_editoriais", "pauta_id"),
+                               ("rss_queue_mutex", "name")):
+            _exec("SELECT %s FROM %s LIMIT 0" % (columns, table), db_path=db_path)
+        return
     _exec(SCHEMA, db_path=db_path)
     _exec(NOTAS_SCHEMA, db_path=db_path)
     _exec("CREATE INDEX IF NOT EXISTS idx_rss_pautas_estado ON rss_pautas(estado, pontuacao)",

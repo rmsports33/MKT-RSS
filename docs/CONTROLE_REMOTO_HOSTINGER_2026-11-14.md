@@ -1,0 +1,77 @@
+# Controle remoto editorial — Hostinger + GitHub (2026-11-14)
+
+## Estado observado
+- Hostinger: conta `u401421381`, site `conexotech.com.br`; Cron da conta estava vazio antes da configuração.
+- Um Cron exclusivo, sem acesso HTTP público, foi cadastrado para executar `ops/hostinger/remote_controller.py` em `~/mkt-rss-runner`.
+- Agendamento ativo de cinco em cinco minutos: UID `ZiA0KZ9rPW`. O Cron transitório de 1 minuto (`7Jo5gcqFg9`) foi removido. A execução real da solicitação ainda exige consulta ao recibo; o cadastro não é prova de sucesso.
+- **Não é o Cron do coletor RSS**. `run_rss_queue.sh` permanece protegido com `CONEXO_RSS_CRON_ACTIVE` e com a regra de escritor único. O workflow diário do GitHub Actions permanece programado; não alterar sem corte seguro.
+- Ações do controlador, somente por allowlist: `image_technical_check`, `binance_image_review_package`. Não há ação para publicar, editar WP, executar código livre, criar contas ou cobrar serviços.
+- Comando remoto é um arquivo de dados JSON no GitHub, validado, controlado por `job_id`; o Cron consulta apenas dados da branch confiável, **sem executar scripts remotos**.
+- O próprio código do controlador é carregado somente do checkout previamente instalado, exceto no bootstrap inicial do Cron.
+- Recibo privado `~/.local/state/conexo-os/remote-control-receipt.json`; todo `job_id` é de execução única (inclusive quando há falha). Não repetir operações falhas automaticamente.
+
+## Solicitação inicial
+`ops/hostinger/remote_request.json`:
+```json
+{"schema":"conexo-remote-request/1","job_id":"binance-image-review-20261114-v1","action":"binance_image_review_package","article_ref":"binance-revisao-6e8da0b05713"}
+```
+Ação: validar manifesto da fotografia Unsplash previamente conferida em 1440/390; gerar **nova versão privada** do pacote Binance, com recursos de imagem e prévia local. **Nenhuma escrita no WordPress**. Não consumir Groq nem Turso. O hash novo substitui a versão anterior apenas para futuras decisões; não sobrescreve o arquivo anterior.
+
+## Segurança e verificação mínima
+1. O controlador confere origem Git, formato de solicitação, artigo e ação permitida, usa `flock` e salva recibo restrito em 0600.
+2. Para verificar se o Cron foi realmente executado, consultar a operação **hosting_cron-jobs_output** da Hostinger por UID. **Agendamento criado não equivale a tarefa executada.**
+3. Resultado esperado no recibo: `status=PASS` e duas operações bem-sucedidas. Em falha: apenas novo job id após corrigir a causa, sem regenerar o artigo.
+4. Se houve `PASS`, inspecionar `preview_path` do novo pacote, conferência visual da **página completa** de 390 e 1440 ainda necessária, não apenas recorte da capa.
+5. Para suspender tudo: apagar somente o Cron UID do controlador. Não tocar no workflow de coleta RSS existente nem na produção WordPress.
+6. Aprovação humana final, licenças particulares e Gate editorial continuam necessários. Nenhuma conclusão 100% sem recibo real.
+
+## Operação futura sem terminal
+- O ChatGPT com conector GitHub altera somente `remote_request.json` com **novo job_id** e ação permitida.
+- Hostinger Cron lê o comando e executa em ambiente privado; ChatGPT consulta o recibo do Cron no conector Hostinger.
+- Isso resolve **o acionamento remoto dessas duas ações**, não ainda toda a orquestração editorial, que requer integração segura com os passos de Gate e WordPress.
+
+## Evidência operacional recebida em 14/11/2026
+
+O operador executou na Hostinger `git pull --ff-only` e depois
+`.venv/bin/python ops/hostinger/remote_controller.py`.
+O terminal retornou:
+
+```json
+{"job_id":"binance-image-review-20261114-v1","status":"PASS","steps":2,"receipt":"/home/u401421381/.local/state/conexo-os/remote-control-receipt.json"}
+```
+
+**Comprovado:** controlador executado manualmente até concluir as duas ações permitidas e registrar recibo privado. **Ainda não comprovado:** que o Cron automático tenha executado, pois a API oficial `hosting_cron-jobs_output` retornou saída vazia mesmo após cadastro. Os detalhes internos do recibo (hash do novo pacote e caminho da prévia) ainda não foram inspecionados nesta sessão. Não equivale a revisão humana de layout ou autorização para WordPress.
+
+## Segunda solicitação — correção editorial (14/11)
+
+- Nova solicitação `binance-substantive-review-20261114-v2`, ação permitida `binance_substantive_review`.
+- `docs/ARTIGO_BINANCE_REVISAO_2026-11-14.md`: abertura adaptada; hash SHA-256 esperado para o corpo `b78d7442741edf59c9516ca6499f9fd8d1d2e9b2395d57c4faf3f06019f080ee`.
+- `ops/hostinger/binance_editorial_review.py` fornece briefing específico, 5 critérios de avaliação assistida e evidências textuais verificadas contra o corpo. Não certifica fatos ou aprovação humana.
+- O contrato `EditorialContract 1.0` é anexado com `status=PENDING`, fontes não verificadas e `evidence_ids=[]`. Isso remove a ausência do contrato, mas conserva **BLOQUEADO** enquanto direitos, evidências e Gate não forem homologados.
+- O renderizador canônico agora evita duplicação de créditos e seções, e coloca as tabelas em contêineres com rolagem própria.
+- Teste focado adicionado: `tests/test_binance_review_integration.py`; ainda depende de execução no checkout Hostinger.
+- Como o controlador instalado faz **fetch de solicitações, não pull de código executável**, a nova ação NÃO se torna disponível na hospedagem até atualização supervisionada do checkout. Não afirmar execução ou promoção da nova versão antes do recibo PASS.
+- WordPress, escritor RSS/Turso e produção permanecem sem escrita por este fluxo. Não reusar o aceite da versão `afd94d...` no novo conteúdo.
+
+## Comprovação da segunda operação (14/11/2026)
+
+Após atualização do checkout na Hostinger, o operador relatou:
+
+```text
+Ran 2 tests in 0.021s
+OK
+{"job_id":"binance-substantive-review-20261114-v2","status":"PASS","steps":1,"receipt":"/home/u401421381/.local/state/conexo-os/remote-control-receipt.json"}
+```
+
+**Homologado:** teste focado de integração 2/2 e execução manual do controlador com resultado PASS. **Não confirmado ainda:** o hash/caminho final do novo pacote, os detalhes de `pipeline-report.json`, a revisão factual humana e a execução autônoma do Cron (API Hostinger segue retornando saída vazia). A versão anterior não recebe aprovação implícita; publicação segue bloqueada.
+
+## Diagnóstico discriminado — recibo v2
+
+Resultado extraído do `pipeline-report.json` em `binance-revisao-ce674e255211`, informado pela execução SSH:
+- `substantive_review.status = PASS`, `voice = ASSISTED_ADAPTED`.
+- Prontidão: somente `links_internos_nao_verificados` e `imagem_destacada_com_direitos_pendente`.
+- Contrato editorial: `BLOQUEADO` por `status_contrato`, `fonte_nao_aprovada`, `claim_nao_aprovado`, `claim_sem_evidencia_aprovada`.
+- Quatro claims `extra_1_1` a `extra_4_1`: `evidence_ids=[]`, `texto_localizado=false`, `evidencia_aprovada=false`. A correspondência textual não pode ser simulada por simples associação de URL.
+- `related_links=NOT_VERIFIED` por ausência de parâmetro verificado no importador, **não** por erro dos URLs. As três páginas de artigos publicados foram localizadas publicamente em 14/11/2026; correção no importador: `verified_related_urls` inclui somente estas três páginas.
+- `human_acceptance=PENDING`; a foto está preparada em manifesto privado, mas falta `featured_media_id` de mídia existente no WordPress e liberação de direitos no Gate autenticado.
+- Não reproduzir nem sobrescrever o pacote v2 só para ajustar o diagnóstico. A correção da prontidão dos links aplica-se a uma **futura** importação quando houver uma razão editorial real para gerar nova versão.
