@@ -74,7 +74,11 @@ def main():
         receipt=STATE/"remote-control-receipt.json"
         prev=json.loads(receipt.read_text()) if receipt.is_file() else {}
         if prev.get("job_id")==jid:
-            print(json.dumps({"status":"ALREADY_PROCESSED","job_id":jid}))
+            print(json.dumps({"status":"ALREADY_PROCESSED","job_id":jid,
+                              "last_run_status":prev.get("status"),
+                              "steps":[{"step":v.get("step"),"status":v.get("status")}
+                                       for v in prev.get("results",[])],
+                              "receipt":str(receipt)}))
             return
         # Commit STARTED before any action; do not retry on failure/crash.
         def record(info):
