@@ -3,7 +3,7 @@
 ## Estado observado
 - Hostinger: conta `u401421381`, site `conexotech.com.br`; Cron da conta estava vazio antes da configuração.
 - Um Cron exclusivo, sem acesso HTTP público, foi cadastrado para executar `ops/hostinger/remote_controller.py` em `~/mkt-rss-runner`.
-- Agendamento de bootstrap (temporário) de minuto em minuto: UID `7Jo5gcqFg9`. **Após a execução confirmada, reduzir para 15 minutos** para evitar solicitações Git desnecessárias.
+- Agendamento ativo de cinco em cinco minutos: UID `ZiA0KZ9rPW`. O Cron transitório de 1 minuto (`7Jo5gcqFg9`) foi removido. A execução real da solicitação ainda exige consulta ao recibo; o cadastro não é prova de sucesso.
 - **Não é o Cron do coletor RSS**. `run_rss_queue.sh` permanece protegido com `CONEXO_RSS_CRON_ACTIVE` e com a regra de escritor único. O workflow diário do GitHub Actions permanece programado; não alterar sem corte seguro.
 - Ações do controlador, somente por allowlist: `image_technical_check`, `binance_image_review_package`. Não há ação para publicar, editar WP, executar código livre, criar contas ou cobrar serviços.
 - Comando remoto é um arquivo de dados JSON no GitHub, validado, controlado por `job_id`; o Cron consulta apenas dados da branch confiável, **sem executar scripts remotos**.
