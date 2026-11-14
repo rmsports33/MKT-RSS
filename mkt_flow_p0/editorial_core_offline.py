@@ -130,7 +130,9 @@ def gerar_corpo_wordpress(article, markdown):
     body = re.sub(
         r'(<table\b[^>]*>.*?</table>)',
         lambda m: '<div class="conexo-table-scroll" style="max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch">'
-                  + m.group(1).replace('<table', '<table style="min-width:590px;width:100%;border-collapse:collapse"', 1)
+                  # Keep the canonical table opening tag for legacy previews;
+                  # the scroll container still constrains mobile overflow.
+                  + m.group(1)
                   + '</div>',
         body, flags=re.S | re.I,
     )
