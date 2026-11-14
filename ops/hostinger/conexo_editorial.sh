@@ -60,6 +60,14 @@ print("=== ARTIGO PARA REVISAO (NAO APROVADO) ===")
 print(markdown)
 PY
     ;;
+  --import-binance)
+    # Imports the GitHub-reviewed Markdown as a distinct private, pending package.
+    # Never calls Groq, Turso, WordPress or the Gate write endpoints.
+    unset WP_USER WP_APP_PASSWORD CONEXO_WP_USER CONEXO_WP_APP_PASSWORD
+    unset TURSO_AUTH_TOKEN GROQ_API_KEY CONEXO_RSS_DRAFT CONEXO_RSS_DRAFT_STAGING
+    unset CONEXO_GATE_REMEDIATION_AUTO
+    "$PY" ops/hostinger/import_binance_revision.py
+    ;;
   --handoff-one)
     [[ -s "$GROQ_TOKEN" && ! -L "$GROQ_TOKEN" ]] || { echo "BLOCKED: private Groq credential missing"; exit 2; }
     [[ "$(stat -c '%a' "$GROQ_TOKEN")" == 600 ]] || { echo "BLOCKED: credential permissions"; exit 2; }
@@ -72,7 +80,7 @@ PY
     "$PY" pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-only --handoff-dir "$HANDOFF_DIR"
     ;;
   *)
-    echo "Usage: bash ops/hostinger/conexo_editorial.sh --inspect|--show-article|--handoff-one"
+    echo "Usage: bash ops/hostinger/conexo_editorial.sh --inspect|--show-article|--import-binance|--handoff-one"
     exit 2
     ;;
 esac
