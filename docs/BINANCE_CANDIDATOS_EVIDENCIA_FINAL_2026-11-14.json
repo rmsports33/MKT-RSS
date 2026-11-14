@@ -1,0 +1,69 @@
+{
+  "schema": "conexo-binance-evidence-candidates/1",
+  "article_id": "binance-cobertura-roubo-cripto-2026-revisao",
+  "handoff_version_sha256": "d2ccb99e2dbe0dbc999a4b8e1fdd49d089c9299c679f5cb6200edc5db6e00fd2",
+  "manuscript_body_sha256": "1969799ce2c4a1b6ad629eec62c39095ac58418695bab2f3f53efefe57448b60",
+  "wordpress": {
+    "site": "conexotech.com.br",
+    "media_id": 9892,
+    "media_source": "https://conexotech.com.br/wp-content/uploads/2026/11/conexotech-binance-cobertura-ataque-2026-capa.jpg",
+    "media_attached_to_post": false,
+    "post_id": null,
+    "wordpress_written_article": false
+  },
+  "claims": [
+    {
+      "claim_id": "extra_1_1",
+      "manuscript_exact_excerpt": "A Reuters informou em 14 de novembro que a Binance já havia reaberto retiradas em 87 redes, mas esperava concluir a normalização das demais até a semana seguinte.",
+      "source_url": "https://www.reuters.com/legal/government/binance-targets-full-reopening-withdrawals-by-next-week-2026-11-14/",
+      "editorial_scope": "A Reuters distingue 95% de cobertura e a reabertura de 87 redes; os dados são atribuídos à Binance e não comprovam indenização individual.",
+      "evidence_candidate_id": "doc-extra_1_1",
+      "status": "SOURCE_CHECKED_ASSISTED_PENDING_HUMAN",
+      "canonical_gate_evidence_ids": [],
+      "approved": false
+    },
+    {
+      "claim_id": "extra_2_1",
+      "manuscript_exact_excerpt": "Em 31 de outubro, disse ter reunido cerca de US$ 6 bilhões, mas ainda precisava adquirir ativos com menor liquidez.",
+      "source_url": "https://www.fidelity.com/news/article/company-news/202610311134RTRSNEWSCOMBINED_L6N46H03L_1",
+      "editorial_scope": "A Reuters de 31/10 registra reposição de 90% e ativos de menor liquidez ainda pendentes; uso da expressão cerca de US$ 6 bilhões tem outra referência Reuters no corpo.",
+      "evidence_candidate_id": "doc-extra_2_1",
+      "status": "SOURCE_CHECKED_ASSISTED_PENDING_HUMAN",
+      "canonical_gate_evidence_ids": [],
+      "approved": false
+    },
+    {
+      "claim_id": "extra_3_1",
+      "manuscript_exact_excerpt": "Dentro desse total — e não como um valor adicional —, a Justiça americana autorizou a apreensão ou restrição de mais de US$ 1,2 bilhão.",
+      "source_url": "https://apnews.com/article/41be4834083e596a8facfd719f851cae",
+      "editorial_scope": "A AP confirma mais de US$ 2,7 bilhões congelados e autorização judicial sobre mais de US$ 1,2 bilhão desse mesmo total; não é devolução aos titulares.",
+      "evidence_candidate_id": "doc-extra_3_1",
+      "status": "SOURCE_CHECKED_ASSISTED_PENDING_HUMAN",
+      "canonical_gate_evidence_ids": [],
+      "approved": false
+    },
+    {
+      "claim_id": "extra_4_1",
+      "manuscript_exact_excerpt": "O comunicado citado pelo Tecnoblog indica cobertura de 100% e a publicação de uma nova prova de reservas.",
+      "source_url": "https://tecnoblog.net/noticias/r-34-bilhoes-binance-cobriu-100-do-prejuizo-do-maior-roubo-de-cripto-da-historia/",
+      "editorial_scope": "O Tecnoblog reproduz declaração empresarial de 100% e nova prova de reservas; não significa recuperação dos ativos desviados.",
+      "evidence_candidate_id": "doc-extra_4_1",
+      "status": "SOURCE_CHECKED_ASSISTED_PENDING_HUMAN",
+      "canonical_gate_evidence_ids": [],
+      "approved": false
+    }
+  ],
+  "copyright": {
+    "source_url": "https://unsplash.com/photos/a-rack-of-servers-in-a-server-room-2JJ3wBHu4_0",
+    "license_url": "https://unsplash.com/license",
+    "photographer": "Kevin Ache",
+    "original_crop_sha256": "b5ba5abd2bb4810eb3641d9c88a7e0d9108f401cb6a9567a44d8ce4f9e1d2d74"
+  },
+  "approval": {
+    "factual_human": false,
+    "version_human": false,
+    "wordpress_gate": false,
+    "publication_authorized": false
+  },
+  "note": "Source matching verified from public articles and exact text spans. This file is an assistance record, not a canonical trusted Gate receipt; values cannot be promoted to PASS or re-used for another content hash."
+}
