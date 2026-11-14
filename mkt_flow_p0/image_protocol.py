@@ -211,4 +211,12 @@ def image_figure(resource, desktop, mobile=None):
         provider = 'Unsplash' if resource.get('license') == 'Unsplash License' else 'Wikimedia Commons'
         attribution=('Foto: <a href="'+e(resource['source_page'])+'">'+e(resource['author'])+
                      '</a> / '+provider+'. <a href="'+e(resource['license_url'])+'">'+e(resource['license'])+'</a>.')
-    return '<figure>'+picture+'<figcaption>'+e(resource['caption'])+' '+attribution+'</figcaption></figure>'
+    caption = resource['caption']
+    # Legacy manifests already had a full photo credit in caption. Do not
+    # duplicate the same author/provider in the rendered HTML.
+    already_credited = (resource.get('source_type') != 'ai_generated'
+                        and resource.get('author', '').casefold() in caption.casefold()
+                        and (('unsplash' in caption.casefold() and resource.get('license') == 'Unsplash License')
+                             or ('wikimedia' in caption.casefold())))
+    credit_suffix = '' if already_credited else ' ' + attribution
+    return '<figure>'+picture+'<figcaption>'+e(caption)+credit_suffix+'</figcaption></figure>'
