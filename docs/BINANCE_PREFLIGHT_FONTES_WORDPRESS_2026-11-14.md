@@ -74,3 +74,13 @@ pending:
 ```
 
 A importação foi concluída e os dois testes focados passaram. **A lista de pendências resumida não prova que os quatro claims foram aprovados:** o contrato de evidências permanece sujeito ao Gate e à revisão humana. Não reimportar apenas para corrigir relatórios, não modificar post 9708 nem post publicado 9744, e não publicar sem autorização específica para este hash.
+
+## Execução direta WordPress e evidências (14/11/2026)
+
+- **Capa realmente enviada à biblioteca de mídia do WordPress de produção:** ID **9892**, arquivo `2026/11/conexotech-binance-cobertura-ataque-2026-capa.jpg`, 1440 × 810, alt e crédito cadastrados. Reconsulta autenticada confirmou `post=null`; portanto ainda não é imagem destacada de um rascunho.
+- Fonte/licença pública revisitada: https://unsplash.com/photos/a-rack-of-servers-in-a-server-room-2JJ3wBHu4_0 (Kevin Ache, Unsplash License); crop original SHA-256 `b5ba5abd2bb4810eb3641d9c88a7e0d9108f401cb6a9567a44d8ce4f9e1d2d74`.
+- **Evidências pré-revisão:** `docs/BINANCE_CANDIDATOS_EVIDENCIA_FINAL_2026-11-14.json` lista 4 claims com trechos literais presentes na versão, URLs, interpretações e estado `SOURCE_CHECKED_ASSISTED_PENDING_HUMAN`. Não usa `status=PASS` ou `evidence_ids` confiáveis do Gate.
+- Consulta autenticada `wpcom_mcp_posts_list` pelo slug `binance-cobertura-roubo-cripto-2026-revisao` confirmou **nenhum rascunho** correspondente.
+- O código Gate em `conexo-editorial-gate/includes/conexo-editorial-gate-core.php` expõe `POST /conexo/v1/editorial/write`, com `intent=stage` para criação e assinatura; o conector WordPress atual permite `wpcom_mcp_posts_create`, mas **não** a rota customizada do Gate. Não usar escrita genérica para desviar do Gate.
+- O broker `/editorial/broker/write` não aceita criação de draft (`intent` restringe-se a publish/schedule) e exige executor e revisão independentes.
+- **Resultado:** uma nova capa (mídia WordPress 9892) foi criada; nenhum artigo ou rascunho foi escrito; não houve aprovação factual/humana/publicação. A única operação restante para criar o draft precisa ocorrer via executor autenticado do Gate, com o pacote exato versionado, IDs de evidências assinados pelo revisor humano e mídia 9892.
