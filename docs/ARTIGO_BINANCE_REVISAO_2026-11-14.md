@@ -1,6 +1,6 @@
 # Binance afirma cobrir perdas de US$ 6,3 bilhões após ataque; números ainda exigem esclarecimentos
 
-**Reportagens de 14 de novembro trazem percentuais diferentes para a recomposição de ativos. A resposta da corretora mostra por que repor o saldo de clientes não é o mesmo que recuperar criptomoedas roubadas.**
+**A Binance diz ter coberto as perdas de um ataque bilionário, mas a conta ainda não está totalmente esclarecida: enquanto uma publicação fala em 100% de cobertura, a Reuters registrou 95%. Para quem usa a corretora, a diferença ajuda a separar saldo reposto, retiradas liberadas e criptomoedas efetivamente recuperadas.**
 
 A Binance afirma ter mobilizado recursos para cobrir integralmente as perdas decorrentes do ataque de 29 de outubro de 2026, que desviou aproximadamente US$ 6,3 bilhões em criptoativos. O comunicado citado pelo Tecnoblog indica cobertura de 100% e a publicação de uma nova prova de reservas. No entanto, reportagem da Reuters de 14 de novembro informa que 95% dos ativos haviam sido cobertos e que as retiradas ainda estavam sendo restabelecidas por etapas. Sem esclarecer o momento e o critério de cada percentual, não é possível tratar ambos como uma mesma medição. [Tecnoblog](https://tecnoblog.net/noticias/r-34-bilhoes-binance-cobriu-100-do-prejuizo-do-maior-roubo-de-cripto-da-historia/) · [Reuters, 14/11](https://www.reuters.com/legal/government/binance-targets-full-reopening-withdrawals-by-next-week-2026-11-14/).
 
