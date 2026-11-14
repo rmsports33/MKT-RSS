@@ -7,7 +7,7 @@ Gate authorization or permission to publish.
 from mkt_flow_p0.editorial_identity import DNA_PROMPT_SHA256
 from mkt_flow_p0.editorial_substance import content_hash, brief_hash, assess_substance
 
-MANUSCRIPT_SHA = "b78d7442741edf59c9516ca6499f9fd8d1d2e9b2395d57c4faf3f06019f080ee"
+MANUSCRIPT_SHA = "1969799ce2c4a1b6ad629eec62c39095ac58418695bab2f3f53efefe57448b60"
 BRIEF = {
     "genre": "noticia",
     "reader": "Leitor brasileiro que guarda criptomoedas em corretora e precisa distinguir a segurança operacional da simples promessa de ressarcimento.",
@@ -20,7 +20,7 @@ CRITIQUE = {
     "reader_need": {
         "score": 4,
         "excerpt": "Para quem mantém criptoativos sob custódia de uma exchange, a principal questão prática não é apenas a promessa de ressarcimento.",
-        "reason": "A seção destinada ao usuário explicita que a disponibilidade de saques por rede e ativo importa mais que uma porcentagem abstrata; não promete garantia inexistente.",
+        "reason": "A seção destinada ao usuário distingue redes e disponibilidade de saques; a atualização da AP esclarece que congelamento, autorização judicial e devolução não são equivalentes.",
     },
     "editorial_angle": {
         "score": 4,
@@ -40,7 +40,7 @@ CRITIQUE = {
     "source_limits": {
         "score": 4,
         "excerpt": "Sem esclarecer o momento e o critério de cada percentual, não é possível tratar ambos como uma mesma medição.",
-        "reason": "O texto assinala as lacunas da reconciliação e distingue o anúncio corporativo de auditoria externa, mas a checagem factual independente ainda pertence ao Gate.",
+        "reason": "O texto assinala lacunas entre 95% e 100%, e separa os US$ 2,7 bilhões congelados dos US$ 1,2 bilhão autorizados judicialmente, sem afirmar devolução aos clientes. O Gate ainda exige revisão factual independente.",
     },
 }
 
