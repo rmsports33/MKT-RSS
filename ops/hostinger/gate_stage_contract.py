@@ -22,77 +22,132 @@ SENSITIVE = re.compile(r"password|secret|token|authorization|private|key|credent
 
 
 def extract_function(source, name):
+    """Return function body by balancing PHP braces, not by the next function.
+
+    This is a bounded structural scanner; comments/strings with curly braces
+    could affect matching, so its output is diagnostic, not an API contract.
+    """
     m = re.search(r"\bfunction\s+" + re.escape(name) + r"\s*\(", source)
     if not m:
         return None
-    # Extract until the next top-level function declaration. This is a
-    # diagnostic approximation, not a PHP parser or an execution contract.
-    following = re.search(r"\bfunction\s+[A-Za-z_]\w*\s*\(", source[m.end():])
-    end = m.end() + following.start() if following else len(source)
-    return source[m.start():min(end, m.start() + 14000)]
+    open_brace = source.find("{", m.end())
+    if open_brace < 0 or open_brace - m.end() > 2000:
+        return None
+    depth = 0
+    for i in range(open_brace, min(len(source), open_brace + 60000)):
+        if source[i] == "{":
+            depth += 1
+        elif source[i] == "}":
+            depth -= 1
+            if depth == 0:
+                return source[m.start():i + 1]
+    return None
+
+
+def structural_info(source, root_name):
+    # Follow direct cxeg_* function calls, at most three levels and six funcs.
+    # Never execute PHP or expose free-form source text.
+    queue = [(root_name, 0)]
+    visited = set()
+    keys, funcs, controls, param_methods = set(), [], set(), set()
+    while queue and len(visited) < 6:
+        name, depth = queue.pop(0)
+        if name in visited:
+            continue
+        visited.add(name)
+        body = extract_function(source, name)
+        if body is None:
+            continue
+        funcs.append(name)
+        patterns = (
+            r"\$(?:request|params|payload|data|args)\s*\[\s*['\"]([\w-]{1,65})['\"]\s*\]",
+            r"\$(?:request|req)\s*->\s*get_param\s*\(\s*['\"]([\w-]{1,65})['\"]",
+            r"\$(?:request|req)\s*->\s*get_(?:string|int|bool)_param\s*\(\s*['\"]([\w-]{1,65})['\"]",
+        )
+        for pattern in patterns:
+            keys.update(v for v in re.findall(pattern, body)
+                        if IDENT.fullmatch(v) and not SENSITIVE.search(v))
+        for word in ("stage", "publish", "schedule", "draft", "wp_insert_post",
+                     "wp_update_post", "current_user_can", "wp_verify_nonce",
+                     "hash_equals", "review", "signature", "featured_media",
+                     "post_id", "version_sha256", "content_sha256", "idempotency"):
+            if re.search(r"\b" + re.escape(word) + r"\b", body, re.I):
+                controls.add(word)
+        for method in ("get_json_params", "get_body_params", "get_params", "get_param"):
+            if "->" + method + "(" in body or re.search(r"->\s*" + method + r"\s*\(", body):
+                param_methods.add(method)
+        if depth < 3:
+            for child in re.findall(r"\b(cxeg_[A-Za-z0-9_]+)\s*\(", body):
+                if child not in visited and child != name and len(queue) < 12:
+                    queue.append((child, depth + 1))
+    return {
+        "found": bool(funcs),
+        "functions_followed": funcs,
+        "parameter_keys_seen": sorted(keys),
+        "request_accessors_seen": sorted(param_methods),
+        "control_keywords_seen": sorted(controls),
+        "diagnostic_only": True,
+    }
 
 
 def safe_contract(source):
-    extracted = {}
-    for function in FUNCTIONS:
-        body = extract_function(source, function)
-        if body is None:
-            extracted[function] = {"found": False}
-            continue
-        candidates = set()
-        patterns = (
-            r"\$request\s*\[\s*['\"]([\w-]{1,65})['\"]\s*\]",
-            r"\$request\s*->\s*get_param\s*\(\s*['\"]([\w-]{1,65})['\"]",
-            r"\$request\s*->\s*get_(?:string|int|bool)_param\s*\(\s*['\"]([\w-]{1,65})['\"]",
-            r"(?:isset|empty)\s*\(\s*\$request\s*\[\s*['\"]([\w-]{1,65})['\"]",
-        )
-        for pattern in patterns:
-            for match in re.findall(pattern, body):
-                if IDENT.fullmatch(match) and not SENSITIVE.search(match):
-                    candidates.add(match)
-        # Whitelist booleans rather than printing raw source code. A hit means
-        # "seen in source", NOT a validated endpoint payload requirement.
-        keywords = ("stage", "publish", "schedule", "draft", "status",
-                    "wp_insert_post", "wp_update_post", "current_user_can",
-                    "wp_verify_nonce", "hash_equals", "permission",
-                    "review", "signature", "featured_media", "post_id",
-                    "version_sha256", "content_sha256", "idempotency")
-        observed = [keyword for keyword in keywords if re.search(r"\b" + re.escape(keyword) + r"\b", body, re.I)]
-        extracted[function] = {
-            "found": True, "parameter_keys_seen": sorted(candidates),
-            "control_keywords_seen": observed,
-            "lines_approx": len(body.splitlines()),
-        }
-    return extracted
+    return {name: structural_info(source, name) for name in FUNCTIONS}
+
+
+def _fetch_index(url, max_bytes=4000000):
+    request = Request(url, headers={
+        "User-Agent": "Conexo-Gate-Stage-Preflight/3",
+        "Accept": "application/json",
+        "Accept-Encoding": "identity",
+    })
+    with urlopen(request, timeout=18) as response:
+        data = response.read(max_bytes + 1)
+        return data[:max_bytes], len(data) > max_bytes, response.status, (
+            response.headers.get("Content-Type", "").split(";")[0].strip().lower())
 
 
 def index_probe():
-    request = Request("https://" + DOMAIN + "/wp-json/", headers={"User-Agent":"Conexo-Gate-Stage-Preflight/2","Accept":"application/json"})
-    try:
-        with urlopen(request, timeout=12) as response:
-            data = response.read(500000)
-            mime = response.headers.get("Content-Type", "").split(";")[0].strip().lower()
-            code = response.status
-        result = {"http_status":code,"content_type":mime}
+    # Namespace endpoint is much smaller than the global WordPress REST index.
+    # GET and OPTIONS are read-only; NEVER POST.
+    results = []
+    for url in (
+        "https://" + DOMAIN + "/wp-json/conexo/v1",
+        "https://" + DOMAIN + "/?rest_route=/conexo/v1",
+        "https://" + DOMAIN + "/wp-json/",
+    ):
         try:
-            root = json.loads(data)
-            routes = root.get("routes", {}) if isinstance(root, dict) else {}
-            result["json_valid"] = True
-            match = routes.get("/conexo/v1/editorial/write")
-            if isinstance(match, dict):
-                result["route_visible"] = True
-                result["methods"] = [x.get("methods") for x in match.get("endpoints", [])]
-                result["public_args"] = sorted(set(k for x in match.get("endpoints", []) for k in x.get("args", {}) if IDENT.fullmatch(k) and not SENSITIVE.search(k)))
+            data, truncated, code, mime = _fetch_index(url)
+            result = {"path":url.split(DOMAIN, 1)[-1],
+                      "http_status":code, "content_type":mime,
+                      "bytes_received":len(data), "truncated":truncated}
+            if truncated:
+                result["json_valid"] = False
+                result["diagnostic"] = "response_truncated"
             else:
-                result["route_visible"] = False
-        except (ValueError, TypeError):
-            result["json_valid"] = False
-            # Only classify the response's first byte, never echo potentially
-            # confidential response HTML or full headers.
-            result["looks_like_html"] = data.lstrip().startswith((b"<!doctype", b"<html", b"<"))
-        return result
-    except (HTTPError, URLError, TimeoutError, OSError) as exc:
-        return {"http_status":getattr(exc, "code", None), "error_type":type(exc).__name__}
+                try:
+                    root = json.loads(data)
+                    result["json_valid"] = True
+                    routes = root.get("routes", {}) if isinstance(root, dict) else {}
+                    match = routes.get("/conexo/v1/editorial/write")
+                    result["route_visible"] = isinstance(match, dict)
+                    if isinstance(match, dict):
+                        result["methods"] = [x.get("methods") for x in match.get("endpoints", [])]
+                        result["public_args"] = sorted({
+                            k for x in match.get("endpoints", [])
+                            for k in x.get("args", {}) if IDENT.fullmatch(k) and not SENSITIVE.search(k)
+                        })
+                except (ValueError, TypeError, UnicodeDecodeError) as exc:
+                    result["json_valid"] = False
+                    result["parse_error"] = type(exc).__name__
+                    result["looks_like_html"] = data.lstrip().startswith((b"<!doctype", b"<html", b"<"))
+            results.append(result)
+            if result.get("route_visible"):
+                break
+        except (HTTPError, URLError, TimeoutError, OSError) as exc:
+            results.append({"path":url.split(DOMAIN, 1)[-1],
+                            "http_status":getattr(exc, "code", None),
+                            "error_type":type(exc).__name__})
+    return results
 
 
 def main():
