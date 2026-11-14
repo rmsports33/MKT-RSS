@@ -20,7 +20,8 @@ class BinanceReviewedImportTests(unittest.TestCase):
 
     def test_review_bound_to_real_edit_and_with_no_human_approval(self):
         self.assertEqual(hashlib.sha256(self.body.encode()).hexdigest(), MANUSCRIPT_SHA)
-        payload = {"article": {"texto_markdown": self.body}}
+        research = {"sources":[{"url":"https://example.org/news","facts":["Fato candidato pendente de revisão."]}]}
+        payload = {"article": {"texto_markdown": self.body}, "research":research}
         enriched = enrich_review_payload(payload)
         self.assertEqual(enriched["editorial_voice_application"]["status"], "ASSISTED_ADAPTED")
         review = assess_substance(self.body, enriched["editorial_brief"],
@@ -28,8 +29,10 @@ class BinanceReviewedImportTests(unittest.TestCase):
         self.assertEqual(review["status"], "PASS")
         self.assertFalse(review["publication_authorized"])
         self.assertFalse(review["factual_approval"])
+        self.assertEqual(enriched["editorial_contract"]["status"], "PENDING")
+        self.assertEqual(enriched["editorial_contract"]["claims"][0]["evidence_ids"], [])
         with self.assertRaisesRegex(ValueError, "differs"):
-            enrich_review_payload({"article":{"texto_markdown":self.body+" changed"}})
+            enrich_review_payload({"article":{"texto_markdown":self.body+" changed"},"research":research})
 
     def test_html_responsive_without_duplicate_source_sections(self):
         metadata = {
