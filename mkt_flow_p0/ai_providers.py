@@ -2,7 +2,7 @@
 
 The editorial modules intentionally keep their historical ``_get_client`` /
 ``chat.completions.create`` seam.  This module supplies that seam for Groq,
-Gemini and OpenRouter without changing editorial contracts or gates.
+Gemini, OpenRouter and optional loopback-only Ollama without changing editorial contracts or gates.
 
 Safety defaults:
 * ``AI_FREE_ONLY=true``;
@@ -32,6 +32,9 @@ FREE_CATALOG = {
     ("groq", "llama-3.3-70b-versatile"),
     ("groq", "llama-3.1-8b-instant"),
     ("groq", "mixtral-8x7b-32768"),
+    # Explicit local, quantized candidates. Download only at operator request.
+    ("ollama", "qwen3:4b"),
+    ("ollama", "qwen2.5:7b"),
     # Gemini/OpenRouter are deliberately not enabled by default.  They can be
     # enabled only with an exact, operator-reviewed allowlist entry.
 }
@@ -93,11 +96,13 @@ def _model(provider: str) -> str:
         "groq": "GROQ_MODEL",
         "gemini": "GEMINI_MODEL",
         "openrouter": "OPENROUTER_MODEL",
+        "ollama": "OLLAMA_MODEL",
     }[provider]
     defaults = {
         "groq": "llama-3.3-70b-versatile",
         "gemini": "gemini-2.0-flash",
         "openrouter": "",
+        "ollama": "qwen3:4b",
     }
     return os.getenv(env, defaults[provider]).strip()
 
@@ -107,6 +112,7 @@ def _key_env(provider: str) -> str:
         "groq": "GROQ_API_KEY",
         "gemini": "GEMINI_API_KEY",
         "openrouter": "OPENROUTER_API_KEY",
+        "ollama": "",
     }[provider]
 
 
@@ -118,6 +124,10 @@ def _require(provider: str, model: str) -> str:
             f"modelo {model} bloqueado por AI_FREE_ONLY; "
             "use um par exato revisado em AI_FREE_ONLY_ALLOWLIST"
         )
+    # Ollama is only reachable from this same machine; never connect to a
+    # public endpoint or silently activate a local worker on shared hosting.
+    if provider == "ollama":
+        return ""
     key = os.getenv(_key_env(provider), "").strip()
     if not key:
         raise ProviderConfigurationError(f"{_key_env(provider)} ausente")
@@ -150,7 +160,7 @@ class _HTTPCompatibleClient:
             "temperature": temperature,
             "max_tokens": max_tokens,
         }
-        if response_format is not None and self.provider == "openrouter":
+        if response_format is not None and self.provider in {"openrouter", "ollama"}:
             payload["response_format"] = response_format
         if self.provider == "gemini":
             text = "\n\n".join(
@@ -170,13 +180,13 @@ class _HTTPCompatibleClient:
             )
             headers = {"Content-Type": "application/json"}
         else:
-            url = "https://openrouter.ai/api/v1/chat/completions"
+            url = ("http://127.0.0.1:11434/v1/chat/completions" if self.provider == "ollama"
+                   else "https://openrouter.ai/api/v1/chat/completions")
             if self.provider == "groq":
                 url = "https://api.groq.com/openai/v1/chat/completions"
-            headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {self.key}",
-            }
+            headers = {"Content-Type": "application/json"}
+            if self.provider != "ollama":
+                headers["Authorization"] = f"Bearer {self.key}"
         req = urllib.request.Request(
             url, data=json.dumps(payload, ensure_ascii=False).encode("utf-8"),
             headers=headers, method="POST",
@@ -201,7 +211,7 @@ class _HTTPCompatibleClient:
 def get_client(provider: str | None = None):
     """Return the historical ``client.chat.completions`` interface."""
     provider = (provider or os.getenv("AI_PROVIDER", "groq")).strip().lower()
-    if provider not in {"groq", "gemini", "openrouter"}:
+    if provider not in {"groq", "gemini", "openrouter", "ollama"}:
         raise ProviderConfigurationError("provedor desconhecido")
     model = _model(provider)
     key = _require(provider, model)
@@ -218,7 +228,7 @@ def get_client(provider: str | None = None):
 
 def provider_status() -> dict:
     p = (os.getenv("AI_PROVIDER", "groq") or "groq").strip().lower()
-    model = _model(p) if p in {"groq", "gemini", "openrouter"} else ""
+    model = _model(p) if p in {"groq", "gemini", "openrouter", "ollama"} else ""
     return {
         **policy(),
         "provider": p,
