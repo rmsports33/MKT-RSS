@@ -10,6 +10,21 @@ from urllib.parse import urlsplit, unquote
 
 import requests
 
+def _post_persist_remediation(post_id):
+    """Optional Gate handoff after a verified new draft; never approves or publishes."""
+    import os
+    if os.environ.get("CONEXO_GATE_REMEDIATION_AUTO") != "1":
+        return "not_configured"
+    try:
+        from mkt_flow_p0.conexo_remediation import run_remediation, wordpress_transport
+        result = run_remediation(wordpress_transport(), apply=True,
+                                 only_post_id=post_id, max_changes=1)
+        return "draft_excerpt_saved" if result["writes"] == 1 else "requires_review"
+    except Exception:
+        # Draft delivery must not be retried when remediation alone fails.
+        return "bridge_failed_inspect"
+
+
 ALLOWED_SITES = frozenset(("https://conexotech.com.br", "https://staging.conexotech.com.br"))
 
 
@@ -170,9 +185,11 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
                 or readback.get("status") != "draft"):
             return {"acao": "falha", "motivo": "readback_wp_divergente_inspecionar",
                     "post_id": post_id, "escreveu": True, "retry_automatic": False}
+        remediation = _post_persist_remediation(post_id)
         return {"acao": "publicado_rascunho", "post_id": post_id, "status": "draft",
                 "wp_link": readback.get("link"), "escreveu": True,
-                "revisao_factual": "PENDENTE", "retry_automatic": False}
+                "revisao_factual": "PENDENTE", "retry_automatic": False,
+                "remediation": remediation}
     except (requests.RequestException, ValueError, KeyError, TypeError):
         return {"acao": "falha", "motivo": "transporte_indeterminado_inspecionar_slug",
                 "slug": slug, "escreveu": False, "retry_automatic": False}
