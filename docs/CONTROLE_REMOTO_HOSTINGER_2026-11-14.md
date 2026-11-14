@@ -41,3 +41,14 @@ O terminal retornou:
 ```
 
 **Comprovado:** controlador executado manualmente até concluir as duas ações permitidas e registrar recibo privado. **Ainda não comprovado:** que o Cron automático tenha executado, pois a API oficial `hosting_cron-jobs_output` retornou saída vazia mesmo após cadastro. Os detalhes internos do recibo (hash do novo pacote e caminho da prévia) ainda não foram inspecionados nesta sessão. Não equivale a revisão humana de layout ou autorização para WordPress.
+
+## Segunda solicitação — correção editorial (14/11)
+
+- Nova solicitação `binance-substantive-review-20261114-v2`, ação permitida `binance_substantive_review`.
+- `docs/ARTIGO_BINANCE_REVISAO_2026-11-14.md`: abertura adaptada; hash SHA-256 esperado para o corpo `b78d7442741edf59c9516ca6499f9fd8d1d2e9b2395d57c4faf3f06019f080ee`.
+- `ops/hostinger/binance_editorial_review.py` fornece briefing específico, 5 critérios de avaliação assistida e evidências textuais verificadas contra o corpo. Não certifica fatos ou aprovação humana.
+- O contrato `EditorialContract 1.0` é anexado com `status=PENDING`, fontes não verificadas e `evidence_ids=[]`. Isso remove a ausência do contrato, mas conserva **BLOQUEADO** enquanto direitos, evidências e Gate não forem homologados.
+- O renderizador canônico agora evita duplicação de créditos e seções, e coloca as tabelas em contêineres com rolagem própria.
+- Teste focado adicionado: `tests/test_binance_review_integration.py`; ainda depende de execução no checkout Hostinger.
+- Como o controlador instalado faz **fetch de solicitações, não pull de código executável**, a nova ação NÃO se torna disponível na hospedagem até atualização supervisionada do checkout. Não afirmar execução ou promoção da nova versão antes do recibo PASS.
+- WordPress, escritor RSS/Turso e produção permanecem sem escrita por este fluxo. Não reusar o aceite da versão `afd94d...` no novo conteúdo.
