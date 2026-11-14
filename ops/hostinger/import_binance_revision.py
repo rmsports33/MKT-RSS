@@ -17,6 +17,14 @@ ARTICLE = ROOT / "docs/ARTIGO_BINANCE_REVISAO_2026-11-14.md"
 BASE = Path.home() / ".local/share/conexo-os/handoffs"
 SOURCE = "https://tecnoblog.net/noticias/r-34-bilhoes-binance-cobriu-100-do-prejuizo-do-maior-roubo-de-cripto-da-historia/"
 
+# Publicly accessible, published ConexoTech articles verified 2026-11-14.
+# These URLs are not factual endorsements and do not substitute for Gate review.
+VERIFIED_RELATED_URLS = [
+    "https://conexotech.com.br/binance-ataque-hacker-636-bilhoes-coreia-do-norte/",
+    "https://conexotech.com.br/como-hackers-roubam-criptomoedas-carteiras-corretoras/",
+    "https://conexotech.com.br/banco-central-99-incidentes-ciberneticos-financeiros-2026/",
+]
+
 SOURCES = [
     {"name": "Reuters 14/11", "url": "https://www.reuters.com/legal/government/binance-targets-full-reopening-withdrawals-by-next-week-2026-11-14/",
      "facts": ["Em 14/11, Reuters atribuiu a Binance cobertura de 95% e indicou que as retiradas ainda eram reabertas progressivamente."]},
@@ -71,7 +79,8 @@ def main():
     target = BASE / ("binance-revisao-" + uuid.uuid4().hex[:12])
     report = processar_artigo_importado(
         payload, target, genero="noticia", offline=True,
-        image_manifest=image_manifest, image_base=image_base)
+        image_manifest=image_manifest, image_base=image_base,
+        verified_related_urls=VERIFIED_RELATED_URLS if args.editorial_review else None)
 
     summary = {
         "status": "REVIEW_ONLY_IMPORT_CREATED",
