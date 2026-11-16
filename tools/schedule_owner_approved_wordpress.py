@@ -22,6 +22,8 @@ from mkt_flow_p0.editorial_broker_transport import (
     BrokerBlocked, _get_json, publish_via_broker,
 )
 from mkt_flow_p0.editorial_transport import SITE
+from mkt_flow_p0.gate_unified import (read_owner_release, content_drift,
+                                       validate_owner_release, GateBlocked)
 from tools.publish_owner_approved import owner_trace
 from tools.wp_identity_preflight import check_identity
 
@@ -76,21 +78,15 @@ def _preflight(post_id, expected_media, *, session):
             or wp.get("featured_media") != expected_media):
         raise BrokerBlocked("WORDPRESS_DRAFT_IDENTITY_OR_COVER_MISMATCH")
     receipt = _owner_receipt(post_id, session)
-    p = receipt.get("payload") if isinstance(receipt, dict) else None
-    version = receipt.get("version_sha256") if isinstance(receipt, dict) else None
-    if (receipt.get("schema") != "conexo-owner-release/1"
-            or not isinstance(p, dict)
-            or p.get("wordpress", {}).get("post_id") != post_id
-            or p.get("owner_id") != 3
-            or p.get("review_mode") != "owner"
-            or not isinstance(version, str) or
-            not re.fullmatch(r"[a-f0-9]{64}", version)):
-        raise BrokerBlocked("OWNER_GATE_RELEASE_MISSING")
+    # Single Gate source of truth: the server-issued release is validated in
+    # one place, including the thirteen real evidence fields.
+    try:
+        info = validate_owner_release(receipt, post_id)
+    except GateBlocked:
+        raise BrokerBlocked("OWNER_GATE_RELEASE_MISSING") from None
     body = wp.get("content") or {}
     original = body.get("raw") if isinstance(body, dict) else None
-    if (not isinstance(original, str) or
-            hashlib.sha256(original.encode("utf-8")).digest() !=
-            hashlib.sha256(p.get("content", "").encode("utf-8")).digest()):
+    if content_drift(info, original):
         raise BrokerBlocked("OWNER_GATE_CONTENT_DRIFT")
     # This validates all thirteen real Gate evidence fields, not ChatGPT assent.
     owner_trace(receipt)

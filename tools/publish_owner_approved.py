@@ -14,7 +14,8 @@ from html.parser import HTMLParser
 from tools.wp_identity_preflight import check_identity
 from mkt_flow_p0.editorial_transport import SITE
 from mkt_flow_p0.editorial_broker_transport import _get_json, publish_via_broker, BrokerBlocked
-from mkt_flow_p0.editorial_trace_gate import REQUIRED
+from mkt_flow_p0.gate_unified import (build_release_trace, read_owner_release,
+                                       validate_owner_release, GateBlocked)
 import requests
 
 
@@ -61,52 +62,37 @@ def verify_public_seo(payload, version, *, http=requests):
 
 
 def owner_trace(packet):
-    payload = packet.get('payload', {})
-    checks = payload.get('checks')
-    if (packet.get('schema') != 'conexo-owner-release/1' or payload.get('owner_id') != 3
-            or payload.get('review_mode') != 'owner' or not isinstance(checks, dict)
-            or not isinstance(payload.get('content'), str)
-            or not re.fullmatch(r'[a-f0-9]{64}', packet.get('version_sha256', ''))):
-        raise BrokerBlocked('OWNER_PACKET_INVALID')
-    mapped = {'source_review':['fontes'], 'research':['fontes','alegacoes'],
-              'factual_review':['alegacoes'], 'style_review':['revisao_substantiva'],
-              'seo_review':['seo'], 'image_review':['capa','licenca_imagem'],
-              'internal_links':['links_internos'], 'render_review':['visual_390','visual_1440'],
-              'editorial_approval':['versao','revisao_substantiva']}
-    digest = hashlib.sha256(payload['content'].encode('utf-8')).hexdigest()
-    events = []
-    for stage in REQUIRED:
-        if stage == 'generation':
-            # This article already exists. PASS observes import of exact bytes;
-            # it does not assert an LLM generation/model execution happened.
-            module = 'mkt-rss.existing-wp-draft-import'
-            evidence = 'existing-wp-content-sha256:' + digest
-        else:
-            for check in mapped[stage]:
-                item = checks.get(check)
-                if (not isinstance(item, dict) or item.get('estado') != 'VERIFICADO'
-                        or not isinstance(item.get('evidencia'), list) or not item['evidencia']
-                        or not all(isinstance(v,str) and len(v.strip()) >= 8 for v in item['evidencia'])):
-                    raise BrokerBlocked('OWNER_CHECK_MISSING')
-            module = 'wordpress.owner-version-review'
-            evidence = 'owner-approval:' + payload['approval_reference'] + ':' + stage
-        events.append({'stage':stage, 'module_id':module, 'status':'PASS', 'evidence_ref':evidence})
-    return {'schema':'conexo-editorial-executor-events/1', 'run_id':str(uuid.uuid4()),
-            'article_id':payload['article_id'], 'post_id':payload['wordpress']['post_id'],
-            'content_sha256':digest, 'publication_authorized':False, 'events':events}
+    """Delegates to the single Gate source of truth.
+
+    The canonical check -> stage map, the 13-check completeness rule and the
+    trace envelope live in ``mkt_flow_p0.gate_unified``; this function stays as
+    the stable name used by the release tools and their tests.
+    """
+    try:
+        return build_release_trace(packet)
+    except GateBlocked as exc:
+        raise BrokerBlocked(str(exc)) from None
 
 
-def release(post_id, version, execute=False, *, session=requests, identity=check_identity):
+def release(post_id, version=None, execute=False, *, session=requests, identity=check_identity):
     if identity(os.environ) != 'PASS':
         raise BrokerBlocked('MKT_SERVICE_IDENTITY_NOT_VERIFIED')
-    if type(post_id) is not int or post_id < 1 or not re.fullmatch(r'[a-f0-9]{64}', version):
+    if type(post_id) is not int or post_id < 1:
+        raise BrokerBlocked('EXPECTED_VERSION_INVALID')
+    if version is not None and not re.fullmatch(r'[a-f0-9]{64}', version):
         raise BrokerBlocked('EXPECTED_VERSION_INVALID')
     auth = (os.environ['WP_USER'], os.environ['WP_APP_PASSWORD'])
-    packet = _get_json(session, f'{SITE}/wp-json/conexo/v1/editorial/owner-release/{post_id}', auth, 15)
-    payload = packet.get('payload', {})
-    if (packet.get('version_sha256') != version or not isinstance(payload,dict)
-            or payload.get('wordpress', {}).get('post_id') != post_id):
+    # The server-issued release is the source of truth. A pasted hash is only
+    # ever a cross-check, never the origin of the approved version.
+    try:
+        info = read_owner_release(post_id, session=session, auth=auth)
+    except GateBlocked as exc:
+        raise BrokerBlocked(str(exc)) from None
+    packet = info['packet']
+    if version is not None and info['version_sha256'] != version:
         raise BrokerBlocked('EXPECTED_OWNER_VERSION_MISMATCH')
+    version = info['version_sha256']
+    payload = packet.get('payload', {})
     trace = owner_trace(packet)
     if not execute:
         return {'validated':True,'post_id':post_id,'version_sha256':version,'write':False}

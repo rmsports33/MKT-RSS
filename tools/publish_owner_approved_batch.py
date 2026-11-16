@@ -13,6 +13,7 @@ import requests
 
 from mkt_flow_p0.editorial_broker_transport import _get_json, BrokerBlocked
 from mkt_flow_p0.editorial_transport import SITE
+from mkt_flow_p0.gate_unified import read_owner_release, GateBlocked
 from tools.publish_owner_approved import release
 from tools.wp_identity_preflight import check_identity
 
@@ -20,23 +21,16 @@ _VERSION = re.compile(r"[a-f0-9]{64}\Z")
 
 
 def gate_owner_version(post_id, *, session=requests):
-    """Retrieve a *server-issued* release for the current exact version."""
+    """Retrieve a *server-issued* release for the current exact version.
+
+    The validation lives in the single Gate source of truth
+    (``mkt_flow_p0.gate_unified``); this keeps the tool's stable error code.
+    """
     auth = (os.environ["WP_USER"], os.environ["WP_APP_PASSWORD"])
-    packet = _get_json(
-        session,
-        f"{SITE}/wp-json/conexo/v1/editorial/owner-release/{post_id}",
-        auth, 15,
-    )
-    payload = packet.get("payload")
-    version = packet.get("version_sha256")
-    if (packet.get("schema") != "conexo-owner-release/1"
-            or not isinstance(payload, dict)
-            or payload.get("wordpress", {}).get("post_id") != post_id
-            or payload.get("owner_id") != 3
-            or payload.get("review_mode") != "owner"
-            or not isinstance(version, str) or not _VERSION.fullmatch(version)):
-        raise BrokerBlocked("OWNER_RELEASE_CURRENT_VERSION_NOT_APPROVED")
-    return version
+    try:
+        return read_owner_release(post_id, session=session, auth=auth)["version_sha256"]
+    except GateBlocked:
+        raise BrokerBlocked("OWNER_RELEASE_CURRENT_VERSION_NOT_APPROVED") from None
 
 
 def publish_batch(post_ids, *, execute=False, lookup=None, publish=None,
