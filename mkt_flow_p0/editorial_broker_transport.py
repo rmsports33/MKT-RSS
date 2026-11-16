@@ -14,6 +14,7 @@ from pathlib import Path
 from mkt_flow_p0.editorial_transport import SITE, load_core
 from mkt_flow_p0.editorial_trace_gate import require_release_trace
 from mkt_flow_p0.editorial_trace_turso import save_turso_trace
+from mkt_flow_p0.gate_unified import content_digest
 
 _SHA = re.compile(r"^[a-f0-9]{64}$")
 _ALLOWED = {"publish": "publish", "schedule": "future"}
@@ -131,8 +132,8 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
         raise BrokerBlocked("WP_SNAPSHOT_NOT_EDITABLE")
     article = payload.get("content")
     if (not isinstance(article, str) or
-            hashlib.sha256(article.encode("utf-8")).hexdigest() !=
-            hashlib.sha256(str(current.get("post_content", "")).encode("utf-8")).hexdigest()):
+            content_digest(article) !=
+            content_digest(str(current.get("post_content", "")))):
         raise BrokerBlocked("WP_CONTENT_MISMATCH")
     expected = {
         "executor": "mkt_rss", "post_id": post_id, "intent": intent,
