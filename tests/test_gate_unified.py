@@ -12,7 +12,10 @@ from mkt_flow_p0.editorial_broker_transport import BrokerBlocked
 from mkt_flow_p0.editorial_trace_gate import REQUIRED
 from mkt_flow_p0.gate_unified import (CHECK_STAGES, GATE_CHECKS, GateBlocked,
                                        STAGE_CHECKS, build_release_trace,
-                                       content_drift, pending_approvals,
+                                       content_digest, content_drift,
+                                       advisory_gate_receipt, batch_review_url,
+                                       DECISION_D1_SCREEN, DECISION_D1_VERSION,
+                                       DECISION_D1_DATE, pending_approvals,
                                        readiness_catalog, readiness_overview,
                                        read_owner_release, review_url,
                                        validate_checks, validate_owner_release,
@@ -211,3 +214,35 @@ def test_digest_of_approved_content_is_stable():
     expected = hashlib.sha256(
         "<p>Private unpublished draft</p>".encode("utf-8")).hexdigest()
     assert info["content_sha256"] == expected
+
+
+# --- Incremento 1: D1, D6 e D16 ---------------------------------------------
+
+def test_decision_d1_screen_is_the_batch_review():
+    assert DECISION_D1_SCREEN == "conexo-gate-revisar-lote"
+    assert DECISION_D1_VERSION == "1.0"
+    assert DECISION_D1_DATE == "2026-11-16"
+
+
+def test_batch_review_url_is_the_canonical_screen():
+    url = batch_review_url()
+    assert "conexo-gate-revisar-lote" in url
+    assert "owner-review" not in url
+    # O link individual permanece como fallback, nao como via canonica.
+    assert "conexo-owner-review" in review_url(9768)
+
+
+def test_content_digest_matches_content_sha256():
+    info = validate_owner_release(packet())
+    assert content_digest("<p>Private unpublished draft</p>") == info["content_sha256"]
+    with pytest.raises(GateBlocked):
+        content_digest(None)
+
+
+def test_advisory_gate_receipt_binds_to_markdown():
+    info = validate_owner_release(packet())
+    receipt = advisory_gate_receipt(info, markdown="<p>Private unpublished draft</p>")
+    assert receipt["status"] == "approved"
+    assert receipt["content_sha256"] == info["content_sha256"]
+    assert receipt["reviewer"] == "wordpress-gate-owner-3"
+    assert receipt["evidence"].startswith("owner-release:")

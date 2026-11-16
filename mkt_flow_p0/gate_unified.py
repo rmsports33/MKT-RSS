@@ -17,6 +17,16 @@ import hashlib
 import os
 import re
 import uuid
+from datetime import datetime, timezone
+
+# --- Decisao D1 (16/11/2026): tela unica por versao ---
+# Superficie canonica de aprovacao, decidida pelo proprietario.
+# ``conexo-gate-revisar-lote`` (lote) e a tela unica; ``conexo-owner-review``
+# permanece como modal individual legado (nao e via de aprovacao rapida).
+# Mudancas futuras requerem decisao de produto do proprietario.
+DECISION_D1_SCREEN = "conexo-gate-revisar-lote"
+DECISION_D1_VERSION = "1.0"
+DECISION_D1_DATE = "2026-11-16"
 
 import requests
 
@@ -90,9 +100,63 @@ def _is_sha(value):
     return isinstance(value, str) and bool(_SHA.fullmatch(value))
 
 
+def content_digest(text):
+    """SHA-256 unico do conteudo textual aprovado.
+
+    Substitui as tres definicoes paralelas de "a mesma versao": o digest
+    canonico do rascunho (JSON de campos), o hash simples do conteudo no
+    broker e o hash do payload na trilha. Para comparar *texto* com texto,
+    este e o digest oficial.
+    """
+    if not isinstance(text, str):
+        raise GateBlocked("CONTENT_DIGEST_INPUT_INVALID")
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def advisory_gate_receipt(info, *, markdown=None, date=None):
+    """Comprovante advisory ``wordpress_gate_test`` derivado do Gate.
+
+    O gate de voz (editorial_voice_adapter) exige nove comprovantes e nenhum
+    produtor existia para este. O Gate do WordPress e a autoridade real: o
+    comprovante apenas traduz o aceite ja emitido pelo servidor para o formato
+    advisory, vinculando-o ao texto revisado.
+
+    ``markdown`` e o texto cuja assinatura o gate de voz confere. Sem ele, o
+    comprovante fica vinculado ao conteudo persistido no WordPress. Nao prova
+    revisao de forma independente e nao autoriza nada.
+    """
+    if not isinstance(info, dict) or not _is_sha(info.get("content_sha256")):
+        raise GateBlocked("OWNER_RELEASE_INFO_INVALID")
+    if markdown is None:
+        digest = info["content_sha256"]
+    else:
+        if not isinstance(markdown, str) or not markdown.strip():
+            raise GateBlocked("ADVISORY_MARKDOWN_INVALID")
+        digest = content_digest(markdown)
+    stamp = date or datetime.now(timezone.utc).isoformat()
+    return {
+        "status": "approved",
+        "content_sha256": digest,
+        "reviewer": "wordpress-gate-owner-3",
+        "evidence": "owner-release:{0}:{1}:{2}".format(
+            info.get("approval_reference", ""), info.get("review_url", ""),
+            info.get("version_sha256", "")),
+        "date": stamp,
+    }
+
+
 def review_url(post_id, site=SITE):
-    """Link direto da tela unitaria de revisao do Gate (sem digitacao manual)."""
+    """Link individual do Gate (modal legado preservado pela decisao D1).
+
+    A tela canonica de aprovacao por versao e a de lote (``batch_review_url``).
+    Este link individual continua valido como fallback, nao como via rapida.
+    """
     return f"{site}/wp-admin/tools.php?page=conexo-owner-review&post_id={int(post_id)}"
+
+
+def batch_review_url(site=SITE):
+    """Tela canonica de aprovacao por versao (decisao D1: revisar-lote)."""
+    return f"{site}/wp-admin/tools.php?page=conexo-gate-revisar-lote"
 
 
 def readiness_catalog():
