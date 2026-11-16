@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Minimal, opt-in Hostinger bridge to the *existing* MKT-RSS/Turso queue.
+"""Minimal, opt-in Hostinger bridge to the existing MKT-RSS/Turso queue.
 
 --snapshot: SQL SELECT only. --collect: bounded RSS discovery and queue insert;
-never LLM, WP, publish, migrations or arbitrary commands. Credentials only on
-Hostinger, from an owner-controlled private file, never from GitHub requests.
+never LLM, WP, publish, migrations or arbitrary commands. Credentials stay on
+Hostinger: URL from the existing private rss-queue.env, token from the existing
+private writer-token file. No shell evaluation of configuration.
 """
 import argparse
 import json
@@ -18,8 +19,8 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 CONFIG = Path.home() / ".config/conexo-os"
+ENV_FILE = CONFIG / "rss-queue.env"
 TOKEN_FILE = CONFIG / "turso-rss-writer.token"
-URL_FILE = CONFIG / "turso-database-url"
 MAX_ITEMS = 2
 SOURCE = "tecnoblog"
 
@@ -31,7 +32,7 @@ def _fail(reason):
 
 
 def _read_private(path):
-    """Require an owner-owned regular file, non-symlink, mode 0400/0600."""
+    """Require an owner-owned regular file, non-symlink, private mode."""
     info = path.lstat()
     if not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid() or info.st_mode & 0o077:
         raise ValueError("PRIVATE_CONFIG_PERMISSIONS")
@@ -41,6 +42,20 @@ def _read_private(path):
     if not data or "\n" in data or "\r" in data:
         raise ValueError("PRIVATE_CONFIG_VALUE")
     return data
+
+
+def _read_env_config(path):
+    """Parse the existing private .env as data; never source/evaluate shell code."""
+    info = path.lstat()
+    if (not stat.S_ISREG(info.st_mode) or info.st_uid != os.getuid()
+            or stat.S_IMODE(info.st_mode) != 0o600 or info.st_size < 1
+            or info.st_size > 16384):
+        raise ValueError("RSS_ENV_FILE_PERMISSIONS_OR_SIZE")
+    from dotenv import dotenv_values
+    values = dotenv_values(path)
+    if not isinstance(values, dict):
+        raise ValueError("RSS_ENV_FILE_INVALID")
+    return values
 
 
 def _trusted_turso_url(raw):
@@ -58,21 +73,27 @@ def _trusted_turso_url(raw):
 
 
 def _configure():
-    # A configured DB URL may come from a protected environment or a private file.
-    # The token NEVER comes from a GitHub request or ambient Cron environment.
+    # Reuse the URL and explicit production target already maintained by the
+    # existing Hostinger queue runner. The token is read from its private file.
+    config = _read_env_config(ENV_FILE)
     raw_url = os.environ.get("TURSO_DATABASE_URL", "").strip()
     if not raw_url:
-        raw_url = _read_private(URL_FILE)
+        raw_url = str(config.get("TURSO_DATABASE_URL") or "").strip()
+    target = (os.environ.get("CONEXO_RSS_TARGET_DB")
+              or config.get("CONEXO_RSS_TARGET_DB") or "").strip()
+    if target != "mkt-rss":
+        raise ValueError("EXPLICIT_MAIN_DATABASE_TARGET_REQUIRED")
     db_url = _trusted_turso_url(raw_url)
     token = _read_private(TOKEN_FILE)
     os.environ["TURSO_DATABASE_URL"] = db_url
     os.environ["TURSO_AUTH_TOKEN"] = token
+    os.environ["CONEXO_RSS_TARGET_DB"] = "mkt-rss"
     os.environ["CONEXO_REQUIRE_CLOUD_PERSISTENCE"] = "1"
-    # Critical: fila_pautas must verify the pre-existing Turso tables and must
-    # never execute CREATE/ALTER/index DDL from this remotely-triggered collector.
+    # Critical: fila_pautas verifies pre-existing tables and never executes DDL.
     os.environ["CONEXO_RSS_SCHEMA_PREEXISTS"] = "1"
+    # Queue intake only; optional catalog links are deliberately disabled.
     os.environ["CONEXO_PRODUCT_LINKS_ENABLED"] = "0"
-    # Explicitly disable all optional write/publication/LLM paths.
+    # Explicitly disable optional write/publication/LLM paths.
     for name in ("WP_USER", "WP_APP_PASSWORD", "CONEXO_WP_USER",
                  "CONEXO_WP_APP_PASSWORD", "GROQ_API_KEY",
                  "CONEXO_RSS_DRAFT", "CONEXO_RSS_DRAFT_STAGING",
