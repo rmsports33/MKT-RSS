@@ -51,10 +51,36 @@ def _read_env_config(path):
             or stat.S_IMODE(info.st_mode) != 0o600 or info.st_size < 1
             or info.st_size > 16384):
         raise ValueError("RSS_ENV_FILE_PERMISSIONS_OR_SIZE")
-    from dotenv import dotenv_values
-    values = dotenv_values(path)
-    if not isinstance(values, dict):
-        raise ValueError("RSS_ENV_FILE_INVALID")
+    # Parse only the two required keys as plain data. Never evaluate shell,
+    # interpolation, command substitution, or arbitrary dotenv expressions.
+    values = {}
+    for line in path.read_text(encoding="utf-8").splitlines():
+        raw = line.strip()
+        if not raw or raw.startswith("#"):
+            continue
+        if raw.startswith("export "):
+            raw = raw[7:].lstrip()
+        key, separator, value = raw.partition("=")
+        if not separator:
+            continue
+        key = key.strip()
+        if key not in ("TURSO_DATABASE_URL", "CONEXO_RSS_TARGET_DB"):
+            continue
+        if key in values:
+            raise ValueError("RSS_ENV_DUPLICATE_KEY")
+        value = value.strip()
+        if value[:1] in ("'", '"'):
+            quote = value[0]
+            end = value.find(quote, 1)
+            if end < 0:
+                raise ValueError("RSS_ENV_INVALID_QUOTING")
+            trailing = value[end + 1:].strip()
+            if trailing and not trailing.startswith("#"):
+                raise ValueError("RSS_ENV_INVALID_TRAILING_DATA")
+            value = value[1:end]
+        else:
+            value = value.split(" #", 1)[0].strip()
+        values[key] = value
     return values
 
 
