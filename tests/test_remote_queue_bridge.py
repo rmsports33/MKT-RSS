@@ -36,6 +36,24 @@ class QueueBridgeTests(unittest.TestCase):
         self.assertEqual(code, 2)
         self.assertEqual(json.loads(out.getvalue())["status"], "BLOCKED")
 
+    def test_config_enforces_existing_schema_and_cloud_only(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            token = Path(tmp) / "token"
+            token.write_text("test-token")
+            token.chmod(0o600)
+            with patch.object(bridge, "TOKEN_FILE", token), \
+                 patch.object(bridge, "URL_FILE", Path(tmp) / "unused-url"), \
+                 patch.dict(os.environ, {"TURSO_DATABASE_URL": "libsql://mkt-rss-prod.turso.io",
+                     "WP_USER": "should-not-survive", "GROQ_API_KEY": "should-not-survive",
+                     "CONEXO_RSS_SCHEMA_PREEXISTS": "0"}, clear=True):
+                bridge._configure()
+                self.assertEqual(os.environ["TURSO_DATABASE_URL"], "https://mkt-rss-prod.turso.io")
+                self.assertEqual(os.environ["TURSO_AUTH_TOKEN"], "test-token")
+                self.assertEqual(os.environ["CONEXO_RSS_SCHEMA_PREEXISTS"], "1")
+                self.assertEqual(os.environ["CONEXO_REQUIRE_CLOUD_PERSISTENCE"], "1")
+                self.assertNotIn("WP_USER", os.environ)
+                self.assertNotIn("GROQ_API_KEY", os.environ)
+
     def test_no_symlinks_or_public_token_permissions(self):
         with tempfile.TemporaryDirectory() as tmp:
             p = Path(tmp) / "key"
