@@ -61,7 +61,6 @@ Sem deploy automático nesta entrega. Para reverter após futura implantação, 
 - Ordem de implantação obrigatória (evita queimar o `job_id`): validar `remote_queue_bridge.py --snapshot` com o interpretador do virtualenv **antes** de instalar o `remote_controller.py` novo. O controlador novo invoca a ponte por `sys.executable`; se o Cron executar o controlador com um interpretador sem as dependências do Turso, o job termina `FAILED` e, por design de recibo durável, o `job_id` não é repetido — seria preciso um `job_id` novo, com nova requisição explícita.
 - Portanto, snapshot direto está homologado; o fluxo remoto via controlador e Cron, implantação e coleta continuam pendentes.
 
-# Hostinger ↔ MKT-RSS/Turso: ponte controlada (primeira intervenção)
 
 ## Evidência de homologação — 16/11/2026 (implantação real e execução pelo Cron)
 
