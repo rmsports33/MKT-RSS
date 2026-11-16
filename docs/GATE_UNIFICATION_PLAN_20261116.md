@@ -14,7 +14,7 @@
 
 | ID | Duplicação/Lacuna | Evidência (caminho:linha) | Status | O que seria necessário para fechar |
 |----|---|---|---|---|
-| **D1** | Duas telas de aprovação em dois plugins diferentes (`conexo-editorial-gate` e `conexo-gate-agenda-nativa`) | `rmsports33/-site-conexotech` plugins: `conexo-editorial-gate/conexo-editorial-gate.php` (tela "Revisão do proprietário") e `conexo-gate-agenda-nativa/conexo-gate-agenda-nativa.php` (slug `conexo-gate-revisar-lote`) | **Resolvido** — acesso ao repo privado confirmou dois plugins concorrentes; decisão de produto: manter `conexo-owner-review` como tela única por versão, tela de lote passa a linkar para ela. | Decisão de produto no repo privado; não afeta o MKT-RSS público. |
+| **D1** | Duas telas de aprovação em dois plugins diferentes (`conexo-editorial-gate` e `conexo-gate-agenda-nativa`) | `rmsports33/-site-conexotech` plugins: `conexo-editorial-gate/conexo-editorial-gate.php` (tela "Revisão do proprietário") e `conexo-gate-agenda-nativa/conexo-gate-agenda-nativa.php` (slug `conexo-gate-revisar-lote`) | **Resolvido** — acesso ao repo privado confirmou dois plugins concorrentes; decisão do proprietário (16/11/2026): manter `conexo-gate-revisar-lote` como tela única por versão; `conexo-owner-review` permanece como modal individual legado, não via de aprovação rápida. Registrado no código em `DECISION_D1_SCREEN`. | Decisão de produto no repo privado; não afeta o MKT-RSS público. |
 | **D2** | Dois transports de escrita (`mkt_flow_p0/editorial_transport.py` `publish_package` vs `mkt_flow_p0/editorial_broker_transport.py` `publish_via_broker`) selecionados por `CONEXO_EDITORIAL_TRANSPORT` | `mkt_flow_p0/editorial_transport.py`, `mkt_flow_p0/editorial_broker_transport.py` | **Em progresso** — o broker/write permanece como único caminho de publicação; o transporte draft-only `wp_draft_staging.py` continua como alternativa offline. | Definir política canônica de transporte no repo público; o private repo decide qual fica ativo. |
 | **D3** | Três implementações do "versão owner-approved" (`tools/publish_owner_approved.py`, `tools/publish_owner_approved_batch.py`, `gate_owner_version` no broker) | `tools/publish_owner_approved.py`, `tools/publish_owner_approved_batch.py`, `mkt_flow_p0/editorial_broker_transport.py` | **Resolvido** — as três tools agora delegam a `gate_unified.py` (`read_owner_release`, `validate_owner_release`, `build_release_trace`). Fonte única: receio do servidor, nunca hash colado. | Manter as tools delegando; nenhum novo transport deve pular o gate_unified. |
 | **D4** | Quatro vocabularies de estágios (13 checks do Gate, 10 executores em `editorial_trace_gate.py`, 11 traces WP em `conexo_gate_trace.py`, 9 receipts advisory em `editorial_voice_adapter.py`) | `mkt_flow_p0/gate_unified.py` `CHECK_STAGES`, `mkt_flow_p0/editorial_trace_gate.py`, `mkt_flow_p0/conexo_gate_trace.py`, `mkt_flow_p0/editorial_voice_adapter.py` | **Resolvido** — `CHECK_STAGES` no gate_unified cobre todos os 13 checks; `titulo`, `categoria` e `html` agora suportam estágio (`editorial_approval`, `render_review`) — antes podiam ser marcados sem bloquear nada. | Manter retrocompatibilidade; futuras adições de estágio seguem o mapa canônico. |
@@ -35,7 +35,7 @@
 
 | Área | Definição canônica | Observação |
 |---|---|---|
-| **Superfície de aprovação** | `conexo-owner-review` como única tela por versão; tela de lote (`conexo-gate-revisar-lote`) só linka para ela | Decisão de produto no repo privado |
+| **Superfície de aprovação** | `conexo-gate-revisar-lote` como única tela por versão (decisão D1 do proprietário, 16/11); `conexo-owner-review` é modal individual legado (`review_url` mantido como fallback) | Decisão de produto no repo privado |
 | **Vocabulário de checks/stages** | `CHECK_STAGES` canônico em `gate_unified.py`, cobre todos os 13 checks com estágio | `titulo`, `categoria`, `html` agora têm estágio |
 | **Leitor de owner-release** | `read_owner_release` lê do servidor (via API WordPress), nunca aceita hash colado | Fonte única e durável |
 | **Índice de pendências de aprovação** | `pending_approvals` com link direto para a tela do Gate (sem digitação manual de ID) | Gerado a partir do receipt do servidor |
@@ -46,7 +46,7 @@
 
 ## Decisões que exigem o proprietário (não são de código)
 
-1. **Qual tela sobrevive** (D1): `conexo-owner-review` (única por versão) ou `conexo-gate-revisar-lote` (lote)? A decisão define o mapa de links entre as telas.
+1. **Qual tela sobrevive** (D1): **decidido em 16/11/2026 — `conexo-gate-revisar-lote` (lote) como única por versão.** `conexo-owner-review` segue como modal individual legado. O mapa de links define: tela individual → link para o lote.
 2. **Se o value gate D7 é aposentado**: manutenção como está continua sem impacto operacional.
 3. **Se o código de agendamento (D12) é deletado ou mantido como deprecated**: a política atual (13/11/2026) proíbe agendamento automático; manutenção do note histórico fica.
 4. **Se a gate de receipts advisory de 9 itens (D16) é aposentada** em favor dos receipts do próprio Gate: a produção atual mantém ambos, o receipt advisory é tradutor, não autorizador.
