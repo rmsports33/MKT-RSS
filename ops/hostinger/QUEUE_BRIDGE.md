@@ -99,3 +99,24 @@ Executado de forma **autônoma** pela tarefa `*/5` da Hostinger, sobre a branch 
 ### Próximos passos (fora deste escopo)
 - Triage editorial das pautas em `DESCOBERTA` (inclui a peça comercial/promocional coletada, que exige o mesmo cuidado de preço/rightsource das demais).
 - Gate Editorial Unificado, piloto SEO/DNS, qualidade editorial e pendências de imagem permanecem nas frentes seguintes do Conexo OS.
+
+## Verificação final da implantação — 16/11/2026
+
+Verificação presencial no checkout da Hostinger (`~/mkt-rss-runner`), sem escrita:
+
+| Verificação | Resultado |
+|---|---|
+| Branch/HEAD | `feat/hostinger-runtime-independente-20261113` @ `2c994bc`, igual ao `origin` |
+| Working tree | limpo (`git status --porcelain` vazio) |
+| `remote_controller.py` | `c2e7250aa65470f0356b9088ef45f8077df68e4372c682a0ca7793a38e519cbb` — confere com o blob da PR |
+| `remote_queue_bridge.py` | `99320640daa5d8ca1c5ebca849f8c9ed2bf93d73fd1ca3c2fdb47372cbc6bcef` — confere com o blob da PR |
+| Backup da implantação | `~/.local/state/conexo-os/pr123-install-20261116T124522Z/` com `remote_controller.py` (5294 B, 14/11 17:48), `remote_controller.pre-merge.py` (7044 B, 16/11 16:16) e os dois arquivos de commit |
+| Commits de fronteira | `installed_pr_commit=91d32f401d5273cac46165f10c97440d22aa800e`, `previous_checkout_commit=bb0c776a231e40f64832cdae028454d77eef92ef` |
+| Fila (snapshot mais recente) | `queue-snapshot-20261116-004` → `total=20`, `DESCOBERTA=20`, demais estados `0`, `READ_ONLY`, `wordpress_written=false`, `publication_authorized=false` |
+
+### Achado: recibo do job Binance não está mais no servidor
+
+- O recibo por `job_id` do Binance (`binance-substantive-review-20261114-v2`) **não existe** em `~/.local/state/conexo-os/remote-jobs/`; `grep -rl "binance-substantive" ~/.local/state/conexo-os/` não retorna recibo.
+- `~/.local/state/conexo-os/remote-control-receipt.json` é arquivo único e foi sobrescrito pelo job mais recente (`queue-snapshot-20261116-004`).
+- A evidência do resultado Binance permanece **documental** (`QUEUE_BRIDGE.md` e `docs/CONTROLE_REMOTO_HOSTINGER_2026-11-14.md`): `status=PASS` em 14/11 17:48Z, `steps=1`, revisão assistida — não aprovação humana nem publicação.
+- **Consequência:** a migração de recibo legado prevista em `_previous_receipt` não preservou este job. Recibos futuros por `job_id` devem ser preservados em `remote-jobs/`; o arquivo único `remote-control-receipt.json` continua sendo apenas o último estado e não substitui o histórico. Nenhum arquivo foi apagado; a lacuna é de preservação automática, não de remoção intencional.
