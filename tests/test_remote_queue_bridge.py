@@ -58,6 +58,25 @@ class QueueBridgeTests(unittest.TestCase):
                 self.assertNotIn("WP_USER", os.environ)
                 self.assertNotIn("GROQ_API_KEY", os.environ)
 
+    def test_env_parser_does_not_evaluate_shell_or_accept_duplicate_keys(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env_file = Path(tmp) / "rss-queue.env"
+            env_file.write_text(
+                'TURSO_DATABASE_URL="$(touch /tmp/conexo-should-not-exist)"\n'
+                'CONEXO_RSS_TARGET_DB="mkt-rss"\n'
+            )
+            env_file.chmod(0o600)
+            parsed = bridge._read_env_config(env_file)
+            self.assertEqual(parsed["TURSO_DATABASE_URL"], '$(touch /tmp/conexo-should-not-exist)')
+            self.assertEqual(parsed["CONEXO_RSS_TARGET_DB"], "mkt-rss")
+            env_file.write_text(
+                "TURSO_DATABASE_URL=libsql://mkt-rss-prod.turso.io\n"
+                "TURSO_DATABASE_URL=libsql://mkt-rss-other.turso.io\n"
+            )
+            env_file.chmod(0o600)
+            with self.assertRaises(ValueError):
+                bridge._read_env_config(env_file)
+
     def test_wrong_target_database_is_blocked(self):
         with tempfile.TemporaryDirectory() as tmp:
             env_file = Path(tmp) / "rss-queue.env"
