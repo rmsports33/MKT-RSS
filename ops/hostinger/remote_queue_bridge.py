@@ -68,6 +68,9 @@ def _configure():
     os.environ["TURSO_DATABASE_URL"] = db_url
     os.environ["TURSO_AUTH_TOKEN"] = token
     os.environ["CONEXO_REQUIRE_CLOUD_PERSISTENCE"] = "1"
+    # Critical: fila_pautas must verify the pre-existing Turso tables and must
+    # never execute CREATE/ALTER/index DDL from this remotely-triggered collector.
+    os.environ["CONEXO_RSS_SCHEMA_PREEXISTS"] = "1"
     os.environ["CONEXO_PRODUCT_LINKS_ENABLED"] = "0"
     # Explicitly disable all optional write/publication/LLM paths.
     for name in ("WP_USER", "WP_APP_PASSWORD", "CONEXO_WP_USER",
