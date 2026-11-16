@@ -78,3 +78,24 @@ Sem deploy automático nesta entrega. Para reverter após futura implantação, 
 - Coleta real (`queue_collect`, Tecnoblog, até 2 itens) — exige autorização específica do proprietário; é escrita no banco.
 - Consolidação: dedupe, lease, reexecução segura e integração MKT-RSS/Turso.
 - Publicação, Gate Editorial e WordPress permanecem bloqueados e intocados.
+
+## Coleta real e deduplicação na fila — 16/11/2026 (Etapas 4 e 5)
+
+Executado de forma **autônoma** pela tarefa `*/5` da Hostinger, sobre a branch operacional `feat/hostinger-runtime-independente-20261113`:
+
+| Job | Requisição (commit) | Recibo | Resultado |
+|---|---|---|---|
+| `queue-collect-20261116-001` | `3086b07` | `queue-collect-20261116-001.json` | `PASS` · `mode=QUEUE_ONLY` · `new: 2` · `duplicates: 0` · `failures: 0` · `wordpress_written=false` · `publication_authorized=false` |
+| `queue-collect-20261116-002` | `29d6736` | `queue-collect-20261116-002.json` | `PASS` · `new: 0` · `duplicates: 2` — deduplicação comprovada na fila real |
+| `queue-snapshot-20261116-004` | `0d6e544` | `queue-snapshot-20261116-004.json` | `PASS` · readback pós-coleta |
+
+- **Readback direto no Turso principal** confirmou as duas pautas novas em estado `DESCOBERTA`:
+  - "Black Magalu: Motorola Edge 70 Pro (512 GB) tem a melhor oferta do momento"
+  - "CEOs de tecnologia pedem volta de Jensen Huang à Nvidia"
+- Limites respeitados em toda a operação: fonte única (Tecnoblog), no máximo 2 itens, sem geração de artigo, sem IA, sem escrita no WordPress, sem autorização de publicação, com recibo durável por `job_id` (nenhum job repetido).
+- **Pauta descoberta não é pauta aprovada**: as novas pautas entram em `DESCOBERTA`, fora de qualquer fluxo de publicação, e seguem condicionadas ao Gate Editorial e à revisão humana da versão.
+- Evidência acumulada de execução autônoma: 6 jobs processados pela mesma tarefa `*/5`, entre eles 3 coletas/snapshots de leitura, 1 coleta com escrita e 1 prova de deduplicação.
+
+### Próximos passos (fora deste escopo)
+- Triage editorial das pautas em `DESCOBERTA` (inclui a peça comercial/promocional coletada, que exige o mesmo cuidado de preço/rightsource das demais).
+- Gate Editorial Unificado, piloto SEO/DNS, qualidade editorial e pendências de imagem permanecem nas frentes seguintes do Conexo OS.
