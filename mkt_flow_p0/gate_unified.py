@@ -10,14 +10,35 @@ Defines:
 - review_url: URL da tela de revisão no WordPress.
 - content_digest: digest SHA-256 único do texto aprovado.
 - advisory_gate_receipt: produz comprovante advisory ``wordpress_gate_test``.
+
+Decisão D1 (16/11/2026): tela única por versão.
+- ``DECISION_D1_SCREEN`` define qual superfície de aprovação é canônica.
+- Valor atual: ``conexo-gate-revisar-lote`` (lote). A tela ``conexo-owner-review``
+  passa a atuar como modal individual (deprecated para aprovação rápida).
+- Mudanças futuras a esta constante requerem decisão de produto do proprietário.
 """
+from pathlib import Path
+
+# --- Decisão D1: Tela única por versão (16/11/2026) ---
+# Define qual superfície de aprovação é canônica para aprovação por versão.
+# Esta decisão foi tomada em 16/11/2026 e afeta o fluxo de lote e individual.
+# Mudanças futuras requerem aprovação do proprietário.
+DECISION_D1_SCREEN = "conexo-gate-revisar-lote"
+# Alternativa (não usada ativamente): DECISION_D1_SCREEN = "conexo-owner-review"
+
+# Marca de versão da decisão para rastreamento e audit trail.
+DECISION_D1_VERSION = "1.0"
+DECISION_D1_DATE = "2026-11-16"
 
 import hashlib
 import re
 import uuid
 from datetime import datetime, timezone
 
-_GATE_BLOCKED = ValueError  # reuse as custom exception placeholder
+class GateBlocked(ValueError):
+    """Levantado quando o Gate do WordPress bloqueia uma operação."""
+
+    pass
 
 
 def _is_sha(value):
@@ -33,7 +54,7 @@ def content_digest(text):
     este é o digest oficial.
     """
     if not isinstance(text, str):
-        raise _GATE_BLOCKED("CONTENT_DIGEST_INPUT_INVALID")
+        raise GateBlocked("CONTENT_DIGEST_INPUT_INVALID")
     return hashlib.sha256(text.encode("utf-8")).hexdigest()
 
 
@@ -50,12 +71,12 @@ def advisory_gate_receipt(info, *, markdown=None, date=None):
     revisão de forma independente e não autoriza nada.
     """
     if not isinstance(info, dict) or not _is_sha(info.get("content_sha256")):
-        raise _GATE_BLOCKED("OWNER_RELEASE_INFO_INVALID")
+        raise GateBlocked("OWNER_RELEASE_INFO_INVALID")
     if markdown is None:
         digest = info["content_sha256"]
     else:
         if not isinstance(markdown, str) or not markdown.strip():
-            raise _GATE_BLOCKED("ADVISORY_MARKDOWN_INVALID")
+            raise GateBlocked("ADVISORY_MARKDOWN_INVALID")
         digest = content_digest(markdown)
     stamp = date or datetime.now(timezone.utc).isoformat()
     return {
