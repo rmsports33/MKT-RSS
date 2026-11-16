@@ -6,7 +6,7 @@
 
 **Agendamento preferido:** o núcleo WordPress e o WP-Cron, com recibo versionado emitido pelo mesmo Gate. O código existente do Gate já aceita `schedule`, guarda `cxeg_schedule_<id>` contendo hash de snapshot e UTC e, ao disparar `publish_future_post`, confere novamente hash e horário. Não agendar diretamente por `wp/v2/posts` porque o Gate bloqueia alterações de status fora da via assinada.
 
-**Economia do Actions:** a rotina de seis jobs de 12/11 foi removida em favor de uma **única execução manual** para instalar os seis agendamentos depois das assinaturas humanas, sem cron periódico do GitHub. Workflow: [Agendamento WordPress nativo](https://github.com/rmsports33/MKT-RSS/actions/workflows/schedule-wordpress-approved-batch-manual.yml).
+**Economia do Actions:** a rotina de seis jobs de 12/11 foi removida em favor de uma **única execução manual** para instalar os seis agendamentos depois das assinaturas humanas, sem cron periódico do GitHub. Workflow: [Agendamento WordPress nativo](https://github.com/rmsports33/MKT-RSS/actions/workflows/schedule-wordpress-approved-batch-manual.yml) — *este workflow foi removido em 13/11/2026 pela política de publicação imediata (docs/EDITORIAL-IMMEDIATE-PUBLICATION-POLICY-20261113.md); o agendamento agora é feito manualmente via hPanel/WordPress Cron.*
 
 ## Aceite real do proprietário — não automatizar assinatura humana
 

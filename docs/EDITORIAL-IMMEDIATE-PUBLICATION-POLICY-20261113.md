@@ -12,7 +12,7 @@
 6. Se Gate já contém parecer vigente da versão, a mesma tela aceita **publicar agora** sem preencher ou assinar novamente. Histórico dos seis posts 9810/9813/9814/9815/9816/9817 está em `publish`; não reabrir, replicar ou reagendar.
 
 ### Ambiente
-- Plugin integrado **Conexo Gate — Publicação Imediata 0.3.0** substitui os arquivos da antiga **Agenda Nativa** na mesma pasta `wp-content/plugins/conexo-gate-agenda-nativa`; mantém Gate Único rc5 como autorizador.
+- Plugin integrado **Conexo Gate — Publicação Imediata (versão instalada no servidor deve ser confirmada por hash)** substitui os arquivos da antiga **Agenda Nativa** na mesma pasta `wp-content/plugins/conexo-gate-agenda-nativa`; mantém Gate Único rc5 como autorizador. A versão reportada (0.3.0) corresponde ao código do repo privado rmsports33/-site-conexotech; a versão real instalada no servidor deve ser validada por comparação de SHA-256 antes de confiar no número (o repo master tem 0.3.3, mas a produção pode ser diferente).
 - ZIP v0.3.0 e rollback v0.2.2 no Google Drive `/ConexoTech`. UpdraftPlus instalado no WordPress e arquivos do backup no Google Drive `/UpdraftPlus` (DB, plugins, temas, uploads, MU-plugins e outros). **Não executar restauração integral**, por decisão explícita do proprietário.
 - Não agendar nem criar tarefas de servidor; o WP-Cron do WordPress pode continuar existindo para manutenção normal do site, mas **não é usado para esperar data de matéria**.
 - GitHub permanece para desenvolvimento, testes e versionamento do MKT-RSS, não para publicar por artigo.

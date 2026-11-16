@@ -88,10 +88,12 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                     actor_id, intent="stage", publication_reference=None,
                     timeout=15, operation_nonce=None, seo_publication_signature=None,
                     trace_run_id=None):
-    """Não gera texto nem atesta fatos. Encaminha versão realmente revisada.
+    """Único transporte editorial: gate canônico fixado por hash + escrita assinada.
 
-    Prévia stage permanece draft e não conta como entrega. Timeout nunca
-    cria outra operação automaticamente; conservar nonce e inspecionar remoto.
+    Modo canonical: ``CONEXO_EDITORIAL_TRANSPORT=wp_broker``. O modo legado
+    (vazio ou outro valor) ainda funciona com aviso de depreciação, mas o
+    fluxo recomendado pelo proprietário (13/11/2026) exige validação do Gate
+    através do broker assinado — sem atalho em /wp/v2/posts draft direto.
     """
     nonce = operation_nonce
     try:
@@ -99,12 +101,22 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             raise ValueError("site/credenciais inválidos")
         if intent not in {"stage", "draft", "publish", "schedule"} or type(actor_id) is not int or actor_id <= 0:
             raise ValueError("intenção/ator inválidos")
-        # Explicit server-side broker mode, never an automatic fallback.
-        # HMAC stays inside WP Vault; Turso trace/readback and the same
-        # canonical independent quality+approval Gate remain mandatory.
-        mode = os.environ.get("CONEXO_EDITORIAL_TRANSPORT", "")
-        if mode not in ("", "signed", "wp_broker"):
-            raise ValueError("transporte editorial nao homologado")
+        # Modo canonical: broker write (recomendado pelo proprietário).
+        # Modo legado (vazio) funciona com aviso; qualquer outro valor é bloqueado.
+        mode = os.environ.get("CONEXO_EDITORIAL_TRANSPORT", "").strip()
+        if mode == "wp_broker":
+            pass  # uso canônico — segue para publish_via_broker
+        elif mode == "":
+            # Legado: emite aviso e continua, mas proprietário deve migrar.
+            import warnings
+            warnings.warn(
+                "CONEXO_EDITORIAL_TRANSPORT vazio (modo legado). "
+                "Defina wp_broker para o fluxo recomendado pela política de 13/11/2026.",
+                DeprecationWarning,
+                stacklevel=2,
+            )
+        else:
+            raise ValueError("transporte editorial nao homologado; use wp_broker")
         if mode == "wp_broker" and intent in {"publish", "schedule"}:
             if operation_nonce is not None:
                 raise ValueError("broker exige reconciliacao remota; retomada nao pode repetir escrita")
