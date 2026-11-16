@@ -6,6 +6,7 @@
 
 - `queue_snapshot`: lê somente `SELECT estado, COUNT(*) FROM rss_pautas GROUP BY estado` no Turso real. Não chama `fila_pautas.listar()`, pois essa função inicializa tabelas.
 - `queue_collect`: coleta **somente Tecnoblog**, até **2 itens**, pela implementação existente de `rss_queue_collect.coletar()`. Deduplicação e lease de um gravador continuam em `fila_pautas`. Não gera artigos, não usa IA, não escreve WordPress.
+- Antes da coleta, `CONEXO_RSS_SCHEMA_PREEXISTS=1` força `fila_pautas` a verificar as tabelas já existentes e bloqueia se alguma faltar; não executa DDL/migrações.
 - Ações antigas do artigo Binance são preservadas, inclusive o `article_ref` restrito.
 - Toda requisição tem `job_id` único; recibos em `~/.local/state/conexo-os/remote-jobs/<job_id>.json` impedem replay. O recibo legado é migrado para impedir que o pedido atual execute outra vez.
 - **Não há execução autônoma da fila por padrão.** Cada ação exige nova requisição explícita no GitHub e implantação do código confiável na Hostinger.
@@ -41,7 +42,7 @@ O Cron atual consulta a requisição a cada cinco minutos, mas **o agendamento n
 python -m unittest discover -s tests -p test_remote_queue_bridge.py -v
 ```
 
-Os testes cobrem allowlist, vínculo de referência, ausência de credenciais, URL, permissões de arquivo, SELECT somente-leitura, limite de coleta e replay do recibo anterior. Testes mockados **não** certificam conexão Turso nem execução do Cron.
+Os testes cobrem allowlist, vínculo de referência, ausência de credenciais, configuração fail-closed de schema preexistente, URL, permissões de arquivo, SELECT somente-leitura, limite de coleta e replay do recibo anterior. Testes mockados **não** certificam conexão Turso nem execução do Cron.
 
 ## Reversão
 
