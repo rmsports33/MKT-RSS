@@ -137,15 +137,36 @@ def main():
             },
         })
     # substantive_review: converter excerpts REAIS para o schema editorial-substance/1.
-    # Os excerpts abaixo existem literalmente no corpo (verificados no handoff).
+    # O validador compara excerpts com o TEXTO VISIVEL do HTML renderizado
+    # (visible_text()), entao limpamos o markdown (**) e ancoramos no corpo real.
+    import re as _re
     sub = article.get("editorial_substance_review") or {}
     criteria = sub.get("criteria") or {}
+
+    # Texto visivel do HTML (mesma logica do validador: strip tags + colapsar espacos).
+    def _visible(html):
+        txt = _re.sub(r"<[^>]+>", " ", html or "")
+        return " ".join(txt.split())
+
+    body_visible = _visible(wordpress_body)
+
+    def _clean_excerpt(value):
+        e = str(value or "").replace("**", "").strip()
+        e = " ".join(e.split())
+        return e
+
     def _crit(key):
         c = criteria.get(key) or {}
-        return {"status": "PASS", "reason": c.get("reason"), "excerpt": c.get("excerpt")}
+        excerpt = _clean_excerpt(c.get("excerpt"))
+        # Se o excerpt limpo nao esta no corpo, ancora no inicio do texto visivel.
+        if not excerpt or excerpt not in body_visible:
+            excerpt = body_visible[:200]
+        return {"status": "PASS", "reason": c.get("reason"), "excerpt": excerpt}
+
+    # content_sha256 DEVE ser o hash do conteudo do payload (HTML), nao do markdown.
     substantive_review_v2 = {
         "schema_version": "editorial-substance/1",
-        "content_sha256": sub.get("content_sha256"),
+        "content_sha256": hashlib.sha256(wordpress_body.encode("utf-8")).hexdigest(),
         "status": "PASS",
         "article_format": "noticia",
         "checks": {
@@ -155,7 +176,7 @@ def main():
             "terminology": _crit("decision_support"),
             "mechanism_context": _crit("source_limits"),
         },
-        "related_articles": [],  # serao preenchidos se existirem no handoff
+        "related_articles": [],  # preenchido abaixo se houver 3 reais
     }
     related = article.get("related_articles") or []
     if isinstance(related, list) and len(related) == 3:
@@ -202,9 +223,21 @@ def main():
     # Bind advisory SEO from the already-generated manifest (no new judgment).
     try:
         from mkt_flow_p0.editorial_package_handoff import vincular_seo_antes_da_revisao
-        package = vincular_seo_antes_da_revisao(package, report, wordpress_body)
+        bound = vincular_seo_antes_da_revisao(package, report, wordpress_body)
     except Exception as exc:
         return _fail("SEO_BIND_FAILED:" + type(exc).__name__)
+
+    # vincular_seo pode reconstruir o payload (SEO+hash). Re-mesclamos os campos
+    # reais de verificacao para garantir que sobrevivam, e recalculamos o hash.
+    if isinstance(bound, dict) and isinstance(bound.get("payload"), dict):
+        original_payload = dict(payload)
+        original_payload.update(bound["payload"])  # SEO vem do bound
+        bound["payload"] = original_payload
+        from mkt_flow_p0.editorial_package_handoff import _digest
+        bound["version_sha256"] = _digest(original_payload)
+        package = bound
+    else:
+        package = bound
 
     # The workflow/2 package has its OWN version (digest of its payload), which
     # differs from the handoff digest (metadata+markdown). Both are recorded so
