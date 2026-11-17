@@ -10,6 +10,42 @@ from urllib.parse import urlsplit, unquote
 
 import requests
 
+
+def _readiness_from_readback(post, *, featured_media_id=None, image_caption=None,
+                             expected_category_id=10):
+    """Sinaliza PRONTO_PARA_REVISAO a partir do readback autenticado.
+
+    Issue MKT-RSS #111: um rascunho existir não significa estar pronto para a
+    revisão do Gate. Esta função apenas *classifica* o readback; não escreve,
+    não aprova SEO, não publica e não altera o status do post. O produtor pode
+    usar o resultado para ligar o sinal de prontidão ao Gate, sem criar outro
+    motor de validação (reusa validate_complete_editorial_draft).
+    """
+    try:
+        from editorial_wordpress_readiness import validate_complete_editorial_draft
+    except ImportError:
+        return {"pronto_para_revisao": False, "motivo_prontidao": "validador_indisponivel"}
+    title = post.get("title") if isinstance(post.get("title"), dict) else {}
+    content = post.get("content") if isinstance(post.get("content"), dict) else {}
+    excerpt = post.get("excerpt") if isinstance(post.get("excerpt"), dict) else {}
+    draft = {
+        "id": post.get("id"), "status": post.get("status"),
+        "title": title.get("raw", "") if isinstance(title, dict) else "",
+        "content": content.get("raw", "") if isinstance(content, dict) else "",
+        "excerpt": excerpt.get("raw", "") if isinstance(excerpt, dict) else "",
+        "slug": post.get("slug"), "categories": post.get("categories"),
+        "featured_media": featured_media_id,
+        "image_caption": image_caption or "",
+        "link": post.get("link"),
+    }
+    readiness = validate_complete_editorial_draft(
+        draft, expected_category_id=expected_category_id)
+    ready = bool(getattr(readiness, "ok", False))
+    errors = tuple(getattr(readiness, "errors", ()) or ())
+    return {"pronto_para_revisao": ready,
+            "motivo_prontidao": list(errors) if errors else []}
+
+
 def _post_persist_remediation(post_id):
     """Optional Gate handoff after a verified new draft; never approves or publishes."""
     import os
@@ -106,6 +142,7 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
     slug = _slug(title, source_url)
     endpoint = target + "/wp-json/wp/v2/posts"
     auth = (wp_user, wp_password)
+    media_caption = ""  # declarations are validated separately; never assumed
     try:
         if featured_media_id is not None:
             # Reuse only media that already exists inside the authenticated WP
@@ -155,9 +192,13 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
                                      featured_media_id, excerpt, author_id):
                 return {"acao": "bloqueado", "motivo": "versao_rascunho_divergente",
                         "post_id": post_id, "escreveu": False, "retry_automatic": False}
+            prontidao = _readiness_from_readback(
+                current, featured_media_id=featured_media_id,
+                image_caption=media_caption)
             return {"acao": "publicado_rascunho", "post_id": post_id,
                     "status": current["status"], "wp_link": current.get("link"),
-                    "escreveu": False, "reutilizado": True, "revisao_factual": "PENDENTE"}
+                    "escreveu": False, "reutilizado": True, "revisao_factual": "PENDENTE",
+                    **prontidao}
         payload = {"title": title.strip(), "content": content, "slug": slug,
                    "status": "draft", "comment_status": "closed"}
         if featured_media_id is not None:
@@ -186,10 +227,16 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
             return {"acao": "falha", "motivo": "readback_wp_divergente_inspecionar",
                     "post_id": post_id, "escreveu": True, "retry_automatic": False}
         remediation = _post_persist_remediation(post_id)
+        # Caption/alt are declarations already validated before the write; do
+        # not issue extra network calls here (single-writer, mock-safe). The
+        # readiness classifier uses WP fields present in the readback.
+        prontidao = _readiness_from_readback(
+            readback, featured_media_id=featured_media_id,
+            image_caption=None)
         return {"acao": "publicado_rascunho", "post_id": post_id, "status": "draft",
                 "wp_link": readback.get("link"), "escreveu": True,
                 "revisao_factual": "PENDENTE", "retry_automatic": False,
-                "remediation": remediation}
+                "remediation": remediation, **prontidao}
     except (requests.RequestException, ValueError, KeyError, TypeError):
         return {"acao": "falha", "motivo": "transporte_indeterminado_inspecionar_slug",
                 "slug": slug, "escreveu": False, "retry_automatic": False}
