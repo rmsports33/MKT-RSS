@@ -46,7 +46,7 @@ resolvidos, não repetir testes e não misturar frentes.
 | M23 | Staging subdomínio | Hostinger | 🔵 Fora do plano | — | Não recriar/não usar |
 | M24 | Ollama, Actions como executor, ChatGPT Work, handoff automático | vários | 🔵 Adiado por decisão | — | Não implementar |
 | M25 | Branches remotas obsoletas (stub do Gate + 3 planos) | MKT-RSS | 🟡 Limpeza local feita, remoto pendente | Autorização | Excluir após autorização |
-| M26 | Recibo `queue-list-20261116-001` | Hostinger | 🔴 Não verificado | SSH leitura | Verificar recibo via operador |
+| M26 | Recibo `queue-list-20261116-001` | Hostinger | ✅ Resolvido — processado pelo Cron em 17/11 01:29Z, `PASS`, `READ_ONLY`, sem deploy | — | Nenhuma; fluxo GitHub→Cron→ponte→Turso 100% operacional |
 
 ---
 
