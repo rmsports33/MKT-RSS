@@ -11,8 +11,13 @@ listar os títulos `DESCOBERTA` e gerar o recibo de triagem.
 
 | Arquivo | SHA-256 |
 |---|---|
-| `ops/hostinger/remote_controller.py` | `c9c8f83e2b585de8c89cde7ee49e20833602a22d22fe2e27762d4b5121cc07ee` |
-| `ops/hostinger/remote_queue_bridge.py` | `5d062fa745ad3c452b720e0adfd28247cd68b9b9704c072cc2a26620ff9c7a36` |
+| `ops/hostinger/remote_controller.py` | `17e38593914dcdc9bdab2cdf973df3eb982417bcf920baa20085fffc303ab622` |
+| `ops/hostinger/remote_queue_bridge.py` | `c4e014bc0c090c351f4aa7d5c84362df2b4634ec2206b7e4ef4e70c376a8c71a` |
+
+> **Nota sobre hashes:** estes são os SHA-256 dos **blobs do git (LF)**, que é o que
+> o `git pull` grava no servidor Linux. Num checkout Windows os arquivos podem virar
+> CRLF e gerar hashes diferentes — isso não é adulteração. No servidor Hostinger
+> (Linux), `sha256sum` deve produzir exatamente os valores acima.
 
 ## Ordem obrigatória (evita queimar o `job_id`)
 
