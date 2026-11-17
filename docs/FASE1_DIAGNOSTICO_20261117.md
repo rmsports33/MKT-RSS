@@ -89,8 +89,9 @@ A divergência foi **eliminada na raiz**: o JS real do servidor foi trazido para
 - Validação: parênteses 192/192, chaves 65/65, colchetes 13/13; linha 230 = `  });`; 254 linhas.
 - O blob commitado foi conferido byte-a-byte (8656 bytes, mesmo SHA).
 - Branch `fix/reconcile-main-js-20261117` no repo privado, commit `09b3868`.
-- **PR #78** aberto para revisão (`fix(theme): reconcile main.js with live server`).
-- Os PRs #71 e #50 podem ser fechados como obsoletos quando o proprietário aprovar.
+- **PR #78** mesclado em 17/11 11:37Z (merge commit `5bfbf28`).
+- **PRs #71 e #50 fechados como obsoletos** (comentário explicando que a correção
+  já está no JS reconciliado do PR #78).
 
 **Resultado:** o repo passa a refletir exatamente o JS que roda em produção, com a
 correção da linha 230. Nenhum deploy automático (proteção da issue #51 já em master).
