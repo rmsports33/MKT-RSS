@@ -80,6 +80,34 @@ Os corpos HTML dos dois artigos foram gerados em
 podem ser abertos no painel de revisão do OpenCode para conferir títulos,
 tabelas,blockquote e quebras — antes mesmo de existir rascunho no WordPress.
 
+## Resolução em 17/11 (executado)
+
+O proprietário revogou a restrição em
+`wp-admin/tools.php?page=cxrm-credential` ("Revogar correção"). Não foi preciso
+colar senha nova: a senha de aplicativo já existente passou a ter permissão
+normal de editor. Pré-voo autenticado: `users/me` → ID 4, role `editor`, HTTP
+200; `wp/v2/posts` → HTTP 200.
+
+O arquivo `~/.config/conexo-os/wp-draft-writer.env` foi criado no servidor a
+partir do token já presente, com permissão `600` e sem exibir a senha.
+
+Rascunhos criados e confirmados por readback autenticado:
+
+| Post | Título | Corpo |
+|---|---|---|
+| **9899** | Senado não comprou iPhones: entenda o contrato de R$ 4,96 milhões com a Claro | 6.314 chars |
+| **9900** | Anatel manda TIM desligar bloqueio de telemarketing; entenda o que muda | 5.346 chars |
+
+Um rascunho duplicado (9898, título com barra invertida por escape de shell)
+foi movido para lixeira. Estado final: apenas 9899 e 9900 como rascunhos.
+
+- Gate: https://conexotech.com.br/wp-admin/tools.php?page=conexo-gate-revisar-lote
+- Edição: `/wp-admin/post.php?post=9899&action=edit` e `...post=9900&action=edit`
+- Prévia: `/?p=9899&preview=true` e `/?p=9900&preview=true`
+
+Nenhum dos dois foi publicado, agendado ou aprovado. O Gate ainda deve apontar
+capa e links internos como pendências — isso é revisão, não bloqueio de preview.
+
 ## O que continua fora da automação (de propósito)
 
 - aprovação no Gate por pessoa (hash da versão, revisor diferente do autor);
