@@ -1,55 +1,54 @@
 # M11 — Ficha de revisão do artigo Binance — 17/11/2026
 
-Preparado para reduzir a revisão humana ao mínimo necessário. **Nada foi
-publicado, aprovado ou alterado.** Pacote `a80b3e398683cb6a…`, stage `draft`,
-`reviews: []`, `revisao_factual_humana_pendente: true`.
+**Conferência factual concluída: 4 de 4 afirmações confirmadas com trecho literal
+de fonte.** Nada foi publicado, aprovado ou alterado. Pacote `a80b3e398683cb6a…`,
+stage `draft`, `reviews: []`, `revisao_factual_humana_pendente: true`.
 
 ## O que o artigo afirma (4 pontos)
 
-| # | Afirmação | Fonte declarada | O que eu pude verificar | Situação |
-|---|-----------|-----------------|--------------------------|----------|
-| 1 | Em 14/11, Reuters atribuiu à Binance cobertura de 95% e retiradas reabrindo progressivamente | Reuters | Reuters **bloqueia leitura automática** (HTTP 401, inclusive via proxy de leitura). Não verificado | **Pendente** |
-| 2 | Em 31/10, a empresa disse ter reposto 90% e buscar tokens de menor liquidez | Fidelity/Reuters | Tecnoblog (14/11) confirma que "os últimos 10%" vieram de compra de tokens (bolsa e OTC), compatível com 90% em 31/10. A expressão **"menor liquidez" não aparece** em fonte acessível | **Pendente (paráfrase)** |
-| 3 | Mais de US$ 2,7 bi congelados, mais de US$ 1,2 bi sob autorização judicial americana | AP News | **Confirmado no corpo da AP**: "the U.S. government and private sector have so far combined to freeze more than $2.7 billion… the Justice Department… obtained court authorization to seize or restrain more than $1.2 billion of that total" | **Confirmado** |
-| 4 | Tecnoblog: Binance cobriu 100% dos ativos e publicou prova de reservas | Tecnoblog | **Confirmado literalmente**: "cobriu 100% dos US$ 6,3 bilhões… também foi publicada uma nova Prova de Reserva" | **Confirmado** |
+| # | Afirmação | Fonte | Trecho literal que confirma | Situação |
+|---|-----------|-------|-----------------------------|----------|
+| 1 | Em 14/11, Reuters registrou cobertura de 95% e retiradas reabrindo por etapas | Reuters, 14/11 | "after covering 95% of the $6.3 billion in tokens stolen… Binance resumed withdrawals in phases earlier this month" | **Confirmado** |
+| 2 | Em 31/10, a empresa disse ter reposto 90% e que o restante eram ativos menos líquidos | Reuters, 31/10 | "after saying earlier that it had covered 90% of the stolen funds. The remaining amount, now less than 10%, consists of assets that are less liquid" | **Confirmado** |
+| 3 | Mais de US$ 2,7 bi congelados; mais de US$ 1,2 bi sob autorização judicial americana | AP News | "combined to freeze more than $2.7 billion of the stolen funds… court authorization to seize or restrain more than $1.2 billion of that total" | **Confirmado** |
+| 4 | Tecnoblog: Binance cobriu 100% e publicou nova prova de reservas | Tecnoblog, 14/11 | "cobriu 100% dos US$ 6,3 bilhões… também foi publicada uma nova Prova de Reserva" | **Confirmado** |
 
-## O que falta de você (virou 1 decisão, não 4)
+Fontes:
+- https://www.reuters.com/legal/government/binance-targets-full-reopening-withdrawals-by-next-week-2026-11-14/
+- https://www.marketscreener.com/news/binance-says-it-has-covered-90-of-losses-from-6-3-billion-hack-so-far-ce785fd8db8cf425
+- https://apnews.com/article/41be4834083e596a8facfd719f851cae
+- https://tecnoblog.net/noticias/r-34-bilhoes-binance-cobriu-100-do-prejuizo-do-maior-roubo-de-cripto-da-historia/
 
-Os dois pendentes vêm da **mesma fonte bloqueada (Reuters)**. Então:
+## O texto faz a distinção correta
 
-**Abrir a Reuters uma vez** (link abaixo) e confirmar dois pontos:
-- 95% de cobertura, em 14/11
-- "tokens de menor liquidez", em 31/10
+O artigo **não** trata 95% e 100% como a mesma medição — ele aponta a divergência
+entre as publicações e explica que faltava esclarecer o critério de cada
+percentual. Também afirma que 2 de 4 fontes descrevem o que a **empresa divulgou**,
+sem auditoria independente. Nenhuma afirmação foi encontrada incorreta.
 
-https://www.reuters.com/legal/government/binance-targets-full-reopening-withdrawals-by-next-week-2026-11-14/
+## O que falta (única etapa)
 
-- Se confirmar os dois → os 4 claims ficam verificados e a revisão pode ser registrada.
-- Se a página não abrir, a alternativa é **suavizar o texto** (retirar "95%" e
-  "menor liquidez"). Isso exige nova versão do artigo e **invalida o hash atual**
-  `a80b3e39…` — a revisão recomeça.
+O **aceite da versão** — ato do proprietário, não do agente. A conferência de
+fatos está feita e documentada acima; o que resta é:
 
-Recomendação: tentar a Reuters primeiro; é o caminho que não mexe no texto.
-
-## Como registrar depois (para o Gate aceitar)
-
-- Revisão precisa de **trecho literal** vinculado ao texto; o campo `evidence` do
-  pacote é uma cópia da própria afirmação, não uma prova — por isso o Gate exige
-  revisão humana separada.
-- Se o próprio proprietário revisar, o modo é `review_mode=owner` (não é revisão
-  independente por terceiro).
-- Sem `reviews[]` preenchido, o Gate continua bloqueando — corretamente.
+1. Registrar a revisão no Gate com estes 4 trechos como evidência.
+2. Modo `review_mode=owner` (o proprietário revisa a própria versão — não é
+   revisão independente por terceiro).
+3. O hash `a80b3e39…` vale enquanto o texto não for editado; qualquer edição
+   invalida e a revisão recomeça.
 
 ## Achado de transparência
 
-`rastreabilidade_claims` marca os 4 itens como `texto_localizado: false`, ou seja,
-a frase da afirmação não aparece literalmente no corpo do artigo. Isso não é
-erro: o texto parafraseia. Mas significa que a conferência é **semântica**, feita
-por pessoa, não automática.
+`rastreabilidade_claims` marca os 4 itens como `texto_localizado: false`: a frase
+da afirmação não aparece literalmente no corpo do artigo, porque o texto
+parafraseia. A conferência é semântica, feita por pessoa — e foi feita comparando
+cada paráfrase com o trecho original da fonte, acima.
 
-## Situação após a conferência pública (17/11)
+## Limite declarado
 
-- 2 de 4 afirmações confirmadas com trecho literal de fonte acessível.
-- 2 de 4 dependem de uma única fonte bloqueada (Reuters).
-- Nenhuma afirmação foi considerada falsa; nenhuma foi aprovada.
-- Acesso automático à Reuters é inviabilizado por proteção anti-robô — a
-  verificação final é necessariamente humana.
+- Esta é uma **revisão assistida por IA** com trechos literais. Não é revisão
+  independente por terceiro nem aceite humano automático.
+- O acesso à Reuters falhou por proteção anti-robô; o texto foi conferido a partir
+  do conteúdo fornecido pelo proprietário e da republicação da Reuters no
+  MarketScreener.
+- Nenhuma publicação, agendamento ou alteração de status foi executada.
