@@ -89,6 +89,14 @@ PY
     unset CONEXO_GATE_REMEDIATION_AUTO
     "$PY" ops/hostinger/verify_binance_image.py
     ;;
+  --binance-stage)
+    # Stage the exact reviewed Binance version through the canonical Gate ONLY.
+    # Needs WP credentials from the operator's private environment; never logs
+    # them. No generic REST fallback, no publish, no approval.
+    unset TURSO_AUTH_TOKEN GROQ_API_KEY CONEXO_RSS_DRAFT CONEXO_RSS_DRAFT_STAGING
+    unset CONEXO_GATE_REMEDIATION_AUTO
+    "$PY" ops/hostinger/binance_gate_stage.py
+    ;;
   --import-binance)
     # Imports the GitHub-reviewed Markdown as a distinct private, pending package.
     # Never calls Groq, Turso, WordPress or the Gate write endpoints.
@@ -109,7 +117,7 @@ PY
     "$PY" pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-only --handoff-dir "$HANDOFF_DIR"
     ;;
   *)
-    echo "Usage: bash ops/hostinger/conexo_editorial.sh --inspect|--show-article|--image-check|--image-stage|--import-binance-reviewed|--import-binance-image|--import-binance|--handoff-one"
+    echo "Usage: bash ops/hostinger/conexo_editorial.sh --inspect|--show-article|--image-check|--image-stage|--import-binance-reviewed|--import-binance-image|--import-binance|--binance-stage|--handoff-one"
     exit 2
     ;;
 esac

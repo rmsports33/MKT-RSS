@@ -21,11 +21,15 @@ ALLOWED = {
     "image_technical_check": ["--image-check"],
     "binance_image_review_package": ["--image-stage", "--import-binance-image"],
     "binance_substantive_review": ["--import-binance-reviewed"],
+    "binance_stage": ["--binance-stage"],
     "queue_snapshot": ["--snapshot"],
     "queue_list": ["--list"],
     "queue_collect": ["--collect"],
 }
 QUEUE_ACTIONS = frozenset({"queue_snapshot", "queue_list", "queue_collect"})
+# Ações que precisam das credenciais WP do operador (o invoke() faz unset delas
+# para todas as outras ações). Nunca são passadas a bridge/scripts de revisão.
+WP_CREDENTIAL_ACTIONS = frozenset({"binance_stage"})
 REPOSITORY = "https://github.com/rmsports33/MKT-RSS.git"
 BRANCH = "feat/hostinger-runtime-independente-20261113"
 
@@ -41,18 +45,23 @@ def validate_request(data):
     action = data["action"]
     if action not in ALLOWED:
         raise ValueError("action not on allowlist")
-    expected_ref = "rss-pautas" if action in QUEUE_ACTIONS else "binance-revisao-6e8da0b05713"
+    if action in QUEUE_ACTIONS:
+        expected_ref = "rss-pautas"
+    elif action == "binance_stage":
+        expected_ref = "binance-revisao-6e8da0b05713"
+    else:
+        expected_ref = "binance-revisao-6e8da0b05713"
     if data["article_ref"] != expected_ref:
         raise ValueError("unsupported action reference")
     return jid, action
 
 
-def invoke(argv, timeout=120):
+def invoke(argv, timeout=120, *, keep_wp_credentials=False):
+    drop = {"GROQ_API_KEY", "TURSO_AUTH_TOKEN"}
+    if not keep_wp_credentials:
+        drop |= {"WP_USER", "WP_APP_PASSWORD", "CONEXO_WP_USER", "CONEXO_WP_APP_PASSWORD"}
     r = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True, timeout=timeout,
-                       env={k: v for k, v in os.environ.items() if k not in {
-                           "GROQ_API_KEY", "WP_USER", "WP_APP_PASSWORD", "CONEXO_WP_USER",
-                           "CONEXO_WP_APP_PASSWORD", "TURSO_AUTH_TOKEN"
-                       }})
+                       env={k: v for k, v in os.environ.items() if k not in drop})
     if r.returncode:
         return {"status": "FAILED", "exit_code": r.returncode,
                 "output": (r.stdout + "\n" + r.stderr)[-3000:]}
@@ -108,6 +117,11 @@ def main():
             raise SystemExit("BLOCKED: invalid or unauthorized remote request")
         if action in QUEUE_ACTIONS and (not QUEUE_BRIDGE.is_file() or QUEUE_BRIDGE.is_symlink()):
             raise SystemExit("BLOCKED: trusted queue bridge missing")
+        if action == "binance_stage":
+            # Credentials must come from the operator's private environment;
+            # never from the GitHub request or this repository.
+            if not (os.environ.get("WP_USER") or os.environ.get("CONEXO_WP_USER")):
+                raise SystemExit("BLOCKED: WP service account not configured on host")
         # Durable per-ID receipts prevent replay when the GitHub request later
         # cycles back to a previously processed job ID. STARTED is non-retryable.
         jobs = STATE / "remote-jobs"
@@ -132,7 +146,8 @@ def main():
             argv = ([sys.executable, str(QUEUE_BRIDGE), flag] if action in QUEUE_ACTIONS
                     else ["bash", str(LAUNCHER), flag])
             try:
-                result = invoke(argv, timeout=120)
+                result = invoke(argv, timeout=120,
+                                keep_wp_credentials=(action in WP_CREDENTIAL_ACTIONS))
             except (OSError, subprocess.TimeoutExpired):
                 result = {"status": "FAILED", "exit_code": -1, "output": "executor unavailable or timed out"}
             outcomes.append({"step": flag, **result})
