@@ -1,0 +1,66 @@
+# Implantação segura da ação `binance_stage` — 17/11/2026
+
+Branch operacional: `feat/hostinger-runtime-independente-20261113` @ `1b4dd3c`
+Issue: MKT-RSS #121. Código implementado, **não executado**. Nenhuma credencial
+no repo; nenhuma publicação; nenhuma aprovação.
+
+## O que a ação faz
+Cria o rascunho Binance **exclusivamente pela rota canônica do Gate**
+(`editorial/write` via `publish_package(intent="stage")`), com:
+- versão exata `d2ccb99e...` e markdown `1969799c...` verificados do handoff imutável
+- `featured_media = 9892` associado somente ao novo rascunho
+- um único receipt por hash (idempotência), sem retry automático
+- `publication_authorized=false`, `human_acceptance=PENDING`
+- proibido: REST genérico `wp/v2/posts`, `wpcom_mcp_posts_create`, token no código
+
+## Arquivos novos/alterados
+| Arquivo | SHA-256 (blob git, LF) |
+|---|---|
+| `ops/hostinger/binance_gate_stage.py` | `4adb8f363f471963c4b1d9fcaf80da938a5f7c11b266d42d9f2441b062bfa35a` |
+| `ops/hostinger/conexo_editorial.sh` | `7175084a2f9b6d950cc702a171c40d2c9667c40cfa5296f1999d9d7f9d5e490d` |
+| `ops/hostinger/remote_controller.py` | `d0524f624d967c73ab5d0c036578d6468c77d37e8e5306888755de74ff09f1e6` |
+| `tests/test_binance_gate_stage.py` | 6 testes de contrato |
+
+## Pré-condições (verificar ANTES de implantar)
+
+> COMANDOS PARA COPIAR E COLAR no terminal da Hostinger (somente leitura):
+
+```bash
+# 1. Handoff existe e é íntegro
+ls -la /home/u401421381/.local/share/conexo-os/handoffs/binance-revisao-48f1ea5be313
+
+# 2. Mídia 9892 existe e está livre
+#    (via WordPress REST autenticado existente)
+
+# 3. Core editorial fixado por hash existe no checkout
+find ~/ -path '*conexo-os-core*' -name editorial_write.py 2>/dev/null | head -3
+
+# 4. Credenciais WP do operador disponíveis no ambiente (não no repo)
+#    confirmar que WP_USER/WP_APP_PASSWORD existem no ambiente privado
+```
+
+## Ordem de implantação (evita queimar o job_id)
+
+1. Atualizar checkout: `git pull --ff-only origin feat/hostinger-runtime-independente-20261113`
+2. Fazer backup dos 3 arquivos alterados
+3. Validar com o virtualenv ANTES de trocar o controlador:
+   ```bash
+   ./.venv/bin/python -m py_compile ops/hostinger/binance_gate_stage.py ops/hostinger/remote_controller.py
+   ./.venv/bin/python -m pytest -q tests/test_binance_gate_stage.py
+   ```
+4. Conferir SHA-256 dos arquivos instalados
+5. **Só depois** criar o `remote_request.json` com o novo job_id:
+   ```json
+   {"schema":"conexo-remote-request/1","job_id":"binance-stage-20261117-001","action":"binance_stage","article_ref":"binance-revisao-6e8da0b05713"}
+   ```
+6. O Cron processa em até 1 minuto. Verificar recibo:
+   ```bash
+   cat ~/.local/state/conexo-os/remote-jobs/binance-stage-20261117-001.json
+   ```
+
+## Regras
+- Se o core fixado por hash não existir, a ação falha fechado (`TRUSTED_CORE_MISSING`).
+- Se as credenciais WP não estiverem no ambiente, falha fechado (`WP_CREDENTIALS_MISSING`).
+- Qualquer falha de staging é **não repetível** por design; novo job_id exige nova decisão.
+- Não publicar, não agendar, não alterar #9708/#9744.
+- Aprovação humana da versão continua obrigatória no Gate; este fluxo só cria o rascunho `draft`.
