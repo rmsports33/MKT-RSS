@@ -3,6 +3,27 @@
 Escolha do proprietário em 17/11: **Anatel/TIM** e **Claro/Senado**.
 Nada foi publicado, nada foi aprovado, nenhuma imagem foi baixada.
 
+## Atualização 17/11 (fim do dia)
+
+O bloqueio foi resolvido. A tabela `rss_triage_audit` e os três triggers foram
+provisionados no Turso de produção, e as **duas pautas foram gravadas como
+`SELECIONADA`** com auditoria imutável:
+
+| Pauta | Evento |
+|---|---|
+| Anatel/TIM | `ba4bc9eeee224279a4b25f785780629b` |
+| Claro/Senado | `41454622c4c041d5b231926279314a2c` |
+
+Fila agora: 22 em `DESCOBERTA`, 2 em `SELECIONADA`. Nenhuma alteração em
+artigo, WordPress ou publicação. Detalhes do mecanismo:
+`docs/TRIAGE_MECANISMO_CHATGPT_VS_OPENCODE_20261117.md`.
+
+Os artigos das duas pautas foram escritos em `artigos-pendentes/2026-11-17/`
+(pasta fora do repositório público, via `.gitignore`), com as pendências de
+fonte primária, imagem e aceite ainda abertas.
+
+---
+
 ## Primeiro, o bloqueio (importante)
 
 A decisão **não pôde ser gravada na fila**. Motivo real:
