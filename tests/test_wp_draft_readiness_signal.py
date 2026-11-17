@@ -33,9 +33,29 @@ def test_incomplete_draft_is_not_marked_ready():
 def test_classifier_never_authorizes_publication():
     out = _readiness_from_readback(_readback(), featured_media_id=456,
                                    image_caption="Foto: autor, fonte, licença CC BY 4.0")
-    assert set(out) == {"pronto_para_revisao", "motivo_prontidao"}
+    assert set(out) == {"pronto_para_revisao", "motivo_prontidao", "revisao_pos_ia"}
     assert "publication_authorized" not in out
     assert "autorizado" not in out
+    assert out["revisao_pos_ia"]["avaliado"] is False
+
+
+def test_quality_reviewer_blocks_on_unbacked_claim():
+    post = _readback()
+    post["content"] = {"raw": "<p>" + ("texto verificavel " * 80) +
+                       "</p><p>Em nossos testes, o aparelho durou 40 horas.</p>"}
+    out = _readiness_from_readback(
+        post, featured_media_id=456,
+        image_caption="Foto: autor, fonte, licença CC BY 4.0",
+        texto_fonte="<p>Texto da fonte sem menção a testes próprios nem 40 horas.</p>")
+    assert out["revisao_pos_ia"]["avaliado"] is True
+    assert out["pronto_para_revisao"] is False
+    assert any("revisao_pos_ia" in str(x) for x in out["motivo_prontidao"])
+
+
+def test_no_source_does_not_fabricate_review():
+    out = _readiness_from_readback(_readback(), featured_media_id=456,
+                                   image_caption="Foto: autor, fonte, licença CC BY 4.0")
+    assert out["revisao_pos_ia"] == {"avaliado": False, "achados": []}
 
 
 def test_missing_validator_fails_closed():

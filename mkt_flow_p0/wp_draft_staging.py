@@ -12,7 +12,7 @@ import requests
 
 
 def _readiness_from_readback(post, *, featured_media_id=None, image_caption=None,
-                             expected_category_id=10):
+                             expected_category_id=10, texto_fonte=None):
     """Sinaliza PRONTO_PARA_REVISAO a partir do readback autenticado.
 
     Issue MKT-RSS #111: um rascunho existir não significa estar pronto para a
@@ -42,8 +42,30 @@ def _readiness_from_readback(post, *, featured_media_id=None, image_caption=None
         draft, expected_category_id=expected_category_id)
     ready = bool(getattr(readiness, "ok", False))
     errors = tuple(getattr(readiness, "errors", ()) or ())
+
+    # Revisor de Qualidade existente (Issue MKT-RSS #42 / OS #52): reutiliza
+    # validar_saida contra a fonte quando ela é fornecida. Nunca inventa fonte
+    # nem transforma ausência de alertas em aprovação — apenas sinaliza achados.
+    revisao_pos_ia = {"avaliado": False, "achados": []}
+    if isinstance(texto_fonte, str) and texto_fonte.strip():
+        try:
+            from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
+            achados = validar_saida(texto_fonte, draft["content"])
+            revisao_pos_ia = {
+                "avaliado": True,
+                "achados": list(achados) if isinstance(achados, (list, tuple)) else [],
+            }
+            if achados:
+                # Um achado do revisor bloqueia a prontidão; não é aprovação.
+                ready = False
+                extra = list(errors) + ["revisao_pos_ia:" + str(a) for a in (achados or [])]
+                errors = tuple(dict.fromkeys(extra))
+        except (ImportError, ValueError, TypeError):
+            revisao_pos_ia = {"avaliado": False, "achados": ["revisor_indisponivel"]}
+
     return {"pronto_para_revisao": ready,
-            "motivo_prontidao": list(errors) if errors else []}
+            "motivo_prontidao": list(errors) if errors else [],
+            "revisao_pos_ia": revisao_pos_ia}
 
 
 def _post_persist_remediation(post_id):
