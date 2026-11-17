@@ -59,6 +59,26 @@ e quebraria o tema**.
 2. ⛔ **Não** mesclar PR #71/#50 nem copiar `main.js` do repo para o servidor.
 3. 📋 Registrar que a correção do JS exige leitura do arquivo real via SSH.
 
+## ✅ Resolução aplicada em 17/11/2026
+
+O operador executou no servidor, via SSH:
+1. Backup: `cp main.js main.js.bak-20261117`
+2. Correção: `sed -i '230s/^  }$/  });/' main.js`
+3. Verificação: linha 230 passou a ser `  });`
+4. Validação de sintaxe (sem `node` no servidor) via Python:
+   - parênteses `()` 192/192 OK
+   - chaves `{}` 65/65 OK
+   - colchetes `[]` 13/13 OK
+5. Versões coerentes: `CONEXO_VERSION = 1.6.9`, `Version: 1.6.9` (style.css)
+
+**Resultado:** M09 resolvido no arquivo corrente do servidor. M10 já estava
+resolvido em master. Fase 1 concluída.
+
+⚠️ **Não mesclar PR #71 nem PR #50**: o `main.js` do repo é artefato binário;
+aplicar esses PRs substituiria o JS real por 72 bytes corrompidos. A correção
+foi feita apenas no servidor, com backup —agem sobre a divergência repo↔servidor
+em momento oportuno, sem deploy automático.
+
 ## Próximo passo (depende de SSH — operador)
 
 > COMANDO PARA COPIAR E COLAR no terminal da Hostinger (somente leitura):

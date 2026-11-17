@@ -29,7 +29,7 @@ resolvidos, não repetir testes e não misturar frentes.
 | M06 | Marker PRONTO_PARA_REVISAO no produtor | MKT-RSS #111 | ✅ Resolvido — `stage_rss_draft` emite `pronto_para_revisao` do readback (commit `6faa96c`) | — | Nenhuma; 35 testes passando |
 | M07 | Reconciliar 149 rascunhos antigos | MKT-RSS #114 | 🔴 Bloqueado (dados não disponibilizados) | WordPress ao vivo | Auditoria readback antes de corrigir |
 | M08 | Revisor de Qualidade único | MKT-RSS #42 / OS #52 | ✅ Resolvido — `validar_saida` reaproveitado no sinal de prontidão (commit `b0b8256`), sem novo motor | — | Nenhuma; achados bloqueiam prontidão, não aprovam |
-| M09 | Erro JS `main.js` linha 230 | site #71 | 🔴 Bloqueado — `main.js` versionado é artefato binário de 72 bytes em master e na branch do PR; JS real só no servidor | SSH (ler arquivo real) + backup | `find`/`grep` no servidor; aplicar delta ao arquivo corrente, nunca copiar do repo |
+| M09 | Erro JS `main.js` linha 230 | site #71 | ✅ Resolvido — delta aplicado no servidor (linha 230 `}` → `});`) com backup `main.js.bak-20261117`; sintaxe validada (pares `()` 192/192, `{}` 65/65, `[]` 13/13); versão 1.6.9 coerente | — | Nenhuma. Não mesclar PR #71/#50 (main.js do repo é artefato binário) |
 | M10 | Proteção anti-auto-deploy do tema | site #51 | ✅ Resolvido — proteção já em master (`workflow_dispatch`, `default: false`, sem cron) | — | Nenhuma; ver `FASE1_DIAGNOSTICO_20261117.md` |
 | M11 | Rascunho Binance via Gate autenticado | MKT-RSS #121 | 🟠 Pacote pronto (mídia #9892, hashes), falta ação Gate | Autorização | Executar via rota do Gate, sem REST genérica |
 | M12 | Artigo #9894 — perfil revisor ID4 | Histórico | 🔴 Gravação do perfil pendente | Usuário | Concluir perfil, verificar fluxo, **não publicar** |
@@ -54,10 +54,10 @@ resolvidos, não repetir testes e não misturar frentes.
 
 | Status | Qtd |
 |--------|-----|
-| ✅ Resolvido e comprovado | 8 |
-| 🟡 Implementado, não integrado | 2 |
+| ✅ Resolvido e comprovado | 10 |
+| 🟡 Implementado, não integrado | 1 |
 | 🟠 Integrado, não homologado | 5 |
-| 🔴 Bloqueado | 7 |
+| 🔴 Bloqueado | 6 |
 | ⚪ Obsoleto | 0 |
 | 🔵 Adiado por decisão | 4 |
 
@@ -66,6 +66,13 @@ resolvidos, não repetir testes e não misturar frentes.
 prontidão do Gate agora nasce do readback autenticado, reaproveita o revisor de
 qualidade existente e anexa a nota temática — sem criar novos motores e sem
 autorizar publicação.
+
+**Fase 1 concluída (17/11):** M10 ✅ (proteção anti-auto-deploy já em master do
+repo privado) e M09 ✅ (JS do tema corrigido no servidor com backup, sintaxe
+validada e versão 1.6.9 coerente). O `main.js` versionado no repo é artefato
+binário de 72 bytes — **nunca copiar do repo para o servidor**; os PRs #71/#50
+devem permanecer abertos até que essa divergência seja reconciliada. Ver
+`FASE1_DIAGNOSTICO_20261117.md`.
 
 ## Sequência de execução (P0 primeiro, sem reconstruir)
 
