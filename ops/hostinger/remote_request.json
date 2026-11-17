@@ -1,6 +1,6 @@
 {
   "schema": "conexo-remote-request/1",
-  "job_id": "queue-snapshot-20261116-004",
-  "action": "queue_snapshot",
+  "job_id": "queue-list-20261116-001",
+  "action": "queue_list",
   "article_ref": "rss-pautas"
 }
