@@ -5,15 +5,14 @@ GitHub Actions cron dispatch can be delayed. A slot never publishes early,
 never catches up into another slot and never retries an uncertain write.
 The only authorizer is an authenticated, current WordPress Gate owner-release.
 """
-import json
 import os
 from datetime import datetime, timedelta, timezone
-from urllib.parse import quote
 
 import requests
 
 from mkt_flow_p0.editorial_broker_transport import BrokerBlocked, _get_json
 from mkt_flow_p0.editorial_transport import SITE
+from mkt_flow_p0.release_guard import emit, preflight_approved, publication_verified
 from tools.publish_owner_approved import release
 from tools.publish_owner_approved_batch import gate_owner_version
 from tools.wp_identity_preflight import check_identity
@@ -100,11 +99,7 @@ def run_slot(cron, *, now=None, read_post=None, lookup=None, publisher=None,
         preflight = publisher(post_id, version, False)
     except (BrokerBlocked, KeyError, TypeError, ValueError):
         return _blocked("GATE_REVIEW_NOT_AUTHENTICATED", post_id=post_id)
-    if (not isinstance(preflight, dict)
-            or preflight.get("validated") is not True
-            or preflight.get("post_id") != post_id
-            or preflight.get("version_sha256") != version
-            or preflight.get("write") is not False):
+    if not preflight_approved(preflight, post_id, version):
         return _blocked("GATE_PREFLIGHT_FAILED", post_id=post_id)
     try:
         result = publisher(post_id, version, True)
@@ -112,10 +107,7 @@ def run_slot(cron, *, now=None, read_post=None, lookup=None, publisher=None,
         return {"status": "PUBLICATION_OUTCOME_UNKNOWN_INSPECT_NO_RETRY",
                 "post_id": post_id, "write": "UNKNOWN",
                 "retry_automatic": False}
-    if (not isinstance(result, dict) or "erro" in result
-            or result.get("verified") is not True
-            or result.get("post_id") != post_id
-            or result.get("seo_public_verified") is not True):
+    if not publication_verified(result, post_id):
         return {"status": "PUBLICATION_UNCERTAIN_RECONCILE_NO_RETRY",
                 "post_id": post_id, "write": "UNKNOWN",
                 "retry_automatic": False}
@@ -129,12 +121,7 @@ def main():
         result = run_slot(cron)
     except (BrokerBlocked, OSError, KeyError, TypeError, ValueError):
         result = _blocked("SLOT_BLOCKED_INSPECT_NO_RETRY")
-    safe = json.dumps(result, ensure_ascii=False, sort_keys=True)
-    print(safe)
-    if os.getenv("GITHUB_STEP_SUMMARY"):
-        with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
-            out.write("ConexoTech: janela 16h - 16h50 BRT / 12-11-2026\n\n"
-                      + safe + "\n")
+    safe = emit(result, "ConexoTech: janela 16h - 16h50 BRT / 12-11-2026")
     return 0 if result["status"] == "PUBLISHED_GATE_APPROVED_AND_PUBLIC_SEO_VERIFIED" else 1
 
 

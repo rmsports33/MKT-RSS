@@ -5,18 +5,16 @@ current draft version *before the first write*. No automatic retry if a write
 is uncertain, SEO readback fails or part of the batch has already published.
 """
 import argparse
-import json
 import os
-import re
 
 import requests
 
 from mkt_flow_p0.editorial_broker_transport import _get_json, BrokerBlocked
 from mkt_flow_p0.editorial_transport import SITE
+from mkt_flow_p0.release_guard import (
+    emit, is_current_version, preflight_approved, publication_verified)
 from tools.publish_owner_approved import release
 from tools.wp_identity_preflight import check_identity
-
-_VERSION = re.compile(r"[a-f0-9]{64}\Z")
 
 
 def gate_owner_version(post_id, *, session=requests):
@@ -34,7 +32,7 @@ def gate_owner_version(post_id, *, session=requests):
             or payload.get("wordpress", {}).get("post_id") != post_id
             or payload.get("owner_id") != 3
             or payload.get("review_mode") != "owner"
-            or not isinstance(version, str) or not _VERSION.fullmatch(version)):
+            or not is_current_version(version)):
         raise BrokerBlocked("OWNER_RELEASE_CURRENT_VERSION_NOT_APPROVED")
     return version
 
@@ -57,11 +55,7 @@ def publish_batch(post_ids, *, execute=False, lookup=None, publish=None,
     for post_id in post_ids:
         version = lookup(post_id)
         preflight = publish(post_id, version, False)
-        if (not isinstance(preflight, dict)
-                or preflight.get("validated") is not True
-                or preflight.get("post_id") != post_id
-                or preflight.get("version_sha256") != version
-                or preflight.get("write") is not False):
+        if not preflight_approved(preflight, post_id, version):
             raise BrokerBlocked("BATCH_PREFLIGHT_NOT_APPROVED")
         versions[post_id] = version
         checked.append(post_id)
@@ -76,10 +70,7 @@ def publish_batch(post_ids, *, execute=False, lookup=None, publish=None,
             return {"status": "PARTIAL_PUBLICATION_RECONCILE_MANUALLY",
                     "published_ids": published, "failed_post_id": post_id,
                     "write": True, "retry_automatic": False}
-        if (not isinstance(result, dict) or "erro" in result
-                or result.get("verified") is not True
-                or result.get("post_id") != post_id
-                or result.get("seo_public_verified") is not True):
+        if not publication_verified(result, post_id):
             return {"status": "PARTIAL_PUBLICATION_RECONCILE_MANUALLY",
                     "published_ids": published, "failed_post_id": post_id,
                     "write": True, "retry_automatic": False}
@@ -99,11 +90,7 @@ def main(argv=None):
         # Never echo draft content, secrets, WP responses or full exceptions.
         result = {"status": "BATCH_GATE_PREFLIGHT_BLOCKED_NO_WRITE",
                   "write": False, "retry_automatic": False}
-    safe_json = json.dumps(result, ensure_ascii=False, sort_keys=True)
-    print(safe_json)
-    if os.getenv("GITHUB_STEP_SUMMARY"):
-        with open(os.environ["GITHUB_STEP_SUMMARY"], "a", encoding="utf-8") as out:
-            out.write("MKT-RSS - owner-approved batch publication\n\n" + safe_json + "\n")
+    safe_json = emit(result, "MKT-RSS - owner-approved batch publication")
     return 0 if result["status"] in (
         "ALL_PUBLICATIONS_VERIFIED", "ALL_GATE_PREFLIGHTS_VALID") else 1
 
