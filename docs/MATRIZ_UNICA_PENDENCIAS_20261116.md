@@ -29,8 +29,8 @@ resolvidos, não repetir testes e não misturar frentes.
 | M06 | Marker PRONTO_PARA_REVISAO no produtor | MKT-RSS #111 | ✅ Resolvido — `stage_rss_draft` emite `pronto_para_revisao` do readback (commit `6faa96c`) | — | Nenhuma; 35 testes passando |
 | M07 | Reconciliar 149 rascunhos antigos | MKT-RSS #114 | 🔴 Bloqueado (dados não disponibilizados) | WordPress ao vivo | Auditoria readback antes de corrigir |
 | M08 | Revisor de Qualidade único | MKT-RSS #42 / OS #52 | ✅ Resolvido — `validar_saida` reaproveitado no sinal de prontidão (commit `b0b8256`), sem novo motor | — | Nenhuma; achados bloqueiam prontidão, não aprovam |
-| M09 | Erro JS `main.js` linha 230 | site #71 | 🟡 Correção preparada, não implantada | site #51 (anti-auto-deploy) | Aplicar delta com autorização manual |
-| M10 | Proteção anti-auto-deploy do tema | site #51 | 🔴 Bloqueado | Autorização | Confirmar antes de M09 |
+| M09 | Erro JS `main.js` linha 230 | site #71 | 🔴 Bloqueado — `main.js` versionado é artefato binário de 72 bytes em master e na branch do PR; JS real só no servidor | SSH (ler arquivo real) + backup | `find`/`grep` no servidor; aplicar delta ao arquivo corrente, nunca copiar do repo |
+| M10 | Proteção anti-auto-deploy do tema | site #51 | ✅ Resolvido — proteção já em master (`workflow_dispatch`, `default: false`, sem cron) | — | Nenhuma; ver `FASE1_DIAGNOSTICO_20261117.md` |
 | M11 | Rascunho Binance via Gate autenticado | MKT-RSS #121 | 🟠 Pacote pronto (mídia #9892, hashes), falta ação Gate | Autorização | Executar via rota do Gate, sem REST genérica |
 | M12 | Artigo #9894 — perfil revisor ID4 | Histórico | 🔴 Gravação do perfil pendente | Usuário | Concluir perfil, verificar fluxo, **não publicar** |
 | M13 | Nota editorial 1–10 | OS #49 | ✅ Resolvido — `nota_editorial` heurística anexada ao resultado do staging (commit `586cb9c`), `publicacao_autorizada: False` | — | Nenhuma; não confundir com qualidade factual |
