@@ -76,8 +76,25 @@ resolvido em master. Fase 1 concluída.
 
 ⚠️ **Não mesclar PR #71 nem PR #50**: o `main.js` do repo é artefato binário;
 aplicar esses PRs substituiria o JS real por 72 bytes corrompidos. A correção
-foi feita apenas no servidor, com backup —agem sobre a divergência repo↔servidor
-em momento oportuno, sem deploy automático.
+foi feita apenas no servidor, com backup.
+
+## ✅ Reconciliação repo ↔ servidor (17/11/2026)
+
+A divergência foi **eliminada na raiz**: o JS real do servidor foi trazido para o repo.
+
+- O operador gerou `base64 -w0` do `main.js` em produção (via SSH, leitura).
+- Decodificação local: **8.656 bytes**, UTF-8 válido, SHA-256
+  `9afeaaa28caff772bad71e44a19a52d83c5b3f366f2a38be18032f0be4e79cc2` —
+  **idêntico ao SHA-256 do arquivo no servidor**.
+- Validação: parênteses 192/192, chaves 65/65, colchetes 13/13; linha 230 = `  });`; 254 linhas.
+- O blob commitado foi conferido byte-a-byte (8656 bytes, mesmo SHA).
+- Branch `fix/reconcile-main-js-20261117` no repo privado, commit `09b3868`.
+- **PR #78** aberto para revisão (`fix(theme): reconcile main.js with live server`).
+- Os PRs #71 e #50 podem ser fechados como obsoletos quando o proprietário aprovar.
+
+**Resultado:** o repo passa a refletir exatamente o JS que roda em produção, com a
+correção da linha 230. Nenhum deploy automático (proteção da issue #51 já em master).
+Nenhuma credencial exposta. Nenhuma alteração em produção além da linha 230 (já validada).
 
 ## Próximo passo (depende de SSH — operador)
 
