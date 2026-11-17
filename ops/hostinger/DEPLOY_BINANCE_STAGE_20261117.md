@@ -1,6 +1,33 @@
 # Implantação segura da ação `binance_stage` — 17/11/2026
 
-Branch operacional: `feat/hostinger-runtime-independente-20261113` @ `1b4dd3c`
+Branch operacional: `feat/hostinger-runtime-independente-20261113` @ `7e0c0f0`
+Issue: MKT-RSS #121. Código implementado e **corrigido**, **não executado**.
+
+## ⚠️ ATUALIZAÇÃO CRÍTICA (17/11) — pré-condições reais descobertas no servidor
+
+A investigação no servidor revelou que o `binance_stage` **não pode executar ainda**:
+
+1. **Não existe pacote `editorial-workflow/2` no servidor.** O handoff
+   `binance-revisao-48f1ea5be313` contém apenas `conexo-editorial-handoff/1`
+   (`metadata` + `markdown`) — que **não é entrada do Gate**. O validator do core
+   exige `substantive_review`, `sources`, `claims`, `images`, `human`, etc., que só
+   o pipeline supervisionado (com IA) produz. O script foi corrigido para
+   **rejeitar o handoff e exigir o pacote real** (`PUBLISHABLE_PACKAGE_MISSING`),
+   sem sintetizar nada localmente.
+2. **O core editorial não está instalado.** `scripts/editorial_write.py`
+   (commit `b485d91`, SHA-256 `823d97d5...`) não existe em nenhum `$HOME`.
+3. **Credenciais** ficam em `~/.config/conexo-os/wp-editorial.token` — o script
+   foi ajustado para ler esse arquivo (não apenas env vars).
+
+### Consequência
+**NÃO publicar o `remote_request.json` agora.** O `job_id` está preservado.
+Ação correta: primeiro gerar o pacote `editorial-workflow/2` pelo pipeline,
+depois instalar o core, e só então publicar a requisição. Nada foi queimado.
+
+---
+
+## (Seção original — mantida para referência)
+
 Issue: MKT-RSS #121. Código implementado, **não executado**. Nenhuma credencial
 no repo; nenhuma publicação; nenhuma aprovação.
 
