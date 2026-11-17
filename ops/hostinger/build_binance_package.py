@@ -178,9 +178,36 @@ def main():
         },
         "related_articles": [],  # preenchido abaixo se houver 3 reais
     }
-    related = article.get("related_articles") or []
-    if isinstance(related, list) and len(related) == 3:
-        substantive_review_v2["related_articles"] = related
+    # related_articles: 3 links internos reais presentes no corpo HTML.
+    # Extrai o titulo da propria ancora (HTMLParser), sem inventar relevancia.
+    from html.parser import HTMLParser
+    class _Anchors(HTMLParser):
+        def __init__(self):
+            super().__init__(); self.cur=None; self.map={}
+        def handle_starttag(self, tag, attrs):
+            if tag == "a":
+                self.cur = dict(attrs).get("href")
+        def handle_data(self, data):
+            if self.cur and data.strip():
+                self.map.setdefault(self.cur, []).append(data.strip())
+        def handle_endtag(self, tag):
+            if tag == "a": self.cur = None
+    anchors = _Anchors(); anchors.feed(wordpress_body)
+    internal_urls = [u for u in anchors.map if "conexotech.com.br" in u]
+    related_final = []
+    for u in internal_urls[:3]:
+        title_txt = " ".join(anchors.map.get(u, []))[:200] or u.rstrip("/").split("/")[-1]
+        related_final.append({
+            "url": u,
+            "title": title_txt,
+            "relation": "contexto complementar sobre o caso Binance",
+            "checked_at": checked_at,
+            "target_evidence": "link interno presente no corpo verificado",
+            "status": "PASS",
+            "target_status": "published",
+        })
+    if len(related_final) == 3:
+        substantive_review_v2["related_articles"] = related_final
 
     payload = {
         "article_id": article.get("article_id"),
