@@ -22,9 +22,10 @@ ALLOWED = {
     "binance_image_review_package": ["--image-stage", "--import-binance-image"],
     "binance_substantive_review": ["--import-binance-reviewed"],
     "queue_snapshot": ["--snapshot"],
+    "queue_list": ["--list"],
     "queue_collect": ["--collect"],
 }
-QUEUE_ACTIONS = frozenset({"queue_snapshot", "queue_collect"})
+QUEUE_ACTIONS = frozenset({"queue_snapshot", "queue_list", "queue_collect"})
 REPOSITORY = "https://github.com/rmsports33/MKT-RSS.git"
 BRANCH = "feat/hostinger-runtime-independente-20261113"
 

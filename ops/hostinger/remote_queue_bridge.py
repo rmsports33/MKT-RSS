@@ -148,6 +148,45 @@ def snapshot():
             "publication_authorized": False}
 
 
+def list_titles():
+    """Read-only, bounded index of DESCOBERTA pautas for human triage.
+
+    Fixed SELECT with a constant state filter and LIMIT. No user input is ever
+    interpolated into SQL. Returns editorial metadata only (id/titulo/fonte/
+    estado/pontuacao/publicada_em) — no resumo, no URLs, no credentials, no
+    article text. Never writes WordPress/Turso and never authorizes publication.
+    """
+    from mkt_flow_p0 import cloud_db
+    from mkt_flow_p0.fila_pautas import STATES
+    if "DESCOBERTA" not in STATES:
+        raise RuntimeError("UNEXPECTED_QUEUE_SCHEMA")
+    result = cloud_db.turso_execute(
+        "SELECT id, titulo, fonte, estado, pontuacao, publicada_em "
+        "FROM rss_pautas WHERE estado = 'DESCOBERTA' "
+        "ORDER BY created_at DESC LIMIT 20")
+    if "erro" in result:
+        raise RuntimeError("TURSO_QUEUE_READ_FAILED")
+    rows = []
+    for row in result.get("rows", []):
+        if len(row) != 6:
+            raise RuntimeError("UNEXPECTED_QUEUE_SCHEMA")
+        pid, titulo, fonte, estado, pontuacao, publicada = row
+        if (not isinstance(pid, str) or not isinstance(titulo, str)
+                or not isinstance(fonte, str) or estado != "DESCOBERTA"):
+            raise RuntimeError("UNEXPECTED_QUEUE_SCHEMA")
+        rows.append({
+            "id": pid[:32],
+            "titulo": titulo[:300],
+            "fonte": fonte[:60],
+            "estado": estado,
+            "pontuacao": int(pontuacao) if str(pontuacao).lstrip("-").isdigit() else 0,
+            "publicada_em": publicada if isinstance(publicada, str) else None,
+        })
+    return {"status": "PASS", "mode": "READ_ONLY", "state": "DESCOBERTA",
+            "count": len(rows), "items": rows, "wordpress_written": False,
+            "publication_authorized": False}
+
+
 def collect():
     from rss_queue_collect import coletar
     # Existing single-writer lease, deduplication and Turso fail-closed rules
@@ -169,11 +208,17 @@ def main(argv=None):
     p = argparse.ArgumentParser(description="MKT-RSS/Turso queue bridge (safe allowlist)")
     exclusive = p.add_mutually_exclusive_group(required=True)
     exclusive.add_argument("--snapshot", action="store_true")
+    exclusive.add_argument("--list", action="store_true")
     exclusive.add_argument("--collect", action="store_true")
     args = p.parse_args(argv)
     try:
         _configure()
-        payload = snapshot() if args.snapshot else collect()
+        if args.snapshot:
+            payload = snapshot()
+        elif args.list:
+            payload = list_titles()
+        else:
+            payload = collect()
     except (OSError, ValueError, RuntimeError, KeyError, TypeError, OverflowError):
         return _fail("QUEUE_BRIDGE_PRECONDITION_OR_OPERATION_FAILED")
     print(json.dumps(payload, sort_keys=True))
