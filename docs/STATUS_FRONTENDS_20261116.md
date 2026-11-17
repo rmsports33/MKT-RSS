@@ -61,3 +61,23 @@ readback. Não restaurar integralmente (decisão explícita do proprietário).
 
 Nenhuma frente foi concluída ou alterada por este registro. Master permanece
 em `f021ea9d`; nenhum gate, publicação ou deploy foi modificado.
+
+## Correções factuais (inventário cruzado 16/11)
+
+Após cruzar as auditorias exportadas com o estado real do repositório:
+
+| Afirmação em conversa anterior | Realidade verificada |
+|---|---|
+| PR #46 "plano operacional aberto" | **MERGED** em master (título: checar broker/Turso/prontidão SEO) |
+| PR #58 "do MKT-RSS" | É do repo privado `-site-conexotech`, **draft**, base `fix/editorial-mcp-gate-c08e14d5` |
+| "842 testes aprovados" | Número histórico; o checkout atual tem **161 arquivos de teste** |
+| "Cron a cada 5 min" | Cron real: `* * * * *` (cada minuto); protegido por lock no controlador |
+| "Python 3.6.8 é o runtime" | Python real do runner: **3.11.18** em `~/mkt-rss-runner/.venv` |
+| WordPress MCP obrigatório | Não conectado nesta sessão; usar HTTP/SSH via operador |
+| Shopee sincronizador "na operacional" | Está em `master`/FEAT; branch operacional **não** o contém |
+
+## Triagem das 20 pautas — REGISTRADA
+
+Ver `docs/TRIAGEM_DESCOBERTA_20261116.md`: 20 títulos `DESCOBERTA` priorizados
+(4 alta, 8 média, 8 baixa/comercial) via ação `queue_list` (somente leitura).
+Nenhuma pauta foi movida de estado; decisão editorial permanece com o proprietário.
