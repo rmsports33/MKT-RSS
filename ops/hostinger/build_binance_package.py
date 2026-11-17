@@ -50,18 +50,87 @@ def main():
     if not isinstance(slug, str) or not slug:
         return _fail("SLUG_MISSING")
 
+    brief = article.get("editorial_brief") or {}
+    identity = article.get("editorial_identity") or {}
+    contrato = article.get("contrato_editorial") or {}
+
+    # Map ONLY real handoff fields into the workflow/2 payload. No invented
+    # verification, no synthetic evidence. Claims stay tied to their real
+    # PENDING status so the Gate keeps blocking until a human verifies.
+    def _publisher(url):
+        from urllib.parse import urlparse
+        host = (urlparse(url).hostname or "").lower()
+        for key, name in (("reuters.com", "Reuters"), ("apnews.com", "Associated Press"),
+                          ("tecnoblog.net", "Tecnoblog"), ("fidelity.com", "Fidelity")):
+            if key in host:
+                return name
+        return host or "fonte"
+
+    checked_at = "2026-11-14T18:15:00Z"  # real mtime of the immutable handoff files
+    sources = []
+    for s in (contrato.get("sources") or []):
+        if not isinstance(s, dict) or not s.get("url"):
+            continue
+        sources.append({
+            "id": s.get("id"),
+            "publisher": _publisher(s["url"]),
+            "checked_at": checked_at,
+            "kind": "secundaria",  # all four are third-party reports, not primary docs
+            "url": s["url"],
+        })
+
+    claims = []
+    for c in (article.get("claims") or []):
+        if not isinstance(c, dict):
+            continue
+        source_ids = [u for u in (c.get("source_urls") or [])
+                      if any(s["url"] == u for s in sources)]
+        # Map URLs to our source ids.
+        id_by_url = {s["url"]: s["id"] for s in sources}
+        mapped = [id_by_url[u] for u in source_ids if u in id_by_url]
+        claims.append({
+            "id": c.get("id"),
+            "statement": c.get("text"),
+            "source_ids": mapped,
+            "evidence": c.get("text"),  # real claim text, NOT a fabricated verification
+            "status": "UNKNOWN",        # honest: verification is PENDING in the handoff
+            "essential": True,
+        })
+
+    payload = {
+        "article_id": article.get("article_id"),
+        "title": article.get("title"),
+        "slug": slug,
+        "content": wordpress_body,
+        "genre": brief.get("genre", "noticia"),
+        "author": identity.get("human_editor") or identity.get("brand") or "Conexo Insight",
+        "durability": "news",  # contrato.content_type == 'noticia'
+        "audience": brief.get("reader"),
+        "question": brief.get("need"),
+        "contribution": brief.get("contribution"),
+        "brazil_context": brief.get("reader"),  # reader is the Brazilian audience framing
+        "disclosure": brief.get("limits"),
+        "directives": [
+            {"path": "AGENTS.md", "sha256": "e29bbd265439d12a7645db49e77c235520bd20aa1ba8fa71c7bad67f6162cca8"},
+            {"path": "docs/EDITORIAL_DNA_V1.md", "sha256": "cfb2408dc4ccc9d6d3a43209af84a96fbd91b834d03e66a2be92cb1765d7bad9"},
+            {"path": "docs/EDITORIAL_WORKFLOW.md", "sha256": "bf7382bd043a461305de73a9688416aa988d90f5a6a4080f101a8496088ad279"},
+        ],
+        "sources": sources,
+        "claims": claims,
+        "gaps": [],
+        "images": [],
+        "substantive_review": article.get("editorial_substance_review") or {},
+    }
+
     # Assemble the unreviewed workflow/2 package from real handoff data.
     package = {
         "schema_version": "editorial-workflow/2",
         "stage": "draft",
-        "payload": {
-            "title": article.get("title"),
-            "slug": slug,
-            "content": wordpress_body,
-            "sources": article.get("sources") or [],
-            "article_id": article.get("article_id"),
-            "genre": (article.get("editorial_brief") or {}).get("genre", "noticia"),
-        },
+        "payload": payload,
+        # A revisão separada e o aceite humano NÃO existem no handoff; ficam
+        # vazios de propósito. O Gate deve continuar bloqueando até que o
+        # revisor independente produza estes registros de forma autêntica.
+        "reviews": [],
     }
 
     # Bind advisory SEO from the already-generated manifest (no new judgment).
