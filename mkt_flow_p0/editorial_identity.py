@@ -11,6 +11,8 @@ import re
 from pathlib import Path
 from urllib.parse import urlsplit
 
+from mkt_flow_p0.origins import SITE_HOST
+
 DNA_REFERENCE = "https://github.com/rmsports33/conexo-os/blob/main/docs/EDITORIAL_DNA_V1.md"
 
 DNA_EDITORIAL_PROMPT = (
@@ -315,7 +317,7 @@ def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None,
         if not isinstance(item, dict) or set(item) != {"url", "title"}:
             raise ValueError("relacionado invalido")
         if (not _url_valida(item["url"]) or
-                urlsplit(item["url"]).hostname != "conexotech.com.br" or
+                urlsplit(item["url"]).hostname != SITE_HOST or
                 not isinstance(item["title"], str) or not item["title"].strip()):
             raise ValueError("link interno nao verificado")
     result["metadata"]["related_articles"] = copy.deepcopy(related)

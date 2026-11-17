@@ -8,6 +8,8 @@ import sqlite3
 from pathlib import Path
 from datetime import datetime
 
+from mkt_flow_p0.origins import SITE_HOST
+
 DB_PATH = Path(__file__).parent.parent / "mkt_flow_p0.db"
 
 # Templates por categoria — variáveis reais (preço, avaliação, disponibilidade)
@@ -190,7 +192,7 @@ class _ConteudoSEO(HTMLParser):
             except ValueError:
                 return
             if (not p.scheme and not p.netloc and href.startswith("/")) or (
-                p.scheme == "https" and p.hostname == "conexotech.com.br"
+                p.scheme == "https" and p.hostname == SITE_HOST
             ):
                 if p.path and p.path != "/":
                     self.links_internos.add(p.path.rstrip("/"))

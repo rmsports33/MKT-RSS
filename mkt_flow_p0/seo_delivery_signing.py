@@ -10,7 +10,9 @@ import json
 import re
 from urllib.parse import urlsplit
 
-SITE = "https://conexotech.com.br"
+from mkt_flow_p0.origins import SITE_HOST, SITE_ORIGIN
+
+SITE = SITE_ORIGIN
 
 def prepare_signed_seo_contract(package, verified_result, *, seo_key):
     """Constrói envelope privado após retorno do transport editorial autenticado.
@@ -53,7 +55,7 @@ def prepare_signed_seo_contract(package, verified_result, *, seo_key):
     if not isinstance(canonical, str) or seo.get("canonical") != canonical:
         raise ValueError("canonical SEO revisada diverge do WordPress")
     parsed = urlsplit(canonical) if isinstance(canonical, str) else None
-    if (not parsed or parsed.scheme != "https" or parsed.netloc != "conexotech.com.br"
+    if (not parsed or parsed.scheme != "https" or parsed.netloc != SITE_HOST
             or parsed.path != "/" + post["post_name"] + "/"
             or parsed.query or parsed.fragment):
         raise ValueError("canonical remota divergente")

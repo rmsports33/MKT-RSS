@@ -8,6 +8,8 @@ import re
 import unicodedata
 from urllib.parse import urlsplit, unquote
 
+from mkt_flow_p0.origins import SITE_ORIGIN
+
 import requests
 
 
@@ -30,7 +32,7 @@ def _post_persist_remediation(post_id):
         # The persisted draft survives a separate bridge error.
         return "bridge_failed_inspect"
 
-ALLOWED_SITES = frozenset(("https://conexotech.com.br", "https://staging.conexotech.com.br"))
+ALLOWED_SITES = frozenset((SITE_ORIGIN, "https://staging.conexotech.com.br"))
 
 
 def _slug(title, source_url):

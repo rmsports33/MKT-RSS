@@ -10,7 +10,9 @@ from http.client import HTTPException
 from urllib.error import HTTPError, URLError
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
-SITE = "https://conexotech.com.br"
+from mkt_flow_p0.origins import SITE_ORIGIN
+
+SITE = SITE_ORIGIN
 EXPECTED_ID = 4
 MAX_BODY = 65536
 

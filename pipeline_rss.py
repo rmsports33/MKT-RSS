@@ -14,6 +14,8 @@ import logging
 import os
 import sqlite3
 import sys
+
+from mkt_flow_p0.origins import SITE_ORIGIN
 import uuid
 from datetime import datetime
 from pathlib import Path
@@ -240,11 +242,11 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         # Falha de rede = nenhum link, nao URLs inventadas nem bloqueio da geracao.
         related_mode = os.getenv("CONEXO_RSS_RELATED_LINKS")
         if (related_mode == "1" or (related_mode is None and
-                os.getenv("WP_URL", "").rstrip("/") == "https://conexotech.com.br")):
+                os.getenv("WP_URL", "").rstrip("/") == SITE_ORIGIN)):
             from mkt_flow_p0.related_posts import buscar_relacionados_wordpress, anexar_relacionados
             if attempt == 0:
                 relacionados = buscar_relacionados_wordpress(
-                    rw["titulo_seo"], "https://conexotech.com.br", timeout=5)
+                    rw["titulo_seo"], SITE_ORIGIN, timeout=5)
             if relacionados:
                 texto_final = anexar_relacionados(texto_final, relacionados)
         if isinstance(rw.get("editorial_handoff"), dict):

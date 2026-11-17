@@ -9,7 +9,9 @@ from urllib.parse import urlsplit
 
 from mkt_flow_p0.editorial_identity import validar_handoff_chatgpt, verificar_aplicacao_voz
 
-SITE = "conexotech.com.br"
+from mkt_flow_p0.origins import SITE_HOST
+
+SITE = SITE_HOST
 LIMITES_POR_GENERO = {"noticia": 550, "guia": 700, "comparativo": 800,
                       "analise": 750, "review": 800, "nota_breve": 180}
 

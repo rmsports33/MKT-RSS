@@ -8,7 +8,9 @@ import json
 import os
 from urllib.request import Request, urlopen
 
-SITE = "https://conexotech.com.br"
+from mkt_flow_p0.origins import SITE_ORIGIN
+
+SITE = SITE_ORIGIN
 QUEUE = "/wp-json/conexo/v1/editorial/remediation/queue"
 EXCERPT = "/wp-json/conexo/v1/editorial/remediation/excerpt"
 

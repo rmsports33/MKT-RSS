@@ -11,7 +11,9 @@ import os
 import re
 from urllib.request import Request, urlopen
 
-SITE = "https://conexotech.com.br"
+from mkt_flow_p0.origins import SITE_ORIGIN
+
+SITE = SITE_ORIGIN
 STAGES = ("rss_collect", "source_verify", "topic_intent", "draft_dna",
           "fact_check", "style_review", "seo_prepare", "image_license",
           "links_verify", "html_check", "visual_preview")

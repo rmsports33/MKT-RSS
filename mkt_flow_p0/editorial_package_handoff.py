@@ -8,7 +8,9 @@ import hashlib
 import json
 import re
 
-SITE = "https://conexotech.com.br"
+from mkt_flow_p0.origins import SITE_ORIGIN
+
+SITE = SITE_ORIGIN
 
 def _digest(payload):
     return hashlib.sha256(json.dumps(payload, ensure_ascii=False, sort_keys=True,

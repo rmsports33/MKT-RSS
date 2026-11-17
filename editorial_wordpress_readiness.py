@@ -6,6 +6,8 @@ It deliberately makes no network calls or WordPress writes.
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
+from mkt_flow_p0.origins import SITE_HOST
+
 
 @dataclass(frozen=True)
 class Readiness:
@@ -14,7 +16,7 @@ class Readiness:
 
 
 def validate_wordpress_readiness(post: dict, *, expected_category_id: int = 10,
-                                 expected_site: str = "conexotech.com.br") -> Readiness:
+                                 expected_site: str = SITE_HOST) -> Readiness:
     errors = []
     if not isinstance(post, dict):
         return Readiness(False, ("post_missing",))
@@ -58,7 +60,7 @@ def require_wordpress_readiness(post: dict, **kwargs) -> None:
 
 
 def validate_complete_editorial_draft(post: dict, *, expected_category_id: int = 10,
-                                      expected_site: str = "conexotech.com.br") -> Readiness:
+                                      expected_site: str = SITE_HOST) -> Readiness:
     """Strict readback contract for marking a saved WordPress draft ready for owner review.
 
     Never generates approvals, makes network calls, or changes WordPress status.

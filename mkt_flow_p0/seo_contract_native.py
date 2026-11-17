@@ -2,7 +2,7 @@
 from urllib.parse import urlparse
 import re
 
-SITE_ORIGIN = "https://conexotech.com.br"
+from mkt_flow_p0.origins import SITE_HOST, SITE_ORIGIN
 
 def contrato_seo_nativo(article, *, site_origin=SITE_ORIGIN):
     """Produz dados neutros para um adaptador do tema, nunca libera publicacao."""
@@ -50,7 +50,7 @@ def contrato_seo_staging_wordpress(contrato):
         raise ValueError("Contrato consultivo nao pode estar aprovado")
     canonical = contrato.get("canonical")
     parsed = urlparse(canonical) if isinstance(canonical, str) else None
-    if (not parsed or parsed.scheme != "https" or parsed.netloc != "conexotech.com.br"
+    if (not parsed or parsed.scheme != "https" or parsed.netloc != SITE_HOST
             or not parsed.path.startswith("/") or not parsed.path.endswith("/")
             or parsed.query or parsed.fragment or parsed.username or parsed.password):
         raise ValueError("Canonical WP invalido")

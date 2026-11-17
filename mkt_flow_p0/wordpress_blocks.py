@@ -4,6 +4,8 @@ import json
 from html.parser import HTMLParser
 from urllib.parse import urlsplit
 
+from mkt_flow_p0.origins import SITE_HOST
+
 
 class _Fragments(HTMLParser):
     def __init__(self):
@@ -57,7 +59,7 @@ def prepare_draft_payload(handoff, body_html, media_receipt, *, expected_title, 
     media_id=media_receipt.get('id');url=media_receipt.get('source_url','')
     p=urlsplit(url)
     if (type(media_id) is not int or media_id<=0 or p.scheme!='https'
-            or p.hostname!='conexotech.com.br' or not media_receipt.get('alt_text')
+            or p.hostname!=SITE_HOST or not media_receipt.get('alt_text')
             or type(author_id) is not int or author_id<=0):raise ValueError('UNVERIFIED_WORDPRESS_MEDIA')
     if (resource.get('wordpress_media_id')!=media_id or resource.get('wordpress_source_url')!=url):raise ValueError('MEDIA_NOT_BOUND_TO_VERSION')
     if handoff['metadata']['title']!=expected_title:raise ValueError('DRAFT_TITLE_MISMATCH')

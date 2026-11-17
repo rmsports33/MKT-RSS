@@ -10,7 +10,9 @@ from urllib.parse import urlsplit
 
 import requests
 
-ALLOWED_SITES = frozenset({"https://conexotech.com.br"})
+from mkt_flow_p0.origins import SITE_HOST, SITE_ORIGIN
+
+ALLOWED_SITES = frozenset({SITE_ORIGIN})
 _STOP = {"de", "da", "do", "das", "dos", "e", "a", "o", "as", "os", "com",
          "para", "por", "como", "um", "uma", "em", "que", "qual", "se", "ou", "mais",
          "brasil", "2026", "2025", "2024", "novo", "novos", "guia", "analise",
@@ -25,7 +27,7 @@ def _tokens(s):
     return {t for t in re.findall(r"[a-z0-9]+", text) if len(t) > 2 and t not in _STOP}
 
 
-def selecionar_relacionados(titulo, posts, *, site="https://conexotech.com.br", limite=3):
+def selecionar_relacionados(titulo, posts, *, site=SITE_ORIGIN, limite=3):
     """Ranking auditavel de noticias publicadas, sem buscar links imaginarios."""
     if site not in ALLOWED_SITES or not 1 <= limite <= 3 or not isinstance(posts, list):
         return []
@@ -148,7 +150,7 @@ def anexar_relacionados(markdown, relacionados):
         if not isinstance(link, str) or not isinstance(name, str) or not name.strip():
             raise ValueError("relacionado incompleto")
         p = urlsplit(link)
-        if (p.scheme != "https" or p.hostname != "conexotech.com.br"
+        if (p.scheme != "https" or p.hostname != SITE_HOST
                 or p.username or p.password or p.port not in (None, 443)
                 or p.query or p.fragment or not p.path.strip("/")
                 or any(ch.isspace() or ord(ch) < 32 for ch in link)):

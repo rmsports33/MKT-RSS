@@ -13,7 +13,9 @@ import secrets
 from pathlib import Path
 import requests
 
-SITE = "https://conexotech.com.br"
+from mkt_flow_p0.origins import SITE_ORIGIN
+
+SITE = SITE_ORIGIN
 
 
 def _effective_seo_key():

@@ -11,6 +11,7 @@ from urllib.parse import urlsplit
 import requests
 
 from mkt_flow_p0.image_handler import processar_capa, MAX_BYTES
+from mkt_flow_p0.origins import SITE_HOST, SITE_ORIGIN
 from mkt_flow_p0.wp_publisher import _auth_header
 
 ORIGEM_LICENCA = "https://unsplash.com/license"
@@ -65,11 +66,11 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
         return {"status": "BLOQUEADO", "motivo": str(exc), "escreveu": False}
     if (type(post_id) is not int or post_id <= 0 or
             foto["approved_post_id"] != post_id or
-            not _https_host(wp_url.rstrip("/"), "conexotech.com.br", "") or
+            not _https_host(wp_url.rstrip("/"), SITE_HOST, "") or
             not wp_user or not wp_app_password):
         return {"status": "BLOQUEADO", "motivo": "destino ou credenciais inválidos",
                 "escreveu": False}
-    api = "https://conexotech.com.br/wp-json/wp/v2"
+    api = SITE_ORIGIN + "/wp-json/wp/v2"
     auth = {"Authorization": _auth_header(wp_user, wp_app_password)}
     try:
         before = request_client.get(api + "/posts/" + str(post_id),

@@ -16,7 +16,9 @@ import unicodedata
 import uuid
 import time
 
-SITE = 'https://conexotech.com.br'
+from mkt_flow_p0.origins import SITE_ORIGIN
+
+SITE = SITE_ORIGIN
 HOMOLOG = 'mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io'
 
 
