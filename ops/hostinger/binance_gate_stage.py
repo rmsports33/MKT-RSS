@@ -34,7 +34,8 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-EXPECTED_VERSION = "d2ccb99e2dbe0dbc999a4b8e1fdd49d089c9299c679f5cb6200edc5db6e00fd2"
+HANDOFF_VERSION = "d2ccb99e2dbe0dbc999a4b8e1fdd49d089c9299c679f5cb6200edc5db6e00fd2"
+PACKAGE_FILE = "editorial-workflow-package.json"
 EXPECTED_MEDIA_ID = 9892
 SITE = "https://conexotech.com.br"
 ARTICLE_REF = "binance-revisao-6e8da0b05713"
@@ -96,12 +97,14 @@ def _find_core(explicit=None):
 
 
 def _load_package(explicit=None):
-    """Load an already-built editorial-workflow/2 package for this version."""
+    """Load the built editorial-workflow/2 package and verify its provenance."""
+    pointer_path = HANDOFF_DIR / "editorial-workflow-pointer.json"
     candidates = []
     if explicit:
         candidates.append(Path(explicit))
-    for candidate in sorted(HANDOFF_DIR.glob(PACKAGE_GLOB)):
-        candidates.append(candidate)
+    direct = HANDOFF_DIR / PACKAGE_FILE
+    if direct.is_file():
+        candidates.append(direct)
     for path in candidates:
         if not path.is_file() or path.is_symlink():
             continue
@@ -109,14 +112,23 @@ def _load_package(explicit=None):
             pkg = json.loads(path.read_text(encoding="utf-8"))
         except (ValueError, OSError):
             continue
-        if not isinstance(pkg, dict):
+        if not isinstance(pkg, dict) or pkg.get("schema_version") != "editorial-workflow/2":
             continue
-        if pkg.get("schema_version") != "editorial-workflow/2":
+        version = pkg.get("version_sha256")
+        if not isinstance(version, str) or len(version) != 64:
             continue
-        if pkg.get("version_sha256") != EXPECTED_VERSION:
-            continue
-        return path, pkg
-    return None, None
+        # Provenance: if a pointer exists, the package version must match it,
+        # and the pointer must reference the immutable handoff version.
+        if pointer_path.is_file():
+            try:
+                ptr = json.loads(pointer_path.read_text(encoding="utf-8"))
+                if (ptr.get("package_version_sha256") != version
+                        or ptr.get("handoff_version_sha256") != HANDOFF_VERSION):
+                    continue
+            except (ValueError, OSError):
+                continue
+        return path, pkg, version
+    return None, None, None
 
 
 def main():
@@ -126,21 +138,20 @@ def main():
                     help="explicit path to the editorial-workflow/2 package")
     args = ap.parse_args()
 
-    # Idempotency: one attempt per version.
-    marker = HANDOFF_DIR / ("gate-stage-" + EXPECTED_VERSION[:16] + ".json")
-    if marker.exists():
-        return _fail("ALREADY_ATTEMPTED")
-
-    pkg_path, package = _load_package(args.package)
+    # Idempotency: one attempt per package version.
+    pkg_path, package, pkg_version = _load_package(args.package)
     if package is None:
         # The handoff is NOT a publishable package. Explain the real blocker.
         handoff_exists = (HANDOFF_DIR / "pipeline-report.json").is_file()
         return _fail(
             "PUBLISHABLE_PACKAGE_MISSING",
-            detail=("o handoff conexo-editorial-handoff/1 nao e entrada do Gate; "
-                    "e necessario o pacote editorial-workflow/2 gerado pelo pipeline "
-                    "supervisionado. NaO sintetizar o pacote localmente."),
+            detail=("execute build_binance_package.py para montar o pacote "
+                    "editorial-workflow/2 a partir do handoff real."),
             handoff_present=handoff_exists)
+
+    marker = HANDOFF_DIR / ("gate-stage-" + pkg_version[:16] + ".json")
+    if marker.exists():
+        return _fail("ALREADY_ATTEMPTED")
 
     core_root = _find_core(args.core_root)
     if core_root is None:
@@ -170,15 +181,15 @@ def main():
         )
     except Exception:
         marker.write_text(json.dumps({"status": "FAILED_UNKNOWN",
-                                      "version_sha256": EXPECTED_VERSION}) + "\n")
+                                      "version_sha256": pkg_version}) + "\n")
         return _fail("STAGE_OUTCOME_UNKNOWN_RECONCILE_NO_RETRY")
 
     marker.write_text(json.dumps({"status": result.get("erro", "ATTEMPTED"),
-                                   "version_sha256": EXPECTED_VERSION}) + "\n")
+                                   "version_sha256": pkg_version}) + "\n")
 
     ok = (isinstance(result, dict) and not result.get("erro")
           and result.get("status") in {"draft", "staged_for_theme_review"}
-          and result.get("version_sha256") == EXPECTED_VERSION)
+          and result.get("version_sha256") == pkg_version)
     return 0 if ok else 1
 
 
