@@ -68,6 +68,21 @@ def _readiness_from_readback(post, *, featured_media_id=None, image_caption=None
             "revisao_pos_ia": revisao_pos_ia}
 
 
+def _nota_editorial_heuristica(*, title, source_url):
+    """Nota temática 1–10 (Issue OS #49) como diagnóstico provisório.
+
+    Reutiliza prioridade_editorial.avaliar_pauta. A nota NÃO mede qualidade
+    factual e NÃO autoriza publicação — é apenas sinalização para a fila.
+    """
+    try:
+        from mkt_flow_p0.prioridade_editorial import avaliar_pauta
+        return avaliar_pauta({
+            "titulo": title, "fonte": source_url, "link": source_url,
+        })
+    except (ImportError, ValueError, TypeError, KeyError):
+        return {"origem": "INDISPONIVEL", "publicacao_autorizada": False}
+
+
 def _post_persist_remediation(post_id):
     """Optional Gate handoff after a verified new draft; never approves or publishes."""
     import os
@@ -165,6 +180,7 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
     endpoint = target + "/wp-json/wp/v2/posts"
     auth = (wp_user, wp_password)
     media_caption = ""  # declarations are validated separately; never assumed
+    nota_editorial = _nota_editorial_heuristica(title=title, source_url=source_url)
     try:
         if featured_media_id is not None:
             # Reuse only media that already exists inside the authenticated WP
@@ -220,7 +236,7 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
             return {"acao": "publicado_rascunho", "post_id": post_id,
                     "status": current["status"], "wp_link": current.get("link"),
                     "escreveu": False, "reutilizado": True, "revisao_factual": "PENDENTE",
-                    **prontidao}
+                    "nota_editorial": nota_editorial, **prontidao}
         payload = {"title": title.strip(), "content": content, "slug": slug,
                    "status": "draft", "comment_status": "closed"}
         if featured_media_id is not None:
@@ -258,7 +274,8 @@ def stage_rss_draft(*, title, content, source_url, wp_url, wp_user, wp_password,
         return {"acao": "publicado_rascunho", "post_id": post_id, "status": "draft",
                 "wp_link": readback.get("link"), "escreveu": True,
                 "revisao_factual": "PENDENTE", "retry_automatic": False,
-                "remediation": remediation, **prontidao}
+                "remediation": remediation, "nota_editorial": nota_editorial,
+                **prontidao}
     except (requests.RequestException, ValueError, KeyError, TypeError):
         return {"acao": "falha", "motivo": "transporte_indeterminado_inspecionar_slug",
                 "slug": slug, "escreveu": False, "retry_automatic": False}

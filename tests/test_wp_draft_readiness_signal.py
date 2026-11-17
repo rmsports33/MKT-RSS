@@ -58,6 +58,15 @@ def test_no_source_does_not_fabricate_review():
     assert out["revisao_pos_ia"] == {"avaliado": False, "achados": []}
 
 
+def test_editorial_note_is_heuristic_and_never_authorizes():
+    from mkt_flow_p0.wp_draft_staging import _nota_editorial_heuristica
+    nota = _nota_editorial_heuristica(
+        title="Notícia sobretechnology relevante", source_url="https://fonte.com.br/x")
+    assert nota.get("publicacao_autorizada") is False
+    assert nota.get("origem") in ("HEURISTICA_PROVISORIA", "INDISPONIVEL")
+    assert "audiencia_medida" not in nota or nota["audiencia_medida"] is False
+
+
 def test_missing_validator_fails_closed():
     import mkt_flow_p0.wp_draft_staging as w
     import builtins
