@@ -1,0 +1,75 @@
+# Matriz Única de Pendências — Conexo OS — 16/11/2026
+
+Consolidação de 4 auditorias cruzadas (6 repositórios GitHub) confrontadas com o
+estado real verificado. **Uma única fonte de verdade** para não reabrir problemas
+resolvidos, não repetir testes e não misturar frentes.
+
+## Convenção de status
+
+| Status | Significado |
+|--------|-------------|
+| ✅ **Resolvido e comprovado** | Código + integração + evidência |
+| 🟡 **Implementado, não integrado** | Código existe, falta ligar ao fluxo real |
+| 🟠 **Integrado, não homologado** | Roda em ambiente isolado, falta prova em produção |
+| 🔴 **Bloqueado** | Depende de autorização/ambiente externo |
+| ⚪ **Obsoleto/substituído** | Superado por componente atual |
+| 🔵 **Adiado por decisão** | Fora do plano atual |
+
+---
+
+## MATRIZ
+
+| ID | Item | Repo / Ref | Status real | Dependência | Próxima ação |
+|----|------|-----------|-------------|-------------|--------------|
+| M01 | Controlador + ponte Turso + Cron | MKT-RSS PR #123 | ✅ Resolvido | — | Nenhuma (preservar) |
+| M02 | Gate Unificado (D1..D16) | MKT-RSS FEAT `6f49043` | ✅ Resolvido | — | Nenhuma (integrado na operacional) |
+| M03 | Fila 20 pautas + `queue_list` + triagem | MKT-RSS `b079e5c` | ✅ Resolvido | — | Nenhuma (`TRIAGEM_DESCOBERTA`) |
+| M04 | PR #46 (SEO readiness) | MKT-RSS | ✅ Resolvido (MERGED) | — | Nenhuma |
+| M05 | PRs #105/#109/#115/#118 (catálogo/Turso) | MKT-RSS | ✅ Resolvido (MERGED) | — | Nenhuma |
+| M06 | Marker PRONTO_PARA_REVISAO no produtor | MKT-RSS #111 | 🟡 Código existe (`require_complete_editorial_draft`), falta ligar ao produtor | Decisão produto | Integrar ao fluxo de criação de rascunho |
+| M07 | Reconciliar 149 rascunhos antigos | MKT-RSS #114 | 🔴 Bloqueado (dados não disponibilizados) | WordPress ao vivo | Auditoria readback antes de corrigir |
+| M08 | Revisor de Qualidade único | MKT-RSS #42 / OS #52 | 🟡 20 arquivos citam, módulo canônico não confirmado | Verificar módulo | Confirmar existência; integrar ou planejar |
+| M09 | Erro JS `main.js` linha 230 | site #71 | 🟡 Correção preparada, não implantada | site #51 (anti-auto-deploy) | Aplicar delta com autorização manual |
+| M10 | Proteção anti-auto-deploy do tema | site #51 | 🔴 Bloqueado | Autorização | Confirmar antes de M09 |
+| M11 | Rascunho Binance via Gate autenticado | MKT-RSS #121 | 🟠 Pacote pronto (mídia #9892, hashes), falta ação Gate | Autorização | Executar via rota do Gate, sem REST genérica |
+| M12 | Artigo #9894 — perfil revisor ID4 | Histórico | 🔴 Gravação do perfil pendente | Usuário | Concluir perfil, verificar fluxo, **não publicar** |
+| M13 | Nota editorial 1–10 | OS #49 | 🟡 Doc + branch, sem ativação | Decisão | Integrar à fila (não confundir com qualidade) |
+| M14 | Preços desatualizados | site #26 | 🔴 Relatório 01/11 desatualizado | Auditoria nova | Refazer auditoria antes de corrigir |
+| M15 | Painel — dependências vulneráveis | conexotech-panel PR #1 | 🟡 PR aberto, versões não confirmadas hoje | Revisão | Validar versões atuais antes de integrar |
+| M16 | Bot Redator #3/#1, Runner #4/#3 | vários | 🔵 Adiado (runner é protótipo) | — | Manter em backlog; não virar executor |
+| M17 | PR multi-IA (Groq/Gemini/OpenRouter) | MKT-RSS #122 | 🟠 Draft, testes Linux pendentes | Ambiente Linux | Testes + homologação, sem fallback prematuro |
+| M18 | Shopee → Turso homolog | MKT-RSS master | 🟠 Código pronto, não executado | Token homolog | `--check → --apply → --verify` |
+| M19 | SEO nativo / Rank Math | site #58 (privado) | 🟠 Homologação parcial | Ambiente | Auditoria HTML, readback, rollback; Rank Math ativo |
+| M20 | Imagens #9705/#9708 | site | 🟠 Parcial | Revisão visual | Homologação ponta a ponta |
+| M21 | Backup recente | site | 🔴 Último 13/11 | Drive/servidor | Executar backup verificável |
+| M22 | SSH sem senha | Hostinger | 🔴 Não confirmado | hPanel | Cadastrar chave ED25519 |
+| M23 | Staging subdomínio | Hostinger | 🔵 Fora do plano | — | Não recriar/não usar |
+| M24 | Ollama, Actions como executor, ChatGPT Work, handoff automático | vários | 🔵 Adiado por decisão | — | Não implementar |
+| M25 | Branches remotas obsoletas (stub do Gate + 3 planos) | MKT-RSS | 🟡 Limpeza local feita, remoto pendente | Autorização | Excluir após autorização |
+| M26 | Recibo `queue-list-20261116-001` | Hostinger | 🔴 Não verificado | SSH leitura | Verificar recibo via operador |
+
+---
+
+## Contagem por status
+
+| Status | Qtd |
+|--------|-----|
+| ✅ Resolvido e comprovado | 5 |
+| 🟡 Implementado, não integrado | 5 |
+| 🟠 Integrado, não homologado | 5 |
+| 🔴 Bloqueado | 7 |
+| ⚪ Obsoleto | 0 |
+| 🔵 Adiado por decisão | 4 |
+
+## Sequência de execução (P0 primeiro, sem reconstruir)
+
+1. **M10 → M09** — confirmar anti-auto-deploy, depois aplicar delta JS
+2. **M06 → M08** — ligar prontidão ao produtor; confirmar Revisor de Qualidade
+3. **M26** — verificar recibo `queue-list` (leitura)
+4. **M11 → M12** — entregas editoriais bloqueadas (com autorização)
+5. **M18 → M17** — homologação Shopee + PR #122 (sem ativar escrita automática)
+6. **M19 → M20 → M21 → M22** — SEO, imagens, backup, SSH
+7. **M25** — limpeza remota (com autorização)
+
+**Regra:** nenhuma publicação automática, nenhum segundo Gate, nenhum novo executor,
+nenhum merge master↔operacional sem reconciliação. Preservar tudo que funciona.
