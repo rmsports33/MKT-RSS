@@ -21,8 +21,28 @@ A investigação no servidor revelou que o `binance_stage` **não pode executar 
 
 ### Consequência
 **NÃO publicar o `remote_request.json` agora.** O `job_id` está preservado.
-Ação correta: primeiro gerar o pacote `editorial-workflow/2` pelo pipeline,
-depois instalar o core, e só então publicar a requisição. Nada foi queimado.
+
+### ✅ Atualização 17/11 (continuação) — core instalado
+
+O core editorial foi instalado com sucesso em
+`~/.cache/conexo-os/editorial-core/` via SCP, com os 5 arquivos nas subpastas
+corretas (`scripts/`, `docs/`) e **todos os SHA-256 verificados** contra o lock:
+```
+823d97d5...  scripts/editorial_write.py
+bf6755e6...  scripts/validate_editorial_package.py
+e29bbd26...  AGENTS.md
+cfb2408d...  docs/EDITORIAL_DNA_V1.md
+bf7382bd...  docs/EDITORIAL_WORKFLOW.md
+```
+`load_core()` aceitará este checkout. O script `binance_gate_stage.py` já descobre
+este caminho automaticamente (`_find_core` procura `~/.cache/conexo-os/editorial-core`).
+
+**Bloqueio restante (o fundamental): o pacote `editorial-workflow/2`.**
+O handoff `conexo-editorial-handoff/1` (metadata+markdown) não é entrada do Gate;
+o validador exige `substantive_review`, `sources`, `claims`, `images`, `human`,
+`editorial_decision`, `process_steps`, `keyword_research` etc., produzidos pelo
+pipeline supervisionado. Ação correta: gerar o pacote pelo pipeline e só então
+publicar a requisição. Nada foi queimado.
 
 ---
 
