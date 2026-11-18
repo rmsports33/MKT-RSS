@@ -82,9 +82,10 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
             wp = p["wordpress"]
             if package.get("stage") != "ready":
                 problems.append("version_not_ready")
+            remote = _readiness_snapshot(post)
             expected_content = body
-            if (not isinstance(post, dict) or any(
-                    post.get(key) != expected for key, expected in {
+            if (not isinstance(remote, dict) or any(
+                    remote.get(key) != expected for key, expected in {
                         "id": wp["post_id"],
                         "title": p["title"],
                         "slug": p["slug"],
