@@ -41,6 +41,8 @@ def marcar(corpo, *, modules, voice_status, substance_status, image_rights_confi
     if not isinstance(corpo, str) or not corpo.strip():
         raise ValueError("corpo vazio para marcar")
     limpo = PADRAO.sub("", corpo)
+    if PREFIXO_MARCA in limpo:
+        raise ValueError("marca de proveniencia malformada no corpo")
     manifesto = {
         "content_sha256": hash_corpo(limpo),
         "version_sha256": str(version_sha256 or ""),
