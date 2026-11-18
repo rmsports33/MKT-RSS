@@ -96,3 +96,28 @@ def test_rest_content_requires_raw_not_only_rendered():
     result = authorize_publish(rest_post, REVIEW)
     assert result["autorizado"] is False
     assert "editorial_provenance_content_raw_unavailable" in result["bloqueios"]
+
+
+def test_rest_edit_objects_use_raw_not_rendered_for_readiness():
+    raw = corpo_com_proveniencia()
+    rest_post = {
+        **POST,
+        "title": {"raw": "Notícia verificada", "rendered": "Título renderizado divergente"},
+        "content": {"raw": raw, "rendered": "<p>HTML renderizado diferente</p>"},
+    }
+    result = authorize_publish(rest_post, REVIEW)
+    assert result["autorizado"] is False
+    assert not any(item.startswith("editorial_provenance_") for item in result["bloqueios"])
+    assert "content_missing" not in result["bloqueios"]
+    assert "title_missing" not in result["bloqueios"]
+
+
+def test_rest_rendered_only_title_is_not_accepted_as_version_source():
+    rest_post = {
+        **POST,
+        "title": {"rendered": "Título apenas renderizado"},
+        "content": {"raw": corpo_com_proveniencia(), "rendered": "<p>Body</p>"},
+    }
+    result = authorize_publish(rest_post, REVIEW)
+    assert result["autorizado"] is False
+    assert "title_missing" in result["bloqueios"]
