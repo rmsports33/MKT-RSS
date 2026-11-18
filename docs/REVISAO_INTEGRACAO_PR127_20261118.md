@@ -1,93 +1,92 @@
-# Revisão de integração — PR #127 (18/11/2026)
+# Revisão de integração e remediação — PR #127 (18/11/2026)
 
-## Decisão
+## Estado executivo
 
-**Compatibilidade de Git/base: aprovada. Integração funcional ponta a ponta: bloqueada. Não promover para ready nem mesclar nesta etapa.**
+**Compatibilidade Git com a base: aprovada. Remediações de software propostas e versionadas. Homologação completa ainda pendente. PR continua draft.**
 
-A revisão não encontrou conflito de ancestralidade nem sobreposição direta com as mudanças posteriores já incorporadas à base. Foram identificadas lacunas na aplicação efetiva da nova marca de proveniência pelo Gate e na semântica do estado de curadoria de vídeo. A validação WordPress de persistência do HTML também não foi demonstrada.
+O trabalho atual avançou os três pontos anteriores:
+1. MKT-RSS agora valida o marcador de proveniência com esquema tipado/estrito e o guard Python só considera `content.raw`.
+2. Vídeo importado agora fica explicitamente `INSERIDO_AGUARDANDO_REVISAO_HUMANA`, sem declarar curadoria apenas porque os metadados estão presentes.
+3. Há uma validação read-only de readback que compara o conteúdo bruto e renderizado do WordPress, além de um patch kit para centralizar a validação na RC10.4 do Gate real.
 
-## Identificação e estado
+Entretanto, os testes MKT-RSS dessas alterações recentes ainda não foram executados no OpenCode, o patch RC10.5 ainda não foi aplicado nem validado numa cópia integral do plugin ativo e não há ambiente WordPress de homologação disponível para verificar filtros/renderização com escrita/readback. Nenhuma alteração foi aplicada ao site ativo.
 
-- Repositório: `rmsports33/MKT-RSS`
-- PR: #127 — `fix/editorial-import-provenance-video-20261118`
-- Base verificada: `feat/hostinger-runtime-independente-20261113`, SHA `3901ca0802d500381d7b0372b4d75dc6fc2ec40e`
-- SHA de código/testes validado pelo OpenCode: `67116a57e4e00561574ea398e6ff7b3976281275`
-- HEAD documental antes desta revisão: `afee368ffa6ab31bc9e4222c4f37aefd619690bf`
-- Comparação GitHub base...HEAD: 14 commits à frente, 0 atrás; estado `ahead`.
-- O GitHub informou `mergeable=true` para o PR. Isso indica ausência de conflito automático detectado, não aprovação funcional.
-- Os commits adicionados durante esta revisão são documentais/limpeza; nenhum arquivo de runtime ou teste foi alterado após a execução de testes no SHA `67116a5`.
+## Gate WordPress real — descoberta que corrige o diagnóstico anterior
+
+A leitura somente pela Hostinger API identificou o plugin ativo no site:
+- `Conexo Editorial Gate (controlado)`, versão `0.1.0-rc10.4`.
+- Núcleo: `wp-content/plugins/conexo-editorial-gate/includes/conexo-editorial-gate-core.php`.
+- Fila/publicador: `includes/conexo-review-publisher.php`.
+- Aprovação/owner review: `includes/conexo-owner-review.php`.
+
+A RC10.4 já contém uma verificação parcial de `cxeg-package:v1` dentro de `cxgna_draft_readiness()`. Portanto, seria incorreto afirmar que o servidor não conhece o marcador. A lacuna real é que essa verificação de fila é incompleta e não está no validador central.
+
+A fila atual remove ocorrências com `preg_replace`, decodifica um marcador, verifica o hash e alguns estados. Não exige unicidade estrita, campos exatos, tipos, versões/hash de versão, nem enums completos. A string `"false"` pode passar pela checagem de `empty()`.
+
+Já `cxeg_quality_valid()` e `cxeg_quality_record()` não chamam o consumidor do marcador. Isso importa porque `cxeg_quality_valid()` é reutilizada por rotas de revisão, owner release e escrita/publicação. A proteção só na fila não garante todas as rotas.
+
+## Remediação MKT-RSS versionada no PR
+
+No branch `fix/editorial-import-provenance-video-20261118`:
+- `mkt_flow_p0/editorial_provenance.py`: agora separa `validar_integridade()` de `validar()`, exige chaves exatas, tipos estritos, SHA-256 válido, mapa exato dos cinco módulos, estados conhecidos, voz/substância enumeradas e booleano real para direitos.
+- `editorial_publish_gate.py`: valida proveniência do conteúdo bruto e usa `content.raw`, não `content.rendered`; normaliza os objetos REST de título/conteúdo/excerpt usando raw somente.
+- `editorial_wordpress_adapter.py`: acrescenta readback read-only para integridade raw e conservação de iframe/VideoObject entre raw e rendered; não faz HTTP por si.
+- `mkt_flow_p0/editorial_import.py`: deixa a curadoria de vídeo pendente até revisão humana explícita e exige booleano real em `media_rights_confirmed`.
+- Testes adicionados para esquema estrito, raw versus rendered, rights boolean e estado pendente de vídeo.
+
+**Esses testes ainda não foram executados após as alterações recentes.** O último conjunto de regressão reportado pelo OpenCode (288 passed, 0 failed, 10 subtests) corresponde ao SHA anterior `67116a57e4e00561574ea398e6ff7b3976281275`, não ao HEAD atual deste branch. Não atribuir esses resultados às novas mudanças.
+
+## RC10.5 patch kit no repositório do site
+
+Branch: `fix/gate-package-provenance-rc10-5-20261118` em `rmsports33/-site-conexotech`.
+
+Diretório: `ops/gate-provenance-rc10.5/`.
+
+Contém consumidor PHP estrito, 14 casos de contrato, aplicador de patch com âncoras exatas e guarda `--isolated-checkout`, além do README de execução e rollback. O aplicador pretende centralizar a validação no núcleo (`cxeg_quality_valid` e `cxeg_quality_record`) e reutilizá-la na fila (`cxgna_draft_readiness`). Não altera o checklist humano, o owner release, HMAC, SQL guard, publicador nem cron.
+
+Validação executada localmente com PHP CLI 8.4.24:
+- 14 casos contratuais do helper: PASS.
+- PHP lint do helper: PASS.
+- Fixture sintético com funções/âncoras: dry-run, aplicação, lint do core/publisher sintéticos e repetição dos 14 casos: PASS.
+
+**Limite importante:** isso não é a aplicação numa cópia integral da RC10.4, não é teste de todas as rotas WordPress e não é homologação da instalação ativa. A cópia integral do plugin deve ser obtida pelo OpenCode em diretório temporário e validada conforme o README, sem tocar em `public_html`.
+
+## Curadoria de vídeo
+
+O importador deixou de afirmar que a presença de ID/título/canal significa curadoria humana. O novo estado é `INSERIDO_AGUARDANDO_REVISAO_HUMANA`, com `human_curation_confirmed=false` e `human_review_required=true`. `human_acceptance` continua `PENDING` e `publication_authorized=false`.
+
+Não existe ainda um atestado humano/versionado de todos os critérios da política (canal, aparelho em uso, jabá/clickbait e permissão de incorporação). O código não presume que alguém assistiu ao vídeo.
+
+## Readback WordPress
+
+O WordPress connector em contexto edit retornou o campo `content` dos posts consultados como string única; não forneceu o par `content.raw` / `content.rendered` necessário para comprovar a sanitização do iframe e do JSON-LD. Um post publicado existente foi apenas lido e não contém a nova marca nem vídeo; não é fixture válido para esse ensaio.
+
+O staging do projeto foi removido. Nenhum rascunho de teste foi criado e nenhum POST/PUT foi feito no site ativo. O teste de persistência de iframe/VideoObject fica **inconclusivo / não homologado** até haver instância WordPress isolada com o mesmo papel e filtros.
 
 ## Compatibilidade com mudanças posteriores
 
-A branch-base atual é exatamente `3901ca0`. Os trabalhos já incorporados estão presentes nessa base:
+A base do PR continua `3901ca0`. Os PRs #125 (normalização de títulos REST) e #126 (adaptador Gemini) já estão na base; seus quatro blobs continuam idênticos aos heads validados. PR #128 é documental e não tem caminhos em comum. PR #124 permanece divergente e não foi usado. Nenhum conflito de ancestralidade foi encontrado.
 
-| Trabalho | Arquivos | Conferência |
-| --- | --- | --- |
-| PR #125 — normalização de títulos REST do Gate | `mkt_flow_p0/editorial_correction_queue.py`, `tests/test_editorial_correction_queue.py` | Os SHA dos blobs na base `3901ca0` são idênticos aos blobs do HEAD validado do PR #125. |
-| PR #126 — quebras de linha do Gemini | `mkt_flow_p0/ai_providers.py`, `tests/test_ai_providers.py` | Os SHA dos blobs na base `3901ca0` são idênticos aos blobs do HEAD validado do PR #126. |
-| PR #128 — política de consolidação contínua | `AGENTS.md`, `docs/CONSOLIDACAO_FACTUAL_20261118.md`, `docs/POLITICA_CONSOLIDACAO_CONTINUA.md` | PR paralelo, documental, sem arquivos em comum com o #127. |
+## Próximas verificações exigidas pelo OpenCode
 
-Nenhum desses seis caminhos de PRs #125/#126/#128 se sobrepõe aos arquivos de runtime ou testes do #127. O PR #124 continua divergente e em rascunho; não foi usado como fonte de código nem incorporado. O PR #122 está supersedido; a correção posterior do Gemini já está na base via #126.
+No checkout isolado da branch MKT-RSS:
+1. confirmar o HEAD atual;
+2. executar os dois testes de regressão de tabela, quatro módulos focados e bateria relevante que foram usados anteriormente;
+3. executar todos os novos testes de `test_editorial_provenance.py`, `test_editorial_import_video_provenance.py`, `test_editorial_publish_gate.py` e `test_editorial_wordpress_adapter.py`;
+4. comparar baseline apenas se falhas, sem enfraquecer testes;
+5. registrar SHA, Python, comandos e saída.
 
-## Revisão do diff do PR #127
+Para o Gate:
+1. copiar a RC10.4 por leitura/cópia para diretório fora do document root;
+2. rodar dry-run e patcher apenas na cópia;
+3. guardar hash/backup/diff, rodar 14 casos e `php -l`;
+4. validar a cópia integral com testes/mocks de qualidade, owner release e write preflight sem efetuar escrita;
+5. não carregar/deployar a cópia no site.
 
-- `mkt_flow_p0/editorial_core_offline.py`: introduz `montar_documento_preview(article, fragmento)` e mantém a assinatura pública de `gerar_html(article, markdown)`, que delega ao helper. Não foi encontrada quebra de chamada existente no diff.
-- `mkt_flow_p0/editorial_import.py`: amplia os campos admitidos para vídeo, valida a entrada antes de criar artefatos, mantém a importação sem escrita WordPress, faz a CLI começar offline e exige `--online` explícito para desenvolvimento com provedor. O corpo de vídeo é montado antes da prontidão e do preflight SEO; prévia e corpo recebem o mesmo fragmento. A assinatura de `processar_artigo_importado` foi preservada.
-- `mkt_flow_p0/editorial_video.py`: aceita os formatos documentados, rejeita origem ambígua e campos desconhecidos, escapa texto HTML e neutraliza caracteres que poderiam encerrar o bloco JSON-LD. O ID do iframe é restrito ao alfabeto/tamanho esperado.
-- `mkt_flow_p0/editorial_provenance.py`: adiciona marca com hash de conteúdo/versão e manifesto de módulos/estados. A integridade local é testada, mas a ligação dessa marca à autorização do Gate não está demonstrada (ver achado 1).
-- Testes: os dois testes de regressão de tabela agora aceitam atributos em `<table>` e mantêm as verificações de conteúdo. As novas suítes cobrem proveniência, formatos de vídeo, importação e sincronismo prévia/corpo.
-- Documentação: o relatório final registra os resultados de execução. O relatório histórico anterior estava com caracteres corrompidos e contradizia a validação final; foi reescrito como histórico substituído. O arquivo `.gitattributes` adicionado sem qualquer atributo efetivo foi removido.
+Para WordPress readback: obter ambiente isolado com mesmo PHP, filtros, papel/capacidades e REST edit context raw/rendered. Sem isso, não declarar homologação.
 
-## Achados
+## Decisão
 
-### 1. Bloqueador — consumo da marca pelo Gate não comprovado
+PR #127 continua aberto e draft. Não fazer merge nem deploy ainda. A remediação do código está versionada, mas precisa de teste no novo HEAD, validação em cópia integral do Gate e prova de readback WordPress isolado.
 
-O importador chama `editorial_provenance.marcar()` para inserir a marca; não chama `editorial_provenance.validar()`. No código MKT-RSS da base, o autorizador existente `editorial_publish_gate.authorize_publish()` exige recibo de proprietário e pacote editorial canônico, mas não integra o novo validador. O módulo `gate_unified.py` também não referencia a nova marca.
-
-A inspeção da árvore versionada de `rmsports33/-site-conexotech` encontrou o plugin de agenda/publicação imediata, que delega ao Gate por funções `cxeg_*`, mas não encontrou implementação versionada que consuma `cxeg-package:v1`. A busca pelo identificador da marca no repositório também não retornou implementação correspondente. Isso **não prova que o código não exista no servidor WordPress**; significa que a integração efetiva do lado do Gate não pode ser certificada a partir dos repositórios inspecionados.
-
-Além disso, `editorial_provenance.validar()` ainda não impõe integralmente um contrato estrito ao manifesto: rejeita `voice_status=NOT_APPLIED`, mas não limita o valor a estados conhecidos; usa avaliação por truthiness para `image_rights_confirmed`; não valida o tipo do mapa `modules` antes de chamar `.get()`; e não valida o formato de `version_sha256`. Como a marca é um JSON com hash, não uma assinatura, ela demonstra consistência do corpo, mas não autentica por si só quem executou módulos ou confirmou direitos.
-
-**Consequência:** não afirmar que o Gate já bloqueia rascunhos sem a marca, nem tratar a marca como aprovação ou prova criptográfica. Para encerrar este achado é necessário localizar/validar o consumidor real no Gate WordPress, exigir contrato estrito e cobrir o comportamento com testes do lado do consumidor. Se esse consumidor estiver fora do repositório, registrar a versão/commit exatos e a evidência de validação sem alterar produção.
-
-### 2. Importante — estado de curadoria de vídeo afirma mais do que a entrada prova
-
-Em `editorial_import.py`, a presença de campos válidos faz o relatório gravar `video_review.status=INSERIDO_COM_CURADORIA_HUMANA`. Não há no payload um atestado explícito, vinculado à versão, que comprove a verificação dos critérios da política de vídeo (canal, uso real do aparelho, ausência de jabá/clickbait e permissão de incorporação). Os pontos são opcionais e o código não comprova que o vídeo foi assistido.
-
-A inserção não libera publicação — `human_acceptance` continua `PENDING` e `publication_authorized=false` —, mas o estado do relatório pode induzir o operador a entender que a curadoria já ocorreu.
-
-**Ajuste recomendado:** renomear o estado para algo como `INSERIDO_AGUARDANDO_REVISAO_HUMANA`, ou exigir um atestado explícito/versionado antes de registrar curadoria confirmada. Atualizar o teste que hoje espera o estado afirmativo.
-
-### 3. Pendente de homologação — HTML persistido no WordPress
-
-A suíte local verifica o HTML gerado e a presença de iframe/JSON-LD na prévia e no corpo. Não existe nesta evidência um ciclo de escrita/readback WordPress para comprovar que o papel usado pelo importador preserva `<iframe>` e `<script type="application/ld+json">` após os filtros/capacidades do WordPress. O PR não executa escrita WordPress e isso foi correto; portanto a persistência desses elementos continua não homologada.
-
-**Ajuste recomendado:** antes de declarar integração WordPress concluída, validar o corpo em ambiente isolado/controlado com o mesmo papel/capacidades e fazer readback, sem publicar e sem escrever em produção durante esta revisão.
-
-## Testes e evidências
-
-Execução reportada pelo OpenCode em checkout isolado `/home/u401421381/mkt-rss-pr127-67116a5`:
-
-- SHA: `67116a57e4e00561574ea398e6ff7b3976281275`
-- Python: 3.11.18
-- Teste Android Drop: 1 passed.
-- Teste de fluxo editorial/importação: 1 passed.
-- Quatro módulos focados: 120 passed.
-- Bateria relevante: 288 passed, 0 failed, 10 subtests.
-
-Registro: https://github.com/rmsports33/MKT-RSS/pull/127#issuecomment-6986915272
-Relatório final: [VALIDACAO_FINAL_PR127_20261118.md](VALIDACAO_FINAL_PR127_20261118.md)
-
-Os resultados são evidência de testes no SHA `67116a5`. Os commits posteriores desta revisão são somente documentação/limpeza e não alteram código/testes.
-
-## Conclusão operacional
-
-- Compatibilidade de Git/base: **aprovada**.
-- Conflitos com PRs #125 e #126 já incorporados: **não encontrados**.
-- Sobreposição com PR #128: **não encontrada**.
-- Regressões locais reportadas: **288 passed, 0 failed**.
-- Integração real do novo manifesto com o Gate WordPress: **não comprovada**.
-- Curadoria humana de vídeo: **estado reportado sem atestado explícito**.
-- Persistência de iframe/JSON-LD no WordPress: **não homologada**.
-
-**Decisão: manter o PR #127 em draft e não mesclar por enquanto.** A ausência de conflito Git não elimina os três itens de integração acima. Nenhuma produção, WordPress, Turso, Gate, cron, deploy ou publicação foi alterada nesta revisão.
+Nenhuma mudança foi aplicada no site ativo, WordPress, Turso, cron ou produção.
