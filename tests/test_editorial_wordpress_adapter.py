@@ -144,3 +144,11 @@ def test_readback_requires_rendered_content_even_without_video():
     })
     assert result["valid"] is False
     assert "wordpress_rendered_content_unavailable" in result["blockers"]
+
+
+def test_inspection_blocks_flattened_connector_string():
+    result = inspect_wordpress_draft(
+        lambda _: {**DRAFT, "content": BODY}, 42, REVIEW)
+    assert result["authorized"] is False
+    assert "editorial_provenance_content_raw_unavailable" in result["blockers"]
+    assert "wordpress_content_raw_unavailable" in result["readback_blockers"]
