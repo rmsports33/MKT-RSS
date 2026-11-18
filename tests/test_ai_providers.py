@@ -206,8 +206,8 @@ def test_gemini_joins_content_parts_with_real_newlines(monkeypatch):
     ])
 
     assert captured["payload"]["systemInstruction"]["parts"][0]["text"] == (
-        "Rule one\\nRule two\\n\\nAdditional rule"
+        "Rule one\nRule two\n\nAdditional rule"
     )
     assert captured["payload"]["contents"] == [
-        {"role": "user", "parts": [{"text": "Source part\\nVerified fact"}]},
+        {"role": "user", "parts": [{"text": "Source part\nVerified fact"}]},
     ]
