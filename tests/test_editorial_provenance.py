@@ -244,3 +244,25 @@ def test_manifesto_com_tipo_estado_ou_campo_desconhecido_e_rejeitado(mutacao):
 def test_marcar_nao_coage_string_false_para_direitos_confirmados():
     with pytest.raises(ValueError, match="booleano"):
         marcar(image_rights_confirmed="false")
+
+
+
+def test_marcar_rejeita_marcas_completas_duplicadas():
+    corpo, _ = marcar()
+    marca = pv.PADRAO.search(corpo).group(0)
+    duplicado = corpo + "\n" + marca
+    with pytest.raises(ValueError, match="duplicada"):
+        marcar(corpo=duplicado)
+
+
+def test_marcar_rejeita_marca_existente_com_hash_invalido():
+    corpo, _ = marcar()
+    adulterado = corpo.replace("Conteúdo editorial verificável", "Conteúdo adulterado")
+    with pytest.raises(ValueError, match="existente invalida"):
+        marcar(corpo=adulterado)
+
+
+def test_marcar_rejeita_modulo_desconhecido_no_input():
+    modules = {**MODULOS, "unexpected_module": "EXECUTED"}
+    with pytest.raises(ValueError, match="modulos desconhecidos"):
+        marcar(modules=modules)
