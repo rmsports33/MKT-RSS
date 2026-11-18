@@ -28,13 +28,21 @@ def _readiness_from_readback(post, *, featured_media_id=None, image_caption=None
     title = post.get("title") if isinstance(post.get("title"), dict) else {}
     content = post.get("content") if isinstance(post.get("content"), dict) else {}
     excerpt = post.get("excerpt") if isinstance(post.get("excerpt"), dict) else {}
+    # Never substitute the expected media ID for the value actually read back
+    # from WordPress. Doing so could certify a draft whose featured image was
+    # not persisted. The caller's expected ID is only a comparison target.
+    readback_media_id = post.get("featured_media")
+    media_mismatch = (
+        featured_media_id is not None
+        and (type(readback_media_id) is not int or readback_media_id != featured_media_id)
+    )
     draft = {
         "id": post.get("id"), "status": post.get("status"),
         "title": title.get("raw", "") if isinstance(title, dict) else "",
         "content": content.get("raw", "") if isinstance(content, dict) else "",
         "excerpt": excerpt.get("raw", "") if isinstance(excerpt, dict) else "",
         "slug": post.get("slug"), "categories": post.get("categories"),
-        "featured_media": featured_media_id,
+        "featured_media": readback_media_id,
         "image_caption": image_caption or "",
         "link": post.get("link"),
     }
@@ -42,6 +50,9 @@ def _readiness_from_readback(post, *, featured_media_id=None, image_caption=None
         draft, expected_category_id=expected_category_id)
     ready = bool(getattr(readiness, "ok", False))
     errors = tuple(getattr(readiness, "errors", ()) or ())
+    if media_mismatch:
+        ready = False
+        errors = tuple(dict.fromkeys(list(errors) + ["featured_media_readback_mismatch"]))
 
     # Revisor de Qualidade existente (Issue MKT-RSS #42 / OS #52): reutiliza
     # validar_saida contra a fonte quando ela é fornecida. Nunca inventa fonte
