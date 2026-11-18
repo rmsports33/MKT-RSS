@@ -238,6 +238,7 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         tem_capa=bool(saved["metadata"].get("featured_image")
                       or saved["metadata"].get("image_resource")))
     result["wordpress_body_sha256"] = _manifesto["content_sha256"]
+    result["version_sha256"] = _manifesto["version_sha256"]
     result["provenance_manifest"] = _manifesto
     (root / "pipeline-report.json").write_text(json.dumps(result,ensure_ascii=False,indent=2), encoding="utf-8")
     # All generated artifacts are private even with a permissive process umask.
