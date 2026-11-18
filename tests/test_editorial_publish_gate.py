@@ -1,5 +1,6 @@
 from editorial_publish_gate import authorize_publish, require_publish_authorization
 import pytest
+from mkt_flow_p0.editorial_provenance import MODULOS_OBRIGATORIOS, marcar
 
 POST = {"id": 123, "status": "draft", "categories": [10],
         "slug": "noticia-verificada", "featured_media": 456,
@@ -7,6 +8,18 @@ POST = {"id": 123, "status": "draft", "categories": [10],
         "link": "https://conexotech.com.br/?p=123"}
 REVIEW = {"veredito": "APROVADO", "revisao_substantiva": True,
           "evidencias_verificadas": True, "aprovacao_atual": True}
+
+
+def corpo_com_proveniencia(**overrides):
+    values = dict(
+        modules={name: "EXECUTED" for name in MODULOS_OBRIGATORIOS},
+        voice_status="ASSISTED_ADAPTED",
+        substance_status="PASS",
+        image_rights_confirmed=True,
+        version_sha256="a" * 64,
+    )
+    values.update(overrides)
+    return marcar("<p>Texto confirmado</p>", **values)[0]
 
 
 def test_four_flags_do_not_replace_canonical_package():
@@ -42,7 +55,6 @@ def test_published_post_is_not_valid_transition_source():
     assert not authorize_publish({**POST, "status": "publish"}, REVIEW)["autorizado"]
 
 
-
 def test_missing_review_fails_closed():
     assert "factual_review_missing" in authorize_publish(POST, None)["bloqueios"]
 
@@ -55,3 +67,32 @@ def test_missing_core_blocks_publication():
     )
     assert result["autorizado"] is False
     assert "canonical_gate_unavailable_or_invalid" in result["bloqueios"]
+
+
+def test_missing_provenance_marker_blocks_even_before_owner_gate():
+    result = authorize_publish(POST, REVIEW)
+    assert result["autorizado"] is False
+    assert "editorial_provenance_marca_ausente" in result["bloqueios"]
+
+
+def test_invalid_provenance_marker_blocks_fail_closed():
+    bad = {**POST, "content": "<p>Alterado depois da marca</p>" + corpo_com_proveniencia()}
+    result = authorize_publish(bad, REVIEW)
+    assert result["autorizado"] is False
+    assert any(item.startswith("editorial_provenance_") for item in result["bloqueios"])
+
+
+def test_valid_provenance_does_not_replace_owner_release_or_canonical_package():
+    marked = {**POST, "content": corpo_com_proveniencia()}
+    result = authorize_publish(marked, REVIEW)
+    assert result["autorizado"] is False
+    assert not any(item.startswith("editorial_provenance_") for item in result["bloqueios"])
+    assert "gate_owner_release_missing" in result["bloqueios"]
+    assert "canonical_editorial_package_missing" in result["bloqueios"]
+
+
+def test_rest_content_requires_raw_not_only_rendered():
+    rest_post = {**POST, "content": {"rendered": corpo_com_proveniencia()}}
+    result = authorize_publish(rest_post, REVIEW)
+    assert result["autorizado"] is False
+    assert "editorial_provenance_content_raw_unavailable" in result["bloqueios"]
