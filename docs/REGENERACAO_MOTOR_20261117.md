@@ -31,7 +31,29 @@ real-9900.html: PASS | manifesto reconhecido pelo Gate
 
 Ou seja: o manifesto gerado pelo Python é aceito pela checagem em PHP do Gate.
 
-## Observação de implantação
+## Troca de pauta em 18/11
+
+A pedido do proprietário, o artigo do Senado foi **excluído**: post 9899 movido
+para a lixeira (`DELETE` autenticado, readback `status=trash`). O tema era de
+governo, fora do nicho de produtos do site.
+
+Nova pauta escolhida entre as já descobertas: **"Melhor TV 65 polegadas"**
+(`29edd1e84516adfe4b0b804862ed06da`), marcada como `SELECIONADA` na fila com
+auditoria (`DESCOBERTA → SELECIONADA`, evento `29edd1e8…`).
+
+O guia foi gerado pelo motor com o pacote canônico:
+
+| Post | Título | Versão | Marca |
+|---|---|---|---|
+| **9906** | Melhor TV 65 polegadas em 2026: 13 modelos e como escolher sem erro | `3a176643f31633c7…` | presente, hash local = hash no WP |
+
+Status do motor: `ENRIQUECIMENTO_PENDENTE` — voz `NOT_APPLIED`, avaliação
+substantiva `PENDING`, imagem/direitos pendentes. Nada virou PASS.
+
+O guia não repete preços: eles envelhecem e exigem data de captura. As
+especificações são atribuídas ao Tecnoblog e aos fabricantes; nenhum teste
+próprio foi inventado.
+
 
 O checkout do servidor (`~/mkt-rss-runner`) estava em branch antiga; para esta
 execução foram copiados `mkt_flow_p0/editorial_import.py` e
