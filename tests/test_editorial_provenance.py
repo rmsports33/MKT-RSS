@@ -102,8 +102,8 @@ def test_produtor_rejeita_fingerprint_bem_formado_mas_divergente():
 def test_consumidor_rejeita_fingerprint_bem_formado_mas_divergente():
     corpo, manifesto = marcar()
     manifesto["version_sha256"] = "a" * 64
-    corpo_sem_marca = pv.PADRAO.sub("", corpo).rstrip(" \\t\\r\\n")
-    divergente = corpo_sem_marca + "\\n" + pv.PREFIXO_MARCA + json.dumps(
+    corpo_sem_marca = pv.PADRAO.sub("", corpo).rstrip(" \t\r\n")
+    divergente = corpo_sem_marca + "\n" + pv.PREFIXO_MARCA + json.dumps(
         manifesto, ensure_ascii=False, separators=(",", ":")) + " -->"
     assert pv.validar_integridade(divergente) == {
         "valido": False, "motivo": "version_hash_mismatch"
