@@ -266,3 +266,10 @@ def test_marcar_rejeita_modulo_desconhecido_no_input():
     modules = {**MODULOS, "unexpected_module": "EXECUTED"}
     with pytest.raises(ValueError, match="modulos desconhecidos"):
         marcar(modules=modules)
+
+
+
+def test_marcar_rejeita_nome_de_modulo_nao_string():
+    modules = {**MODULOS, 99: "EXECUTED"}
+    with pytest.raises(ValueError, match="nomes de modulos"):
+        marcar(modules=modules)
