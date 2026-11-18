@@ -153,22 +153,48 @@ class _HTTPCompatibleClient:
         if response_format is not None and self.provider == "openrouter":
             payload["response_format"] = response_format
         if self.provider == "gemini":
-            text = "\n\n".join(
-                f"{m.get('role', 'user')}: {m.get('content', '')}" for m in messages
-            )
+            system_parts = []
+            contents = []
+            for message in messages:
+                role = str(message.get("role", "user")).strip().lower()
+                content = message.get("content", "")
+                if isinstance(content, list):
+                    content = "\\n".join(
+                        str(part.get("text", "")) if isinstance(part, dict) else str(part)
+                        for part in content
+                    )
+                else:
+                    content = str(content)
+                if role == "system":
+                    if content:
+                        system_parts.append(content)
+                    continue
+                gemini_role = "model" if role == "assistant" else "user"
+                contents.append({"role": gemini_role, "parts": [{"text": content}]})
+            if not contents:
+                raise ProviderConfigurationError("mensagens Gemini ausentes")
             payload = {
-                "contents": [{"role": "user", "parts": [{"text": text}]}],
+                "contents": contents,
                 "generationConfig": {
                     "temperature": temperature,
                     "maxOutputTokens": max_tokens,
                     "responseMimeType": "application/json",
                 },
             }
+            if system_parts:
+                payload["systemInstruction"] = {
+                    "parts": [{"text": "\\n\\n".join(system_parts)}]
+                }
             url = (
                 "https://generativelanguage.googleapis.com/v1beta/models/"
-                f"{model}:generateContent?key={self.key}"
+                f"{model}:generateContent"
             )
-            headers = {"Content-Type": "application/json"}
+            # Google supports the API key header; keep credentials out of URLs,
+            # query strings, redirects and routine HTTP diagnostics.
+            headers = {
+                "Content-Type": "application/json",
+                "x-goog-api-key": self.key,
+            }
         else:
             url = "https://openrouter.ai/api/v1/chat/completions"
             if self.provider == "groq":
