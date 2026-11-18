@@ -1,83 +1,75 @@
-# Proveniência no Gate WordPress e homologação de readback — 18/11/2026
+# Gate WordPress: integração da proveniência e readback — 18/11/2026
 
-## Estado desta entrega
+## Descoberta do Gate ativo
 
-O lado MKT-RSS recebeu uma camada fail-closed adicional:
-- \`mkt_flow_p0.editorial_provenance.validar_integridade()\` verifica unicidade, estrutura tipada e hash do corpo.
-- \`mkt_flow_p0.editorial_provenance.validar()\` também exige módulos executados, aplicação da voz, revisão substantiva PASS e direitos de imagem booleanos confirmados.
-- \`editorial_publish_gate.authorize_publish()\` passou a rejeitar ausência de \`content.raw\` e qualquer marca ausente, inválida ou com estado editorial pendente. A marca não substitui \`owner_release\`, pacote canônico ou revisão factual confiável.
-- \`editorial_wordpress_adapter.validate_wordpress_content_readback()\` é uma verificação local/read-only: confere integridade do corpo bruto e, quando há vídeo, compara iframe e VideoObject entre \`content.raw\` e \`content.rendered\`.
-- O importador agora informa \`INSERIDO_AGUARDANDO_REVISAO_HUMANA\`; metadados válidos do vídeo não são tratados como curadoria humana.
-- \`media_rights_confirmed\` exige booleano real. A string \`"false"\` não pode virar confirmação por coerção.
+A leitura somente pela Hostinger API identificou no site \`conexotech.com.br\`:
+- Plugin ativo: **Conexo Editorial Gate (controlado)**, versão **0.1.0-rc10.4**.
+- Núcleo: \`wp-content/plugins/conexo-editorial-gate/includes/conexo-editorial-gate-core.php\`.
+- Fila/publicador: \`includes/conexo-review-publisher.php\`.
+- Revisão do proprietário: \`includes/conexo-owner-review.php\`.
 
-**Isso ainda não prova que o Gate PHP instalado em conexotech.com.br consome a marca.** O código do plugin que implementa as funções centrais \`cxeg_*\` não foi localizado na árvore versionada de \`rmsports33/-site-conexotech\`. O plugin versionado de publicação imediata apenas delega a funções do Gate existente; não é seguro colocar a regra somente nessa interface. Não alterar esse wrapper nem criar um segundo Gate.
+Não houve escrita, upload, ativação/desativação, criação de rascunho, publicação ou agendamento no WordPress.
 
-## Contrato da marca
+O código ativo não está versionado na árvore observada de \`rmsports33/-site-conexotech\`. Por isso, a correção é preparada como patch kit revisável, não como um plugin paralelo nem como uma cópia incompleta do plugin instalado.
 
-O corpo contém exatamente um comentário:
-\`<!-- cxeg-package:v1:{JSON} -->\`
+## Estado parcial encontrado na RC10.4
 
-Campos JSON obrigatórios e exclusivos:
-- \`content_sha256\`: SHA-256 do corpo sem a marca.
-- \`version_sha256\`: SHA-256 hexadecimal da versão de handoff.
-- \`modules\`: mapa dos módulos obrigatórios para \`EXECUTED\` (estados conhecidos: \`EXECUTED\`, \`SKIPPED\`, \`FAILED\`).
-- \`voice_status\`: \`PROMPT_APPLIED\`, \`HUMAN_ADAPTED\`, \`ASSISTED_ADAPTED\` ou \`NOT_APPLIED\`.
-- \`substance_status\`: \`PASS\`, \`PENDING\` ou \`FAIL\`.
-- \`image_rights_confirmed\`: JSON booleano real.
+O método \`cxgna_draft_readiness()\` de \`conexo-review-publisher.php\` já inspeciona \`cxeg-package:v1\`, compara um hash e exige módulos, voz, substância e direitos. Porém:
+- remove todas as ocorrências com \`preg_replace\`, mas decodifica somente um marcador;
+- não rejeita duplicatas completas/incompletas de forma consistente;
+- não valida conjunto exato de campos, tipos estritos, versão SHA ou enumerações;
+- \`empty()\` aceita alguns valores inesperados, incluindo a string não vazia \`"false"\`, como se fossem direitos confirmados.
 
-Módulos exigidos: \`editorial_identity\`, \`editorial_core_offline\`, \`seo\`, \`editorial_readiness\`, \`editorial_substance\`.
+Mais importante, o núcleo \`cxeg_quality_valid()\` não consome a marca. O endpoint \`cxeg_quality_record()\` também não a verifica antes de armazenar um parecer. A função central é reutilizada por rotas de revisão, owner release e escrita/publicação; portanto, a checagem isolada da fila não cobre todas as transições.
 
-Canonicalização do hash em todas as linguagens: remover somente a marca identificada e aplicar trim apenas dos caracteres ASCII espaço, tab, CR e LF no final (\`rstrip(" \\t\\r\\n")\` em Python; \`rtrim($body, " \\t\\n\\r")\` em PHP); calcular SHA-256 UTF-8. Não normalizar HTML, Unicode, atributos, ordem de atributos nem espaços internos.
+## Correção preparada — RC10.5 patch kit
 
-A marca é um **recibo de integridade**, não uma assinatura. Ela não autentica identidade humana, execução real de módulo ou licença de mídia. O Gate deve exigir separadamente sua aprovação humana autenticada e seus demais contratos.
+Branch do repositório do site:
+\`fix/gate-package-provenance-rc10-5-20261118\`
 
-## Integração obrigatória no Gate PHP
+Diretório:
+\`ops/gate-provenance-rc10.5/\`
 
-Quando o código-fonte oficial do plugin Gate for localizado, integrar o validador no ponto central compartilhado por todas as rotas de aprovação/transição, antes de emitir owner release ou mudar estado. Não integrar só na tela administrativa nem só no plugin de agenda/publicação imediata.
+Arquivos:
+- \`conexo-editorial-provenance.php\`: consumidor PHP estrito do manifesto.
+- \`test_conexo_editorial_provenance.php\`: testes contratuais independentes.
+- \`apply_gate_patch.py\`: aplicador com âncoras exatas, dry-run obrigatório recomendado, backup e guarda explícita \`--isolated-checkout\`.
+- \`README.md\`: instruções de cópia isolada e critérios de aceite.
 
-Requisitos do consumidor PHP:
-1. Obter o post persistido do banco/ snapshot confiável do próprio Gate. Não usar \`content.rendered\`, POST do formulário, campo trazido pelo cliente ou hash colado.
-2. Rejeitar \`post_content\` ausente ou não textual.
-3. Contar ocorrências de \`cxeg-package\\s*:\` sem diferenciar caixa; exigir exatamente uma. Qualquer segunda ocorrência ou marca quebrada reprova.
-4. Exigir exatamente um comentário completo \`<!-- cxeg-package:v1:{...} -->\`; decodificar JSON com exceção em erro.
-5. Exigir o conjunto exato de seis campos, tipos estritos, SHA-256 hexadecimal e estados conhecidos.
-6. Remover somente a marca completa, calcular SHA-256 conforme a canonicalização acima e comparar com \`hash_equals\`.
-7. Exigir os cinco módulos em \`EXECUTED\`, voz diferente de \`NOT_APPLIED\`, substância \`PASS\` e \`image_rights_confirmed === true\`.
-8. Se qualquer verificação falhar, manter o Gate em bloqueio; não emitir \`owner_release\`, não aceitar e não publicar.
-9. Mesmo com a marca válida, continuar exigindo identidade autorizada do proprietário, checks completos, revisão factual e vínculo à versão exata. Não converter hash de conteúdo em aprovação.
+O patch propõe três mudanças exclusivamente na cópia de validação:
+1. incluir o helper no núcleo;
+2. exigir a marca no \`cxeg_quality_valid()\` e \`cxeg_quality_record()\`;
+3. substituir a lógica duplicada da fila pelo mesmo validador central.
 
-O código PHP exato não foi inserido neste repositório porque o plugin que define e assina o Gate não está versionado aqui. Implementar um consumidor em plugin auxiliar não garantiria cobertura de todas as rotas e criaria falsa segurança.
+Assim, a validação será repetida nas funções centrais que a revisão humana, owner release e fluxo de escrita já chamam. O aceite humano, o checklist, identidade do proprietário, HMAC, SQL guard, cron e publicador permanecem intactos.
 
-## Testes obrigatórios do consumidor PHP
+A marca continua sendo um **recibo de integridade**, não uma assinatura ou certificado de identidade humana. Direitos de imagem e revisão factual seguem dependentes das etapas humanas/independentes já existentes no Gate.
 
-Criar testes no repositório/plug-in oficial do Gate para:
-- corpo sem marca;
-- JSON inválido ou campos ausentes/extras;
-- SHA incorreto e alteração de um byte do corpo;
-- marcas duplicadas idênticas, conflitantes e malformadas;
-- módulo ausente ou diferente de \`EXECUTED\`;
-- voz \`NOT_APPLIED\`, substância \`PENDING/FAIL\`, direitos \`false\` ou string;
-- marca estruturalmente válida, seguida ainda dos checks e owner release normais;
-- conteúdo alterado entre leitura e emissão do owner release.
+## Validação já executada
 
-Os casos negativos devem provar que nenhuma rota de aceite consegue ignorar o validador. O teste positivo só prova que a marca passou; não deve publicar nem criar aceite real.
+Com PHP CLI 8.4.24:
+- **14 casos contratuais** passaram no helper isolado.
+- \`php -l\` passou para o helper.
+- O aplicador foi exercitado em fixture sintético com as âncoras necessárias: dry-run, aplicação, lint do núcleo/publisher sintéticos e repetição dos 14 casos passaram.
+
+Isso não é teste da cópia integral do plugin RC10.4 nem homologação na instalação ativa. A aplicação na cópia completa ainda deve ser feita pelo OpenCode, conforme o README do patch kit, e os resultados precisam ser registrados com SHA-256, PHP, saída de lint, testes e diff.
 
 ## Readback WordPress
 
-A implementação Python faz verificação read-only sobre um objeto REST já obtido. Para prova real do comportamento de WordPress são necessários:
-- \`content.raw\` obtido em contexto de edição pelo papel de serviço autorizado;
-- \`content.rendered\` retornado na mesma leitura;
-- mesma versão do Gate, WordPress, filtros e papel/capacidades usados operacionalmente;
-- um rascunho de teste descartável em ambiente isolado, nunca um post público.
+A camada MKT-RSS disponibiliza \`validate_wordpress_content_readback()\`, que verifica:
+- integridade do \`content.raw\`;
+- presença de um iframe \`youtube-nocookie\` e de \`VideoObject\` JSON-LD com o mesmo ID no raw;
+- preservação correspondente em \`content.rendered\`.
 
-Critérios: o hash do corpo raw deve corresponder; se o raw contém vídeo, o rendered deve conservar o iframe \`youtube-nocookie\` e o JSON-LD \`VideoObject\` com o mesmo ID. Remoção/sanitização de qualquer um deles reprova a homologação. Se raw ou rendered não puderem ser lidos, resultado é inconclusivo/bloqueado.
+O WordPress connector em contexto edit para os posts consultados retornou \`content\` como string, sem separar os campos raw/rendered. Portanto essa consulta não satisfaz o contrato de readback para testar a sanitização do iframe e JSON-LD.
 
-**Não executar POST/PUT em produção para esse teste.** O staging do projeto foi removido e nenhum ambiente WordPress isolado foi disponibilizado nesta tarefa. Não criar rascunho, usuário, token, cron ou staging sem autorização específica.
+O staging foi removido do projeto. Não foi criado rascunho de teste nem executado POST/PUT em produção. A persistência dos elementos de vídeo segue **não homologada**.
 
-## Próximos insumos necessários
+## Próximo passo operacional seguro
 
-1. Caminho e versão/commit do plugin PHP oficial que define \`cxeg_snapshot\`, \`cxeg_owner_approve\`, \`cxeg_owner_release_read\` e a transição central do Gate.
-2. Checkout/cópia isolada desse plugin para implementação/testes do consumidor PHP.
-3. Ambiente WordPress isolado com o mesmo papel/capacidades para o teste de gravação/readback.
+1. OpenCode deve copiar o plugin ativo para uma pasta temporária fora do document root, sem alterar o original.
+2. Executar o \`README.md\` do patch kit: hashes originais, teste do helper, \`--dry-run\`, patch na cópia, \`php -l\`, testes e diff.
+3. Se a cópia integral divergir das âncoras esperadas, parar e reconciliar a versão em vez de forçar o patch.
+4. Disponibilizar uma instância WordPress de homologação isolada com o mesmo PHP, filtros e papel/capacidades para um teste controlado de persistência/readback. Sem ela, não declarar o teste de sanitização concluído.
 
-Até esses insumos existirem, MKT-RSS bloqueia localmente conteúdo sem proveniência válida, mas a integração do Gate PHP e a persistência real do WordPress permanecem **não homologadas**.
+**Nenhuma mudança da RC10.5 foi aplicada ao site ativo.** Sem merge, deploy, publicação, cron ou escrita em produção nesta etapa.
