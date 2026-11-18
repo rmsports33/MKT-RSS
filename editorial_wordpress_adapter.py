@@ -94,6 +94,57 @@ def _video_markup_summary(content):
     }
 
 
+def _context_content(post, field):
+    """Read the content string supplied by one explicitly requested REST context."""
+    content = post.get("content") if isinstance(post, dict) else None
+    if isinstance(content, str):
+        return content
+    if isinstance(content, dict):
+        value = content.get(field)
+        return value if isinstance(value, str) else None
+    return None
+
+
+def assemble_wordpress_context_readback(edit_post, view_post):
+    """Pair separate context=edit (raw) and context=view (rendered) GET results.
+
+    The connector used by ConexoTech flattens each REST context to a string.
+    Pairing is safe only when both reads refer to the same post version and
+    status. A single flattened string is never promoted to raw+rendered.
+    """
+    if not isinstance(edit_post, dict) or not isinstance(view_post, dict):
+        return None, ["wordpress_context_response_invalid"]
+
+    edit_id = edit_post.get("id")
+    view_id = view_post.get("id")
+    if (type(edit_id) is not int or edit_id <= 0
+            or type(view_id) is not int or view_id != edit_id):
+        return None, ["wordpress_context_post_id_mismatch"]
+
+    edit_modified = edit_post.get("modified")
+    view_modified = view_post.get("modified")
+    if (not isinstance(edit_modified, str) or not edit_modified.strip()
+            or edit_modified != view_modified):
+        return None, ["wordpress_context_version_mismatch"]
+
+    edit_status = edit_post.get("status")
+    view_status = view_post.get("status")
+    if (not isinstance(edit_status, str) or not edit_status.strip()
+            or edit_status != view_status):
+        return None, ["wordpress_context_status_mismatch"]
+
+    raw = _context_content(edit_post, "raw")
+    rendered = _context_content(view_post, "rendered")
+    if not isinstance(raw, str) or not raw.strip():
+        return None, ["wordpress_content_raw_unavailable"]
+    if not isinstance(rendered, str) or not rendered.strip():
+        return None, ["wordpress_rendered_content_unavailable"]
+
+    combined = dict(edit_post)
+    combined["content"] = {"raw": raw, "rendered": rendered}
+    return combined, []
+
+
 def validate_wordpress_content_readback(post):
     """Verify stored raw-body integrity and that rendered HTML retained video markup.
 
@@ -144,13 +195,29 @@ def validate_wordpress_content_readback(post):
 
 
 def inspect_wordpress_draft(fetch_post, post_id, factual_review,
-                            *, expected_category_id=10):
+                            *, expected_category_id=10, fetch_post_view=None):
     if type(post_id) is not int or post_id <= 0:
         return {"authorized": False, "blockers": ["post_id_invalid"], "post": None}
     if not callable(fetch_post):
         return {"authorized": False, "blockers": ["fetch_post_missing"], "post": None}
     try:
         data = fetch_post(post_id)
+        if fetch_post_view is not None:
+            if not callable(fetch_post_view):
+                return {"authorized": False, "blockers": ["fetch_post_view_missing"], "post": None}
+            view_data = fetch_post_view(post_id)
+            data, context_blockers = assemble_wordpress_context_readback(data, view_data)
+            if context_blockers:
+                return {
+                    "authorized": False,
+                    "blockers": context_blockers,
+                    "readback_valid": False,
+                    "readback_blockers": context_blockers,
+                    "post": {"id": post_id, "status": (
+                        edit_status if isinstance(edit_status := getattr(data, "get", lambda *_: None)("status"), str)
+                        else None
+                    )},
+                }
     except Exception:
         return {"authorized": False, "blockers": ["wordpress_read_failed"], "post": None}
     if not isinstance(data, dict) or type(data.get("id")) is not int or data["id"] != post_id:
