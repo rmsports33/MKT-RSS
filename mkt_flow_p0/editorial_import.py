@@ -176,7 +176,17 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
     # Proveniencia: o corpo gerado pelo motor sai marcado. O Gate recusa
     # rascunhos sem esta marca, independentemente de quem escreveu o texto.
     from mkt_flow_p0.editorial_provenance import marcar
+    from mkt_flow_p0.editorial_video import bloco_video, extrair_video, videoobject_jsonld
     _corpo = Path(rendered["wordpress_body"]).read_text(encoding="utf-8")
+    _video = extrair_video(payload)
+    if _video is not None:
+        _corpo = _corpo.rstrip() + "\n\n" + bloco_video(_video) + "\n" \
+            + videoobject_jsonld(_video) + "\n"
+        result["video_review"] = {"status": "INSERIDO_COM_CURADORIA_HUMANA",
+                                  "youtube_id": _video["youtube_id"],
+                                  "canal": _video["canal"]}
+    else:
+        result["video_review"] = {"status": "SEM_VIDEO_VALIDO", "inserido": False}
     _modulos = {m["id"]: m["execution"] for m in result["module_manifest"]}
     _corpo_marcado, _manifesto = marcar(
         _corpo,
