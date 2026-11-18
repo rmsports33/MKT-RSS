@@ -153,5 +153,27 @@ class QueueBridgeTests(unittest.TestCase):
             self.assertEqual(json.loads(path.read_text())["status"], "STARTED")
 
 
+    def test_read_only_list_is_bounded_and_uses_fixed_discovery_query(self):
+        from mkt_flow_p0 import cloud_db
+        rows = [["pauta-12345678901234567890123456789012", "Pauta de teste",
+                 "Tecnoblog", "DESCOBERTA", 72, "2026-11-17T10:00:00Z"]]
+        with patch.object(cloud_db, "turso_execute", return_value={"rows": rows}) as query:
+            result = bridge.list_titles()
+        sql = query.call_args.args[0]
+        self.assertIn("WHERE estado = 'DESCOBERTA'", sql)
+        self.assertIn("LIMIT 20", sql)
+        self.assertTrue(sql.lstrip().upper().startswith("SELECT"))
+        self.assertEqual(result["count"], 1)
+        self.assertEqual(result["items"][0]["titulo"], "Pauta de teste")
+        self.assertNotIn("resumo", result["items"][0])
+        self.assertNotIn("url", result["items"][0])
+        self.assertFalse(result["wordpress_written"])
+        self.assertFalse(result["publication_authorized"])
+
+        with patch.object(cloud_db, "turso_execute", return_value={"erro": "offline"}):
+            with self.assertRaises(RuntimeError):
+                bridge.list_titles()
+
+
 if __name__ == "__main__":
     unittest.main()
