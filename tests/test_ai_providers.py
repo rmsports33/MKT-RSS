@@ -135,3 +135,44 @@ def test_legacy_rewriter_error_contract_remains_fail_closed(
         assert result["error_code"] == expected
     else:
         assert expected in result["erro"]
+
+
+def test_gemini_preserves_system_and_assistant_roles_and_hides_api_key(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "secret-test-key")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-2.0-flash")
+    monkeypatch.setenv("AI_FREE_ONLY_ALLOWLIST", "gemini:gemini-2.0-flash")
+
+    captured = {}
+    body = json.dumps({
+        "candidates": [{
+            "content": {"parts": [{"text": '{"ok": true}'}]},
+            "finishReason": "STOP",
+        }]
+    }).encode()
+
+    def fake_urlopen(request, timeout):
+        captured["url"] = request.full_url
+        captured["headers"] = dict(request.header_items())
+        captured["payload"] = json.loads(request.data.decode("utf-8"))
+        captured["timeout"] = timeout
+        return _HTTPResponse(body)
+
+    monkeypatch.setattr(ai_providers.urllib.request, "urlopen", fake_urlopen)
+    client, model = ai_providers.get_client()
+    client.chat.completions.create(model=model, messages=[
+        {"role": "system", "content": "Preserve editorial rules."},
+        {"role": "user", "content": "Source facts."},
+        {"role": "assistant", "content": "Prior analysis."},
+        {"role": "user", "content": "Write the article."},
+    ])
+
+    assert "secret-test-key" not in captured["url"]
+    assert "key=" not in captured["url"]
+    assert captured["headers"].get("X-goog-api-key") == "secret-test-key"
+    assert captured["payload"]["systemInstruction"]["parts"][0]["text"] == "Preserve editorial rules."
+    assert captured["payload"]["contents"] == [
+        {"role": "user", "parts": [{"text": "Source facts."}]},
+        {"role": "model", "parts": [{"text": "Prior analysis."}]},
+        {"role": "user", "parts": [{"text": "Write the article."}]},
+    ]
