@@ -115,3 +115,14 @@ As leituras GET edit/view de #9894, #9900, #9906 e #9253 correlacionaram ID/stat
 - Sem autorização nesta revisão: merge, deploy, upload, escrita WordPress/Turso, aprovação, publicação, cron ou alteração da instalação ativa.
 
 O PR #127 permanece draft até a pendência de readback ser resolvida e a revisão final aceitar o escopo integrado com o Gate #79.
+
+## Retificação de estado — ensaio controlado de vídeo (18/11/2026)
+
+Esta seção prevalece sobre os trechos históricos acima que ainda classificam a persistência de vídeo como pendente ou não homologada.
+
+- O ensaio autorizado no rascunho temporário #9907 passou para persistência/conservação funcional: GET em context=edit e context=view conservaram iframe YouTube nocookie, JSON-LD VideoObject, marcador RC10.5 e o mesmo ID/status/modified. O SHA-256 do corpo raw correspondeu ao content_sha256 do manifesto.
+- O post #9907 foi movido para a lixeira (status=trash). A purga definitiva ainda depende do wp-admin; não houve alteração em outros posts.
+- Portanto, a persistência funcional de vídeo NÃO é mais bloqueio. A única pendência WordPress é estrutural: obter, por GET REST nativo via OpenCode, os objetos content.raw e content.rendered e executar offline o adaptador com esse envelope real. O MCP achata content em string e não fecha essa última prova.
+- A evidência detalhada está em docs/WORDPRESS_GATE_PROVENANCE_READBACK_20261118.md e no comentário https://github.com/rmsports33/MKT-RSS/pull/127#issuecomment-6993604869.
+
+**Estado operacional permanece inalterado:** PR #127 draft; nenhum merge, deploy, cron, aprovação, publicação ou alteração adicional no WordPress. Não iniciar integração do Gate até concluir o GET nativo e a revisão final dos HEADs/diffs.
