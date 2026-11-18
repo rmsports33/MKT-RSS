@@ -90,3 +90,28 @@ Para WordPress readback: obter ambiente isolado com mesmo PHP, filtros, papel/ca
 PR #127 continua aberto e draft. Não fazer merge nem deploy ainda. A remediação do código está versionada, mas precisa de teste no novo HEAD, validação em cópia integral do Gate e prova de readback WordPress isolado.
 
 Nenhuma mudança foi aplicada no site ativo, WordPress, Turso, cron ou produção.
+
+
+## Atualização de revisão conjunta — 18/11/2026
+
+### Validação técnica no HEAD atual
+
+HEAD final MKT-RSS: 5406b076b823243490ea1fa937b758ba5f1577ae.
+- tests/test_editorial_provenance.py: 43 passed.
+- testes publish-gate/adapter/snapshot: 40 passed.
+- tests/test_editorial_import_video_provenance.py: 10 passed.
+- Exportador corrigido no commit 5406b07; fixture do produtor gerada (600 bytes), fingerprint 80d09ee7… e content hash 2d2c56ef…
+- Evidência: https://github.com/rmsports33/MKT-RSS/pull/127#issuecomment-6992953782.
+
+### Readback real reavaliado
+
+As leituras GET edit/view de #9894, #9900, #9906 e #9253 correlacionaram ID/status/modified. Nenhum comprova o contrato requerido: #9894 não tem vídeo/marca; #9900 e #9906 não têm vídeo e usam fingerprint anterior; #9253 conserva componente cxaf-video com script lazy-load, mas não tem iframe persistido nem JSON-LD VideoObject. Além disso, o conector achata content em string e não fornece content.raw/content.rendered como objetos. A homologação de sanitização/persistência de vídeo continua pendente. Detalhes em docs/WORDPRESS_GATE_PROVENANCE_READBACK_20261118.md.
+
+### Parecer conjunto
+
+- Aprovado em cópia isolada: contrato Python, fingerprint compartilhado e exportador de fixture.
+- Aprovado nos testes focados reportados: 93 testes (43 + 40 + 10).
+- Pendente: readback real de iframe + VideoObject via REST nativo ou WordPress isolado.
+- Sem autorização nesta revisão: merge, deploy, upload, escrita WordPress/Turso, aprovação, publicação, cron ou alteração da instalação ativa.
+
+O PR #127 permanece draft até a pendência de readback ser resolvida e a revisão final aceitar o escopo integrado com o Gate #79.
