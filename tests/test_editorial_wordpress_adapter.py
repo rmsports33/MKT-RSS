@@ -3,6 +3,7 @@ from editorial_wordpress_adapter import (
     inspect_wordpress_draft,
     validate_wordpress_content_readback,
 )
+from mkt_flow_p0 import editorial_provenance as pv
 from mkt_flow_p0.editorial_provenance import MODULOS_OBRIGATORIOS, marcar
 from mkt_flow_p0.editorial_video import bloco_video, videoobject_jsonld
 
@@ -17,7 +18,7 @@ def marked_body(content):
         voice_status="ASSISTED_ADAPTED",
         substance_status="PASS",
         image_rights_confirmed=True,
-        version_sha256="b" * 64,
+        version_sha256=pv.version_sha256_esperado(),
     )[0]
 
 
