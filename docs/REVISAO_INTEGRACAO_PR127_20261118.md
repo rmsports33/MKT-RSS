@@ -30,9 +30,9 @@ Já `cxeg_quality_valid()` e `cxeg_quality_record()` não chamam o consumidor do
 No branch `fix/editorial-import-provenance-video-20261118`:
 - `mkt_flow_p0/editorial_provenance.py`: agora separa `validar_integridade()` de `validar()`, exige chaves exatas, tipos estritos, SHA-256 válido, mapa exato dos cinco módulos, estados conhecidos, voz/substância enumeradas e booleano real para direitos. O produtor também rejeita marca pré-existente duplicada ou inválida e nomes de módulos desconhecidos, mantendo idempotência somente para uma marca íntegra.
 - `editorial_publish_gate.py`: valida proveniência do conteúdo bruto e usa `content.raw`, não `content.rendered`; normaliza os objetos REST de título/conteúdo/excerpt usando raw somente.
-- `editorial_wordpress_adapter.py`: acrescenta readback read-only para integridade raw e conservação de iframe/VideoObject entre raw e rendered; não faz HTTP por si.
+- `editorial_wordpress_adapter.py`: acrescenta readback read-only que exige explicitamente `content.raw` e `content.rendered`; string plana do conector é inconclusiva/bloqueada. Verifica integridade raw e conservação de iframe/VideoObject entre raw e rendered; não faz HTTP por si.
 - `mkt_flow_p0/editorial_import.py`: deixa a curadoria de vídeo pendente até revisão humana explícita e exige booleano real em `media_rights_confirmed`.
-- Testes adicionados para esquema estrito, raw versus rendered, rights boolean, estado pendente de vídeo e rejeição de marca duplicada/inválida na origem. Os testes novos aguardam execução no HEAD atual.
+- Testes adicionados para esquema estrito, raw versus rendered, strings planas do conector, rights boolean, estado pendente de vídeo e rejeição de marca duplicada/inválida na origem. Os testes novos aguardam execução no HEAD atual.
 
 **Esses testes ainda não foram executados após as alterações recentes.** O último conjunto de regressão reportado pelo OpenCode (288 passed, 0 failed, 10 subtests) corresponde ao SHA anterior `67116a57e4e00561574ea398e6ff7b3976281275`, não ao HEAD atual deste branch. Não atribuir esses resultados às novas mudanças.
 
