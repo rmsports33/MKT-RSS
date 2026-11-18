@@ -1,4 +1,5 @@
 from editorial_wordpress_adapter import (
+    assemble_wordpress_context_readback,
     inspect_wordpress_draft,
     validate_wordpress_content_readback,
 )
@@ -77,6 +78,58 @@ def test_malformed_status_blocks():
     result = inspect_wordpress_draft(lambda _: {**DRAFT, "status": "publish"}, 42, REVIEW)
     assert not result["authorized"]
     assert "unexpected_status" in result["blockers"]
+
+
+def test_separate_edit_and_view_contexts_are_combined_for_same_post_version():
+    modified = "2026-11-18T09:00:00"
+    edit_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
+    view_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
+
+    combined, blockers = assemble_wordpress_context_readback(edit_post, view_post)
+
+    assert blockers == []
+    assert combined["id"] == 42
+    assert combined["content"] == {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}
+    assert validate_wordpress_content_readback(combined)["valid"] is True
+
+
+def test_separate_context_readback_rejects_different_post_ids():
+    modified = "2026-11-18T09:00:00"
+    edit_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
+    view_post = {**VIDEO_DRAFT, "id": 43, "modified": modified, "content": VIDEO_BODY}
+
+    combined, blockers = assemble_wordpress_context_readback(edit_post, view_post)
+
+    assert combined is None
+    assert blockers == ["wordpress_context_post_id_mismatch"]
+
+
+def test_separate_context_readback_rejects_different_modified_versions():
+    edit_post = {**VIDEO_DRAFT, "modified": "2026-11-18T09:00:00", "content": VIDEO_BODY}
+    view_post = {**VIDEO_DRAFT, "modified": "2026-11-18T09:01:00", "content": VIDEO_BODY}
+
+    combined, blockers = assemble_wordpress_context_readback(edit_post, view_post)
+
+    assert combined is None
+    assert blockers == ["wordpress_context_version_mismatch"]
+
+
+def test_inspection_reads_edit_and_view_contexts_for_the_same_version():
+    modified = "2026-11-18T09:00:00"
+    edit_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
+    view_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
+    calls = []
+
+    result = inspect_wordpress_draft(
+        lambda post_id: (calls.append(("edit", post_id)), edit_post)[1],
+        42,
+        REVIEW,
+        fetch_post_view=lambda post_id: (calls.append(("view", post_id)), view_post)[1],
+    )
+
+    assert calls == [("edit", 42), ("view", 42)]
+    assert result["readback_valid"] is True
+    assert result["authorized"] is False
 
 
 def test_wordpress_readback_confirms_raw_hash_and_video_objects():
