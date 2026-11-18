@@ -79,6 +79,12 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
     from mkt_flow_p0.adaptador_contrato_editorial import avaliar_snapshot_editorial
     from mkt_flow_p0.seo import validar_artigo_wordpress
 
+    # Explicit booleans only: strings such as "false" must never confirm image rights.
+    if type(media_rights_confirmed) is not bool:
+        raise ValueError("media_rights_confirmed deve ser booleano")
+    if featured_media_id is not None and (type(featured_media_id) is not int
+                                          or featured_media_id <= 0):
+        raise ValueError("featured_media_id invalido")
     # Reject invalid destinations/inputs before network or provider usage.
     if Path(output_dir).exists():
         raise FileExistsError("diretório de saída já existe")
@@ -146,7 +152,12 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
     if video is not None:
         corpo = (corpo.rstrip() + "\n\n" + bloco_video(video) + "\n"
                  + videoobject_jsonld(video) + "\n")
-        video_review = {"status": "INSERIDO_COM_CURADORIA_HUMANA",
+        # A presenca de metadados comprova somente que o bloco foi montado.
+        # A curadoria humana exige verificacao dos criterios da politica e nao
+        # pode ser presumida pelo importador.
+        video_review = {"status": "INSERIDO_AGUARDANDO_REVISAO_HUMANA",
+                        "human_curation_confirmed": False,
+                        "human_review_required": True,
                         "youtube_id": video["youtube_id"],
                         "canal": video["canal"],
                         "duracao": video.get("duracao", "")}
@@ -212,7 +223,7 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         modules=_modulos,
         voice_status=(result.get("editorial_voice_application") or {}).get("status", "NOT_APPLIED"),
         substance_status=(result.get("substantive_review") or {}).get("status", "PENDING"),
-        image_rights_confirmed=bool(media_rights_confirmed),
+        image_rights_confirmed=media_rights_confirmed,
         version_sha256=str(result.get("version_sha256") or ""))
     Path(rendered["wordpress_body"]).write_text(_corpo_marcado, encoding="utf-8")
     # Preview entrega o mesmo fragmento (video + marca): nada diverge do body.
