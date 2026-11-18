@@ -134,3 +134,10 @@ def test_extrair_manifesto_rejeita_marcadores_duplicados():
     corpo, _ = marcar()
     marca = pv.PADRAO.search(corpo).group(0)
     assert pv.extrair_manifesto(corpo + "\\n" + marca) is None
+
+
+
+def test_marcar_rejeita_marca_anterior_malformada():
+    corpo = CORPO + "\\n" + pv.PREFIXO_MARCA + "{quebrado"
+    with pytest.raises(ValueError, match="marca de proveniencia malformada"):
+        marcar(corpo=corpo)
