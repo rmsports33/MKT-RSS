@@ -1,6 +1,7 @@
 import copy
 import json
 import os
+import re
 from pathlib import Path
 import subprocess
 import sys
@@ -27,7 +28,7 @@ class ImportedEditorialFlowTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, patch('socket.create_connection',side_effect=AssertionError('Unexpected network')):
             result=processar_artigo_importado(payload(),Path(folder)/'version')
             self.assertEqual(set(result['modules_executed']),{'editorial_import','editorial_identity','editorial_core_offline','format','seo','seo_contract_native','editorial_readiness','gate_editorial_pos_ia','adaptador_contrato_editorial','editorial_trace','image_protocol','editorial_substance'})
-            self.assertIn('<table>',Path(result['wordpress_body_path']).read_text())
+            self.assertRegex(Path(result['wordpress_body_path']).read_text(),r'<table\\b[^>]*>')
             self.assertIn('noindex,nofollow',Path(result['preview_path']).read_text())
             self.assertFalse(result['wordpress_written']);self.assertFalse(result['provider_called'])
             self.assertFalse(result['publication_authorized'])
