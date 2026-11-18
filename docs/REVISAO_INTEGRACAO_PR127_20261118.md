@@ -28,7 +28,7 @@ Já `cxeg_quality_valid()` e `cxeg_quality_record()` não chamam o consumidor do
 ## Remediação MKT-RSS versionada no PR
 
 No branch `fix/editorial-import-provenance-video-20261118`:
-- `mkt_flow_p0/editorial_provenance.py`: agora separa `validar_integridade()` de `validar()`, exige chaves exatas, tipos estritos, SHA-256 válido, mapa exato dos cinco módulos, estados conhecidos, voz/substância enumeradas e booleano real para direitos. O produtor também rejeita marca pré-existente duplicada ou inválida e nomes de módulos desconhecidos, mantendo idempotência somente para uma marca íntegra.
+- `mkt_flow_p0/editorial_provenance.py`: agora separa `validar_integridade()` de `validar()`, exige chaves exatas, tipos estritos, SHA-256 válido, mapa exato dos cinco módulos, estados conhecidos, voz/substância enumeradas e booleano real para direitos. O produtor também rejeita marca pré-existente duplicada ou inválida, módulos desconhecidos e nomes de módulos que não sejam strings, mantendo idempotência somente para uma marca íntegra.
 - `editorial_publish_gate.py`: valida proveniência do conteúdo bruto e usa `content.raw`, não `content.rendered`; normaliza os objetos REST de título/conteúdo/excerpt usando raw somente.
 - `editorial_wordpress_adapter.py`: acrescenta readback read-only que exige explicitamente `content.raw` e `content.rendered`; string plana do conector é inconclusiva/bloqueada. Verifica integridade raw e conservação de iframe/VideoObject entre raw e rendered; não faz HTTP por si.
 - `mkt_flow_p0/editorial_import.py`: deixa a curadoria de vídeo pendente até revisão humana explícita e exige booleano real em `media_rights_confirmed`.
