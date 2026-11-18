@@ -227,8 +227,7 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         modules=_modulos,
         voice_status=(result.get("editorial_voice_application") or {}).get("status", "NOT_APPLIED"),
         substance_status=(result.get("substantive_review") or {}).get("status", "PENDING"),
-        image_rights_confirmed=media_rights_confirmed,
-        version_sha256=str(result.get("version_sha256") or ""))
+        image_rights_confirmed=media_rights_confirmed)
     Path(rendered["wordpress_body"]).write_text(_corpo_marcado, encoding="utf-8")
     # Preview entrega o mesmo fragmento (video + marca): nada diverge do body.
     Path(rendered["html"]).write_text(
