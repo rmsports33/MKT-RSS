@@ -97,9 +97,9 @@ def _video_markup_summary(content):
 def validate_wordpress_content_readback(post):
     """Verify stored raw-body integrity and that rendered HTML retained video markup.
 
-    A content.raw digest protects the exact persisted fragment. When the raw body
-    contains a video, content.rendered must retain the matching iframe and
-    VideoObject schema. This is a read-only check; it never performs HTTP.
+    Requires both content.raw and content.rendered from edit context. A flattened
+    connector string is inconclusive, not raw. When raw contains a video, rendered
+    must retain the matching iframe and VideoObject schema. This is read-only.
     """
     if not isinstance(post, dict):
         return {"valid": False, "blockers": ["wordpress_response_invalid"]}
