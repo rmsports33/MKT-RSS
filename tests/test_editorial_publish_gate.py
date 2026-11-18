@@ -4,6 +4,7 @@ from editorial_publish_gate import (
     require_publish_authorization,
 )
 import pytest
+from mkt_flow_p0 import editorial_provenance as pv
 from mkt_flow_p0.editorial_provenance import MODULOS_OBRIGATORIOS, marcar
 
 POST = {"id": 123, "status": "draft", "categories": [10],
@@ -20,7 +21,7 @@ def corpo_com_proveniencia(**overrides):
         voice_status="ASSISTED_ADAPTED",
         substance_status="PASS",
         image_rights_confirmed=True,
-        version_sha256="a" * 64,
+        version_sha256=pv.version_sha256_esperado(),
     )
     values.update(overrides)
     return marcar("<p>Texto confirmado</p>", **values)[0]
