@@ -125,3 +125,22 @@ def test_readback_detects_mutation_of_persisted_raw_content():
     })
     assert result["valid"] is False
     assert "wordpress_raw_provenance_hash_divergente" in result["blockers"]
+
+
+
+def test_readback_rejects_flattened_connector_content_string():
+    result = validate_wordpress_content_readback({
+        **DRAFT,
+        "content": BODY,
+    })
+    assert result["valid"] is False
+    assert result["blockers"] == ["wordpress_content_raw_unavailable"]
+
+
+def test_readback_requires_rendered_content_even_without_video():
+    result = validate_wordpress_content_readback({
+        **DRAFT,
+        "content": {"raw": BODY},
+    })
+    assert result["valid"] is False
+    assert "wordpress_rendered_content_unavailable" in result["blockers"]
