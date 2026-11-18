@@ -12,7 +12,8 @@ relatório solto que não está no registro é considerado inexistente.
   o registro aponta para ele, e não o contrário.
 - Relatório novo não deve repetir conteúdo que já está no registro; deve apontá-lo.
 - Toda execução de auditoria deve rodar `python tools/check_registro_unico.py`
-  antes de commit.
+  antes de commit. Em clone novo, configurar uma vez: `git config core.hooksPath .githooks`
+  (o hook `.githooks/pre-commit` já roda a checagem automaticamente).
 
 ## Política de economia de execução — decisão do proprietário, 13/11/2026 (precedência alta)
 
