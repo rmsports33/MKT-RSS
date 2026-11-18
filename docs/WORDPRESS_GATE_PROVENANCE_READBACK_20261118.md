@@ -112,3 +112,19 @@ Foram feitas novas leituras de posts existentes nos contextos solicitados edit e
 **Conclusão:** readback GET e correlação confirmados para os quatro posts; persistência/conservação do iframe + VideoObject do fluxo MKT-RSS continua PENDENTE / NÃO HOMOLOGADA. A busca read-only não encontrou post existente com marcador RC10.5 válido, iframe YouTube nocookie e VideoObject correspondente.
 
 **Próxima rota segura:** OpenCode deve obter por GET a resposta REST nativa em /wp-json/wp/v2/posts/{id}?context=edit e context=view, usando autenticação já disponível sem expor credenciais. Guardar JSON local fora do Git e validar com o utilitário offline. Se não existir post elegível, a prova exige WordPress isolado. Não criar post de teste na instalação ativa sem autorização específica.
+
+## Ensaio controlado de persistência na instalação ativa — 18/11/2026
+
+Após autorização expressa do responsável, foi criado um único rascunho sintético temporário, ID #9907, status draft, com comentários fechados e slug exclusivo. Não foi publicado nem agendado. O conteúdo continha iframe youtube-nocookie de ID sintético TESTvideo01, JSON-LD VideoObject correspondente e marcador cxeg-package:v1 gerado segundo o contrato RC10.5.
+
+Resultados das leituras GET separadas:
+- context=edit: mesmo ID #9907, status draft, modified 2026-11-18T19:31:51; corpo 1.396 caracteres; 1 iframe youtube-nocookie; 1 script JSON-LD VideoObject; marcador presente.
+- context=view: mesmo ID/status/modified; corpo 1.363 caracteres; 1 iframe youtube-nocookie; 1 script JSON-LD VideoObject; marcador presente.
+- O identificador sintético TESTvideo01 e o embedUrl coincidiram nos dois contextos. A diferença de 33 caracteres corresponde aos delimitadores Gutenberg wp:html removidos na renderização; o conteúdo funcional permaneceu.
+- SHA-256 do corpo raw recalculado offline: a47a5210f9bc5d162e3ceb95f43739fda481b2654a7a7460cf19077fd737f3df, igual ao content_sha256 do manifesto. Fingerprint de versão: 80d09ee7c49505560862a0364c1af8b4aa5b694f9db954b52b35f26b82bdbfaa.
+
+**Conclusão do ensaio:** PASS para persistência do iframe + VideoObject + marcador no contexto edit e conservação no contexto view, sob a instalação ativa atual (RC10.4) e o papel de autenticação usado. O conteúdo não foi removido/sanitizado nesses dois readbacks.
+
+**Limite de integração:** o WordPress MCP ainda achata content em string e não expõe a forma REST nativa content.raw/content.rendered. Portanto, o ensaio comprova os elementos devolvidos por cada contexto, mas não executa literalmente o adaptador MKT-RSS com os objetos nativos. OpenCode deve realizar a última chamada GET REST nativa, sem escrita, para confirmar que o adaptador aceita a estrutura real do endpoint.
+
+**Limpeza:** o post #9907 foi movido para a lixeira e uma leitura posterior confirmou status=trash. O conector só permite lixeira recuperável, não exclusão permanente; a limpeza permanente requer esvaziar a lixeira no wp-admin. Nenhum outro post foi alterado.
