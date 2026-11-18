@@ -1,4 +1,6 @@
 # Estado das frentes remanescentes — 16/11/2026
+> **AVISO — REGISTRO HISTÓRICO, NÃO OPERACIONAL (18/11/2026):** este documento é uma fotografia de 16/11 e não representa o estado atual das frentes. Não executar comandos, sequências ou ações descritas sem revalidar branches, ambiente e evidências. Consultar a consolidação factual atual e obter readback recente antes de agir. O conteúdo original foi preservado como histórico.
+
 
 Registro factual do que está pendente e **por quê**. Nada aqui autoriza publicação,
 deploy, exclusão de mídia ou alteração de gate. Serve para não repetir o problema
