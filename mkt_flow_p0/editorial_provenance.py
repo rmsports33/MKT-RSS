@@ -1,22 +1,11 @@
-"""Proveniencia do corpo WordPress: marca e valida o pacote do motor.
+"""Proveniencia verificavel do corpo WordPress.
 
-A marca e um comentario HTML inserido APOS a execucao dos modulos. O Gate
-WordPress compara o hash declarado com o corpo sem a marca; se nao houver
-marca valida, o rascunho nao e elegivel para revisao/publicacao.
+A marca comprova integridade e estado declarado do pacote. Ela NAO autentica
+quem executou os modulos, quem confirmou direitos nem quem revisou o artigo.
+A aprovacao humana e a autorizacao de publicacao continuam no Gate confiavel.
 
-Regras da marca:
-- o corpo entrega EXATAMENTE uma marca; duas iguais tambem sao recusadas;
-- qualquer segunda ocorrencia do nome do pacote seguida de dois-pontos
-  (`cxeg-package:` em qualquer caixa ou espacamento, marca quebrada ou copia
-  dentro do texto) conta como marca extra e e recusada;
-- marca ilegivel ou incompleta e recusada como malformada;
-- `marcar` recusa corpo que ja traga prefixo residual, para nao produzir um
-  pacote que a propria validacao reprovaria;
-- o hash cobre o corpo SEM a marca: qualquer alteracao posterior invalida.
-
-A marca registra estado, nao aprovacao: voz nao aplicada, substancia pendente
-ou direitos de imagem pendentes continuam reprovando na validacao local e no
-Gate, mesmo com o hash correto.
+O consumidor deve validar o corpo bruto persistido (WordPress content.raw),
+nunca confiar somente em content.rendered ou em uma marca copiada pelo cliente.
 """
 import hashlib
 import json
@@ -24,9 +13,8 @@ import re
 
 PREFIXO_MARCA = "<!-- cxeg-package:v1:"
 PADRAO = re.compile(r"<!--\s*cxeg-package:v1:(\{.*?\})\s*-->", re.S)
-# Nome do pacote seguido de dois-pontos, tolerante a caixa e espaco: pega a
-# segunda marca mesmo quando ela imita o formato com variacao.
 OCORRENCIA = re.compile(r"cxeg-package\s*:", re.IGNORECASE)
+SHA256 = re.compile(r"^[0-9a-f]{64}$")
 
 MODULOS_OBRIGATORIOS = (
     "editorial_identity",
@@ -35,6 +23,17 @@ MODULOS_OBRIGATORIOS = (
     "editorial_readiness",
     "editorial_substance",
 )
+CAMPOS_MANIFESTO = {
+    "content_sha256",
+    "version_sha256",
+    "modules",
+    "voice_status",
+    "substance_status",
+    "image_rights_confirmed",
+}
+ESTADOS_VOZ = {"PROMPT_APPLIED", "HUMAN_ADAPTED", "ASSISTED_ADAPTED", "NOT_APPLIED"}
+ESTADOS_SUBSTANCIA = {"PASS", "PENDING", "FAIL"}
+ESTADOS_EXECUCAO = {"EXECUTED", "SKIPPED", "FAILED"}
 
 
 def hash_corpo(corpo):
@@ -44,40 +43,48 @@ def hash_corpo(corpo):
 
 
 def _contar_marcas(corpo):
-    """Conta ocorrencias do nome do pacote: 0, 1 ou muitas."""
     return len(OCORRENCIA.findall(corpo))
 
 
-def marcar(corpo, *, modules, voice_status, substance_status, image_rights_confirmed,
-           version_sha256=""):
-    """Devolve corpo com a marca unica; o hash e calculado SEM a marca.
-
-    Idempotente: uma marca anterior e removida antes de escrever a nova.
-    Corpo com prefixo residual (marca quebrada ou copia) e recusado, porque o
-    resultado seria um pacote invalido.
-    """
+def marcar(corpo, *, modules, voice_status, substance_status,
+           image_rights_confirmed, version_sha256=""):
+    """Insere uma única marca; estados pendentes são registrados, nunca aprovados."""
     if not isinstance(corpo, str) or not corpo.strip():
         raise ValueError("corpo vazio para marcar")
+    if not isinstance(modules, dict):
+        raise ValueError("modules deve ser um dicionario")
+    if voice_status not in ESTADOS_VOZ:
+        raise ValueError("voice_status invalido")
+    if substance_status not in ESTADOS_SUBSTANCIA:
+        raise ValueError("substance_status invalido")
+    if type(image_rights_confirmed) is not bool:
+        raise ValueError("image_rights_confirmed deve ser booleano")
+    if not isinstance(version_sha256, str) or not SHA256.fullmatch(version_sha256):
+        raise ValueError("version_sha256 deve ser SHA-256 hexadecimal")
     limpo = PADRAO.sub("", corpo)
     if _contar_marcas(limpo):
-        raise ValueError("marca de proveniencia malformada no corpo: "
-                         "remova antes de marcar")
+        raise ValueError("marca de proveniencia malformada no corpo: remova antes de marcar")
+    modulos = {}
+    for nome in MODULOS_OBRIGATORIOS:
+        estado = modules.get(nome, "SKIPPED")
+        if not isinstance(estado, str) or estado not in ESTADOS_EXECUCAO:
+            raise ValueError("estado de modulo invalido: " + nome)
+        modulos[nome] = estado
     manifesto = {
         "content_sha256": hash_corpo(limpo),
-        "version_sha256": str(version_sha256 or ""),
-        "modules": {m: str((modules or {}).get(m, "SKIPPED"))
-                    for m in MODULOS_OBRIGATORIOS},
-        "voice_status": str(voice_status),
-        "substance_status": str(substance_status),
-        "image_rights_confirmed": bool(image_rights_confirmed),
+        "version_sha256": version_sha256,
+        "modules": modulos,
+        "voice_status": voice_status,
+        "substance_status": substance_status,
+        "image_rights_confirmed": image_rights_confirmed,
     }
-    marca = PREFIXO_MARCA + json.dumps(manifesto, ensure_ascii=False,
-                                       separators=(",", ":")) + " -->"
+    marca = PREFIXO_MARCA + json.dumps(
+        manifesto, ensure_ascii=False, separators=(",", ":")) + " -->"
     return limpo.rstrip() + "\n" + marca, manifesto
 
 
 def extrair_manifesto(corpo):
-    """Manifesto declarado na unica marca bem formada, ou None."""
+    """Devolve o manifesto JSON da unica marca bem formada, senao None."""
     if not isinstance(corpo, str) or _contar_marcas(corpo) != 1:
         return None
     encontrados = list(PADRAO.finditer(corpo))
@@ -85,43 +92,64 @@ def extrair_manifesto(corpo):
         return None
     try:
         manifesto = json.loads(encontrados[0].group(1))
-    except ValueError:
+    except (TypeError, ValueError):
         return None
     return manifesto if isinstance(manifesto, dict) else None
 
 
-def validar(corpo):
-    """Espelho local da checagem do Gate. Nao concede aprovacao alguma."""
+def validar_integridade(corpo):
+    """Valida estrutura, unicidade, SHA do corpo e tipos sem aprovar estados editoriais."""
     if not isinstance(corpo, str):
         return {"valido": False, "motivo": "marca_ausente"}
     quantidade = _contar_marcas(corpo)
     if quantidade == 0:
         return {"valido": False, "motivo": "marca_ausente"}
     if quantidade > 1:
-        # Duplicada mesmo com hashes iguais: uma marca por corpo, sem excecao.
         return {"valido": False, "motivo": "marca_duplicada"}
     encontrados = list(PADRAO.finditer(corpo))
     if len(encontrados) != 1:
         return {"valido": False, "motivo": "manifesto_invalido"}
     try:
         manifesto = json.loads(encontrados[0].group(1))
-    except ValueError:
+    except (TypeError, ValueError):
         return {"valido": False, "motivo": "manifesto_invalido"}
-    if not isinstance(manifesto, dict):
+    if not isinstance(manifesto, dict) or set(manifesto) != CAMPOS_MANIFESTO:
         return {"valido": False, "motivo": "manifesto_invalido"}
-    # Remover somente a unica marca validada. Nunca apagar silenciosamente
-    # uma segunda marca ou fragmento de marca antes de conferir integridade.
-    limpo = corpo[:encontrados[0].start()] + corpo[encontrados[0].end():]
-    if manifesto.get("content_sha256") != hash_corpo(limpo):
+    if (not isinstance(manifesto.get("content_sha256"), str)
+            or not SHA256.fullmatch(manifesto["content_sha256"])
+            or not isinstance(manifesto.get("version_sha256"), str)
+            or not SHA256.fullmatch(manifesto["version_sha256"])):
+        return {"valido": False, "motivo": "manifesto_invalido"}
+    modulos = manifesto.get("modules")
+    if (not isinstance(modulos, dict)
+            or any(not isinstance(k, str) or not isinstance(v, str)
+                   or v not in ESTADOS_EXECUCAO for k, v in modulos.items())):
+        return {"valido": False, "motivo": "manifesto_invalido"}
+    if (manifesto.get("voice_status") not in ESTADOS_VOZ
+            or manifesto.get("substance_status") not in ESTADOS_SUBSTANCIA
+            or type(manifesto.get("image_rights_confirmed")) is not bool):
+        return {"valido": False, "motivo": "manifesto_invalido"}
+    marca = encontrados[0]
+    limpo = corpo[:marca.start()] + corpo[marca.end():]
+    if manifesto["content_sha256"] != hash_corpo(limpo):
         return {"valido": False, "motivo": "hash_divergente"}
-    modulos = manifesto.get("modules") or {}
+    return {"valido": True, "manifesto": manifesto}
+
+
+def validar(corpo):
+    """Espelho fail-closed para Gate: integridade e requisitos editoriais."""
+    integridade = validar_integridade(corpo)
+    if not integridade["valido"]:
+        return integridade
+    manifesto = integridade["manifesto"]
+    modulos = manifesto["modules"]
     faltando = [m for m in MODULOS_OBRIGATORIOS if modulos.get(m) != "EXECUTED"]
     if faltando:
         return {"valido": False, "motivo": "modulos_ausentes", "faltando": faltando}
-    if manifesto.get("voice_status") == "NOT_APPLIED":
+    if manifesto["voice_status"] == "NOT_APPLIED":
         return {"valido": False, "motivo": "voz_nao_aplicada"}
-    if manifesto.get("substance_status") != "PASS":
+    if manifesto["substance_status"] != "PASS":
         return {"valido": False, "motivo": "avaliacao_substantiva_pendente"}
-    if not manifesto.get("image_rights_confirmed"):
+    if manifesto["image_rights_confirmed"] is not True:
         return {"valido": False, "motivo": "direitos_de_imagem_pendentes"}
     return {"valido": True, "manifesto": manifesto}
