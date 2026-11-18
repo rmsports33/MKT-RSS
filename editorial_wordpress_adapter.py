@@ -108,11 +108,14 @@ def validate_wordpress_content_readback(post):
         raw = content.get("raw")
         rendered = content.get("rendered")
     else:
-        raw = content if isinstance(content, str) else None
+        # A connector's flattened content string is not proof of raw storage.
+        raw = None
         rendered = None
     blockers = []
     if not isinstance(raw, str) or not raw.strip():
         return {"valid": False, "blockers": ["wordpress_content_raw_unavailable"]}
+    if not isinstance(rendered, str) or not rendered.strip():
+        blockers.append("wordpress_rendered_content_unavailable")
     integrity = validar_integridade(raw)
     if not integrity["valido"]:
         blockers.append("wordpress_raw_provenance_" + integrity.get("motivo", "invalid"))
@@ -122,21 +125,15 @@ def validate_wordpress_content_readback(post):
     if raw_video["iframe_ids"] != raw_video["schema_ids"]:
         if raw_video["iframe_ids"] or raw_video["schema_ids"]:
             blockers.append("wordpress_raw_video_markup_incomplete")
-    if raw_video["iframe_ids"]:
-        if not isinstance(rendered, str):
-            blockers.append("wordpress_rendered_content_unavailable")
-        else:
-            rendered_video = _video_markup_summary(rendered)
-            if rendered_video["invalid"]:
-                blockers.append("wordpress_rendered_video_markup_invalid")
-            if (rendered_video["iframe_ids"] != raw_video["iframe_ids"]
-                    or rendered_video["schema_ids"] != raw_video["schema_ids"]):
-                blockers.append("wordpress_rendered_video_markup_changed")
-    elif isinstance(rendered, str):
+    if isinstance(rendered, str) and rendered.strip():
         rendered_video = _video_markup_summary(rendered)
         if rendered_video["invalid"]:
             blockers.append("wordpress_rendered_video_markup_invalid")
-        if rendered_video["iframe_ids"] or rendered_video["schema_ids"]:
+        if raw_video["iframe_ids"]:
+            if (rendered_video["iframe_ids"] != raw_video["iframe_ids"]
+                    or rendered_video["schema_ids"] != raw_video["schema_ids"]):
+                blockers.append("wordpress_rendered_video_markup_changed")
+        elif rendered_video["iframe_ids"] or rendered_video["schema_ids"]:
             blockers.append("wordpress_rendered_video_markup_unexpected")
     return {
         "valid": not blockers,
@@ -158,14 +155,9 @@ def inspect_wordpress_draft(fetch_post, post_id, factual_review,
         return {"authorized": False, "blockers": ["wordpress_read_failed"], "post": None}
     if not isinstance(data, dict) or type(data.get("id")) is not int or data["id"] != post_id:
         return {"authorized": False, "blockers": ["wordpress_response_invalid"], "post": None}
+    # Preserve the REST objects: authorize_publish extracts raw explicitly,
+    # while readback validation independently requires raw and rendered.
     post = dict(data)
-    title = post.get("title")
-    if isinstance(title, dict):
-        post["title"] = title.get("raw") if isinstance(title.get("raw"), str) else None
-    content = post.get("content")
-    if isinstance(content, dict):
-        # A readback without raw is insufficient for a hash/provenance decision.
-        post["content"] = content.get("raw") if isinstance(content.get("raw"), str) else None
     result = authorize_publish(post, factual_review,
                                expected_category_id=expected_category_id)
     readback = validate_wordpress_content_readback(data)
