@@ -176,3 +176,38 @@ def test_gemini_preserves_system_and_assistant_roles_and_hides_api_key(monkeypat
         {"role": "model", "parts": [{"text": "Prior analysis."}]},
         {"role": "user", "parts": [{"text": "Write the article."}]},
     ]
+
+
+
+def test_gemini_joins_content_parts_with_real_newlines(monkeypatch):
+    monkeypatch.setenv("AI_PROVIDER", "gemini")
+    monkeypatch.setenv("GEMINI_API_KEY", "secret-test-key")
+    monkeypatch.setenv("GEMINI_MODEL", "gemini-2.0-flash")
+    monkeypatch.setenv("AI_FREE_ONLY_ALLOWLIST", "gemini:gemini-2.0-flash")
+
+    captured = {}
+    body = json.dumps({
+        "candidates": [{
+            "content": {"parts": [{"text": '{"ok": true}'}]},
+            "finishReason": "STOP",
+        }]
+    }).encode()
+
+    def fake_urlopen(request, timeout):
+        captured["payload"] = json.loads(request.data.decode("utf-8"))
+        return _HTTPResponse(body)
+
+    monkeypatch.setattr(ai_providers.urllib.request, "urlopen", fake_urlopen)
+    client, model = ai_providers.get_client()
+    client.chat.completions.create(model=model, messages=[
+        {"role": "system", "content": [{"text": "Rule one"}, {"text": "Rule two"}]},
+        {"role": "system", "content": "Additional rule"},
+        {"role": "user", "content": [{"text": "Source part"}, {"text": "Verified fact"}]},
+    ])
+
+    assert captured["payload"]["systemInstruction"]["parts"][0]["text"] == (
+        "Rule one\nRule two\n\nAdditional rule"
+    )
+    assert captured["payload"]["contents"] == [
+        {"role": "user", "parts": [{"text": "Source part\nVerified fact"}]},
+    ]

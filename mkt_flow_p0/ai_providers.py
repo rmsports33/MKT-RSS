@@ -159,7 +159,7 @@ class _HTTPCompatibleClient:
                 role = str(message.get("role", "user")).strip().lower()
                 content = message.get("content", "")
                 if isinstance(content, list):
-                    content = "\\n".join(
+                    content = "\n".join(
                         str(part.get("text", "")) if isinstance(part, dict) else str(part)
                         for part in content
                     )
@@ -183,7 +183,7 @@ class _HTTPCompatibleClient:
             }
             if system_parts:
                 payload["systemInstruction"] = {
-                    "parts": [{"text": "\\n\\n".join(system_parts)}]
+                    "parts": [{"text": "\n\n".join(system_parts)}]
                 }
             url = (
                 "https://generativelanguage.googleapis.com/v1beta/models/"
