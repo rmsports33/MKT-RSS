@@ -123,6 +123,7 @@ def validar_integridade(corpo):
         return {"valido": False, "motivo": "manifesto_invalido"}
     modulos = manifesto.get("modules")
     if (not isinstance(modulos, dict)
+            or set(modulos) != set(MODULOS_OBRIGATORIOS)
             or any(not isinstance(k, str) or k not in MODULOS_OBRIGATORIOS
                    or not isinstance(v, str) or v not in ESTADOS_EXECUCAO
                    for k, v in modulos.items())):
