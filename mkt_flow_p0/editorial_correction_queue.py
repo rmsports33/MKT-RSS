@@ -12,7 +12,7 @@ import re
 from editorial_wordpress_readiness import validate_wordpress_readiness
 
 _TEST_PATTERN = re.compile(
-    r"\\[\\s*(?:TESTE|TEST|NAO\\s+PUBLICAR|DO\\s+NOT\\s+PUBLISH)\\b", re.IGNORECASE)
+    r"\[\s*(?:TESTE|TEST|NAO\s+PUBLICAR|DO\s+NOT\s+PUBLISH)\b", re.IGNORECASE)
 
 _REASON_OWNER = {
     "featured_image_missing": "mkt_flow_p0.image_protocol",
