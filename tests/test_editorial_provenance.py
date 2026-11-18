@@ -72,8 +72,10 @@ def test_modulo_obrigatorio_ausente():
     adulterado = pv.PADRAO.sub("", corpo).rstrip() + "\n<!-- cxeg-package:v1:" + json.dumps(
         manifesto, ensure_ascii=False, separators=(",", ":")) + " -->"
     resultado = pv.validar(adulterado)
-    assert resultado["motivo"] == "modulos_ausentes"
-    assert resultado["faltando"] == ["editorial_substance"]
+    assert resultado == {"valido": False, "motivo": "manifesto_invalido"}
+    assert pv.validar_integridade(adulterado) == {
+        "valido": False, "motivo": "manifesto_invalido"
+    }
 
 
 def test_version_sha256_precisa_ser_hexadecimal_completo():
