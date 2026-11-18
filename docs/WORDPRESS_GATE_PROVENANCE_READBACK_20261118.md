@@ -54,16 +54,37 @@ Com PHP CLI 8.4.24:
 
 Isso não é teste da cópia integral do plugin RC10.4 nem homologação na instalação ativa. A aplicação na cópia completa ainda deve ser feita pelo OpenCode, conforme o README do patch kit, e os resultados precisam ser registrados com SHA-256, PHP, saída de lint, testes e diff.
 
-## Readback WordPress
+## Readback WordPress — pareamento dos contextos REST
 
-A camada MKT-RSS disponibiliza \`validate_wordpress_content_readback()\`, que verifica:
-- integridade do \`content.raw\`;
-- presença de um iframe \`youtube-nocookie\` e de \`VideoObject\` JSON-LD com o mesmo ID no raw;
-- preservação correspondente em \`content.rendered\`.
+O conector WordPress empregado pelo projeto achata cada chamada em uma string:
+- `context=edit`: conteúdo bruto persistido;
+- `context=view`: HTML renderizado para exibição.
 
-O WordPress connector em contexto edit para os posts consultados retornou \`content\` como string, sem separar os campos raw/rendered. Portanto essa consulta não satisfaz o contrato de readback para testar a sanitização do iframe e JSON-LD.
+Uma leitura somente do post #9894 foi executada nos dois contextos. Ambas retornaram o mesmo ID (9894), status (`pending`) e `modified` (`2026-11-16T22:42:42`). O corpo bruto teve 11.435 caracteres e o renderizado 11.447; os conteúdos não são idênticos, como esperado após a renderização. Nenhuma escrita foi feita.
 
-O staging foi removido do projeto. Não foi criado rascunho de teste nem executado POST/PUT em produção. A persistência dos elementos de vídeo segue **não homologada**.
+Essa resposta não contém `cxeg-package:v1`, iframe YouTube ou `VideoObject`; portanto ela comprova somente que os dois contextos podem ser lidos e correlacionados para a mesma versão. Não comprova a proveniência MKT-RSS nem a preservação de vídeo.
+
+### Correção do adaptador MKT-RSS
+
+O adaptador agora inclui `assemble_wordpress_context_readback(edit_post, view_post)`, que converte as duas respostas em `content.raw` e `content.rendered` somente quando:
+- os dois IDs são o mesmo inteiro positivo;
+- os dois valores `modified` são presentes e idênticos;
+- status é presente e idêntico;
+- a chamada edit fornece corpo bruto não vazio e a chamada view fornece HTML renderizado não vazio.
+
+O fluxo `inspect_wordpress_draft()` pode receber um segundo callback `fetch_post_view` para fazer as duas leituras. Sem os dois contextos, uma string achatada continua bloqueada. ID, versão ou status divergentes falham fechados. Foram adicionados quatro testes para o pareamento, rejeição de ID/versão divergentes e inspeção com as duas chamadas. **Esses novos testes ainda precisam ser executados no HEAD atualizado do PR #127.**
+
+### Limite restante da homologação
+
+Não foi identificado, entre as respostas reais consultadas até aqui, um post de prova que reúna marcador MKT-RSS válido, iframe `youtube-nocookie` e JSON-LD `VideoObject` já persistidos. Não será criado um post de teste na instalação ativa.
+
+Para encerrar a homologação de vídeo, OpenCode deve:
+1. localizar somente por leitura um post existente comprovadamente vinculado ao MKT-RSS e que contenha iframe + `VideoObject`;
+2. obter a resposta de edição e a de visualização, preservando ID, status e `modified`;
+3. executar o normalizador e `validate_wordpress_content_readback()`;
+4. confirmar que os mesmos IDs aparecem no raw e no rendered, e que o hash de proveniência do raw confere.
+
+Se não existir esse post ou se não houver uma instalação WordPress isolada com os filtros equivalentes, registrar a homologação de vídeo como **pendente**. O teste real #9894 não deve ser usado como substituto, pois não contém a marca nem os elementos de vídeo.
 
 ## Próximo passo operacional seguro
 
