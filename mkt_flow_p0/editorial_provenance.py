@@ -81,7 +81,7 @@ def marcar(corpo, *, modules, voice_status, substance_status,
     }
     marca = PREFIXO_MARCA + json.dumps(
         manifesto, ensure_ascii=False, separators=(",", ":")) + " -->"
-    return limpo.rstrip() + "\n" + marca, manifesto
+    return limpo.rstrip(" \\t\\r\\n") + "\n" + marca, manifesto
 
 
 def extrair_manifesto(corpo):
