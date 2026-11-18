@@ -76,9 +76,11 @@ def test_modulo_obrigatorio_ausente():
     assert resultado["faltando"] == ["editorial_substance"]
 
 
-def test_marca_tolera_maior_que_no_manifesto():
-    corpo, _ = marcar(version_sha256="v>1")
-    assert pv.validar(corpo)["valido"] is True
+def test_version_sha256_precisa_ser_hexadecimal_completo():
+    with pytest.raises(ValueError, match="version_sha256"):
+        marcar(version_sha256="v>1")
+    with pytest.raises(ValueError, match="version_sha256"):
+        marcar(version_sha256="a" * 63)
 
 
 @pytest.mark.parametrize("opcoes,motivo", [
@@ -209,3 +211,34 @@ def test_marcar_recusa_corpo_com_marca_residual():
         marcar(CORPO + "\n<!-- cxeg-package:v1:quebrada -->")
     with pytest.raises(ValueError, match="marca de proveniencia malformada"):
         marcar(CORPO + "\n<!-- CXEG-PACKAGE:v1 -->")
+
+
+def test_integridade_separa_hash_de_requisitos_editoriais():
+    corpo, _ = marcar(image_rights_confirmed=False, substance_status="PENDING",
+                      voice_status="NOT_APPLIED")
+    integrity = pv.validar_integridade(corpo)
+    assert integrity["valido"] is True
+    assert pv.validar(corpo)["motivo"] == "voz_nao_aplicada"
+
+
+@pytest.mark.parametrize("mutacao", [
+    lambda m: m.update(image_rights_confirmed="false"),
+    lambda m: m.update(voice_status="APROVADO"),
+    lambda m: m.update(substance_status="APROVADO"),
+    lambda m: m.update(version_sha256="x"),
+    lambda m: m.update(modules=[]),
+    lambda m: m.update(untrusted_flag=True),
+])
+def test_manifesto_com_tipo_estado_ou_campo_desconhecido_e_rejeitado(mutacao):
+    corpo, _ = marcar()
+    manifesto = pv.extrair_manifesto(corpo)
+    mutacao(manifesto)
+    corpo_adulterado = pv.PADRAO.sub("", corpo).rstrip() + "\n" + pv.PREFIXO_MARCA + json.dumps(
+        manifesto, ensure_ascii=False, separators=(",", ":")) + " -->"
+    resultado = pv.validar_integridade(corpo_adulterado)
+    assert resultado == {"valido": False, "motivo": "manifesto_invalido"}
+
+
+def test_marcar_nao_coage_string_false_para_direitos_confirmados():
+    with pytest.raises(ValueError, match="booleano"):
+        marcar(image_rights_confirmed="false")
