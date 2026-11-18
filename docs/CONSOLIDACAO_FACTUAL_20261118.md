@@ -20,13 +20,13 @@ Este documento consolida somente os fatos verificados nesta rodada sobre os PRs 
 
 O OpenCode reportou, antes das duas últimas alterações de teste, 120 testes focados aprovados, 15 casos críticos aprovados e bateria ampla com 286 aprovados e 2 falhas. As mesmas duas falhas foram reportadas na baseline `3901ca0`, portanto não foram classificadas como regressões.
 
-A correção da asserção Android Drop ainda não foi executada após o commit `f7ff6cf`. A segunda falha histórica identificada no relatório é `test_real_modules_generate_preview_body_seo_and_pending_diagnostics_without_network`; sua localização e correção ainda não foram comprovadas. Não atribuir PASS ao código posterior a `6794c64` sem nova execução.
+A correção da asserção Android Drop foi commitada em `f7ff6cf` e a correção da segunda falha foi localizada em `tests/test_imported_editorial_flow.py`, commitada em `198e1b3`. Ambas substituem a exigência literal de `<table>` por reconhecimento da tag com atributos, mantendo as verificações de conteúdo. **Nenhuma das duas correções foi executada em teste ainda.** Não atribuir PASS ao código posterior a `6794c64` sem nova execução.
 
 A evidência anterior do OpenCode está no comentário https://github.com/rmsports33/MKT-RSS/pull/127#issuecomment-6985765535. O relatório original está em https://github.com/rmsports33/MKT-RSS/blob/50d84358bb9a5434b03a031e86226ee199e890b7/docs/VALIDACAO_PR127_20261118.md.
 
 ### Próxima ação segura
 
-Executar no checkout isolado do OpenCode os dois testes afetados e a bateria focada relevante; registrar SHA exato, comando, ambiente, resultado e diferenças. Não executar no checkout operacional Hostinger e não acessar serviços reais. Se a segunda asserção exigir mudança, ajustar apenas o teste para reconhecer o HTML semanticamente produzido, preservando as verificações de conteúdo e segurança.
+Executar no checkout isolado do OpenCode os dois testes afetados e os quatro módulos focados; registrar SHA exato, comando, ambiente, resultado e diferenças. O comentário de execução está no PR #127. Não executar no checkout operacional Hostinger e não acessar serviços reais. Se a segunda asserção exigir mudança, ajustar apenas o teste para reconhecer o HTML semanticamente produzido, preservando as verificações de conteúdo e segurança.
 
 ## PR #124 — fila de correção do Gate
 
@@ -68,4 +68,4 @@ Esta frente só poderá ser considerada concluída quando:
 4. os PRs permanecerem sem integração até revisão explícita e segura;
 5. nenhuma alteração operacional não autorizada ocorrer.
 
-**Estado em 18/11/2026:** documentação e descrições reconciliadas; execução final dos testes pendente no OpenCode. Nenhuma integração ou alteração de produção realizada.
+**Estado em 18/11/2026:** documentação e descrições reconciliadas; as duas asserções históricas foram corrigidas; execução final dos testes pendente no OpenCode. Nenhuma integração ou alteração de produção realizada.
