@@ -1,4 +1,8 @@
-from editorial_publish_gate import authorize_publish, require_publish_authorization
+from editorial_publish_gate import (
+    _matches_canonical_package_snapshot,
+    authorize_publish,
+    require_publish_authorization,
+)
 import pytest
 from mkt_flow_p0.editorial_provenance import MODULOS_OBRIGATORIOS, marcar
 
@@ -121,3 +125,43 @@ def test_rest_rendered_only_title_is_not_accepted_as_version_source():
     result = authorize_publish(rest_post, REVIEW)
     assert result["autorizado"] is False
     assert "title_missing" in result["bloqueios"]
+
+
+def test_canonical_package_snapshot_matches_raw_rest_content():
+    raw = corpo_com_proveniencia()
+    payload = {
+        "title": POST["title"],
+        "slug": POST["slug"],
+        "content": raw,
+        "wordpress": {
+            "post_id": POST["id"],
+            "featured_media": POST["featured_media"],
+            "categories": POST["categories"],
+        },
+    }
+    rest_post = {
+        **POST,
+        "title": {"raw": POST["title"], "rendered": "Rendered title can differ"},
+        "content": {"raw": raw, "rendered": "<p>Rendered HTML can differ</p>"},
+    }
+    assert _matches_canonical_package_snapshot(rest_post, payload) is True
+
+
+def test_canonical_package_snapshot_rejects_rendered_only_content():
+    raw = corpo_com_proveniencia()
+    payload = {
+        "title": POST["title"],
+        "slug": POST["slug"],
+        "content": raw,
+        "wordpress": {
+            "post_id": POST["id"],
+            "featured_media": POST["featured_media"],
+            "categories": POST["categories"],
+        },
+    }
+    rest_post = {
+        **POST,
+        "title": {"raw": POST["title"], "rendered": POST["title"]},
+        "content": {"rendered": raw},
+    }
+    assert _matches_canonical_package_snapshot(rest_post, payload) is False
