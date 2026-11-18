@@ -5,13 +5,27 @@ Regras (docs/site/politica-curadoria-video.md):
 - titulo e canal reais, nunca inventados;
 - player oficial youtube-nocookie, credito visivel e link direto;
 - o video e SECAO do artigo, nunca o artigo inteiro;
-- sem dados validos, nada e inserido.
+- sem dado valido nao ha bloco; dado presente porem invalido reprova o pacote.
 
-Aceita os dois formatos que o fluxo realmente produz:
+Dois formatos de entrada sao suportados, e apenas esses:
 - a ficha canonica com campos `youtube_*` (redator-artigo-blogs);
-- o dict curto ja convertido: `youtube_id`, `titulo`, `canal`, `resumo`,
+- o dicionario curto ja convertido: `youtube_id`, `titulo`, `canal`, `resumo`,
   `pontos`, `duracao`, `uploadDate`, `duracao_iso`.
-Campos desconhecidos sao rejeitados: nada e inventado nem descartado em silencio.
+
+A validacao e a MESMA em qualquer localizacao do payload (`video`, `article`,
+`metadata` ou raiz), e acontece ANTES da normalizacao:
+
+- campo `youtube_*` desconhecido e recusado em qualquer lugar;
+- no container `video` qualquer campo desconhecido e recusado; na raiz e na
+  ficha (`article`/`metadata`) so os campos de video sao considerados, pois o
+  resto do dicionario pertence ao pacote/artigo;
+- ficha canonica (`article`/`metadata`) nao ignora `youtube_*` desconhecido nem
+  mistura `youtube_*` com campos curtos; nela so `youtube_*` declara video,
+  para nao confundir campo do artigo com video;
+- o dicionario curto vale em bloco explicito, nunca como ficha de artigo;
+- bloco incompleto, ambiguo ou com tipo errado reprova o pacote inteiro, em vez
+  de virar video parcial;
+- mais de uma origem de video no mesmo payload e conflito declarado.
 
 Nenhuma chamada de rede e nenhuma escolha automatica de video: a curadoria e
 humana. A chave YOUTUBE_API_KEY, quando usada, fica so no ambiente.
@@ -43,6 +57,13 @@ CAMPOS_FICHA = {
     "youtube_duracao_iso": "duracao_iso",
 }
 
+# Campos que so existem no formato curto (youtube_id e comum aos dois).
+CAMPOS_CURTOS = tuple(k for k in CAMPOS_VIDEO if k not in CAMPOS_FICHA)
+LOCAIS_ARTIGO = ("article", "metadata")
+LOCAIS_EXPLICITOS = ("video",)
+
+# O bloco visivel mostra no maximo 4 pontos (politica do gerador legado).
+
 
 def duracao_para_iso(valor):
     """Converte '8:32'/'1:02:03' em 'PT8M32S'/'PT1H2M3S'.
@@ -64,9 +85,7 @@ def duracao_para_iso(valor):
     h = int(horas) if horas else 0
     m = int(minutos)
     s = int(segundos)
-    if not horas and (m >= 60 or s >= 60):
-        return ""
-    if horas and (m >= 60 or s >= 60):
+    if m >= 60 or s >= 60:
         return ""
     partes = "PT"
     if h:
@@ -78,95 +97,157 @@ def duracao_para_iso(valor):
     return partes
 
 
-def _candidato(fonte):
-    """Escolhe a origem do video e recusa campos `youtube_*` desconhecidos."""
-    if not isinstance(fonte, dict):
-        return None
-    video = fonte.get("video")
-    if isinstance(video, dict):
-        return video
-    for chave in ("article", "metadata"):
-        artigo = fonte.get(chave)
-        if not isinstance(artigo, dict):
-            continue
-        _rejeitar_youtube_desconhecido(artigo)
-        if any(k in artigo for k in CAMPOS_FICHA):
-            return {k: artigo[k] for k in CAMPOS_FICHA if k in artigo}
-    _rejeitar_youtube_desconhecido(fonte)
-    if any(k in fonte for k in CAMPOS_FICHA):
-        return {k: fonte[k] for k in CAMPOS_FICHA if k in fonte}
-    return None
+def _tem_campo_video(dados):
+    """True quando o dicionario declara algum campo do contrato de video."""
+    return any(isinstance(k, str) and (k.startswith("youtube_") or k in CAMPOS_VIDEO)
+               for k in dados)
 
 
-def _rejeitar_youtube_desconhecido(dados):
+def _declara_video_canonico(dados):
+    """Ficha de artigo so declara video por `youtube_*` (inclusive desconhecido)."""
+    return any(isinstance(k, str) and k.startswith("youtube_") for k in dados)
+
+
+def _eh_canonico(dados):
+    """Formato canonico = presenca de `youtube_*` alem do id compartilhado."""
+    return any(k in dados for k in CAMPOS_FICHA if k != "youtube_id")
+
+
+def _rejeitar_youtube_desconhecido(dados, local):
     estranhos = sorted(k for k in dados
                        if isinstance(k, str) and k.startswith("youtube_")
                        and k not in CAMPOS_FICHA)
     if estranhos:
-        raise ValueError("campo youtube_ desconhecido: " + ", ".join(estranhos))
+        raise ValueError("campo youtube_ desconhecido em %s: %s"
+                         % (local, ", ".join(estranhos)))
 
 
-def _normalizar(dados):
-    """Converte ficha `youtube_*` ou dict curto para o formato interno."""
-    if any(k in dados for k in CAMPOS_FICHA if k != "youtube_id"):
-        mistos = sorted(k for k in dados
-                        if k in CAMPOS_VIDEO and k not in CAMPOS_FICHA)
+def _validar_bloco(dados, local):
+    """Aplica as mesmas regras a qualquer bloco; devolve se e canonico.
+
+    O container `video` nao aceita campo fora do contrato. Raiz e ficha
+    (`article`/`metadata`) carregam outros campos do pacote/artigo, mas seguem
+    proibidas de ter `youtube_*` desconhecido ou mistura de formatos.
+    """
+    _rejeitar_youtube_desconhecido(dados, local)
+    if local in LOCAIS_EXPLICITOS:
+        desconhecidos = sorted(str(k) for k in dados
+                              if not isinstance(k, str)
+                              or (k not in CAMPOS_VIDEO and k not in CAMPOS_FICHA))
+        if desconhecidos:
+            raise ValueError("campo de video desconhecido em %s: %s"
+                             % (local, ", ".join(desconhecidos)))
+    canonico = _eh_canonico(dados)
+    if canonico:
+        mistos = sorted(k for k in dados if k in CAMPOS_CURTOS)
         if mistos:
-            raise ValueError("nao misture youtube_* com campos curtos: "
-                             + ", ".join(mistos))
-        return {CAMPOS_FICHA[k]: v for k, v in dados.items() if k in CAMPOS_FICHA}
-    desconhecidos = sorted(set(dados) - set(CAMPOS_VIDEO))
-    if desconhecidos:
-        raise ValueError("campo de video desconhecido: " + ", ".join(desconhecidos))
-    return dict(dados)
+            raise ValueError("nao misture youtube_* com campos curtos em %s: %s"
+                             % (local, ", ".join(mistos)))
+    return canonico
 
 
-def extrair_video(fonte):
-    """Le o video do payload canonico; devolve None quando nao ha dado valido."""
-    dados = _candidato(fonte)
-    if dados is None:
-        return None
-    dados = _normalizar(dados)
-    for chave in OBRIGATORIOS:
-        valor = dados.get(chave)
-        if valor is None or (isinstance(valor, str) and not valor.strip()):
-            return None
-        if not isinstance(valor, str):
-            raise ValueError("campo de video invalido: " + chave)
-        dados[chave] = valor.strip()
-    if not ID_YOUTUBE.match(dados["youtube_id"]):
-        # Politica: sem ID valido, nenhum bloco e criado.
-        return None
+def _coletar_origens(fonte):
+    """Localiza TODAS as origens de video; nao escolhe uma em silencio."""
+    if not isinstance(fonte, dict):
+        raise ValueError("payload de video deve ser dicionario")
+    origens = []
+    if "video" in fonte:
+        bloco = fonte["video"]
+        if not isinstance(bloco, dict):
+            raise ValueError("video deve ser dicionario")
+        if not bloco:
+            raise ValueError("video vazio: informe os campos ou omita a chave")
+        origens.append(("video", bloco))
+    for local in LOCAIS_ARTIGO:
+        if local not in fonte:
+            continue
+        bloco = fonte[local]
+        if bloco is None:
+            continue
+        if not isinstance(bloco, dict):
+            raise ValueError("%s deve ser dicionario" % local)
+        if _declara_video_canonico(bloco):
+            origens.append((local, bloco))
+    if _tem_campo_video(fonte):
+        origens.append(("root", fonte))
+    return origens
+
+
+def _normalizar(dados, canonico):
+    """Converte ficha `youtube_*` ou dict curto para o formato interno.
+
+    So roda depois da validacao: nenhum campo desconhecido chega aqui.
+    """
+    if canonico:
+        return {CAMPOS_FICHA[k]: dados[k] for k in CAMPOS_FICHA if k in dados}
+    return {k: dados[k] for k in CAMPOS_VIDEO if k in dados}
+
+
+def _texto_obrigatorio(dados, chave, local):
+    valor = dados.get(chave)
+    if not isinstance(valor, str) or not valor.strip():
+        raise ValueError("video incompleto ou invalido em %s: %s" % (local, chave))
+    return valor.strip()
+
+
+def _opcionais(dados, local):
     for chave in ("resumo", "duracao", "uploadDate", "duracao_iso"):
         valor = dados.get(chave)
         if valor is None:
             continue
         if not isinstance(valor, str):
-            raise ValueError("campo de video invalido: " + chave)
+            raise ValueError("campo de video invalido em %s: %s" % (local, chave))
         texto = valor.strip()
         if texto:
             dados[chave] = texto
         else:
             dados.pop(chave)
+
+
+def _pontos(dados, local):
     pontos = dados.get("pontos")
-    if pontos is not None:
-        if not isinstance(pontos, list):
-            raise ValueError("youtube_pontos deve ser lista")
-        itens = []
-        for item in pontos:
-            if item is None or isinstance(item, (dict, list)):
-                raise ValueError("youtube_pontos invalido")
-            texto = str(item).strip()
-            if texto:
-                itens.append(texto)
-        if itens:
-            dados["pontos"] = itens[:4]
-        else:
-            dados.pop("pontos")
+    if pontos is None:
+        return
+    if not isinstance(pontos, list):
+        raise ValueError("youtube_pontos deve ser lista em %s" % local)
+    itens = []
+    for item in pontos:
+        if item is None or isinstance(item, (dict, list, bool)):
+            raise ValueError("youtube_pontos invalido em %s" % local)
+        texto = str(item).strip()
+        if not texto:
+            raise ValueError("youtube_pontos com item vazio em %s" % local)
+        itens.append(texto)
+    if itens:
+        dados["pontos"] = itens[:4]
+    else:
+        dados.pop("pontos")
+
+
+def extrair_video(fonte):
+    """Le o video do payload; None apenas quando nao ha campo de video algum.
+
+    Qualquer video declarado e validado por inteiro: entrada invalida levanta
+    ValueError e reprova o pacote, em vez de gerar bloco parcial.
+    """
+    origens = _coletar_origens(fonte)
+    if not origens:
+        return None
+    if len(origens) > 1:
+        raise ValueError("video definido em mais de uma origem: %s"
+                         % ", ".join(local for local, _ in origens))
+    local, bloco = origens[0]
+    dados = _normalizar(bloco, _validar_bloco(bloco, local))
+    for chave in OBRIGATORIOS:
+        dados[chave] = _texto_obrigatorio(dados, chave, local)
+    if not ID_YOUTUBE.match(dados["youtube_id"]):
+        raise ValueError("youtube_id invalido em %s: %r" % (local, dados["youtube_id"]))
+    _opcionais(dados, local)
+    _pontos(dados, local)
     if "duracao_iso" in dados:
         iso = duracao_para_iso(dados["duracao_iso"])
         if not iso:
-            raise ValueError("youtube_duracao_iso invalida")
+            raise ValueError("youtube_duracao_iso invalida em %s" % local)
         dados["duracao_iso"] = iso
     elif dados.get("duracao"):
         iso = duracao_para_iso(dados["duracao"])
@@ -192,7 +273,7 @@ def bloco_video(video):
         partes.append("<p>" + html.escape(video["resumo"]) + "</p>")
     if video.get("pontos"):
         partes.append("<ul>" + "".join("<li>" + html.escape(p) + "</li>"
-                                       for p in video["pontos"]) + "</ul>")
+                                       for p in video["pontos"][:4]) + "</ul>")
     if video.get("duracao"):
         partes.append('<p class="cx-video-duracao">Duração: '
                       + html.escape(video["duracao"]) + "</p>")

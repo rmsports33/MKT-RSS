@@ -24,7 +24,8 @@ def _preparar_handoff(payload):
     required_payload = {"source_url", "source_name", "article", "research"}
     optional_payload = {"editorial_voice_application", "editorial_brief",
                         "editorial_substance_review", "editorial_contract", "video"}
-    optional_payload |= set(CAMPOS_VIDEO)
+    # Video: dict curto ou ficha canonica, em `video` ou na raiz do pacote.
+    optional_payload |= set(CAMPOS_VIDEO) | set(CAMPOS_FICHA)
     if (not isinstance(payload, dict)
             or not required_payload.issubset(payload)
             or set(payload) - required_payload - optional_payload):

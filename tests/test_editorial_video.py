@@ -71,14 +71,20 @@ def test_misturar_formatos_e_rejeitado():
         }})
 
 
+def test_ficha_sem_campo_de_video_nao_cria_bloco():
+    # Ausencia total de video: nada e inserido, nada e inventado.
+    assert ev.extrair_video(ficha()) is None
+
+
 @pytest.mark.parametrize("campos", [
-    {},
     {"youtube_id": "abc", "youtube_titulo": "T", "youtube_canal": "C"},
     {"youtube_id": "dQw4w9WgXcQ", "youtube_canal": "C"},
     {"youtube_id": "dQw4w9WgXcQ", "youtube_titulo": "   ", "youtube_canal": "C"},
 ])
-def test_entrada_sem_dado_valido_nao_cria_bloco(campos):
-    assert ev.extrair_video(ficha(**campos)) is None
+def test_ficha_com_video_invalido_reprova_o_pacote(campos):
+    # Video declarado e invalido nunca vira bloco parcial: reprova o pacote.
+    with pytest.raises(ValueError):
+        ev.extrair_video(ficha(**campos))
 
 
 def test_payload_sem_video_devolve_none():
