@@ -34,6 +34,28 @@ def _readiness_snapshot(post):
     return normalized
 
 
+def _matches_canonical_package_snapshot(post, payload):
+    """Compare canonical package identity against persisted raw REST fields."""
+    if not isinstance(post, dict) or not isinstance(payload, dict):
+        return False
+    wordpress = payload.get("wordpress")
+    if not isinstance(wordpress, dict):
+        return False
+    remote = _readiness_snapshot(post)
+    expected = {
+        "id": wordpress.get("post_id"),
+        "title": payload.get("title"),
+        "slug": payload.get("slug"),
+        "featured_media": wordpress.get("featured_media"),
+        "categories": wordpress.get("categories"),
+    }
+    return (
+        isinstance(remote, dict)
+        and all(remote.get(key) == value for key, value in expected.items())
+        and _raw_content(post) == payload.get("content")
+    )
+
+
 def authorize_publish(post, factual_review=None, *, package=None, core_root=None,
                       expected_category_id=10, owner_release=None):
     problems = list(validate_wordpress_readiness(
@@ -79,19 +101,9 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
                 package, Path(core_root), require_editorial_ready=True)
             problems.extend(errors + blockers)
             p = package["payload"]
-            wp = p["wordpress"]
             if package.get("stage") != "ready":
                 problems.append("version_not_ready")
-            remote = _readiness_snapshot(post)
-            expected_content = body
-            if (not isinstance(remote, dict) or any(
-                    remote.get(key) != expected for key, expected in {
-                        "id": wp["post_id"],
-                        "title": p["title"],
-                        "slug": p["slug"],
-                        "featured_media": wp["featured_media"],
-                        "categories": wp["categories"],
-                    }.items()) or expected_content != p["content"]):
+            if not _matches_canonical_package_snapshot(post, p):
                 problems.append("remote_version_mismatch")
         except (ImportError, OSError, ValueError, TypeError, KeyError, RuntimeError):
             problems.append("canonical_gate_unavailable_or_invalid")
