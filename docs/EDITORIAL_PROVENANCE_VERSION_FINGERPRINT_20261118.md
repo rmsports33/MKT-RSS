@@ -52,3 +52,21 @@ Executar no patch kit Gate:
 Depois, gerar uma fixture usando o produtor Python real e validá-la pelo PHP real. A fixture deve permanecer fora da produção; o resultado precisa demonstrar aceitação do fingerprint correspondente e rejeição de um digest divergente. Não declarar compatibilidade ponta a ponta antes dessa execução.
 
 Nenhuma integração em WordPress ativo, merge, deploy ou publicação é autorizada por este documento.
+
+## Fixture de compatibilidade ponta a ponta
+
+O produtor disponibiliza um gerador offline, baseado na função real `mkt_flow_p0.editorial_provenance.marcar()`:
+
+```bash
+python tools/export_editorial_provenance_gate_fixture.py --output /tmp/conexo-provenance-fixture.html
+```
+
+Copie esse arquivo para a cópia isolada do patch kit Gate (não para o site) e execute:
+
+```bash
+php ops/gate-provenance-rc10.5/test_conexo_editorial_provenance.php /tmp/conexo-provenance-fixture.html
+```
+
+Além das 20 asserções contratuais internas, o teste com argumento executa duas verificações adicionais: aceita o manifesto produzido pelo MKT-RSS e rejeita a mesma fixture após substituir o fingerprint por um digest divergente. O teste não acessa WordPress nem escreve em produção.
+
+**Status nesta revisão:** código, testes e fixture foram adicionados/atualizados no GitHub. As execuções Python/PHP e o ensaio integrado ainda precisam ser rodados no OpenCode/SSH e registrados com o SHA exato. Não considerar PASS até a execução real.
