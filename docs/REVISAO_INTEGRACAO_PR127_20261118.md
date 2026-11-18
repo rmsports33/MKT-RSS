@@ -42,12 +42,12 @@ Branch: `fix/gate-package-provenance-rc10-5-20261118` em `rmsports33/-site-conex
 
 Diretório: `ops/gate-provenance-rc10.5/`.
 
-Contém consumidor PHP estrito, 14 casos de contrato, aplicador de patch com âncoras exatas e guarda `--isolated-checkout`, além do README de execução e rollback. O aplicador pretende centralizar a validação no núcleo (`cxeg_quality_valid` e `cxeg_quality_record`) e reutilizá-la na fila (`cxgna_draft_readiness`). Não altera o checklist humano, o owner release, HMAC, SQL guard, publicador nem cron.
+Contém consumidor PHP estrito, 17 casos de contrato, aplicador de patch com âncoras exatas e guarda `--isolated-checkout`, além do README de execução e rollback. O aplicador pretende centralizar a validação no núcleo (`cxeg_quality_valid` e `cxeg_quality_record`) e reutilizá-la na fila (`cxgna_draft_readiness`). Não altera o checklist humano, o owner release, HMAC, SQL guard, publicador nem cron.
 
 Validação executada localmente com PHP CLI 8.4.24:
-- 14 casos contratuais do helper: PASS.
+- 17 casos contratuais do helper: PASS.
 - PHP lint do helper: PASS.
-- Fixture sintético com funções/âncoras: dry-run, aplicação, lint do core/publisher sintéticos e repetição dos 14 casos: PASS.
+- Fixture sintético com funções/âncoras: dry-run, aplicação, lint do core/publisher sintéticos e repetição dos 17 casos: PASS.
 
 **Limite importante:** isso não é a aplicação numa cópia integral da RC10.4, não é teste de todas as rotas WordPress e não é homologação da instalação ativa. A cópia integral do plugin deve ser obtida pelo OpenCode em diretório temporário e validada conforme o README, sem tocar em `public_html`.
 
