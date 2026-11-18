@@ -48,9 +48,9 @@ A marca continua sendo um **recibo de integridade**, não uma assinatura ou cert
 ## Validação já executada
 
 Com PHP CLI 8.4.24:
-- **14 casos contratuais** passaram no helper isolado.
+- **17 casos contratuais** passaram no helper isolado.
 - \`php -l\` passou para o helper.
-- O aplicador foi exercitado em fixture sintético com as âncoras necessárias: dry-run, aplicação, lint do núcleo/publisher sintéticos e repetição dos 14 casos passaram.
+- O aplicador foi exercitado em fixture sintético com as âncoras necessárias: dry-run, aplicação, lint do núcleo/publisher sintéticos e repetição dos 17 casos passaram. O patcher exige sentinel `.conexo-gate-isolated-copy` e recusa caminhos sob `public_html`, `www`, `httpdocs` ou `htdocs`.
 
 Isso não é teste da cópia integral do plugin RC10.4 nem homologação na instalação ativa. A aplicação na cópia completa ainda deve ser feita pelo OpenCode, conforme o README do patch kit, e os resultados precisam ser registrados com SHA-256, PHP, saída de lint, testes e diff.
 
