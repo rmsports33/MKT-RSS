@@ -4,7 +4,11 @@ The output is intended for an isolated cross-language Gate contract test only.
 It contains no production post, credentials, network calls or WordPress writes.
 """
 import argparse
+import sys
 from pathlib import Path
+
+# Permitir a invocacao documentada `python tools/<script>.py` a partir da raiz.
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from mkt_flow_p0.editorial_provenance import MODULOS_OBRIGATORIOS, marcar
 
