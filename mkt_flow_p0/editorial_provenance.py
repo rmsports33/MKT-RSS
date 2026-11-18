@@ -37,10 +37,10 @@ ESTADOS_EXECUCAO = {"EXECUTED", "SKIPPED", "FAILED"}
 
 # Deve permanecer byte a byte sincronizado com o descritor do Gate PHP.
 DESCRITOR_VERSAO_CONTRATO = (
-    "cxeg-package:v1\\n"
-    "contract:2026-11-18-rc1\\n"
-    "fields:content_sha256,version_sha256,modules,voice_status,substance_status,image_rights_confirmed\\n"
-    "modules:editorial_identity,editorial_core_offline,seo,editorial_readiness,editorial_substance\\n"
+    "cxeg-package:v1\n"
+    "contract:2026-11-18-rc1\n"
+    "fields:content_sha256,version_sha256,modules,voice_status,substance_status,image_rights_confirmed\n"
+    "modules:editorial_identity,editorial_core_offline,seo,editorial_readiness,editorial_substance\n"
     "hash:sha256"
 )
 
@@ -53,7 +53,7 @@ def version_sha256_esperado():
 def hash_corpo(corpo):
     if not isinstance(corpo, str):
         raise TypeError("corpo deve ser texto")
-    # Canonicalizacao ASCII equivalente a PHP rtrim($body, " \\t\\n\\r").
+    # Canonicalizacao ASCII equivalente a PHP rtrim($body, " \\t\n\\r").
     return hashlib.sha256(corpo.rstrip(" \t\r\n").encode("utf-8")).hexdigest()
 
 
