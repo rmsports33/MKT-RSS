@@ -1,4 +1,5 @@
 from tools.validate_wordpress_snapshot import validate_snapshot
+from mkt_flow_p0 import editorial_provenance as pv
 from mkt_flow_p0.editorial_provenance import MODULOS_OBRIGATORIOS, marcar
 from mkt_flow_p0.editorial_video import bloco_video, videoobject_jsonld
 
@@ -13,7 +14,7 @@ def _snapshot():
         voice_status="ASSISTED_ADAPTED",
         substance_status="PASS",
         image_rights_confirmed=True,
-        version_sha256="b" * 64,
+        version_sha256=pv.version_sha256_esperado(),
     )[0]
     base = {
         "id": 42,
