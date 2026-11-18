@@ -35,6 +35,20 @@ ESTADOS_VOZ = {"PROMPT_APPLIED", "HUMAN_ADAPTED", "ASSISTED_ADAPTED", "NOT_APPLI
 ESTADOS_SUBSTANCIA = {"PASS", "PENDING", "FAIL"}
 ESTADOS_EXECUCAO = {"EXECUTED", "SKIPPED", "FAILED"}
 
+# Deve permanecer byte a byte sincronizado com o descritor do Gate PHP.
+DESCRITOR_VERSAO_CONTRATO = (
+    "cxeg-package:v1\\n"
+    "contract:2026-11-18-rc1\\n"
+    "fields:content_sha256,version_sha256,modules,voice_status,substance_status,image_rights_confirmed\\n"
+    "modules:editorial_identity,editorial_core_offline,seo,editorial_readiness,editorial_substance\\n"
+    "hash:sha256"
+)
+
+
+def version_sha256_esperado():
+    """Fingerprint SHA-256 do descritor canônico compartilhado com o Gate."""
+    return hashlib.sha256(DESCRITOR_VERSAO_CONTRATO.encode("utf-8")).hexdigest()
+
 
 def hash_corpo(corpo):
     if not isinstance(corpo, str):
@@ -48,7 +62,7 @@ def _contar_marcas(corpo):
 
 
 def marcar(corpo, *, modules, voice_status, substance_status,
-           image_rights_confirmed, version_sha256=""):
+           image_rights_confirmed, version_sha256=None):
     """Insere uma única marca; estados pendentes são registrados, nunca aprovados."""
     if not isinstance(corpo, str) or not corpo.strip():
         raise ValueError("corpo vazio para marcar")
@@ -60,8 +74,13 @@ def marcar(corpo, *, modules, voice_status, substance_status,
         raise ValueError("substance_status invalido")
     if type(image_rights_confirmed) is not bool:
         raise ValueError("image_rights_confirmed deve ser booleano")
+    esperado = version_sha256_esperado()
+    if version_sha256 is None:
+        version_sha256 = esperado
     if not isinstance(version_sha256, str) or not SHA256.fullmatch(version_sha256):
         raise ValueError("version_sha256 deve ser SHA-256 hexadecimal")
+    if version_sha256 != esperado:
+        raise ValueError("version_sha256 nao corresponde ao fingerprint esperado do contrato")
     ocorrencias = _contar_marcas(corpo)
     if ocorrencias > 1:
         raise ValueError("marca de proveniencia duplicada: remova antes de marcar")
@@ -135,6 +154,8 @@ def validar_integridade(corpo):
             or not isinstance(manifesto.get("version_sha256"), str)
             or not SHA256.fullmatch(manifesto["version_sha256"])):
         return {"valido": False, "motivo": "manifesto_invalido"}
+    if manifesto["version_sha256"] != version_sha256_esperado():
+        return {"valido": False, "motivo": "version_hash_mismatch"}
     modulos = manifesto.get("modules")
     if (not isinstance(modulos, dict)
             or set(modulos) != set(MODULOS_OBRIGATORIOS)
