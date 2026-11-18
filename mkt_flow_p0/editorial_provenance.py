@@ -53,9 +53,9 @@ def marcar(corpo, *, modules, voice_status, substance_status,
         raise ValueError("corpo vazio para marcar")
     if not isinstance(modules, dict):
         raise ValueError("modules deve ser um dicionario")
-    if voice_status not in ESTADOS_VOZ:
+    if not isinstance(voice_status, str) or voice_status not in ESTADOS_VOZ:
         raise ValueError("voice_status invalido")
-    if substance_status not in ESTADOS_SUBSTANCIA:
+    if not isinstance(substance_status, str) or substance_status not in ESTADOS_SUBSTANCIA:
         raise ValueError("substance_status invalido")
     if type(image_rights_confirmed) is not bool:
         raise ValueError("image_rights_confirmed deve ser booleano")
@@ -122,11 +122,14 @@ def validar_integridade(corpo):
         return {"valido": False, "motivo": "manifesto_invalido"}
     modulos = manifesto.get("modules")
     if (not isinstance(modulos, dict)
-            or any(not isinstance(k, str) or not isinstance(v, str)
-                   or v not in ESTADOS_EXECUCAO for k, v in modulos.items())):
+            or any(not isinstance(k, str) or k not in MODULOS_OBRIGATORIOS
+                   or not isinstance(v, str) or v not in ESTADOS_EXECUCAO
+                   for k, v in modulos.items())):
         return {"valido": False, "motivo": "manifesto_invalido"}
-    if (manifesto.get("voice_status") not in ESTADOS_VOZ
-            or manifesto.get("substance_status") not in ESTADOS_SUBSTANCIA
+    voice_status = manifesto.get("voice_status")
+    substance_status = manifesto.get("substance_status")
+    if (not isinstance(voice_status, str) or voice_status not in ESTADOS_VOZ
+            or not isinstance(substance_status, str) or substance_status not in ESTADOS_SUBSTANCIA
             or type(manifesto.get("image_rights_confirmed")) is not bool):
         return {"valido": False, "motivo": "manifesto_invalido"}
     marca = encontrados[0]
