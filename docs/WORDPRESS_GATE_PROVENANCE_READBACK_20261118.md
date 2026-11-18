@@ -94,3 +94,21 @@ Se não existir esse post ou se não houver uma instalação WordPress isolada c
 4. Disponibilizar uma instância WordPress de homologação isolada com o mesmo PHP, filtros e papel/capacidades para um teste controlado de persistência/readback. Sem ela, não declarar o teste de sanitização concluído.
 
 **Nenhuma mudança da RC10.5 foi aplicada ao site ativo.** Sem merge, deploy, publicação, cron ou escrita em produção nesta etapa.
+
+
+## Atualização de readback real — 18/11/2026 (GET somente)
+
+Foram feitas novas leituras de posts existentes nos contextos solicitados edit e view, sem POST/PUT, criação de rascunho ou alteração editorial:
+
+| Post | Status | ID/modified correlacionados | Conteúdo encontrado | Resultado |
+|---|---|---|---|---|
+| #9894 | pending | sim; 2026-11-16T22:42:42 | sem iframe, VideoObject ou marcador | não serve como prova de vídeo/proveniência |
+| #9900 | draft | sim; 2026-11-17T21:18:02 | sem iframe ou VideoObject; marcador legado | não serve como prova de vídeo; fingerprint difere do contrato RC10.5 |
+| #9906 | draft | sim; 2026-11-17T21:32:59 | sem iframe ou VideoObject; marcador legado | não serve como prova de vídeo; fingerprint difere do contrato RC10.5 |
+| #9253 | draft | sim; 2026-09-26T03:14:39 | wrapper cxaf-video, data-video-id e script lazy-load; sem iframe persistido e sem VideoObject | comprova placeholder/script, não o contrato iframe + VideoObject |
+
+**Limitação do conector:** apesar das chamadas separadas edit/view, o MCP entrega content como string achatada, não os objetos REST content.raw e content.rendered. IDs, status e modified podem ser correlacionados, mas o adaptador corretamente recusa promover essas strings a prova raw/rendered.
+
+**Conclusão:** readback GET e correlação confirmados para os quatro posts; persistência/conservação do iframe + VideoObject do fluxo MKT-RSS continua PENDENTE / NÃO HOMOLOGADA. A busca read-only não encontrou post existente com marcador RC10.5 válido, iframe YouTube nocookie e VideoObject correspondente.
+
+**Próxima rota segura:** OpenCode deve obter por GET a resposta REST nativa em /wp-json/wp/v2/posts/{id}?context=edit e context=view, usando autenticação já disponível sem expor credenciais. Guardar JSON local fora do Git e validar com o utilitário offline. Se não existir post elegível, a prova exige WordPress isolado. Não criar post de teste na instalação ativa sem autorização específica.
