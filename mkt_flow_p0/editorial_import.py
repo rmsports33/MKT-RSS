@@ -216,8 +216,12 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         "publication_authorized":False,"human_acceptance":"PENDING"}
     # Proveniencia: o corpo gerado pelo motor sai marcado. O Gate recusa
     # rascunhos sem esta marca, independentemente de quem escreveu o texto.
-    from mkt_flow_p0.editorial_provenance import marcar
-    _modulos = {m["id"]: m["execution"] for m in result["module_manifest"]}
+    from mkt_flow_p0.editorial_provenance import MODULOS_OBRIGATORIOS, marcar
+    # A marca cobre apenas os modulos canonicos; os ids de diagnostico do
+    # manifesto completo nao fazem parte do contrato de proveniencia.
+    _execucao = {m["id"]: m["execution"] for m in result["module_manifest"]}
+    _modulos = {nome: _execucao.get(nome, "SKIPPED")
+                for nome in MODULOS_OBRIGATORIOS}
     _corpo_marcado, _manifesto = marcar(
         corpo,
         modules=_modulos,

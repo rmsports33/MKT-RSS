@@ -66,6 +66,8 @@ def marcar(corpo, *, modules, voice_status, substance_status,
     if ocorrencias > 1:
         raise ValueError("marca de proveniencia duplicada: remova antes de marcar")
     if ocorrencias == 1:
+        if extrair_manifesto(corpo) is None:
+            raise ValueError("marca de proveniencia malformada no corpo: remova antes de marcar")
         integridade_existente = validar_integridade(corpo)
         if not integridade_existente["valido"]:
             raise ValueError("marca de proveniencia existente invalida: remova antes de marcar")
