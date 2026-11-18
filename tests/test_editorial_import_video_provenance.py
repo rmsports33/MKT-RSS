@@ -89,7 +89,9 @@ def test_video_da_ficha_chega_ao_corpo_e_ao_preview(tmp_path):
     resultado = processar(payload_com_video(), tmp_path / "v")
     corpo = Path(resultado["wordpress_body_path"]).read_text(encoding="utf-8")
     preview = Path(resultado["preview_path"]).read_text(encoding="utf-8")
-    assert resultado["video_review"]["status"] == "INSERIDO_COM_CURADORIA_HUMANA"
+    assert resultado["video_review"]["status"] == "INSERIDO_AGUARDANDO_REVISAO_HUMANA"
+    assert resultado["video_review"]["human_curation_confirmed"] is False
+    assert resultado["video_review"]["human_review_required"] is True
     assert resultado["video_review"]["youtube_id"] == "dQw4w9WgXcQ"
     assert "youtube-nocookie.com/embed/dQw4w9WgXcQ" in corpo
     assert '"duration": "PT8M32S"' in corpo
@@ -154,3 +156,18 @@ def test_cli_inicia_offline_e_exige_online_explicito(tmp_path):
     online = parser.parse_args(
         ["--import-article", "a.json", "--handoff-dir", "d", "--online"])
     assert online.offline is False
+
+
+def test_direitos_de_imagem_exigem_booleano_real_antes_de_criar_saida(tmp_path):
+    destino = tmp_path / "nao-deve-ser-criado"
+    with pytest.raises(ValueError, match="media_rights_confirmed deve ser booleano"):
+        processar_artigo_importado(payload(), destino, media_rights_confirmed="false")
+    assert not destino.exists()
+
+
+def test_curadoria_de_video_nao_e_inferida_de_campos_validos(tmp_path):
+    resultado = processar(payload_com_video(), tmp_path / "video")
+    assert resultado["video_review"]["human_curation_confirmed"] is False
+    assert resultado["video_review"]["human_review_required"] is True
+    assert resultado["human_acceptance"] == "PENDING"
+    assert resultado["publication_authorized"] is False
