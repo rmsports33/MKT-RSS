@@ -62,9 +62,19 @@ def marcar(corpo, *, modules, voice_status, substance_status,
         raise ValueError("image_rights_confirmed deve ser booleano")
     if not isinstance(version_sha256, str) or not SHA256.fullmatch(version_sha256):
         raise ValueError("version_sha256 deve ser SHA-256 hexadecimal")
+    ocorrencias = _contar_marcas(corpo)
+    if ocorrencias > 1:
+        raise ValueError("marca de proveniencia duplicada: remova antes de marcar")
+    if ocorrencias == 1:
+        integridade_existente = validar_integridade(corpo)
+        if not integridade_existente["valido"]:
+            raise ValueError("marca de proveniencia existente invalida: remova antes de marcar")
     limpo = PADRAO.sub("", corpo)
     if _contar_marcas(limpo):
         raise ValueError("marca de proveniencia malformada no corpo: remova antes de marcar")
+    desconhecidos = set(modules) - set(MODULOS_OBRIGATORIOS)
+    if desconhecidos:
+        raise ValueError("modulos desconhecidos: " + ", ".join(sorted(desconhecidos)))
     modulos = {}
     for nome in MODULOS_OBRIGATORIOS:
         estado = modules.get(nome, "SKIPPED")
