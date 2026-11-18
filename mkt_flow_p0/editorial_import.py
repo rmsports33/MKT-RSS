@@ -173,6 +173,21 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         "related_links":"VERIFIED_BY_CALLER" if verified_related_urls else "NOT_VERIFIED",
         "provider_called":bool(development_receipt),"network_called":bool(development_receipt) or image_plan.get("network_called",False),"wordpress_written":False,
         "publication_authorized":False,"human_acceptance":"PENDING"}
+    # Proveniencia: o corpo gerado pelo motor sai marcado. O Gate recusa
+    # rascunhos sem esta marca, independentemente de quem escreveu o texto.
+    from mkt_flow_p0.editorial_provenance import marcar
+    _corpo = Path(rendered["wordpress_body"]).read_text(encoding="utf-8")
+    _modulos = {m["id"]: m["execution"] for m in result["module_manifest"]}
+    _corpo_marcado, _manifesto = marcar(
+        _corpo,
+        modules=_modulos,
+        voice_status=(result.get("editorial_voice_application") or {}).get("status", "NOT_APPLIED"),
+        substance_status=(result.get("substantive_review") or {}).get("status", "PENDING"),
+        image_rights_confirmed=bool(media_rights_confirmed),
+        version_sha256=str(result.get("version_sha256") or ""))
+    Path(rendered["wordpress_body"]).write_text(_corpo_marcado, encoding="utf-8")
+    result["wordpress_body_sha256"] = _manifesto["content_sha256"]
+    result["provenance_manifest"] = _manifesto
     (root / "pipeline-report.json").write_text(json.dumps(result,ensure_ascii=False,indent=2), encoding="utf-8")
     # All generated artifacts are private even with a permissive process umask.
     for path in root.iterdir():
