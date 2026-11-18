@@ -158,9 +158,12 @@ def gerar_corpo_wordpress(article, markdown):
     return "\n".join(items)
 
 
-def gerar_html(article, markdown):
-    """Documento completo SOMENTE para pre-visualizacao offline, sempre noindex."""
-    fragmento = gerar_corpo_wordpress(article, markdown)
+def montar_documento_preview(article, fragmento):
+    """Documento completo SOMENTE para pre-visualizacao offline, sempre noindex.
+
+    Recebe o MESMO fragmento entregue ao WordPress para que preview e corpo
+    nunca divirjam, inclusive apos video e marca de proveniencia.
+    """
     seo = article["seo"]
     return "\n".join([
         "<!doctype html>",
@@ -181,6 +184,11 @@ def gerar_html(article, markdown):
         fragmento,
         "</article></main></body></html>",
     ])
+
+
+def gerar_html(article, markdown):
+    """Documento completo SOMENTE para pre-visualizacao offline, sempre noindex."""
+    return montar_documento_preview(article, gerar_corpo_wordpress(article, markdown))
 
 
 def processar(metadata_file, markdown_file, output_dir, editorial_package_file=None):

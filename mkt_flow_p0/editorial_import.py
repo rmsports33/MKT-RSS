@@ -1,7 +1,9 @@
 """Import a researched article into the existing MKT-RSS editorial handoff.
 
 Offline imports never call a provider. Online imports automatically develop and
-critique pending prose with the existing provider. Neither path writes WordPress.
+critique pending prose with the existing provider, but only when the caller asks
+for it explicitly (`offline=False` or the CLI flag `--online`).
+Neither path writes WordPress.
 """
 import argparse
 import json
@@ -12,25 +14,35 @@ from pathlib import Path
 from mkt_flow_p0.editorial_identity import (
     criar_handoff_chatgpt, salvar_handoff_chatgpt, validar_handoff_chatgpt,
 )
+from mkt_flow_p0.editorial_video import (
+    CAMPOS_FICHA, CAMPOS_VIDEO, bloco_video, extrair_video, videoobject_jsonld,
+)
 
 
 def _preparar_handoff(payload):
     """Validate an editor/provider input without side effects."""
     required_payload = {"source_url", "source_name", "article", "research"}
-    optional_payload = {"editorial_voice_application", "editorial_brief", "editorial_substance_review", "editorial_contract"}
+    optional_payload = {"editorial_voice_application", "editorial_brief",
+                        "editorial_substance_review", "editorial_contract", "video"}
+    optional_payload |= set(CAMPOS_VIDEO)
     if (not isinstance(payload, dict)
             or not required_payload.issubset(payload)
             or set(payload) - required_payload - optional_payload):
         raise ValueError("pacote exige source_url, source_name, article e research; a prova de voz é opcional")
+    # Video e validado antes de qualquer diretorio, handoff ou rede: campo
+    # desconhecido ou malformado reprova o pacote inteiro.
+    extrair_video(payload)
     source_name = payload["source_name"]
     if not isinstance(source_name, str) or not source_name.strip() or len(source_name) > 120:
         raise ValueError("nome da fonte original invalido")
     article = payload["article"]
     required = {"titulo_seo", "meta_description", "slug", "texto_markdown"}
-    if not isinstance(article, dict) or set(article) != required:
+    # A ficha pode carregar o video (youtube_*); nada alem disso e aceito.
+    if (not isinstance(article, dict)
+            or set(article) - set(CAMPOS_FICHA) != required):
         raise ValueError("campos do artigo invalidos")
-    if (not isinstance(article["texto_markdown"], str)
-            or len(article["texto_markdown"].split()) < 200):
+    markdown = article["texto_markdown"]
+    if not isinstance(markdown, str) or len(markdown.split()) < 200:
         raise ValueError("artigo precisa de ao menos 200 palavras")
     handoff = criar_handoff_chatgpt(
         article, url_fonte=payload["source_url"],
@@ -57,11 +69,14 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
 
     Offline mode preserves text and reports pending work. No WordPress writes.
     """
-    from mkt_flow_p0.editorial_core_offline import processar, validar_pacote
+    from mkt_flow_p0.editorial_core_offline import (
+        montar_documento_preview, processar, validar_pacote,
+    )
     from mkt_flow_p0.editorial_readiness import avaliar_prontidao_editorial
     from mkt_flow_p0.gate_editorial_pos_ia import validar_saida
     from mkt_flow_p0.editorial_trace import make_trace, save_trace
     from mkt_flow_p0.adaptador_contrato_editorial import avaliar_snapshot_editorial
+    from mkt_flow_p0.seo import validar_artigo_wordpress
 
     # Reject invalid destinations/inputs before network or provider usage.
     if Path(output_dir).exists():
@@ -123,8 +138,20 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
     metadata_path.write_text(json.dumps(saved["metadata"], ensure_ascii=False, indent=2), encoding="utf-8")
     markdown_path.write_text(saved["markdown"], encoding="utf-8")
     rendered = processar(metadata_path, markdown_path, root)
-    body = Path(rendered["wordpress_body"]).read_text(encoding="utf-8")
-    readiness = avaliar_prontidao_editorial(saved, html=body, genero=genero,
+    corpo = Path(rendered["wordpress_body"]).read_text(encoding="utf-8")
+    # Video entra ANTES de readiness/SEO: o que for avaliado e exatamente o
+    # conteudo que sera entregue, e o preview recebe o mesmo fragmento.
+    video = extrair_video(payload)
+    if video is not None:
+        corpo = (corpo.rstrip() + "\n\n" + bloco_video(video) + "\n"
+                 + videoobject_jsonld(video) + "\n")
+        video_review = {"status": "INSERIDO_COM_CURADORIA_HUMANA",
+                        "youtube_id": video["youtube_id"],
+                        "canal": video["canal"],
+                        "duracao": video.get("duracao", "")}
+    else:
+        video_review = {"status": "SEM_VIDEO_VALIDO", "inserido": False}
+    readiness = avaliar_prontidao_editorial(saved, html=corpo, genero=genero,
         featured_media_id=featured_media_id, direitos_imagem_confirmados=media_rights_confirmed,
         verified_related_urls=verified_related_urls)
     source_text = "\n".join(fact for source in payload["research"]["sources"] for fact in source["facts"])
@@ -171,9 +198,32 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         "voice_quality_review":readiness.get("revisao_de_voz", "PENDENTE_AVALIACAO_HUMANA"),
         "image_research":image_plan, "image_generation_request":image_plan.get('generation_request'),
         "image_ai_used":bool(image_plan.get('ai_called')),
+        "video_review":video_review,
         "related_links":"VERIFIED_BY_CALLER" if verified_related_urls else "NOT_VERIFIED",
         "provider_called":bool(development_receipt),"network_called":bool(development_receipt) or image_plan.get("network_called",False),"wordpress_written":False,
         "publication_authorized":False,"human_acceptance":"PENDING"}
+    # Proveniencia: o corpo gerado pelo motor sai marcado. O Gate recusa
+    # rascunhos sem esta marca, independentemente de quem escreveu o texto.
+    from mkt_flow_p0.editorial_provenance import marcar
+    _modulos = {m["id"]: m["execution"] for m in result["module_manifest"]}
+    _corpo_marcado, _manifesto = marcar(
+        corpo,
+        modules=_modulos,
+        voice_status=(result.get("editorial_voice_application") or {}).get("status", "NOT_APPLIED"),
+        substance_status=(result.get("substantive_review") or {}).get("status", "PENDING"),
+        image_rights_confirmed=bool(media_rights_confirmed),
+        version_sha256=str(result.get("version_sha256") or ""))
+    Path(rendered["wordpress_body"]).write_text(_corpo_marcado, encoding="utf-8")
+    # Preview entrega o mesmo fragmento (video + marca): nada diverge do body.
+    Path(rendered["html"]).write_text(
+        montar_documento_preview(saved["metadata"], _corpo_marcado), encoding="utf-8")
+    # SEO recalculado sobre o conteudo final, nao sobre o texto anterior.
+    result["seo_preflight"] = validar_artigo_wordpress(
+        saved["metadata"]["title"], _corpo_marcado,
+        tem_capa=bool(saved["metadata"].get("featured_image")
+                      or saved["metadata"].get("image_resource")))
+    result["wordpress_body_sha256"] = _manifesto["content_sha256"]
+    result["provenance_manifest"] = _manifesto
     (root / "pipeline-report.json").write_text(json.dumps(result,ensure_ascii=False,indent=2), encoding="utf-8")
     # All generated artifacts are private even with a permissive process umask.
     for path in root.iterdir():
@@ -190,15 +240,25 @@ def resumo_execucao(result):
     return {k: result[k] for k in keys if k in result}
 
 
-def main():
-    """Offline CLI: import a finished article; never call a model or WordPress."""
-    parser = argparse.ArgumentParser(description="Importar artigo para revisao MKT-RSS")
+def _parser():
+    """CLI offline por padrao: provedor e rede exigem --online explicito."""
+    parser = argparse.ArgumentParser(
+        description="Importar artigo para revisao MKT-RSS (offline por padrao)")
     parser.add_argument("--import-article", type=Path, required=True)
     parser.add_argument("--handoff-dir", type=Path, required=True)
     parser.add_argument("--image-manifest", type=Path)
     parser.add_argument("--image-fit-review", choices=("PASS", "INCONGRUENT"), help="Resultado da revisão visual/editorial da candidata gratuita")
-    parser.add_argument("--offline",action="store_true",help="Sem pesquisa de imagem na rede; protocolo ainda avalia catálogo/pendências")
-    args = parser.parse_args()
+    parser.add_argument("--offline", dest="offline", action="store_true", default=True,
+                        help="Comportamento padrao: sem pesquisa de imagem na rede e sem provedor")
+    parser.add_argument("--online", dest="offline", action="store_false",
+                        help="EXPLICITO: permite o desenvolvimento editorial automatico pelo provedor existente")
+    return parser
+
+
+def main(argv=None):
+    """CLI offline por padrao: sem provedor e sem WordPress; online so com --online."""
+    parser = _parser()
+    args = parser.parse_args(argv)
     if args.import_article.stat().st_size > 1024 * 1024:
         parser.error("arquivo excede 1 MiB")
     payload = json.loads(args.import_article.read_text(encoding="utf-8"))
