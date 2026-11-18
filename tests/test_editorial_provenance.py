@@ -12,7 +12,7 @@ MODULOS = {m: "EXECUTED" for m in pv.MODULOS_OBRIGATORIOS}
 def marcar(corpo=CORPO, **opcoes):
     base = dict(modules=MODULOS, voice_status="ASSISTED_ADAPTED",
                 substance_status="PASS", image_rights_confirmed=True,
-                version_sha256="a" * 64)
+                version_sha256=pv.version_sha256_esperado())
     base.update(opcoes)
     return pv.marcar(corpo, **base)
 
@@ -83,6 +83,31 @@ def test_version_sha256_precisa_ser_hexadecimal_completo():
         marcar(version_sha256="v>1")
     with pytest.raises(ValueError, match="version_sha256"):
         marcar(version_sha256="a" * 63)
+
+def test_fingerprint_canonico_e_compativel_com_o_gate_php():
+    assert pv.version_sha256_esperado() == (
+        "80d09ee7c49505560862a0364c1af8b4"
+        "aa5b694f9db954b52b35f26b82bdbfaa"
+    )
+    corpo, manifesto = marcar()
+    assert manifesto["version_sha256"] == pv.version_sha256_esperado()
+    assert pv.validar_integridade(corpo)["valido"] is True
+
+
+def test_produtor_rejeita_fingerprint_bem_formado_mas_divergente():
+    with pytest.raises(ValueError, match="fingerprint esperado"):
+        marcar(version_sha256="a" * 64)
+
+
+def test_consumidor_rejeita_fingerprint_bem_formado_mas_divergente():
+    corpo, manifesto = marcar()
+    manifesto["version_sha256"] = "a" * 64
+    corpo_sem_marca = pv.PADRAO.sub("", corpo).rstrip(" \\t\\r\\n")
+    divergente = corpo_sem_marca + "\\n" + pv.PREFIXO_MARCA + json.dumps(
+        manifesto, ensure_ascii=False, separators=(",", ":")) + " -->"
+    assert pv.validar_integridade(divergente) == {
+        "valido": False, "motivo": "version_hash_mismatch"
+    }
 
 
 @pytest.mark.parametrize("opcoes,motivo", [
