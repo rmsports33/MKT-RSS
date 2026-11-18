@@ -97,19 +97,8 @@ A divergência foi **eliminada na raiz**: o JS real do servidor foi trazido para
 correção da linha 230. Nenhum deploy automático (proteção da issue #51 já em master).
 Nenhuma credencial exposta. Nenhuma alteração em produção além da linha 230 (já validada).
 
-## Próximo passo (depende de SSH — operador)
+## Nota de atualização — 18/11/2026
 
-> COMANDO PARA COPIAR E COLAR no terminal da Hostinger (somente leitura):
+A seção de comandos SSH abaixo foi removida por estar obsoleta e contradizer a reconciliação documentada acima. O PR #78 foi mesclado em 17/11 e o JS real foi reconciliado byte a byte com o arquivo do servidor. **Não executar a antiga busca SSH nem reaplicar a correção da linha 230.**
 
-```bash
-find ~/ -path '*/wp-content/themes/*' -name main.js -type f 2>/dev/null | head -5
-```
-
-Depois, para localizar a linha problemática:
-
-```bash
-grep -n "csvBtns.forEach" CAMINHO_DO_MAIN.js
-```
-
-Com o caminho e o trecho reais, o delta pode ser preparado com segurança e
-aplicado **somente ao arquivo corrente do servidor**, com backup prévio.
+Este arquivo permanece um registro histórico da Fase 1. Qualquer mudança futura no tema exige nova leitura do arquivo corrente, backup e validação específica; nunca substituir o tema inteiro nem copiar um artefato antigo para produção.
