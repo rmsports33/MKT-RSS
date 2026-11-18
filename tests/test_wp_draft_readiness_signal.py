@@ -82,3 +82,13 @@ def test_missing_validator_fails_closed():
         assert out["motivo_prontidao"] == "validador_indisponivel"
     finally:
         builtins.__import__ = real_import
+
+
+def test_featured_media_must_match_authenticated_wordpress_readback():
+    post = _readback()
+    post["featured_media"] = 456
+    out = _readiness_from_readback(
+        post, featured_media_id=999,
+        image_caption="Foto: autor, fonte, licença CC BY 4.0")
+    assert out["pronto_para_revisao"] is False
+    assert "featured_media_readback_mismatch" in out["motivo_prontidao"]
