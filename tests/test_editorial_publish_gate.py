@@ -8,7 +8,7 @@ from mkt_flow_p0.editorial_provenance import MODULOS_OBRIGATORIOS, marcar
 
 POST = {"id": 123, "status": "draft", "categories": [10],
         "slug": "noticia-verificada", "featured_media": 456,
-        "title": "Notícia verificada", "content": "<p>Texto confirmado</p>",
+        "title": "Notícia verificada", "content": {"raw": "<p>Texto confirmado</p>", "rendered": "<p>Texto confirmado</p>"},
         "link": "https://conexotech.com.br/?p=123"}
 REVIEW = {"veredito": "APROVADO", "revisao_substantiva": True,
           "evidencias_verificadas": True, "aprovacao_atual": True}
@@ -80,14 +80,16 @@ def test_missing_provenance_marker_blocks_even_before_owner_gate():
 
 
 def test_invalid_provenance_marker_blocks_fail_closed():
-    bad = {**POST, "content": "<p>Alterado depois da marca</p>" + corpo_com_proveniencia()}
+    bad_body = "<p>Alterado depois da marca</p>" + corpo_com_proveniencia()
+    bad = {**POST, "content": {"raw": bad_body, "rendered": bad_body}}
     result = authorize_publish(bad, REVIEW)
     assert result["autorizado"] is False
     assert any(item.startswith("editorial_provenance_") for item in result["bloqueios"])
 
 
 def test_valid_provenance_does_not_replace_owner_release_or_canonical_package():
-    marked = {**POST, "content": corpo_com_proveniencia()}
+    marked_body = corpo_com_proveniencia()
+    marked = {**POST, "content": {"raw": marked_body, "rendered": marked_body}}
     result = authorize_publish(marked, REVIEW)
     assert result["autorizado"] is False
     assert not any(item.startswith("editorial_provenance_") for item in result["bloqueios"])
@@ -165,3 +167,26 @@ def test_canonical_package_snapshot_rejects_rendered_only_content():
         "content": {"rendered": raw},
     }
     assert _matches_canonical_package_snapshot(rest_post, payload) is False
+
+
+def test_flattened_rest_content_string_is_not_accepted_as_raw():
+    flattened = {**POST, "content": corpo_com_proveniencia()}
+    result = authorize_publish(flattened, REVIEW)
+    assert result["autorizado"] is False
+    assert "editorial_provenance_content_raw_unavailable" in result["bloqueios"]
+
+
+def test_canonical_package_snapshot_rejects_flattened_content_string():
+    raw = corpo_com_proveniencia()
+    payload = {
+        "title": POST["title"],
+        "slug": POST["slug"],
+        "content": raw,
+        "wordpress": {
+            "post_id": POST["id"],
+            "featured_media": POST["featured_media"],
+            "categories": POST["categories"],
+        },
+    }
+    assert _matches_canonical_package_snapshot(
+        {**POST, "content": raw}, payload) is False
