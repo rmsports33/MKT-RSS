@@ -1,4 +1,6 @@
 # Matriz Única de Pendências — Conexo OS — 16/11/2026
+> **AVISO — REGISTRO HISTÓRICO, NÃO OPERACIONAL (18/11/2026):** esta matriz representa o estado observado em 16/11. Estados, branches, PRs e próximos passos podem ter mudado desde então. Não executar a sequência abaixo nem usar suas contagens como status atual. Consultar a consolidação factual atual na linha documental vigente e obter evidência recente antes de qualquer ação. O conteúdo original foi preservado como fotografia histórica.
+
 
 Consolidação de 4 auditorias cruzadas (6 repositórios GitHub) confrontadas com o
 estado real verificado. **Uma única fonte de verdade** para não reabrir problemas
