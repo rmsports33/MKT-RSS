@@ -1,0 +1,3 @@
+#!/bin/sh
+# Verifica se o registro unico cobre os documentos de auditoria antes de commit.
+python tools/check_registro_unico.py

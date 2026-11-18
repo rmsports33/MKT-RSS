@@ -113,3 +113,19 @@ Detalhes por tema permanecem nos documentos citados.
 - M19 SEO: `docs/M19_INVENTARIO_SEO_20261117.md`
 - Gate política: `docs/EDITORIAL-IMMEDIATE-PUBLICATION-POLICY-20261113.md`
 - Vídeo: `docs/site/politica-curadoria-video.md`
+
+<!-- registro-unico:auto:start -->
+
+## Documentos de auditoria reconhecidos (atualizado automaticamente)
+
+- `docs/AUDITORIA_MODULOS_CREDENCIAIS_20261118.md` — Auditoria de mÃ³dulos desligados e credenciais â€” 18/11/2026
+- `docs/CREDENCIAL_MOTOR_20261117.md` — Credencial do motor editorial â€” 17/11/2026
+- `docs/GARGALO_RASCUNHO_WORDPRESS_20261117.md` — Gargalo entre geraÃ§Ã£o e WordPress â€” diagnÃ³stico e soluÃ§Ã£o â€” 17/11/2026
+- `docs/M07_FILA_CORRECAO_20261117.md` — M07 â€” Fila de correÃ§Ã£o de rascunhos â€” 17/11/2026
+- `docs/M14_AUDITORIA_PRECOS_20261117.md` — M14 â€” Auditoria de preÃ§os publicados â€” 17/11/2026
+- `docs/PAUTAS_SELECIONADAS_20261117.md` — Duas pautas escolhidas â€” briefing e conferÃªncia â€” 17/11/2026
+- `docs/PAUTAS_TRIAGEM_20261117.md` — Pautas paradas na fila â€” triagem de 17/11/2026
+- `docs/REGENERACAO_MOTOR_20261117.md` — RegeneraÃ§Ã£o dos dois artigos pelo motor â€” 17/11/2026
+- `docs/TRIAGE_MECANISMO_CHATGPT_VS_OPENCODE_20261117.md` — Como a triagem era feita e como ficou no OpenCode â€” 17/11/2026
+
+<!-- registro-unico:auto:end -->
