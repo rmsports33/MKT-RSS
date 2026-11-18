@@ -13,6 +13,7 @@ import json
 import re
 
 PADRAO = re.compile(r"<!--\s*cxeg-package:v1:(\{.*?\})\s*-->")
+PREFIXO_MARCA = "<!-- cxeg-package:v1:"
 
 MODULOS_OBRIGATORIOS = (
     "editorial_identity",
@@ -33,7 +34,9 @@ def marcar(corpo, *, modules, voice_status, substance_status, image_rights_confi
            version_sha256=""):
     """Devolve corpo com marca; o hash e calculado SEM a marca.
 
-    Idempotente: uma marca anterior e removida antes de escrever a nova.
+    Idempotente: marcas anteriores bem formadas sao removidas antes de
+    escrever uma nova. A validacao final, por outro lado, exige exatamente
+    uma marca e rejeita qualquer duplicacao.
     """
     if not isinstance(corpo, str) or not corpo.strip():
         raise ValueError("corpo vazio para marcar")
@@ -47,34 +50,43 @@ def marcar(corpo, *, modules, voice_status, substance_status, image_rights_confi
         "substance_status": str(substance_status),
         "image_rights_confirmed": bool(image_rights_confirmed),
     }
-    marca = "<!-- cxeg-package:v1:" + json.dumps(manifesto, ensure_ascii=False,
-                                                  separators=(",", ":")) + " -->"
+    marca = PREFIXO_MARCA + json.dumps(manifesto, ensure_ascii=False,
+                                       separators=(",", ":")) + " -->"
     return limpo.rstrip() + "\n" + marca, manifesto
 
 
 def extrair_manifesto(corpo):
-    """Manifesto declarado na marca, ou None. Nunca concede aprovacao."""
+    """Manifesto declarado na unica marca bem formada, ou None."""
     if not isinstance(corpo, str):
         return None
-    encontrado = PADRAO.search(corpo)
-    if not encontrado:
+    encontrados = list(PADRAO.finditer(corpo))
+    if len(encontrados) != 1 or corpo.count(PREFIXO_MARCA) != 1:
         return None
     try:
-        return json.loads(encontrado.group(1))
+        return json.loads(encontrados[0].group(1))
     except ValueError:
         return None
 
 
 def validar(corpo):
     """Espelho local da checagem do Gate. Nao concede aprovacao alguma."""
-    encontrado = PADRAO.search(corpo) if isinstance(corpo, str) else None
-    if not encontrado:
+    if not isinstance(corpo, str):
         return {"valido": False, "motivo": "marca_ausente"}
+    quantidade = corpo.count(PREFIXO_MARCA)
+    if quantidade == 0:
+        return {"valido": False, "motivo": "marca_ausente"}
+    if quantidade > 1:
+        return {"valido": False, "motivo": "marca_duplicada"}
+    encontrados = list(PADRAO.finditer(corpo))
+    if len(encontrados) != 1:
+        return {"valido": False, "motivo": "manifesto_invalido"}
     try:
-        manifesto = json.loads(encontrado.group(1))
+        manifesto = json.loads(encontrados[0].group(1))
     except ValueError:
         return {"valido": False, "motivo": "manifesto_invalido"}
-    limpo = PADRAO.sub("", corpo)
+    # Remover somente a unica marca validada. Nunca apagar silenciosamente
+    # uma segunda marca ou fragmento de marca antes de conferir integridade.
+    limpo = corpo[:encontrados[0].start()] + corpo[encontrados[0].end():]
     if manifesto.get("content_sha256") != hash_corpo(limpo):
         return {"valido": False, "motivo": "hash_divergente"}
     modulos = manifesto.get("modules") or {}
