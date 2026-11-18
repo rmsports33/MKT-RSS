@@ -1,5 +1,19 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
+## Registro único de auditorias — 18/11/2026 (precedência alta)
+
+Toda conferência, inventário, ficha, auditoria ou checagem deve começar e terminar por
+`docs/REGISTRO_UNICO_20261118.md`. Um achado só tem status depois de constar ali;
+relatório solto que não está no registro é considerado inexistente.
+
+- Nenhum documento de auditoria novo é aceito no mesmo commit sem virar referência
+  no registro único.
+- Detalhe longo só fica em arquivo próprio quando não couber no registro; nesse caso
+  o registro aponta para ele, e não o contrário.
+- Relatório novo não deve repetir conteúdo que já está no registro; deve apontá-lo.
+- Toda execução de auditoria deve rodar `python tools/check_registro_unico.py`
+  antes de commit.
+
 ## Política de economia de execução — decisão do proprietário, 13/11/2026 (precedência alta)
 
 - **GitHub Actions não é executor padrão** de auditorias, testes, provas pontuais, reconciliações ou revisão editorial. A franquia de Actions está pressionada antes de completar o mês: priorizar WordPress MCP, HTTP/Turso existente (somente leitura quando apropriado), navegador em nuvem, execução isolada e documentos no Drive.
