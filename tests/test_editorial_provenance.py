@@ -17,6 +17,13 @@ def marcar(corpo=CORPO, **opcoes):
     return pv.marcar(corpo, **base)
 
 
+def marca_de(corpo):
+    """Texto exato da marca presente no corpo."""
+    achado = pv.PADRAO.search(corpo)
+    assert achado is not None
+    return achado.group(0)
+
+
 def test_marca_valida_e_hash_do_corpo_sem_marca():
     corpo, manifesto = marcar()
     assert pv.validar(corpo) == {"valido": True, "manifesto": manifesto}
@@ -46,6 +53,11 @@ def test_adulteracao_do_corpo_invalida_a_marca():
 
 def test_marca_ausente():
     assert pv.validar(CORPO) == {"valido": False, "motivo": "marca_ausente"}
+
+
+def test_corpo_que_nao_e_texto_e_marca_ausente():
+    assert pv.validar(None) == {"valido": False, "motivo": "marca_ausente"}
+    assert pv.validar(123) == {"valido": False, "motivo": "marca_ausente"}
 
 
 def test_manifesto_invalido():
@@ -93,11 +105,13 @@ def test_extrair_manifesto_le_a_marca_declarada():
     assert pv.extrair_manifesto(CORPO) is None
 
 
+# --- duplicidade e marcador malformado -------------------------------------
+
 
 def test_validar_rejeita_marcadores_duplicados_identicos():
     corpo, _ = marcar()
     marca = pv.PADRAO.search(corpo).group(0)
-    duplicado = corpo + "\\n" + marca
+    duplicado = corpo + "\n" + marca
     assert pv.validar(duplicado) == {
         "valido": False, "motivo": "marca_duplicada"
     }
@@ -109,7 +123,7 @@ def test_validar_rejeita_marcadores_duplicados_conflitantes():
     manifesto["voice_status"] = "NOT_APPLIED"
     conflitante = pv.PREFIXO_MARCA + json.dumps(
         manifesto, ensure_ascii=False, separators=(",", ":")) + " -->"
-    duplicado = corpo + "\\n" + conflitante
+    duplicado = corpo + "\n" + conflitante
     assert pv.validar(duplicado) == {
         "valido": False, "motivo": "marca_duplicada"
     }
@@ -117,7 +131,7 @@ def test_validar_rejeita_marcadores_duplicados_conflitantes():
 
 def test_validar_rejeita_segundo_marcador_malformado():
     corpo, _ = marcar()
-    duplicado = corpo + "\\n" + pv.PREFIXO_MARCA + "{quebrado"
+    duplicado = corpo + "\n" + pv.PREFIXO_MARCA + "{quebrado"
     assert pv.validar(duplicado) == {
         "valido": False, "motivo": "marca_duplicada"
     }
@@ -133,11 +147,65 @@ def test_validar_rejeita_marcador_unico_malformado():
 def test_extrair_manifesto_rejeita_marcadores_duplicados():
     corpo, _ = marcar()
     marca = pv.PADRAO.search(corpo).group(0)
-    assert pv.extrair_manifesto(corpo + "\\n" + marca) is None
+    assert pv.extrair_manifesto(corpo + "\n" + marca) is None
 
 
+# --- reforcos: hash igual, variacoes e simulacao ---------------------------
 
-def test_marcar_rejeita_marca_anterior_malformada():
-    corpo = CORPO + "\\n" + pv.PREFIXO_MARCA + "{quebrado"
+
+def test_marca_unica_valida_continua_aceita():
+    corpo, manifesto = marcar()
+    assert corpo.count("cxeg-package") == 1
+    assert pv.validar(corpo) == {"valido": True, "manifesto": manifesto}
+
+
+def test_duplicacao_identica_reprovada_mesmo_com_hash_igual():
+    corpo, manifesto = marcar()
+    duplicado = corpo + "\n" + marca_de(corpo)
+    # O hash declarado continua batendo com o corpo sem as duas marcas.
+    assert pv.hash_corpo(pv.PADRAO.sub("", duplicado)) == manifesto["content_sha256"]
+    assert pv.validar(duplicado)["motivo"] == "marca_duplicada"
+
+
+def test_simulacao_de_segunda_marca_com_caixa_diferente():
+    corpo, _ = marcar()
+    manifesto = pv.extrair_manifesto(corpo)
+    simulado = corpo + "\n<!-- CXEG-PACKAGE:v1:" + json.dumps(
+        manifesto, ensure_ascii=False, separators=(",", ":")) + " -->"
+    assert pv.validar(simulado)["motivo"] == "marca_duplicada"
+
+
+def test_simulacao_de_segunda_marca_sem_espaco_no_comentario():
+    corpo, _ = marcar()
+    manifesto = pv.extrair_manifesto(corpo)
+    simulado = corpo + "\n<!--cxeg-package:v1:" + json.dumps(
+        manifesto, ensure_ascii=False, separators=(",", ":")) + "-->"
+    assert pv.validar(simulado)["motivo"] == "marca_duplicada"
+
+
+def test_simulacao_de_segunda_marca_dentro_do_texto():
+    # Texto do artigo citando o prefixo tambem conta: uma marca, sem excecao.
+    corpo, _ = marcar()
+    alterado = corpo.replace("<h2>Seção</h2>",
+                             "<h2>Seção</h2>\n<pre>cxeg-package:v1:{}</pre>")
+    assert pv.validar(alterado)["motivo"] == "marca_duplicada"
+
+
+def test_marca_de_outra_versao_ao_lado_da_valida_nao_passa():
+    corpo, _ = marcar()
+    assert pv.validar(corpo + "\n<!-- cxeg-package:vX:{} -->")["motivo"] == \
+        "marca_duplicada"
+
+
+def test_marca_malformada_sem_comentario_valido():
+    assert pv.validar(CORPO + "\n<!-- cxeg-package:v1: sem chaves -->") == {
+        "valido": False, "motivo": "manifesto_invalido"}
+    assert pv.validar(CORPO + "\n<!-- cxeg-package:v1 : {} -->") == {
+        "valido": False, "motivo": "manifesto_invalido"}
+
+
+def test_marcar_recusa_corpo_com_marca_residual():
     with pytest.raises(ValueError, match="marca de proveniencia malformada"):
-        marcar(corpo=corpo)
+        marcar(CORPO + "\n<!-- cxeg-package:v1:quebrada -->")
+    with pytest.raises(ValueError, match="marca de proveniencia malformada"):
+        marcar(CORPO + "\n<!-- CXEG-PACKAGE:v1 -->")
