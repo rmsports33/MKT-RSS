@@ -91,3 +91,46 @@ def test_extrair_manifesto_le_a_marca_declarada():
     corpo, manifesto = marcar()
     assert pv.extrair_manifesto(corpo) == manifesto
     assert pv.extrair_manifesto(CORPO) is None
+
+
+
+def test_validar_rejeita_marcadores_duplicados_identicos():
+    corpo, _ = marcar()
+    marca = pv.PADRAO.search(corpo).group(0)
+    duplicado = corpo + "\\n" + marca
+    assert pv.validar(duplicado) == {
+        "valido": False, "motivo": "marca_duplicada"
+    }
+
+
+def test_validar_rejeita_marcadores_duplicados_conflitantes():
+    corpo, _ = marcar()
+    manifesto = pv.extrair_manifesto(corpo)
+    manifesto["voice_status"] = "NOT_APPLIED"
+    conflitante = pv.PREFIXO_MARCA + json.dumps(
+        manifesto, ensure_ascii=False, separators=(",", ":")) + " -->"
+    duplicado = corpo + "\\n" + conflitante
+    assert pv.validar(duplicado) == {
+        "valido": False, "motivo": "marca_duplicada"
+    }
+
+
+def test_validar_rejeita_segundo_marcador_malformado():
+    corpo, _ = marcar()
+    duplicado = corpo + "\\n" + pv.PREFIXO_MARCA + "{quebrado"
+    assert pv.validar(duplicado) == {
+        "valido": False, "motivo": "marca_duplicada"
+    }
+
+
+def test_validar_rejeita_marcador_unico_malformado():
+    quebrado = pv.PREFIXO_MARCA + "{quebrado"
+    assert pv.validar(quebrado) == {
+        "valido": False, "motivo": "manifesto_invalido"
+    }
+
+
+def test_extrair_manifesto_rejeita_marcadores_duplicados():
+    corpo, _ = marcar()
+    marca = pv.PADRAO.search(corpo).group(0)
+    assert pv.extrair_manifesto(corpo + "\\n" + marca) is None
