@@ -205,18 +205,19 @@ def inspect_wordpress_draft(fetch_post, post_id, factual_review,
         if fetch_post_view is not None:
             if not callable(fetch_post_view):
                 return {"authorized": False, "blockers": ["fetch_post_view_missing"], "post": None}
+            edit_data = data
             view_data = fetch_post_view(post_id)
-            data, context_blockers = assemble_wordpress_context_readback(data, view_data)
+            data, context_blockers = assemble_wordpress_context_readback(edit_data, view_data)
             if context_blockers:
                 return {
                     "authorized": False,
                     "blockers": context_blockers,
                     "readback_valid": False,
                     "readback_blockers": context_blockers,
-                    "post": {"id": post_id, "status": (
-                        edit_status if isinstance(edit_status := getattr(data, "get", lambda *_: None)("status"), str)
-                        else None
-                    )},
+                    "post": {
+                        "id": post_id,
+                        "status": edit_data.get("status") if isinstance(edit_data, dict) else None,
+                    },
                 }
     except Exception:
         return {"authorized": False, "blockers": ["wordpress_read_failed"], "post": None}
