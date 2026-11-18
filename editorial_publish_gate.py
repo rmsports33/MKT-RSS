@@ -20,7 +20,12 @@ def _raw_field(value):
 def _raw_content(post):
     if not isinstance(post, dict):
         return None
-    return _raw_field(post.get("content"))
+    content = post.get("content")
+    # A REST content string is ambiguous (it may be rendered HTML); only the
+    # explicit edit-context content.raw field is accepted as persisted source.
+    if not isinstance(content, dict):
+        return None
+    return _raw_field(content)
 
 
 def _readiness_snapshot(post):
