@@ -72,6 +72,8 @@ def marcar(corpo, *, modules, voice_status, substance_status,
     limpo = PADRAO.sub("", corpo)
     if _contar_marcas(limpo):
         raise ValueError("marca de proveniencia malformada no corpo: remova antes de marcar")
+    if any(not isinstance(nome, str) for nome in modules):
+        raise ValueError("nomes de modulos devem ser strings")
     desconhecidos = set(modules) - set(MODULOS_OBRIGATORIOS)
     if desconhecidos:
         raise ValueError("modulos desconhecidos: " + ", ".join(sorted(desconhecidos)))
