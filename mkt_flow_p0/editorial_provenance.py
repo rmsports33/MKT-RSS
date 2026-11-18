@@ -40,7 +40,7 @@ def hash_corpo(corpo):
     if not isinstance(corpo, str):
         raise TypeError("corpo deve ser texto")
     # Canonicalizacao ASCII equivalente a PHP rtrim($body, " \\t\\n\\r").
-    return hashlib.sha256(corpo.rstrip(" \\t\\r\\n").encode("utf-8")).hexdigest()
+    return hashlib.sha256(corpo.rstrip(" \t\r\n").encode("utf-8")).hexdigest()
 
 
 def _contar_marcas(corpo):
