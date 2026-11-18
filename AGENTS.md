@@ -1,3 +1,9 @@
+## Política obrigatória de consolidação contínua e sanitização — 18/11/2026
+
+Aplicar a [Política de consolidação contínua e sanitização](docs/POLITICA_CONSOLIDACAO_CONTINUA.md) em todo trabalho neste repositório. Trabalho pronto e validado deve virar commit; alterações locais devem ser preservadas e classificadas; toda branch/PR precisa de destino e próxima ação; mudanças prontas seguem para integração assim que seguro e autorizado. Testes são proporcionais e não se repetem sem justificativa técnica. Commit, merge e deploy são marcos distintos. Esta regra não autoriza escrita WordPress/Turso, publicação, agendamento, Gate, deploy ou produção. Preservar a política de economia de Actions e as aprovações humanas.
+
+---
+
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
 ## Política de economia de execução — decisão do proprietário, 13/11/2026 (precedência alta)
