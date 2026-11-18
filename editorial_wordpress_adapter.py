@@ -161,7 +161,7 @@ def inspect_wordpress_draft(fetch_post, post_id, factual_review,
     post = dict(data)
     title = post.get("title")
     if isinstance(title, dict):
-        post["title"] = title.get("raw") or title.get("rendered") or ""
+        post["title"] = title.get("raw") if isinstance(title.get("raw"), str) else None
     content = post.get("content")
     if isinstance(content, dict):
         # A readback without raw is insufficient for a hash/provenance decision.
