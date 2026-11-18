@@ -1,20 +1,43 @@
-"""Compatibilidade do guard: flags do chamador não substituem o pacote canônico.
+"""Guard local de compatibilidade e proveniencia para transicao WordPress.
 
-Este módulo deixou de ser um "gate paralelo": ele apenas agrega os bloqueios
-existentes e **exige o aceite humano emitido pelo Gate do WordPress**
-(``owner_release``). Sem esse recibo, a publicação continua bloqueada — um
-check técnico nunca vira aprovação.
+O Gate WordPress continua sendo a autoridade de aceite humano. Este modulo
+acrescenta uma verificacao fail-closed da marca de proveniencia no corpo bruto
+persistido; uma marca valida nunca substitui owner_release nem revisao factual.
 """
 from pathlib import Path
+
 from editorial_wordpress_readiness import validate_wordpress_readiness
+from mkt_flow_p0.editorial_provenance import validar as validar_proveniencia
+
+
+def _raw_content(post):
+    """Le somente content.raw quando REST retorna objeto; rendered nao prova bytes persistidos."""
+    if not isinstance(post, dict):
+        return None
+    content = post.get("content")
+    if isinstance(content, dict):
+        content = content.get("raw")
+    return content if isinstance(content, str) and content.strip() else None
 
 
 def authorize_publish(post, factual_review=None, *, package=None, core_root=None,
                       expected_category_id=10, owner_release=None):
-    problems = list(validate_wordpress_readiness(post, expected_category_id=expected_category_id).errors)
-    # Autorização humana: o Gate do WordPress é a única autoridade. O recibo
-    # é lido do servidor (nunca um hash colado) e precisa estar vinculado à
-    # versão exata do rascunho.
+    problems = list(validate_wordpress_readiness(
+        post, expected_category_id=expected_category_id).errors)
+
+    # Proveniencia obrigatoria: conferir o corpo bruto persistido, nunca o
+    # HTML rendered nem uma flag enviada pelo chamador.
+    body = _raw_content(post)
+    if body is None:
+        problems.append("editorial_provenance_content_raw_unavailable")
+    else:
+        provenance = validar_proveniencia(body)
+        if not provenance["valido"]:
+            problems.append("editorial_provenance_" + provenance.get("motivo", "invalid"))
+
+    # Autorizacao humana: o Gate do WordPress e a unica autoridade. O recibo
+    # e lido do servidor (nunca um hash colado) e precisa estar vinculado a
+    # versao exata do rascunho.
     if owner_release is None:
         problems.append("gate_owner_release_missing")
     else:
@@ -27,8 +50,7 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
             post_id = post.get("id") if isinstance(post, dict) else None
             if post_id is not None and info["post_id"] != post_id:
                 problems.append("gate_owner_release_post_mismatch")
-            body = post.get("content") if isinstance(post, dict) else None
-            if isinstance(body, str) and content_digest(body) != info["content_sha256"]:
+            if body is not None and content_digest(body) != info["content_sha256"]:
                 problems.append("remote_version_mismatch")
     if not isinstance(package, dict) or not core_root:
         problems.append("canonical_editorial_package_missing")
@@ -39,16 +61,22 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
         try:
             from mkt_flow_p0.editorial_transport import load_core
             core = load_core(core_root)
-            errors, blockers = core.validator().evaluate(package, Path(core_root), require_editorial_ready=True)
+            errors, blockers = core.validator().evaluate(
+                package, Path(core_root), require_editorial_ready=True)
             problems.extend(errors + blockers)
             p = package["payload"]
             wp = p["wordpress"]
             if package.get("stage") != "ready":
                 problems.append("version_not_ready")
-            if not isinstance(post, dict) or any(post.get(key) != expected for key, expected in {
-                    "id": wp["post_id"], "title": p["title"], "content": p["content"],
-                    "slug": p["slug"], "featured_media": wp["featured_media"],
-                    "categories": wp["categories"]}.items()):
+            expected_content = body
+            if (not isinstance(post, dict) or any(
+                    post.get(key) != expected for key, expected in {
+                        "id": wp["post_id"],
+                        "title": p["title"],
+                        "slug": p["slug"],
+                        "featured_media": wp["featured_media"],
+                        "categories": wp["categories"],
+                    }.items()) or expected_content != p["content"]):
                 problems.append("remote_version_mismatch")
         except (ImportError, OSError, ValueError, TypeError, KeyError, RuntimeError):
             problems.append("canonical_gate_unavailable_or_invalid")
@@ -56,7 +84,7 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
 
 
 def _unique(items):
-    """Mantém a ordem e remove bloqueios repetidos."""
+    """Mantem a ordem e remove bloqueios repetidos."""
     seen, out = set(), []
     for item in items:
         if item not in seen:
