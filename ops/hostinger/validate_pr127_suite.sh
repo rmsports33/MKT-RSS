@@ -3,8 +3,8 @@
 # Worktree is outside public_html; tests are offline and never call WordPress writes.
 set -u
 ROOT="$HOME/mkt-rss-runner"
-WORK="$HOME/tmp/mkt-rss-pr127-validation-20261119"
-LOCK="$HOME/tmp/mkt-rss-pr127-validation-20261119.lock"
+WORK="$HOME/tmp/p127"
+LOCK="$HOME/tmp/p127.lock"
 mkdir -p "$HOME/tmp"
 if [ -e "$LOCK" ]; then
   echo "VALIDATION_ALREADY_STARTED"
