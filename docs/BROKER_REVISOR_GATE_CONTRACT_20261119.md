@@ -1,259 +1,330 @@
-# Contrato Broker–Revisor–Gate
+# Contrato Broker–Revisor–Gate — revisão 2
 
-Especificação técnica verificável para integrar o Revisor Único ao caminho de publicação pelo broker Conexo (`conexo/v1/editorial/broker/write`), sem autorizar publicação até que todos os critérios abaixo sejam comprovados.
+**Versão:** 2.0 (19/11/2026). **Substitui, sem apagar,** a versão 1 em `docs/BROKER_REVISOR_GATE_CONTRACT_20261119.md`, commit `9c5b596cd8aaa5fc97b7cb9b189f8ac2d849d284`, branch `docs/broker-revisor-gate-contract-20261119`. A branch da v1 permanece como histórico e não foi alterada.
 
-**Estado:** especificação (não implementada). **Base de código:** master `101fe18ddfcfdd6ee7dfaf356f860be1db54b9ff`. **Branches relevantes:** `fix/revisor-unico-gate-verificacao-20261119` (`fb96e0c1f9f34d86bd40fcd433ef17e827d0dc30`, guard local + registro assinado), `fix/revisor-gate-publish-path-20261119` (`e4276c24843464f53dc5bc2d8992501c4e67b723`, bloqueio intencional do broker), `fix/broker-revisor-guard-tests-20261119` (`e1c33a535233decd48770598c623c90fe2846eb9`). **PR #130** (draft) reúne as duas primeiras e **não** está pronto para integração final.
+**Finalidade:** especificar, de forma verificável, a integração autenticada entre MKT-RSS (cliente), registro confiável do Revisor Único, Gate RC10.5 (WordPress) e broker `conexo/v1/editorial/broker/write`, **antes** de qualquer retirada do bloqueio `trusted_factual_review_broker_guard_not_integrated`.
 
-Este documento **não** autoriza publicação, não define data de ativação, não altera código e **não** reduz nenhuma proteção existente. Suíte verde nunca foi interpretada aqui como autorização de publicação.
+**Base de código citada:** master `101fe18ddfcfdd6ee7dfaf356f860be1db54b9ff`; v1 das branches `fix/revisor-unico-gate-verificacao-20261119` (`fb96e0c`), `fix/revisor-gate-publish-path-20261119` (`e4276c2`), `fix/broker-revisor-guard-tests-20261119` (`e1c33a5`). **PR #130:** draft, não pronto para integração final.
+
+Este documento não autoriza publicação, não implementa nada, não retira bloqueio, não cria cron, não faz merge e não implanta. Suíte verde, por si só, não completa a integração.
+
+## 0. Correções desta revisão (bloqueios da revisão técnica)
+
+| # | Bloqueio apontado | Onde foi corrigido |
+|---|---|---|
+| C1 | HMAC exige segredo compartilhado; verificador também poderia assinar | §2 e §3.1 — Ed25519 para M1, chave pública no verificador; HMAC legado só em servidor de confiança |
+| C2 | `served_at`/`registry_seq_floor` fora da assinatura | §3.2 — assinatura cobre envelope completo (`protocol_version`, `alg`, `kid`, `record`, `served_at`, `registry_seq`); `registry_seq_floor` removido |
+| C3 | Origem de produção nos testes | §2.3, §4 etapa 1, `SEC-29` — allowlist explícita, produção proibida em homologação |
+| C4 | Comparação de digests semanticamente distintos | §5 — definição formal de `draft_digest`, `content_digest` e ponte por igualdade byte a byte; comparação proibida entre digests diferentes |
+| A1 | Página pública ≠ `context=view` | §3.4 — E1/E2/E3 separados, campos e correlação próprios |
+| A2 | M5 emitido antes da escrita | §1 e §4 — M1–M4 são pré-condições; M5 é recibo **pós-escrita** |
+| A3 | Idempotência × replay conflitantes | §4 etapa 9, §6 — três classes de repetição, nonce atômico, `SEC-25`, `SEC-30`–`SEC-33` |
+| A4 | `SEC-28` circular | §7.1 — teste temporário `BLOCK-TEMP-01`; testes do contrato implementado separados e expressamente futuros |
+| O1 | Cinco positivos não identificados | §7.2 — `POS-01`…`POS-05` com entrada, pré-condição e resultado |
+| O2 | Assinatura do Gate M3 | §3.3 — formato, campos assinados, verificação, `kid`, rotação |
+| O3 | Autoridade da sequência | §3.2 — `registry_seq` emitido e aplicado apenas pelo servidor do registro |
+| O4 | Nonce atômico | §6 — transação, estado, unique key, recuperação após falha |
+| O5 | Relógios | §6.1 — medição de skew, janela reavaliada, bloqueio se não sincronizado |
+| O6 | Classes de evidência | §8 — offline / homologação real / restauração separadas |
 
 ## 1. Escopo e não escopo
 
-**Dentro:** contrato de mensagens entre MKT-RSS (cliente), o registro confiável do Revisor Único, o WordPress/Gate (RC10.5) e o broker server-side; ordem de verificação; códigos de bloqueio; testes de segurança; critérios de aceitação para retirar o bloqueio `trusted_factual_review_broker_guard_not_integrated`.
+**Dentro:** contrato de mensagens, ordem de verificação no broker, códigos de bloqueio, testes negativos/positivos e critérios para retirar o bloqueio.
 
-**Fora:** alterar o DNA editorial, trocar de fornecedor/chave, publicar ou agendar conteúdo, ativar cron, integrar o Gate PHP, provisionar homologação real, executar merge.
+**Fora:** DNA editorial, troca de fornecedor, publicação, agendamento real, ativação de cron, merge, deploy, provisionamento de homologação.
 
-**Pré-condição operacional:** o bloqueio descrito em `mkt_flow_p0/editorial_transport.py:110-113` **permanece** até a Seção 9 estar cumprida e auditada. Nenhuma mudança deste documento, por si só, reabre `wp_broker`.
+**Regra de estado:** o bloqueio em `mkt_flow_p0/editorial_transport.py:110-113` continua ativo. Pré-condições de escrita são **M1, M2, M3 e M4**. **M5** é o recibo emitido **depois** da escrita; nenhuma especificação pode exigir M5 como pré-condição.
 
-## 2. Situação atual verificada (19/11/2026)
+## 2. Atores, chaves e origens
 
-| Componente | Estado comprovado |
-|---|---|
-| Guard local (cliente) | `authorize_publish` exige, sempre, parecer do Revisor verificado contra registro injetado; `{"verified": True}` autodeclarado nunca vale. Commit `a1de816` + `fb96e0c` |
-| Registro assinado | `verify_independent_review(post, certificate, signing_key, lookup_review, registry_verification_key, *, now=None)` em `editorial_trusted_review.py`; envelope `{record, signature}` com HMAC-SHA256 de chave distinta (`sign_registry_record`) |
-| Broker | `publish_via_broker` verifica origem, intenção, referência humana, pacote canônico, Turso, Gate e somente então escreve; hoje recusa `publish`/`schedule` **antes** de qualquer chamada, com `trusted_factual_review_broker_guard_not_integrated` |
-| Gate do WordPress | Autoridade de aceite humano; `conexo-owner-release/1` lido do servidor (`gate_unified.read_owner_release`), nunca hash colado |
-| Readback | `assemble_wordpress_context_readback` exige `context=edit` (raw) e `context=view` (rendered) do mesmo post/versão/status; string achatada é rejeitada |
-| Testes | Suíte do checkout preparado: 1637 passed, 11 skipped, 0 failed (`fb96e0c`); broker recusa com 2 testes e 2 subtests (`e1c33a5`) |
+### 2.1 Atores
 
-**Lacuna central:** nenhum destes componentes, sozinho nem em conjunto, garante hoje que o broker server-side tenha feito a própria verificação autenticada antes de escrever. O guard é do cliente; um cliente comprometido ou configurado sem as credenciais corretas falseia preenchimentos — por isso o broker é a fronteira final que precisa implementar este contrato de forma independente.
-
-## 3. Atores e fronteiras de confiança
-
-```
-[IAS]            [TRUSTED REGISTRY]                [WordPress / Gate RC10.5]
-issuer  ------->  registro + assinatura  <-------   owner-release/1
- (M1)                     (M2)                              (M3)
-                                                          ▲
-        (M4 edit+view)    (M5 recibo)      (M6 pedido)     │
-                            ▲   │                          │
-              MKT-RSS (cliente)  └──────── broker ─────────┘
-```
-
-| Ator | Fronteira | O que pode e não pode |
-|---|---|---|
-| Emissor do certificado (IAS) | HMAC própria | Emite certificado de revisão; não lê o WordPress; não publica |
-| Registro confiável do Revisor | Par assina/verifica próprio | Devolve registro assinado; revogação e sequência monotônica; não escreve |
-| Gate RC10.5 (WP) | Chave privada própria | Emite `owner-release/1`; nunca aceita hash colado; não confia no cliente |
-| Broker server-side | Segredo próprio no WP Vault | Verifica M1–M5; pode recusar; não gera texto, não agenda sozinho |
-| MKT-RSS (cliente) | Sem segredo de emissão | Transporta M1–M4, exibe recibos; não pode produzir PASS |
-| Cron / plugin de deploy | Fora deste contrato | Nunca publica sem M3 válido |
-
-**Regra de ouro:** quem publica carrega o custo de provar. O broker **deve** provar internamente M1–M5 antes de qualquer `POST` editorial; qualquer divergência, timeout, resposta ausente ou não-autenticada bloqueia `publish` e `schedule`.
-
-## 4. Chaves e domínios
-
-Quatro chaves, **distintas**, com rotação independente:
-
-| Chave | Uso | Onde vive | Tamanho mínimo |
+| Ator | Papel | Pode | Não pode |
 |---|---|---|---|
-| `K_ISS` | HMAC do certificado (M1) | Segredo de emissão (IAS); cliente só verifica | 32 bytes |
-| `K_REG` | HMAC/assimetria do registro (M2) | Serviço de registro; broker e cliente verificam | 32 bytes |
-| `K_GATE` | Gate RC10.5 | Vault do WordPress; nunca exposta | — |
-| `K_BROKER` | Segredo interno do broker | WP Vault; nunca sai do servidor | 32 bytes |
+| IAS (emissor do certificado) | Emitir M1 com chave privada de emissão | Assinar decisão de revisão | Escrever no WordPress; verificar publicamente com o mesmo segredo |
+| Registro confiável do Revisor | Guardar e assinar M2; sequência autoritativa | Revogar, emitir envelope novo | Confiar em sequência guardada pelo cliente |
+| Gate RC10.5 (WP) | Emitir M3 assinado | Aprovar/negar por identidade humana | Aceitar hash colado; publicar diretamente |
+| Broker server-side | Fronteira final antes da escrita | Verificar M1–M4, recusar, escrever uma vez com nonce | Gerar texto; confiar em flag do cliente; auto-retry |
+| MKT-RSS (cliente) | Transportar mensagens e exibir recibos | Ler, montar pacote, chamar broker | Produzir PASS; verificar assinatura com chave privada |
+| Cron/deploy | Fora do contrato | — | Publicar sem M3 válido |
 
-Nenhuma chave sai de seu domínio. `K_BROKER` não assina nada que o cliente possa forjar; o recibo M5 é informativo, não uma nova autorização.
+### 2.2 Domínios de chave (separados, nunca reutilizados)
 
-**Recomendação:** em homologação, validar a troca de HMAC-SHA256 (compatível com `sign_registry_record`) por assinatura asimétrica (Ed25519) para M2, eliminando chave compartilhada entre registro e broker. Qualquer migração não pode enfraquecer o caso HMAC já implementado até haver convergência e rollback comprovado.
+| Chave | Tipo | Uso | Posse | Rotação |
+|---|---|---|---|---|
+| `K_ISS` | **Ed25519 privada** | Assinar M1 | IAS apenas | `kid` + sobreposição de 24h |
+| `K_ISS_PUB` | Ed25519 pública | Verificar M1 | broker (e qualquer verificador) | por `kid` |
+| `K_REG` | Ed25519 privada (ou HMAC restrito) | Assinar M2 | serviço de registro apenas | `kid` + sobreposição de 24h |
+| `K_REG_PUB` | Ed25519 pública | Verificar M2 | broker e cliente somente-leitura | por `kid` |
+| `K_GATE` | Ed25519 privada | Assinar M3 | Gate RC10.5, Vault do WP | `kid` + sobreposição de 24h |
+| `K_GATE_PUB` | Ed25519 pública | Verificar M3 | broker | por `kid` |
+| `K_BROKER` | Segredo interno | Proteger estado do broker | WP Vault, nunca exportado | administração do WP |
 
-## 5. Mensagens (contratos de dados)
+**HMAC legado:** `sign_registry_record`/`verify_factual_certificate` hoje usam HMAC-SHA256. Onde HMAC for mantido temporariamente, a verificação fica **exclusivamente em servidores de confiança**; nenhum cliente externo recebe a chave. Migração para Ed25519 é obrigatória antes da Fase D e não pode ser feita aceitando ambas as chaves no mesmo campo sem `alg` explícito.
 
-Todas as mensagens são JSON UTF-8 canônico (`sort_keys`, `separators=(",",":")`, `allow_nan=False`). Hash e comparação são sempre de bytes canônicos. Campo desconhecido **não** implica confiança.
+### 2.3 Origens (correção C3)
 
-### M1 — Certificado de revisão independente (existente, inalterado)
+Origens permitidas vêm de allowlist explícita em `CONEXO_BROKER_ALLOWED_ORIGINS`, carregada pelo perfil de execução:
 
-| Campo | Validação |
-|---|---|
-| `version` = `1`, `review_type` = `independent_human` | igualdade exata |
-| `draft_sha256` | SHA-256 hex; recalculado de `draft_digest(post)`; exige `status=="draft"`, `categories` válidas contendo `10` e sem `1`, `featured_media` int > 0, `slug` não vazio |
-| `decision` = `APROVADO` | igualdade exata |
-| `reviewer_id` | string não vazia, ≠ aprovador do Gate |
-| `review_record_url` | `https://` obrigatório |
-| `evidence_refs` | lista não vazia de `https://` |
-| `issued_at`, `expires_at` | epoch int; `issued_at ≤ now < expires_at`; TTL ≤ 86400s |
-| `signature` | HMAC-SHA256 hex de M1 sem `signature`; comprimento 64 |
+- perfil `staging`: apenas `<HOMOLOGATION_HOST>` (valor real a ser provisionado; **não** é `conexotech.com.br`);
+- perfil `production`: apenas `https://conexotech.com.br`;
+- allowlist vazia, domínio ausente ou domínio de produção em perfil `staging` → `BROKER_ORIGIN_NOT_ALLOWED`, sem escrita.
 
-### M2 — Envelope do registro confiável (existente, **endurecido**)
+Todos os testes OFFLINE e de HOMOLOGAÇÃO usam o perfil `staging`. Teste de produção em modo `staging` é obrigatório (`SEC-29`).
 
-```json
-{
-  "record": {
-    "reviewer_id": "...",
-    "review_record_url": "https://...",
-    "draft_sha256": "<sha256 do draft edit-context>",
-    "decision": "APROVADO",
-    "status": "FINAL",
-    "independent": true,
-    "revoked": false,
-    "evidence_refs": ["https://..."],
-    "issued_at": 1713900000,
-    "registry_seq": 91827,
-    "expires_at": 1713907200
-  },
-  "signature": "<hmac|ed25519 de bytes canônicos do record>",
-  "served_at": 1713900005,
-  "registry_seq_floor": 91827
-}
-```
+## 3. Mensagens do contrato
 
-Validações adicionais exigidas:
+Notação: `canon(x)` = JSON UTF-8 com `sort_keys=True`, `ensure_ascii=False`, `separators=(",",":")`, `allow_nan=False`. Assinatura = Ed25519 sobre `canon(objeto sem o campo signature)`, em hex minúsculo. Toda mensagem com `protocol_version=1`, `alg`, `kid`.
 
-1. Assinatura verificada com `K_REG` (erro: `review_record_signature_invalid`).
-2. `issued_at ≤ now < expires_at` e TTL ≤ 3600s (registro é de consulta, não de aprovação).
-3. Atualidade da **resposta**: `served_at` dentro de `[now-120, now+30]`; fora disto, `review_record_stale_response`.
-4. Anti-replay por sequência: `registry_seq` monotônico por `review_record_url`; valores ≤ último visto são recusados (`review_record_replay_detected`). Cliente e broker guardam o maior `registry_seq` conhecido por registro.
-5. `revoked == false` estritamente; qualquer presença ou tipo errado bloqueia.
-6. Campos obrigatórios da nota 1–5 do M1 aplicam-se à igualdade `draft_sha256`.
-7. Registro não autoritativo está **sempre** atrasado o suficiente para expirar: ausência de `expires_at`/`registry_seq` bloqueia (`review_record_evidence_missing`).
-
-### M3 — Liberação do responsável (existente, inalterada)
-
-`conexo-owner-release/1`, lido pelo broker do servidor (`/wp-json/conexo/v1/editorial/owner-release/{post_id}`) com a identidade de serviço do cliente apenas para leitura; nunca hash colado. Validações: `owner_id == 3`, `review_mode == "owner"`, 13 checks `VERIFICADO` com evidência não vazia, `version_sha256` igual ao do pacote, post_id igual, `content` igual ao raw persistido. Qualquer falha: bloqueio do Gate, sem escrita.
-
-### M4 — Readback WordPress autenticado
-
-Dois GETs autenticados, ambos com identidade de serviço, `allow_redirects=False`:
-
-- `GET /wp-json/wp/v2/posts/{id}?context=edit` → único lugar que expõe `content.raw`/`title.raw`;
-- `GET /{slug}/` ou `context=view` → representação pública (HTML), usada só para comparação e vídeo, **nunca** como fonte de versão.
-
-Correlação obrigatória: mesmo `id`, `modified` idêntico, `status` idêntico, `_conexo_mkt_rss_run_id` igual quando presente nos dois. Divergência: `wordpress_context_version_mismatch`. O `draft_sha256` (M1/M2) deve ser recomputável a partir do objeto `edit` exatamente como `draft_digest()` implementa hoje.
-
-### M5 — Recibo do broker (informativo)
+### 3.1 M1 — Certificado de revisão independente
 
 ```json
-{"status": "verified|idempotent|transport_unknown_inspect|...", 
- "post_id": 0, "nonce": "<hex 32>", "verified": true,
- "retry_automatic": false, "operation_nonce": "<nonce do cliente>"}
+{"protocol_version":1,"alg":"Ed25519","kid":"iss-2026-11",
+ "review_type":"independent_human","draft_sha256":"<hex>",
+ "decision":"APROVADO","reviewer_id":"...",
+ "review_record_url":"https://...","evidence_refs":["https://..."],
+ "issued_at":1713900000,"expires_at":1713907200,"signature":"<hex>"}
 ```
 
-Nunca contém selo de aprovação novo; sempre declara `retry_automatic: false` em incertezas.
+Verificação: `K_ISS_PUB[kid]`; `draft_sha256` recalculado por `draft_digest(E1)` (§5); `issued_at ≤ now < expires_at`, TTL ≤ 86400s; `decision` exatamente `APROVADO`; `review_type` exatamente `independent_human`; `reviewer_id` ≠ aprovador do Gate. A chave pública **não** consegue assinar — isto resolve C1.
 
-## 6. Ordem de verificação (no broker, antes de qualquer POST editorial)
+### 3.2 M2 — Envelope do registro confiável
 
-1. Configuração mínima: `wp_url == https://conexotech.com.br`, identidade de serviço, modo explícito `wp_broker`, intent ∈ {publish, schedule}.
-2. Entrada: pacote canônico com `stage == "ready"`, `version_sha256` 64 hex, `payload.wordpress.post_id` int > 0.
-3. Turso: trilha exigida (`require_release_trace`) presente e **relida** com `run_id` isolado.
-4. Readback autenticado M4; só prossegue se correlacionado e raw íntegro.
-5. Certificado M1 válido (assinatura, TTL, `draft_digest` confere com M4).
-6. Registro M2 válido (assinatura, TTL, `served_at`, sequência, sem revogação).
-7. Gate M3 válido (owner 3, mode owner, 13 checks, vínculo de conteúdo e post).
-8. Conferência cruzada: `content_digest(M4.raw)` deve ser recomputado e comparado ao `content_sha256` declarado pelo Gate em M3 (`editorial_publish_gate`/`gate_unified`) e ao `draft_sha256` declarado em M1/M2.
-9. Apenas então: escrita com `operation_nonce` único; nonce guardado por 48h; resposta conforme M5.
+```json
+{"protocol_version":1,"alg":"Ed25519","kid":"reg-2026-11",
+ "record":{"reviewer_id":"...","review_record_url":"https://...",
+   "draft_sha256":"<hex>","decision":"APROVADO","status":"FINAL",
+   "independent":true,"revoked":false,"evidence_refs":["https://..."],
+   "issued_at":1713900000,"expires_at":1713903600,"registry_seq":91827},
+ "served_at":1713900005,
+ "signature":"<hex>"}
+```
 
-Nenhuma etapa concede autorização às anteriores; cada falha é terminal e **sem** escrita.
+Correção C2: a assinatura cobre **todos** os campos acima exceto `signature`, inclusive `served_at`, `registry_seq`, `protocol_version`, `alg` e `kid`. Qualquer alteração em metadados invalida a assinatura.
 
-## 7. Códigos de bloqueio
+Correção O3: `registry_seq` é **autoritativo no servidor do registro**, monotônico por `review_record_url`, emitido no envelope; o broker verifica contra o maior valor que o próprio servidor registrou/observou, e o armazena. Memória local do cliente pode ser *sinal* de suspeita, mas **nunca** é requisito de segurança nem fonte de verdade; `registry_seq_floor` foi removido do contrato.
 
-| Código | Etapa | Significado |
+Validação: assinatura, TTL do `record` ≤ 3600s, `served_at` conforme §6.1, `registry_seq` monotônico no servidor, `revoked is False`, `status=="FINAL"`, `independent is True`, igualdade de `draft_sha256`, `reviewer_id`, `evidence_refs` e `review_record_url` com M1.
+
+### 3.3 M3 — Liberação do responsável (Gate RC10.5)
+
+```json
+{"schema":"conexo-owner-release/1","protocol_version":1,"alg":"Ed25519",
+ "kid":"gate-2026-11","issued_at":1713900008,"expires_at":1713903608,
+ "payload":{ ... campos atuais do owner-release ... },
+ "signature":"<hex>"}
+```
+
+Campos assinados: todos os acima, exceto `signature`. O broker verifica com `K_GATE_PUB[kid]` e exige: `payload.owner_id == 3`, `payload.review_mode == "owner"`, 13 checks `VERIFICADO` com evidência não vazia, `version_sha256` de 64 hex igual ao do pacote, `payload.wordpress.post_id` igual ao post lido, `content_sha256` equivalente a `content_digest(raw)` (§5), TTL ≤ 3600s.
+
+**Estado real:** o Gate RC10.5 atual entrega `conexo-owner-release/1` por GET autenticado, sem assinatura Ed25519 própria verificável offline. Enquanto essa assinatura não existir, **nenhum publish/schedule pelo broker é autorizado**; o bloqueio permanece. A implementação de `kid` no Gate é pré-condição da Fase D.
+
+Rotação: novo par de chaves publicado com `kid` novo; broker aceita `kid` antigo por no máximo 24h; após isso, `kid` antigo entra em lista de revogação e é recusado. Rotação de emergência invalida `kid` imediatamente e exige reemissão de M3. `K_GATE` privada nunca sai do Vault.
+
+### 3.4 M4 — Correlação WordPress (correção A1)
+
+Três leituras distintas, com papéis diferentes:
+
+| Endpoint | Nome | Autenticação | Campos exigidos | Papel |
+|---|---|---|---|---|
+| `GET /wp-json/wp/v2/posts/{id}?context=edit` | **E1** | sim | `id`, `status`, `modified`, `slug`, `categories`, `featured_media`, `title.raw`, `content.raw`, `link`, `meta._conexo_mkt_rss_run_id` | **única** fonte de versão; base de `draft_digest` e `content_digest` |
+| `GET /wp-json/wp/v2/posts/{id}?context=view` | **E2** | sim | `id`, `status`, `modified`, `slug`, `link`, `content.rendered` | checar que a representação REST pública corresponde ao mesmo objeto |
+| `GET /{slug}/?conexo_verify=<versão>` | **E3** | não | HTTP 200, `<title>`, `meta description`, `link rel=canonical`, iframe/`VideoObject` quando aplicável | conferir SEO público; **não** fornece `id`, `modified` ou `status` |
+
+Correlação obrigatória: E1 e E2 com mesmo `id`, mesmo `modified`, mesmo `status`, mesmo `slug`; `meta._conexo_mkt_rss_run_id` igual quando presente nos dois. E1↔E3 por `slug` + canonical exato + título/descrição esperados (padrão já usado em `tools/publish_owner_approved.py::verify_public_seo`). String achatada de conector nunca é promovida a `raw`. Divergências: `wordpress_context_*_mismatch` / `wordpress_content_raw_unavailable`.
+
+### 3.5 M5 — Recibo do broker (pós-escrita)
+
+Emitido somente após resultado conhecido da escrita:
+
+```json
+{"status":"verified|idempotent|transport_unknown_inspect|...",
+ "post_id":0,"nonce":"<hex>","verified":true,
+ "retry_automatic":false,"operation_nonce":"<hex>"}
+```
+
+Não contém selo novo de aprovação; não autoriza nada. `retry_automatic` é sempre `false` quando o resultado é incerto.
+
+## 4. Ordem de verificação no broker
+
+Pré-condições (antes de qualquer `POST` editorial):
+
+1. Perfil e allowlist de origem (§2.3); identidade de serviço; modo `wp_broker` explícito; intent ∈ {`publish`, `schedule`}.
+2. Pacote canônico: `stage == "ready"`, `version_sha256` 64 hex, `payload.wordpress.post_id` int > 0.
+3. Turso: `require_release_trace` com `run_id` válido, relido antes da escrita.
+4. M4: E1/E2/E3 correlacionados (§3.4); `content.raw` íntegro; sincronização de relógio verificada (§6.1).
+5. M1: assinatura, TTL, identidade e `draft_digest(E1)`.
+6. M2: assinatura do envelope inteiro, frescura, sequência autoritativa, revogação, igualdade com M1.
+7. M3: assinatura do Gate, `kid`, TTL, owner 3, 13 checks, vínculo de post/versão.
+8. Ponte de digests (§5): `draft_digest(E1)` com M1/M2; `content_digest(E1.raw)` com M3; `E1.raw == package.payload.content` byte a byte.
+9. Escrita única com `operation_nonce` reservado atomicamente (§6). Só depois disso M5.
+
+Nenhuma etapa autoriza a seguinte por omissão; falha é terminal, sem escrita.
+
+## 5. Definição formal dos digests (correção C4)
+
+| Nome | Implementação | Entrada | Normalização | Uso |
+|---|---|---|---|---|
+| `draft_digest(post)` | `editorial_factual_certificate.draft_digest` | objeto REST **E1** | campos `id`, `status`, `title`, `content` (objeto → `raw`), `slug`, `categories` **ordenados**, `featured_media`; `canon()` | comparar **somente** com `draft_sha256` de M1 e M2 |
+| `content_digest(body)` | `mkt_flow_p0.gate_unified.content_digest` | string UTF-8 de `E1.content.raw` | bytes exatos da string, sem HTML renderizado | comparar **somente** com `content_sha256` de M3 |
+| `package_content_sha256` | SHA-256 de `package.payload.content` | string UTF-8 do pacote | bytes exatos | comparar com `E1.content.raw` byte a byte |
+| `seo_sha256` | SHA-256 de `canon(seo)` | `provider`, `canonical`, `title`, `description` | `canon()` | uso exclusivo do Gate de SEO no broker |
+
+`draft_digest` e `content_digest` **têm entradas e normalizações diferentes e não podem ser comparados entre si**. A ponte segura é:
+
+```
+E1.content.raw == package.payload.content              (byte a byte)
+draft_digest(E1) == M1.draft_sha256 == M2.record.draft_sha256
+content_digest(E1.content.raw) == M3.content_sha256
+```
+
+Nenhum valor é reutilizado fora da sua coluna. Teste obrigatório: alterar um único byte de `raw` invalida as três verificações, sem escrita.
+
+## 6. Nonce, concorrência e tempo
+
+### 6.1 Tempo (correção O5)
+
+O broker mede o desvio de relógio na mesma requisição usando o cabeçalho `Date` de E1 (WordPress) e do serviço de registro:
+
+- `skew = max(|hora_do_servidor - hora_local|)`;
+- se `skew > 30s` ou algum `Date` ausente/inválido → `CLOCK_SYNC_UNVERIFIED`, sem escrita;
+- janela aceita para `served_at`: `[now - (120s + skew), now + (30s + skew)]`;
+- `issued_at/expires_at` são sempre comparados com `now` local **após** a checagem de skew;
+- testes fixam relógio (`now`) e simulam skew de 60s e cabeçalho ausente (`SEC-34`, `SEC-35`).
+
+### 6.2 Nonce atômico (correções A3/O4)
+
+Tabela do broker: `conexo_editorial_operations(nonce PK, post_id, version_sha256, body_sha256, state, created_at, updated_at)` com restrição única em `(post_id, nonce)` e índice em `version_sha256`.
+
+Estados: `RESERVED` → `WRITTEN` | `FAILED`. A reserva e a decisão de escrita ocorrem na **mesma transação** com bloqueio de linha. Concorrência: o segundo pedido com o mesmo nonce bloqueia na linha e relê o estado.
+
+Três classes de repetição:
+
+| Classe | Entrada | Resultado |
 |---|---|---|
-| `WP_ORIGIN_NOT_ALLOWED` | 1 | origem diferente da homologada |
-| `HUMAN_REFERENCE_MISSING` | 1 | sem referência humana verificável |
-| `CANONICAL_PACKAGE_INVALID` / `CANONICAL_VERSION_INVALID` | 2 | pacote malformado |
-| `TRACE_RUN_ID_MISSING` / `TRACE_*` | 3 | trilha Turso ausente/inválida |
-| `WP_READ_OUTCOME_UNKNOWN` / `WP_READ_HTTP_REJECTED` | 4 | readback indisponível |
-| `wordpress_context_*_mismatch` | 4 | draft ≠ contexto público correlacionado |
-| `trusted_factual_review_missing` | 5–6 | argumentos/certificado/registro ausentes |
-| `trusted_factual_review_certificate_invalid` | 5 | assinatura/TTL/edição inválidos |
-| `review_record_signature_invalid` | 6 | registro forjado/alterado |
-| `review_record_stale_response` | 6 | resposta antiga (relógio controlado) |
-| `review_record_replay_detected` | 6 | `registry_seq` regressivo |
-| `review_record_mismatch` | 6 | decisão/revogação/identidade divergem |
-| `gate_owner_release_*` | 7 | Gate ausente/inválido/divergente |
-| `remote_version_mismatch` | 8 | conteúdo editado após aceite |
-| `trusted_factual_review_broker_guard_not_integrated` | — | **marca do estado atual**; só pode ser removida após a Seção 9 |
+| Repetição segura | mesmo nonce, mesmo `body_sha256`, `WRITTEN` | devolver recibo `idempotent` anterior; **nenhuma** segunda escrita |
+| Repetição conflitante | mesmo nonce, `body_sha256` diferente | `NONCE_BODY_CONFLICT`; nenhuma escrita |
+| Nonce já consumido em outra versão | nonce novo, porém `version_sha256` já `WRITTEN` | `VERSION_ALREADY_CONSUMED`; nenhuma escrita |
 
-## 8. Testes de segurança (obrigatórios antes de retirar o bloqueio)
+Falha entre escrita e recibo: não marcar `FAILED` por timeout sozinho. Consultar E1 pelo `operation_nonce` persistido no post (`meta` do WordPress) e reconciliar:
 
-Convenção: todos os testes são offline, com HTTP mockado e `POST` gravado em espião; **nenhum teste pode publicar de verdade**. `requests.post` chamado zero vezes em 100% dos casos negativos.
+- post presente → `WRITTEN`, devolver recibo idempotente;
+- post ausente com confirmação do WordPress → `FAILED`, nonce pode ser reutilizado com novo pedido;
+- resultado desconhecido → `transport_unknown_inspect`, `retry_automatic: false`, nenhuma escrita automática.
+
+TTL de 48h para limpeza de registros antigos, mantendo o hash do corpo por mais tempo para detectar replay tardio.
+
+## 7. Testes
+
+Convenção: testes OFFLINE usam HTTP mockado, relógio fixo e espião de `requests.post`; **nenhum deles publica de verdade**. Todo teste negativo afirma `requests.post` chamado zero vezes.
+
+### 7.1 Negativos — SEC-01…SEC-29 (implementar na Fase B, bloqueio intacto)
+
+| ID | Cenário | Bloqueio esperado |
+|---|---|---|
+| SEC-01 | sem M1 | `trusted_factual_review_missing` |
+| SEC-02 | M1 assinado com chave privada errada | `certificate_invalid` |
+| SEC-03 | M1 expirado | `certificate_invalid` |
+| SEC-04 | `decision = REJEITADO` | `certificate_invalid` |
+| SEC-05 | `review_type != independent_human` | `certificate_invalid` |
+| SEC-06 | `draft_sha256` de outro draft | `certificate_invalid` |
+| SEC-07 | envelope M2 sem assinatura | `review_record_signature_missing` |
+| SEC-08 | 1 byte alterado em `record` | `review_record_signature_invalid` |
+| SEC-09 | `served_at` alterado fora da assinatura | `review_record_signature_invalid` |
+| SEC-10 | `registry_seq` alterado fora da assinatura | `review_record_signature_invalid` |
+| SEC-11 | envelope assinado com `K_ISS` em vez de `K_REG` | `review_record_signature_invalid` |
+| SEC-12 | `served_at = now-300s` | `review_record_stale_response` |
+| SEC-13 | `served_at = now+60s` | `review_record_stale_response` |
+| SEC-14 | `registry_seq` regression no servidor | `review_record_replay_detected` |
+| SEC-15 | `revoked = true` (assinado) | `review_record_mismatch` |
+| SEC-16 | `status = PENDING` | `review_record_mismatch` |
+| SEC-17 | `independent = false` | `review_record_mismatch` |
+| SEC-18 | M2 sem `expires_at` | `review_record_evidence_missing` |
+| SEC-19 | E1/E2 com `modified` diferentes | `wordpress_context_version_mismatch` |
+| SEC-20 | conteúdo achatado como `raw` | `wordpress_content_raw_unavailable` |
+| SEC-21 | M3 ausente | `gate_owner_release_missing` |
+| SEC-22 | M3 de outro post | `gate_owner_release_post_mismatch` |
+| SEC-23 | conteúdo alterado após aceite | `remote_version_mismatch` |
+| SEC-24 | `owner_id = 4` | `gate_owner_release_invalid` |
+| SEC-25 | check do M3 sem evidência | `gate_owner_release_invalid` |
+| SEC-26 | HTTP 200 com pacote inválido | recusa semântica, sem POST |
+| SEC-27 | timeout do registro | `trusted_review_unavailable`, sem POST |
+| SEC-28 | falha de rede no readback E1 | `WP_READ_OUTCOME_UNKNOWN`, sem POST |
+| SEC-29 | perfil `staging` com origem `https://conexotech.com.br` | `BROKER_ORIGIN_NOT_ALLOWED`, sem POST |
+
+`BLOCK-TEMP-01` (correção A4): teste **temporário**, existente hoje e em `tests/test_editorial_broker_transport.py`, comprovando que `publish`/`schedule` com `wp_broker` recusam com `trusted_factual_review_broker_guard_not_integrated`. Não é teste do contrato implementado: deve ser removido **no mesmo commit** que implementar M1–M4 no broker e substituído pelos testes `CONTRACT-01…` com aprovação válida. Mantê-lo após a implementação seria circular; removê-lo antes seria abrir o caminho sem prova.
+
+### 7.2 Positivos identificados (correção O1)
+
+| ID | Entrada | Pré-condição | Resultado esperado |
+|---|---|---|---|
+| POS-01 | M1+M2+M3 válidos, E1/E2/E3 correlacionados, `intent=publish`, nonce N1 | perfil `staging`, relógio sincronizado, Turso relido | 1 POST no broker, `status=verified`, `retry_automatic=false` |
+| POS-02 | idem, `intent=schedule`, `post_date_gmt` futura | mesmo de POS-01 | 1 POST, `status=verified`, data preservada no WP |
+| POS-03 | repetição de POS-01 com mesmo nonce e mesmo corpo | `state=WRITTEN` | `status=idempotent`, **0** POST adicional |
+| POS-04 | repetição de POS-01 com mesmo nonce e corpo diferente | `state=WRITTEN` | `NONCE_BODY_CONFLICT`, 0 POST |
+| POS-05 | simulação de queda após POST antes do recibo | nonce persistido, WP consultável | recuperação por E1, `status=verified`/`idempotent`, sem segundo POST, evidência de restauração |
+
+### 7.3 Negativos adicionais de concorrência/tempo (Fase C)
 
 | ID | Cenário | Esperado |
 |---|---|---|
-| SEC-01 | Sem certificado | bloqueio `trusted_factual_review_missing` |
-| SEC-02 | Certificado assinado com chave errada | `certificate_invalid` |
-| SEC-03 | Certificado expirado (`now > expires_at`) | `certificate_invalid` |
-| SEC-04 | Certificado `decision = REJEITADO` | `certificate_invalid` |
-| SEC-05 | Certificado `review_type != independent_human` | `certificate_invalid` |
-| SEC-06 | Certificado `draft_sha256` de outro draft | `certificate_invalid` |
-| SEC-07 | Envelope sem signature | `review_record_signature_missing` |
-| SEC-08 | Envelope adulterado (1 byte do record) | `review_record_signature_invalid` |
-| SEC-09 | Envelope assinado com `K_ISS` em vez de `K_REG` | `review_record_signature_invalid` |
-| SEC-10 | `served_at` agora−300s | `review_record_stale_response` |
-| SEC-11 | `served_at` futuro além de +30s | `review_record_stale_response` |
-| SEC-12 | `registry_seq` menor que já visto | `review_record_replay_detected` |
-| SEC-13 | Registro com `revoked: true` (assinado) | `review_record_mismatch` |
-| SEC-14 | Registro com `status: PENDING` | `review_record_mismatch` |
-| SEC-15 | Registro com `independent: false` | `review_record_mismatch` |
-| SEC-16 | Registro sem `expires_at`/`registry_seq` | `review_record_evidence_missing` |
-| SEC-17 | Readback edit e view com `modified` diferentes | `wordpress_context_version_mismatch` |
-| SEC-18 | String de conteúdo achatada como raw | `wordpress_content_raw_unavailable` |
-| SEC-19 | Gate sem owner-release | `gate_owner_release_missing` |
-| SEC-20 | owner-release de outro post | `gate_owner_release_post_mismatch` |
-| SEC-21 | Conteúdo alterado após aceite | `remote_version_mismatch` |
-| SEC-22 | `owner_id = 4` | `gate_owner_release_invalid` |
-| SEC-23 | Check sem evidência no release | `gate_owner_release_invalid` |
-| SEC-24 | HTTP 200 com pacote inválido | falha semântica, sem POST |
-| SEC-25 | Replay do mesmo `operation_nonce` | segunda tentativa recusada, 1 escrita no máximo |
-| SEC-26 | Falha de rede no readback | `WP_READ_OUTCOME_UNKNOWN`, POST não chamado |
-| SEC-27 | Timeout no registro | `trusted_review_unavailable`, sem POST |
-| SEC-28 | `publish` e `schedule` com modo `wp_broker` | recusa `trusted_factual_review_broker_guard_not_integrated` **até** Seção 9 concluída |
+| SEC-30 | dois pedidos concorrentes com o mesmo nonce | 1 escrita, 1 `idempotent` |
+| SEC-31 | nonce reutilizado com `version_sha256` distinta | `VERSION_ALREADY_CONSUMED` |
+| SEC-32 | falha entre POST e recibo, WP ausente | `transport_unknown_inspect`, sem retry automático |
+| SEC-33 | `kid` de M3 revogado | `gate_owner_release_invalid` |
+| SEC-34 | skew de 60s | `CLOCK_SYNC_UNVERIFIED` |
+| SEC-35 | cabeçalho `Date` ausente | `CLOCK_SYNC_UNVERIFIED` |
 
-Suíte de integração (homologação): banco isolado + WP de homologação + espelho do registro; executar os 28 casos e 5 positivos (cadeia completa válida; idempotência no retry; rollback restaura conteúdo e status; restauração de backup integra; revisão humana confirma). Nenhum teste em produção.
+`CONTRACT-01…` (Fase C, somente após implementação): versão válida com todos os campos assinados deve autorizar exatamente um POST; estes testes **não** substituem `BLOCK-TEMP-01` até que a Fase E seja cumprida.
 
-## 9. Critérios de aceitação (retirar o bloqueio só após todos)
+## 8. Classes de evidência (correção O6)
 
-1. 28/28 SEC, 5 positivos e idempotência/rollback verdes no ambiente de homologação do WP, com leituras `context=edit` e pública reais.
-2. Suíte completa do repositório verde no checkout preparado, com SHA registrado em `docs/REGISTRO_UNICO_20261118.md`.
-3. Rollback de código comprovado (revert para o estado pré-bloqueio ou para `e4276c2`) e restauração de banco/tema/plugins testada a partir de um backup verificável datado.
-4. Chaves `K_REG` e `K_BROKER` provisionadas só no servidor; cliente sem elas; sem elas em qualquer commit.
-5. Revisão humana do proprietário do código, do Gate e do fluxo de publicação; aceite explícito vinculado à versão exata.
-6. PR #130 aberto com escopo mínimo, sem merge automático, sem deploy automático, sem cron.
-7. Documento de homologação atualizado no Registro Único (seção própria), com evidências de HTTP, hashes e restauração.
+| Classe | Ambiente | Ferramenta | Evidência exigida | Não serve como prova de |
+|---|---|---|---|---|
+| OFFLINE | checkout preparado, HTTP mockado, relógio fixo | pytest | log com contagem, SHA do commit, `git status` limpo | publicação real, integração server-side |
+| HOMOLOGAÇÃO REAL | WordPress de homologação, banco isolado, domínio da allowlist | cliente + broker reais | GETs E1/E2/E3 autenticados (com hash), POST único, `post_id`/status conferidos, sem segredos em logs | produção |
+| RESTAURAÇÃO | backup datado restaurado em banco separado | ferramenta de backup verificável | manifesto SHA-256, data/tamanho, saída do restore, contagem de posts/temas/plugins antes/depois, confronto com produção | sucesso de publicação |
+| DECISÃO | revisão do proprietário | registro único | aceite explícito vinculado ao SHA | automação por suíte verde |
 
-## 10. Ordem de trabalho
+Evidência de OFFLINE nunca é apresentada como homologação; evidência de homologação nunca é apresentada como restauração; nenhuma substitui aceite humano.
 
-1. **Fase A — especificação (este documento).** Nenhum código.
-2. **Fase B — registro e teste negativo:** implementar SEC-01…SEC-28 na suíte preparada (offline), sem tocar `editorial_transport.py`.
-3. **Fase C — broker e cliente:** verificação independente no broker, nonce store, readback autenticado interno, M2 com sequência e `served_at`.
-4. **Fase D — homologação:** banco isolado, dados descartáveis, backup antes/depois, prova de rollback.
-5. **Fase E — decisão de integrar:** só com os 7 critérios da Seção 9; PR #130 deixa de ser draft e é integrado no máximo por fast-forward, sem publicação.
+## 9. Critérios de aceitação para retirar o bloqueio
 
-## 11. Riscos e questões abertas
+1. 29 SEC + 6 testes de concorrência/tempo verdes no checkout preparado; SHA e contagem registrados.
+2. 5 positivos (`POS-01`…`POS-05`) verdes, com 1 POST no máximo por versão.
+3. Homologação real com E1/E2/E3 lidos e correlacionados; logs e hashes no Registro Único.
+4. Restauração comprovada em ambiente isolado (manifesto datado + saída do restore + contagens confrontadas).
+5. M1/M2/M3 com assinatura assimétrica e `kid`; nenhum cliente com chave privada; HMAC legado só no servidor.
+6. Nonce atômico com transação e recuperação pós-falha provadas.
+7. Skew medido e janelas aplicadas; nenhum teste com relógio assumido correto.
+8. Revisão humana do proprietário, vinculada à versão exata; PR #130 sem merge/deploy automático; seção própria no Registro Único.
 
-- Falta serviço/local real do registro assinado, com `registry_seq` e chave própria; sem ele o broker só pode confiar em mocks.
-- Rotação de `K_REG` sem janela de downtime e sem aceitar envelopes de versões antigas.
-- Relógio do servidor da Hostinger vs WP vs cliente: skew de relógio precisa ser medido, não assumido.
-- Nonce store persistente (ex.: tabela ou opção do WordPress com TTL) — ainda inexistente.
-- Homologação sem ambiente WordPress com identificadores descartáveis: impossível provar M4 real hoje.
-- Custo de latência: 4 GETs + verificação por publicação; aceitável apenas se a taxa de erro for conhecida.
-- Owner `owner_id == 3` confidencialidade: não copiar valores para logs, nem para o Registro Único.
+## 10. Ordem de trabalho autorizável
 
-## 12. Definição de pronto para este contrato
+1. Aprovação desta revisão documental (Fase A). Nada foi implementado.
+2. Fase B: implementar `SEC-01`…`SEC-29` em branch isolada, **sem alterar o bloqueio**; rodar suíte OFFLINE e registrar SHA.
+3. Validar criptografia (§3.1–3.3) e semântica de digests (§5) por revisão assistida e por teste vetorial com entradas fixas.
+4. Fase C: implementar M1–M4 no broker, nonce atômico, `kid`/rotação e `SEC-30`…`SEC-35`; `BLOCK-TEMP-01` só sai no commit que prova `CONTRACT-01…`.
+5. Fase D: homologação real com origem isolada e restauração comprovada.
+6. Fase E: decisão de integração com os 8 critérios — até lá, PR #130 permanece draft.
 
-- [ ] Todos os testes SEC verdes na suíte preparada;
-- [ ] 5 testes positivos com leitura `context=edit` real em homologação;
-- [ ] Chave independente do registro provisionada só no servidor;
-- [ ] Nenhuma escrita no WordPress de produção durante validação;
-- [ ] Rollback e restauração comprovados com backup datado;
-- [ ] Aceite humano do proprietário vinculado à versão;
-- [ ] Registro Único atualizado (nova seção).
+## 11. Riscos em aberto
 
-## 13. Apêndice — comandos de verificação rápida
+- Registro assinado com `registry_seq` autoritativo e rotação ainda não provisionado.
+- Gate RC10.5 ainda não emite M3 assinado com `kid`.
+- Domínio de homologação (`<HOMOLOGATION_HOST>`) precisa ser definido pelo proprietário.
+- Skew real entre Hostinger, WordPress e registro precisa ser medido, não assumido.
+- Latência de 4 leituras + verificação por publicação precisa ser aceita explicitamente.
+- Segredos nunca devem aparecer em logs, testes ou Registro Único.
 
-```powershell
-python -m pytest tests/test_readback_gate_parecer_e2e.py tests/test_editorial_trusted_review.py `
-  tests/test_editorial_publish_gate.py tests/test_editorial_broker_transport.py -q
-```
-```powershell
-python tools/check_registro_unico.py
-```
-Hoje ambos passam no checkout preparado, mas **não** retiram `trusted_factual_review_broker_guard_not_integrated` nem autorizam publicação. PASS neste documento significa "provado em ambiente controlado", nunca "publicado".
+## 12. Definição de pronto da revisão documental
+
+- [x] C1–C4 e A1–A4 respondidos;
+- [x] cinco positivos identificados com entrada, pré-condição e resultado;
+- [x] M3 com formato, campos assinados, verificação e rotação;
+- [x] sequência autoritativa no servidor;
+- [x] nonce atômico e recuperação;
+- [x] janelas temporais com medição de skew;
+- [x] OFFLINE × homologação × restauração separados.
+
+Aprovação desta revisão **não** autoriza Fase B automaticamente; o proprietário deve autorizar cada fase.
