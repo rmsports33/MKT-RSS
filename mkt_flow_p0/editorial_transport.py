@@ -111,21 +111,6 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
             # The broker has not yet exposed the Revisor registry contract.
             # Never allow broker publication to bypass the local signed-review guard.
             raise ValueError("trusted_factual_review_broker_guard_not_integrated")
-            if operation_nonce is not None:
-                raise ValueError("broker exige reconciliacao remota; retomada nao pode repetir escrita")
-            if not isinstance(package, dict) or not isinstance(package.get("payload"), dict):
-                raise ValueError("pacote editorial ausente")
-            from mkt_flow_p0.editorial_broker_transport import publish_via_broker
-            return publish_via_broker(
-                package, core_root=core_root, wp_url=wp_url,
-                wp_user=wp_user, wp_password=wp_password,
-                trace_run_id=trace_run_id, intent=intent,
-                publication_reference=publication_reference,
-                post_date_gmt=package.get("payload", {}).get("wordpress", {}).get("post_date_gmt")
-                    if intent == "schedule" else None,
-                timeout=timeout,
-                require_signed_seo=intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1",
-            )
         core = load_core(core_root)
         v = core.validator()
         errors, blockers = v.evaluate(package, Path(core_root), for_staging=intent == "stage")
