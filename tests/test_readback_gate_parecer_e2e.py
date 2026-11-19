@@ -202,3 +202,82 @@ def test_advisory_receipt_binds_to_the_exact_raw_body():
     assert receipt["content_sha256"] == content_digest(body)
     assert receipt["reviewer"] == "wordpress-gate-owner-3"
     assert "publication_authorized" not in receipt
+
+
+# --- Revisor Único ligado ao guard: pacote + recibo + parecer na mesma versão ---
+
+def _package(body, *, post_id=POST_ID):
+    return {
+        "stage": "ready",
+        "version_sha256": version_sha256_esperado(),
+        "payload": {
+            "title": TITLE, "slug": SLUG, "content": body,
+            "wordpress": {"post_id": post_id, "featured_media": 456,
+                          "categories": [10]},
+        },
+    }
+
+
+class _SimulatedCore:
+    """Stands in for the hash-pinned Conexo OS validator; no file is read."""
+
+    class _Validator:
+        def evaluate(self, package, root, *, require_editorial_ready=True):
+            return [], []
+
+    def validator(self):
+        return self._Validator()
+
+
+def _patch_core(monkeypatch):
+    monkeypatch.setattr("mkt_flow_p0.editorial_transport.load_core",
+                        lambda root: _SimulatedCore())
+
+
+def test_verified_review_with_valid_package_and_release_authorizes_simulated(
+        monkeypatch, tmp_path):
+    combined, body = _readback()
+    cert, record = _certificate_and_record(combined)
+    _patch_core(monkeypatch)
+    result = authorize_publish(
+        combined, {"verified": True},
+        package=_package(body), core_root=str(tmp_path),
+        owner_release=_release(body),
+        review_certificate=cert, review_signing_key=KEY,
+        lookup_review=lambda _: record, now=150)
+    assert result == {"autorizado": True, "bloqueios": []}
+
+
+def test_valid_package_and_release_without_verified_review_stay_blocked(
+        monkeypatch, tmp_path):
+    combined, body = _readback()
+    _patch_core(monkeypatch)
+    result = authorize_publish(
+        combined, {"verified": True},
+        package=_package(body), core_root=str(tmp_path),
+        owner_release=_release(body))
+    assert result["autorizado"] is False
+    assert "trusted_factual_review_missing" in result["bloqueios"]
+
+
+def test_revoked_review_blocks_even_with_valid_package_and_release(
+        monkeypatch, tmp_path):
+    combined, body = _readback()
+    cert, record = _certificate_and_record(combined)
+    _patch_core(monkeypatch)
+    result = authorize_publish(
+        combined, {"verified": True},
+        package=_package(body), core_root=str(tmp_path),
+        owner_release=_release(body),
+        review_certificate=cert, review_signing_key=KEY,
+        lookup_review=lambda _: {**record, "revoked": True}, now=150)
+    assert result["autorizado"] is False
+    assert "trusted_factual_review_review_record_mismatch" in result["bloqueios"]
+
+
+def test_self_asserted_review_dict_is_never_verification():
+    combined, _ = _readback()
+    result = authorize_publish(
+        combined, {"verified": True, "reviewer_id": "revisor-unico-3"})
+    assert result["autorizado"] is False
+    assert "trusted_factual_review_missing" in result["bloqueios"]

@@ -2,8 +2,12 @@
 
 O Gate WordPress continua sendo a autoridade de aceite humano. Este modulo
 acrescenta uma verificacao fail-closed da marca de proveniencia no corpo bruto
-persistido; uma marca valida nunca substitui owner_release nem revisao factual.
+persistido e do parecer de revisao independente; nem marca valida nem parecer
+substituem owner_release. O parecer e conferido contra o registro confiavel
+injetado pelo chamador; um dicionario `{"verified": True}` entregue no payload
+nunca conta como verificacao.
 """
+import re
 from pathlib import Path
 
 from editorial_wordpress_readiness import validate_wordpress_readiness
@@ -61,8 +65,33 @@ def _matches_canonical_package_snapshot(post, payload):
     )
 
 
+def _review_blockers(post, certificate, signing_key, lookup_review, *, now=None):
+    """Verify the independent review against the trusted store, never the payload.
+
+    Missing inputs, an unusable store and any mismatch all block. The reviewer
+    only attests the editorial review; it never authorizes publication.
+    """
+    if (not isinstance(certificate, dict)
+            or not isinstance(signing_key, (bytes, bytearray))
+            or not callable(lookup_review)):
+        return ["trusted_factual_review_missing"]
+    try:
+        from editorial_trusted_review import verify_independent_review
+        result = verify_independent_review(
+            post, certificate, bytes(signing_key), lookup_review, now=now)
+    except Exception:
+        return ["trusted_factual_review_verification_unavailable"]
+    if isinstance(result, dict) and result.get("verified") is True:
+        return []
+    reason = result.get("reason") if isinstance(result, dict) else None
+    reason = re.sub(r"[^a-z0-9_]+", "_", str(reason or "not_verified").lower())
+    return ["trusted_factual_review_" + reason.strip("_")]
+
+
 def authorize_publish(post, factual_review=None, *, package=None, core_root=None,
-                      expected_category_id=10, owner_release=None):
+                      expected_category_id=10, owner_release=None,
+                      review_certificate=None, review_signing_key=None,
+                      lookup_review=None, now=None):
     problems = list(validate_wordpress_readiness(
         _readiness_snapshot(post), expected_category_id=expected_category_id).errors)
 
@@ -95,9 +124,6 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
                 problems.append("remote_version_mismatch")
     if not isinstance(package, dict) or not core_root:
         problems.append("canonical_editorial_package_missing")
-        problems.append("trusted_factual_review_missing")
-        if not isinstance(factual_review, dict):
-            problems.append("factual_review_missing")
     else:
         try:
             from mkt_flow_p0.editorial_transport import load_core
@@ -112,6 +138,14 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
                 problems.append("remote_version_mismatch")
         except (ImportError, OSError, ValueError, TypeError, KeyError, RuntimeError):
             problems.append("canonical_gate_unavailable_or_invalid")
+
+    # Revisao independente: conferida contra o registro confiavel do chamador.
+    # O parametro ``factual_review`` e autodeclarado (compatibilidade) e nunca
+    # vale como prova; segue exigido apenas como declaracao de presenca.
+    problems.extend(_review_blockers(
+        post, review_certificate, review_signing_key, lookup_review, now=now))
+    if not isinstance(factual_review, dict):
+        problems.append("factual_review_missing")
     return {"autorizado": not problems, "bloqueios": _unique(problems)}
 
 
