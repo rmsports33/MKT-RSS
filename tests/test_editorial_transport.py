@@ -123,10 +123,10 @@ class TransportTests(unittest.TestCase):
             self.assertIn("erro",self.call(intent="publish",publication_reference="ordem sintética"))
         get.assert_not_called();post.assert_not_called()
 
-    def test_authorized_publish_and_readback(self):
+    def test_publish_path_requires_signed_reviewer_guard_before_any_write(self):
         self.p["stage"]="ready";self.f.approve()
-        # Synthetic trusted lookup exercises the real trace preflight. This is
-        # an offline test double, never a Turso receipt or editorial acceptance.
+        # A valid local package and trace are insufficient without the signed
+        # independent-review certificate + trusted registry envelope.
         import hashlib
         from mkt_flow_p0.editorial_trace_gate import require_release_trace, REQUIRED
         run_id = "synthetic-transport-trace"
@@ -141,11 +141,36 @@ class TransportTests(unittest.TestCase):
         def preflight(package, trace_run_id):
             return require_release_trace(package, trace_run_id,
                 lookup=lambda _: {"ok": True, "trace": packet})
+        def authenticated_get(url, **kwargs):
+            if url.endswith("/wp-json/wp/v2/posts/9711"):
+                p=self.p["payload"]
+                return Response({"id":9711,"status":"draft",
+                    "title":{"raw":p["title"]},"content":{"raw":p["content"]},
+                    "slug":p["slug"],"categories":[10],"featured_media":9714,
+                    "link":transport.SITE+"/?p=9711"})
+            return self.get_mock(url, **kwargs)
         with patch("mkt_flow_p0.editorial_trace_gate.require_release_trace", side_effect=preflight), \
-             patch.object(transport.requests,"get",side_effect=self.get_mock), \
-             patch.object(transport.requests,"post",side_effect=self.post_mock):
-            r=self.call(intent="publish",publication_reference="ordem sintética", trace_run_id=run_id)
-        self.assertNotIn("erro",r,r);self.assertEqual(r["status"],"publish")
+             patch.object(transport.requests,"get",side_effect=authenticated_get), \
+             patch.object(transport.requests,"post") as post:
+            results = [
+                self.call(intent=intent,publication_reference="ordem sintética", trace_run_id=run_id)
+                for intent in ("publish", "schedule")
+            ]
+        for r in results:
+            self.assertIn("erro",r,r)
+            self.assertIn("trusted_factual_review_missing",r.get("reason",""))
+        post.assert_not_called()
+
+    def test_broker_publish_and_schedule_fail_closed_until_guard_is_integrated(self):
+        with patch.dict(os.environ,{"CONEXO_EDITORIAL_TRANSPORT":"wp_broker"}), \
+             patch("mkt_flow_p0.editorial_broker_transport.publish_via_broker") as broker, \
+             patch.object(transport.requests,"post") as post:
+            for intent in ("publish","schedule"):
+                result=self.call(intent=intent,publication_reference="ordem sintética")
+                self.assertIn("trusted_factual_review_broker_guard_not_integrated",
+                              result.get("reason",""))
+        broker.assert_not_called()
+        post.assert_not_called()
 
     def test_rss_source_must_match_apuration_before_transport(self):
         with patch.object(transport.requests,"get") as get,patch.object(transport.requests,"post") as post:

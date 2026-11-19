@@ -95,7 +95,10 @@ def avaliar_gate_publicacao(titulo: str, texto: str, links: list) -> dict:
         }
 
 
-def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", publication_reference=None, operation_nonce=None, trace_run_id=None):
+def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", publication_reference=None,
+                              operation_nonce=None, trace_run_id=None, factual_review=None,
+                              owner_release=None, review_certificate=None, review_signing_key=None,
+                              lookup_review=None, registry_verification_key=None, review_now=None):
     """Conclusão supervisionada da pauta RSS; jamais certifica texto automaticamente."""
     from mkt_flow_p0.editorial_transport import publish_package
     payload = package.get("payload", {}) if isinstance(package, dict) else {}
@@ -108,7 +111,11 @@ def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", 
         return {"acao": "bloqueado", "erro": "origem da pauta RSS não corresponde às fontes apuradas"}
     return publish_package(package, core_root=core_root, actor_id=actor_id, intent=intent, operation_nonce=operation_nonce,
         trace_run_id=trace_run_id, publication_reference=publication_reference, wp_url=os.getenv("WP_URL", ""),
-        wp_user=os.getenv("WP_USER", ""), wp_password=os.getenv("WP_APP_PASSWORD", ""))
+        wp_user=os.getenv("WP_USER", ""), wp_password=os.getenv("WP_APP_PASSWORD", ""),
+        factual_review=factual_review, owner_release=owner_release,
+        review_certificate=review_certificate, review_signing_key=review_signing_key,
+        lookup_review=lookup_review, registry_verification_key=registry_verification_key,
+        review_now=review_now)
 
 
 def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None,

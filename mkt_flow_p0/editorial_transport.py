@@ -87,7 +87,9 @@ def _finalize_seo_after_publish(package, result, *, envelope, wp_auth, timeout):
 def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                     actor_id, intent="stage", publication_reference=None,
                     timeout=15, operation_nonce=None, seo_publication_signature=None,
-                    trace_run_id=None):
+                    trace_run_id=None, factual_review=None, owner_release=None,
+                    review_certificate=None, review_signing_key=None,
+                    lookup_review=None, registry_verification_key=None, review_now=None):
     """Não gera texto nem atesta fatos. Encaminha versão realmente revisada.
 
     Prévia stage permanece draft e não conta como entrega. Timeout nunca
@@ -106,21 +108,9 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
         if mode not in ("", "signed", "wp_broker"):
             raise ValueError("transporte editorial nao homologado")
         if mode == "wp_broker" and intent in {"publish", "schedule"}:
-            if operation_nonce is not None:
-                raise ValueError("broker exige reconciliacao remota; retomada nao pode repetir escrita")
-            if not isinstance(package, dict) or not isinstance(package.get("payload"), dict):
-                raise ValueError("pacote editorial ausente")
-            from mkt_flow_p0.editorial_broker_transport import publish_via_broker
-            return publish_via_broker(
-                package, core_root=core_root, wp_url=wp_url,
-                wp_user=wp_user, wp_password=wp_password,
-                trace_run_id=trace_run_id, intent=intent,
-                publication_reference=publication_reference,
-                post_date_gmt=package.get("payload", {}).get("wordpress", {}).get("post_date_gmt")
-                    if intent == "schedule" else None,
-                timeout=timeout,
-                require_signed_seo=intent == "publish" and os.environ.get("CONEXO_REQUIRE_SIGNED_SEO") == "1",
-            )
+            # The broker has not yet exposed the Revisor registry contract.
+            # Never allow broker publication to bypass the local signed-review guard.
+            raise ValueError("trusted_factual_review_broker_guard_not_integrated")
         core = load_core(core_root)
         v = core.validator()
         errors, blockers = v.evaluate(package, Path(core_root), for_staging=intent == "stage")
@@ -242,6 +232,34 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
                 raise ValueError("snapshot autenticado indisponível")
             remote = response.json()
             snapshot, link = remote["snapshot"], remote["link"]
+        if intent in {"publish", "schedule"}:
+            # Authenticated edit-context readback is the exact persisted object
+            # evaluated by the same Revisor/Gate guard before any write.
+            review_response = requests.get(
+                f"{SITE}/wp-json/wp/v2/posts/{post_id}",
+                params={"context": "edit"}, auth=auth, timeout=timeout,
+                allow_redirects=False)
+            if review_response.status_code != 200:
+                raise ValueError("trusted_factual_review_wordpress_readback_unavailable")
+            review_post = review_response.json()
+            if not isinstance(review_post, dict) or review_post.get("id") != post_id:
+                raise ValueError("trusted_factual_review_wordpress_identity_mismatch")
+            from editorial_publish_gate import require_publish_authorization
+            persisted_review_post = {
+                "id": review_post.get("id"), "status": review_post.get("status"),
+                "title": review_post.get("title"), "content": review_post.get("content"),
+                "slug": review_post.get("slug"), "categories": review_post.get("categories"),
+                "featured_media": review_post.get("featured_media"),
+                "link": review_post.get("link"),
+            }
+            require_publish_authorization(
+                persisted_review_post, factual_review, package=package,
+                core_root=core_root, owner_release=owner_release,
+                review_certificate=review_certificate,
+                review_signing_key=review_signing_key,
+                lookup_review=lookup_review,
+                registry_verification_key=registry_verification_key,
+                now=review_now)
         if intent in {"publish", "schedule"} and package["payload"]["substantive_review"]["article_format"] == "noticia":
             from editorial_wordpress_readiness import require_wordpress_readiness
             require_wordpress_readiness({"id": snapshot["ID"], "title": snapshot["post_title"],
