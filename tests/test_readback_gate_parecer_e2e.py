@@ -12,7 +12,7 @@ import pytest
 
 from editorial_factual_certificate import draft_digest
 from editorial_publish_gate import authorize_publish
-from editorial_trusted_review import verify_independent_review
+from editorial_trusted_review import sign_registry_record, verify_independent_review
 from editorial_wordpress_adapter import (
     assemble_wordpress_context_readback,
     validate_wordpress_content_readback,
@@ -33,6 +33,7 @@ from mkt_flow_p0.editorial_provenance import (
 )
 
 KEY = b"test-only-key-for-simulated-trusted-review-123456"
+REGISTRY_KEY = b"test-only-registry-key-for-simulated-store-123"
 POST_ID = 42
 MODIFIED = "2026-11-19T10:00:00"
 TITLE = "Título verificado para leitura nativa"
@@ -91,6 +92,11 @@ def _certificate_and_record(post):
     return cert, record
 
 
+def _envelope(record, key=REGISTRY_KEY):
+    """Registry response signed with its own key, distinct from the certificate."""
+    return {"record": record, "signature": sign_registry_record(record, key)}
+
+
 def _release(body, *, post_id=POST_ID, content=None):
     return {
         "schema": "conexo-owner-release/1",
@@ -125,7 +131,8 @@ def test_native_readback_trusted_review_and_gate_packet_share_exact_version():
     combined, body = _readback()
     cert, record = _certificate_and_record(combined)
     assert verify_independent_review(
-        combined, cert, KEY, lambda _: record, now=150)["verified"] is True
+        combined, cert, KEY, lambda _: _envelope(record), REGISTRY_KEY,
+        now=150)["verified"] is True
 
     release = _release(body)
     info = validate_owner_release(release, post_id=POST_ID)
@@ -151,7 +158,8 @@ def test_reviewer_verification_alone_never_authorizes_publication():
     combined, _ = _readback()
     cert, record = _certificate_and_record(combined)
     assert verify_independent_review(
-        combined, cert, KEY, lambda _: record, now=150)["verified"] is True
+        combined, cert, KEY, lambda _: _envelope(record), REGISTRY_KEY,
+        now=150)["verified"] is True
 
     result = authorize_publish(
         combined, {"verified": True, "reviewer_id": cert["reviewer_id"]})
@@ -202,3 +210,101 @@ def test_advisory_receipt_binds_to_the_exact_raw_body():
     assert receipt["content_sha256"] == content_digest(body)
     assert receipt["reviewer"] == "wordpress-gate-owner-3"
     assert "publication_authorized" not in receipt
+
+
+# --- Revisor Único ligado ao guard: pacote + recibo + parecer na mesma versão ---
+
+def _package(body, *, post_id=POST_ID):
+    return {
+        "stage": "ready",
+        "version_sha256": version_sha256_esperado(),
+        "payload": {
+            "title": TITLE, "slug": SLUG, "content": body,
+            "wordpress": {"post_id": post_id, "featured_media": 456,
+                          "categories": [10]},
+        },
+    }
+
+
+class _SimulatedCore:
+    """Stands in for the hash-pinned Conexo OS validator; no file is read."""
+
+    class _Validator:
+        def evaluate(self, package, root, *, require_editorial_ready=True):
+            return [], []
+
+    def validator(self):
+        return self._Validator()
+
+
+def _patch_core(monkeypatch):
+    monkeypatch.setattr("mkt_flow_p0.editorial_transport.load_core",
+                        lambda root: _SimulatedCore())
+
+
+def test_verified_review_with_valid_package_and_release_authorizes_simulated(
+        monkeypatch, tmp_path):
+    combined, body = _readback()
+    cert, record = _certificate_and_record(combined)
+    _patch_core(monkeypatch)
+    result = authorize_publish(
+        combined, {"verified": True},
+        package=_package(body), core_root=str(tmp_path),
+        owner_release=_release(body),
+        review_certificate=cert, review_signing_key=KEY,
+        lookup_review=lambda _: _envelope(record),
+        registry_verification_key=REGISTRY_KEY, now=150)
+    assert result == {"autorizado": True, "bloqueios": []}
+
+
+def test_valid_package_and_release_without_verified_review_stay_blocked(
+        monkeypatch, tmp_path):
+    combined, body = _readback()
+    _patch_core(monkeypatch)
+    result = authorize_publish(
+        combined, {"verified": True},
+        package=_package(body), core_root=str(tmp_path),
+        owner_release=_release(body))
+    assert result["autorizado"] is False
+    assert "trusted_factual_review_missing" in result["bloqueios"]
+
+
+def test_revoked_review_blocks_even_with_valid_package_and_release(
+        monkeypatch, tmp_path):
+    combined, body = _readback()
+    cert, record = _certificate_and_record(combined)
+    _patch_core(monkeypatch)
+    result = authorize_publish(
+        combined, {"verified": True},
+        package=_package(body), core_root=str(tmp_path),
+        owner_release=_release(body),
+        review_certificate=cert, review_signing_key=KEY,
+        lookup_review=lambda _: _envelope({**record, "revoked": True}),
+        registry_verification_key=REGISTRY_KEY, now=150)
+    assert result["autorizado"] is False
+    assert "trusted_factual_review_review_record_mismatch" in result["bloqueios"]
+
+
+def test_self_asserted_review_dict_is_never_verification():
+    combined, _ = _readback()
+    result = authorize_publish(
+        combined, {"verified": True, "reviewer_id": "revisor-unico-3"})
+    assert result["autorizado"] is False
+    assert "trusted_factual_review_missing" in result["bloqueios"]
+
+
+def test_registry_envelope_signed_with_another_key_is_not_trusted(
+        monkeypatch, tmp_path):
+    combined, body = _readback()
+    cert, record = _certificate_and_record(combined)
+    _patch_core(monkeypatch)
+    result = authorize_publish(
+        combined, {"verified": True},
+        package=_package(body), core_root=str(tmp_path),
+        owner_release=_release(body),
+        review_certificate=cert, review_signing_key=KEY,
+        lookup_review=lambda _: _envelope(record, b"x" * 32),
+        registry_verification_key=REGISTRY_KEY, now=150)
+    assert result["autorizado"] is False
+    assert ("trusted_factual_review_review_record_signature_invalid"
+            in result["bloqueios"])
