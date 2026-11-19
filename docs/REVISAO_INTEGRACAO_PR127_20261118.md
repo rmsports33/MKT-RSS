@@ -126,3 +126,12 @@ Esta seção prevalece sobre os trechos históricos acima que ainda classificam 
 - A evidência detalhada está em docs/WORDPRESS_GATE_PROVENANCE_READBACK_20261118.md e no comentário https://github.com/rmsports33/MKT-RSS/pull/127#issuecomment-6993604869.
 
 **Estado operacional permanece inalterado:** PR #127 draft; nenhum merge, deploy, cron, aprovação, publicação ou alteração adicional no WordPress. Não iniciar integração do Gate até concluir o GET nativo e a revisão final dos HEADs/diffs.
+
+## Revisão corretiva adicional do adaptador — 18/11/2026
+
+Na revisão estática posterior aos 93 testes focados já reportados, foram endurecidos dois pontos de compatibilidade/robustez no parser de readback de vídeo:
+
+- O parser agora reconhece `VideoObject` quando o JSON-LD usa `@type` como lista (por exemplo, `["VideoObject", "CreativeWork"]`) e quando o objeto está dentro de `@graph`. Essas são formas válidas de estruturar JSON-LD e não devem gerar falso bloqueio quando o iframe e o embedUrl correspondem.
+- A leitura da porta da URL foi movida para dentro do tratamento de `ValueError`. URLs com portas inválidas ou fora do intervalo passam a ser classificadas como marcação de vídeo inválida, sem escapar como exceção inesperada do parser.
+
+Foram acrescentados dois testes de regressão em `tests/test_editorial_wordpress_adapter.py` para essas situações. **Esses dois testes novos ainda precisam ser executados no OpenCode**; não são incluídos retroativamente nos 93 testes já reportados. Nenhuma chamada de rede ou escrita WordPress foi introduzida. A revisão não altera as regras de autorização: aprovação humana, proveniência, integridade raw e correspondência de vídeo continuam obrigatórias.
