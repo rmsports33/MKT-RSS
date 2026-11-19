@@ -265,7 +265,7 @@ def extrair_video(fonte):
     if not ID_YOUTUBE.match(dados["youtube_id"]):
         raise ValueError("youtube_id invalido em %s: %r" % (local, dados["youtube_id"]))
     _opcionais(dados, local)
-    if "uploadDate" in dados and not _upload_date_valida(dados["uploadDate"]):
+    if dados.get("uploadDate") is not None and not _upload_date_valida(dados["uploadDate"]):
         raise ValueError("youtube_uploadDate deve ser data ISO-8601 valida com fuso quando houver horario")
     _pontos(dados, local)
     if "duracao_iso" in dados:
