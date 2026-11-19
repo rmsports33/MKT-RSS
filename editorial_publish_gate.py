@@ -59,17 +59,29 @@ def _matches_canonical_package_snapshot(post, payload):
 
 
 def _review_blockers(post, certificate, signing_key, lookup_review,
-                     registry_verification_key, *, now=None):
+                     registry_verification_key, *, now=None,
+                     require_contract_v23=False, sequence_store=None):
     if (not isinstance(certificate, dict)
-            or not isinstance(signing_key, (bytes, bytearray))
-            or not callable(lookup_review)
-            or not isinstance(registry_verification_key, (bytes, bytearray))):
+            or not callable(lookup_review)):
         return ["trusted_factual_review_missing"]
+    if require_contract_v23:
+        if signing_key is None or registry_verification_key is None:
+            return ["trusted_factual_review_missing"]
+        verifier_kwargs = {"now": now, "sequence_store": sequence_store}
+        keys = (signing_key, registry_verification_key)
+    else:
+        if (not isinstance(signing_key, (bytes, bytearray))
+                or not isinstance(registry_verification_key, (bytes, bytearray))):
+            return ["trusted_factual_review_missing"]
+        verifier_kwargs = {"now": now}
+        keys = (bytes(signing_key), bytes(registry_verification_key))
     try:
-        from editorial_trusted_review import verify_independent_review
-        result = verify_independent_review(
-            post, certificate, bytes(signing_key), lookup_review,
-            bytes(registry_verification_key), now=now)
+        from editorial_trusted_review import (
+            verify_independent_review, verify_independent_review_contract)
+        verifier = (verify_independent_review_contract if require_contract_v23
+                    else verify_independent_review)
+        result = verifier(post, certificate, keys[0], lookup_review,
+                          keys[1], **verifier_kwargs)
     except Exception:
         return ["trusted_factual_review_verification_unavailable"]
     if isinstance(result, dict) and result.get("verified") is True:
@@ -82,7 +94,8 @@ def _review_blockers(post, certificate, signing_key, lookup_review,
 def authorize_publish(post, factual_review=None, *, package=None, core_root=None,
                       expected_category_id=10, owner_release=None,
                       review_certificate=None, review_signing_key=None,
-                      lookup_review=None, registry_verification_key=None, now=None):
+                      lookup_review=None, registry_verification_key=None, now=None,
+                      require_contract_v23=False, review_sequence_store=None):
     problems = list(validate_wordpress_readiness(
         _readiness_snapshot(post), expected_category_id=expected_category_id).errors)
 
@@ -129,7 +142,9 @@ def authorize_publish(post, factual_review=None, *, package=None, core_root=None
     # Always verify, including when a canonical package is present.
     problems.extend(_review_blockers(
         post, review_certificate, review_signing_key, lookup_review,
-        registry_verification_key, now=now))
+        registry_verification_key, now=now,
+        require_contract_v23=require_contract_v23,
+        sequence_store=review_sequence_store))
     if not isinstance(factual_review, dict):
         problems.append("factual_review_missing")
     return {"autorizado": not problems, "bloqueios": _unique(problems)}

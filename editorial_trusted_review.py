@@ -27,15 +27,16 @@ def sign_registry_record(record, registry_signing_key):
 
 def verify_independent_review(post, certificate, signing_key, lookup_review,
                               registry_verification_key, *, now=None,
-                              sequence_store=None):
+                              sequence_store=None, envelope=None):
     if not callable(lookup_review):
         return {"verified": False, "reason": "trusted_review_store_missing"}
     if not verify_factual_certificate(post, certificate, signing_key, now=now):
         return {"verified": False, "reason": "certificate_invalid"}
-    try:
-        envelope = lookup_review(certificate["review_record_url"])
-    except Exception:
-        return {"verified": False, "reason": "trusted_review_unavailable"}
+    if envelope is None:
+        try:
+            envelope = lookup_review(certificate["review_record_url"])
+        except Exception:
+            return {"verified": False, "reason": "trusted_review_unavailable"}
     if not isinstance(envelope, dict):
         return {"verified": False, "reason": "review_record_missing"}
 
@@ -81,3 +82,42 @@ def verify_independent_review(post, certificate, signing_key, lookup_review,
     if not required:
         return {"verified": False, "reason": "review_record_mismatch"}
     return {"verified": True, "reason": None}
+
+
+def _algorithm_rejection(value, where):
+    """Explicit reason for a non-Ed25519 algorithm in a protected path."""
+    alg = value.get("alg") if isinstance(value, dict) else None
+    if alg is None:
+        return where + "_algorithm_missing"
+    if isinstance(alg, str) and alg.upper().startswith("HMAC"):
+        return where + "_algorithm_legacy_hmac"
+    return where + "_algorithm_unsupported"
+
+
+def verify_independent_review_contract(post, certificate, signing_key,
+                                       lookup_review, registry_verification_key,
+                                       *, now=None, sequence_store=None):
+    """Protected path: only Ed25519 M1 + signed M2 are accepted (contract v2.3).
+
+    Missing `alg`, legacy HMAC and any unknown algorithm are rejected before
+    any cryptographic check. The legacy path in `verify_independent_review`
+    remains available only to isolated pre-Ed25519 tests.
+    """
+    if not isinstance(certificate, dict) or certificate.get("alg") != "Ed25519":
+        return {"verified": False, "reason": _algorithm_rejection(
+            certificate, "certificate")}
+    if not callable(lookup_review):
+        return {"verified": False, "reason": "trusted_review_store_missing"}
+    try:
+        envelope = lookup_review(certificate["review_record_url"])
+    except Exception:
+        return {"verified": False, "reason": "trusted_review_unavailable"}
+    if not isinstance(envelope, dict):
+        return {"verified": False, "reason": "review_record_missing"}
+    if envelope.get("alg") != "Ed25519":
+        return {"verified": False, "reason": _algorithm_rejection(
+            envelope, "review_record")}
+    return verify_independent_review(
+        post, certificate, signing_key, lookup_review,
+        registry_verification_key, now=now, sequence_store=sequence_store,
+        envelope=envelope)
