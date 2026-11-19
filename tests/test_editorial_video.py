@@ -180,3 +180,10 @@ def test_upload_date_invalida_reprova_o_video(upload_date):
             "youtube_id": "dQw4w9WgXcQ", "titulo": "T", "canal": "C",
             "uploadDate": upload_date,
         }})
+
+def test_upload_date_nula_permanece_opcional():
+    video = ev.extrair_video({"video": {
+        "youtube_id": "dQw4w9WgXcQ", "titulo": "T", "canal": "C",
+        "uploadDate": None,
+    }})
+    assert "uploadDate" not in video
