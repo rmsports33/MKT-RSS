@@ -135,3 +135,10 @@ Na revisão estática posterior aos 93 testes focados já reportados, foram endu
 - A leitura da porta da URL foi movida para dentro do tratamento de `ValueError`. URLs com portas inválidas ou fora do intervalo passam a ser classificadas como marcação de vídeo inválida, sem escapar como exceção inesperada do parser.
 
 Foram acrescentados dois testes de regressão em `tests/test_editorial_wordpress_adapter.py` para essas situações. **Esses dois testes novos ainda precisam ser executados no OpenCode**; não são incluídos retroativamente nos 93 testes já reportados. Nenhuma chamada de rede ou escrita WordPress foi introduzida. A revisão não altera as regras de autorização: aprovação humana, proveniência, integridade raw e correspondência de vídeo continuam obrigatórias.
+
+
+## Validação do campo uploadDate do vídeo — revisão estática
+
+O campo opcional `youtube_uploadDate` era aceito como qualquer string não vazia e poderia chegar ao JSON-LD como data inválida. O importador agora aceita somente data ISO-8601 válida (`YYYY-MM-DD`) ou data/hora ISO-8601 com fuso explícito (por exemplo, `2026-10-01T12:00:00Z`); data impossível, texto livre e data/hora sem fuso são recusados. Foram adicionados casos válidos e inválidos em `tests/test_editorial_video.py`.
+
+A validação confirma apenas o formato e a validade calendárica, não a veracidade da data publicada pelo canal. A origem factual continua sujeita à verificação editorial humana. Os novos testes de data também aguardam execução no OpenCode e não fazem parte dos 93 testes anteriores.
