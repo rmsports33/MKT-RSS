@@ -207,11 +207,12 @@ def test_inspection_blocks_flattened_connector_string():
     assert "editorial_provenance_content_raw_unavailable" in result["blockers"]
     assert "wordpress_content_raw_unavailable" in result["readback_blockers"]
 
+
 def test_readback_accepts_videoobject_in_jsonld_graph_and_type_array():
     import json
 
     script = videoobject_jsonld(VIDEO).removeprefix(
-        '<script type="application/ld+json>').removesuffix('</script>')
+        '<script type="application/ld+json">').removesuffix('</script>')
     video_object = json.loads(script)
     video_object["@type"] = ["VideoObject", "CreativeWork"]
     graph_document = json.dumps({
@@ -221,7 +222,7 @@ def test_readback_accepts_videoobject_in_jsonld_graph_and_type_array():
     body = marked_body(
         "<h2>Review</h2>\\n"
         + bloco_video(VIDEO)
-        + '<script type="application/ld+json>' + graph_document + "</script>"
+        + '<script type="application/ld+json">' + graph_document + "</script>"
     )
     result = validate_wordpress_content_readback({
         **VIDEO_DRAFT,
@@ -236,7 +237,7 @@ def test_readback_rejects_malformed_video_url_port_without_crashing():
         "youtube-nocookie.com/embed/dQw4w9WgXcQ",
         "youtube-nocookie.com:99999/embed/dQw4w9WgXcQ",
     )
-    body = marked_body("<h2>Review</h2>\\n" + iframe + "\\n" + videoobject_jsonld(VIDEO))
+    body = marked_body("<h2>Review</h2>\\n" + iframe + "\n" + videoobject_jsonld(VIDEO))
     result = validate_wordpress_content_readback({
         **VIDEO_DRAFT,
         "content": {"raw": body, "rendered": body},
