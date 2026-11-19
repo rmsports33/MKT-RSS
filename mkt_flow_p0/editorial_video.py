@@ -195,6 +195,7 @@ def _opcionais(dados, local):
     for chave in ("resumo", "duracao", "uploadDate", "duracao_iso"):
         valor = dados.get(chave)
         if valor is None:
+            dados.pop(chave, None)
             continue
         if not isinstance(valor, str):
             raise ValueError("campo de video invalido em %s: %s" % (local, chave))
