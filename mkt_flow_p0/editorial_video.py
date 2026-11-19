@@ -209,15 +209,15 @@ def _upload_date_valida(valor):
     """Accept Schema.org date or timezone-qualified ISO-8601 dateTime only."""
     if not isinstance(valor, str):
         return False
-    if re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", valor):
+    if re.fullmatch(r"\d{4}-\d{2}-\d{2}", valor):
         try:
             date.fromisoformat(valor)
             return True
         except ValueError:
             return False
     if not re.fullmatch(
-            r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
-            r"(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})", valor):
+            r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}"
+            r"(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})", valor):
         return False
     try:
         parsed = datetime.fromisoformat(valor.replace("Z", "+00:00"))
