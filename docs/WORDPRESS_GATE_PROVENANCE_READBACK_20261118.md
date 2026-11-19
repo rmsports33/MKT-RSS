@@ -1,3 +1,5 @@
+> **Estado consolidado em 19/11/2026 — prevalece sobre as seções históricas anteriores:** o ensaio autorizado do post temporário #9907 passou para persistência/conservação funcional de iframe YouTube nocookie, JSON-LD VideoObject e marcador RC10.5 nos contextos edit/view; o hash raw correspondeu ao manifesto. O post foi movido para a lixeira. A pendência restante não é mais provar a persistência do vídeo: é obter via OpenCode, somente GET, o envelope REST nativo `content.raw` e `content.rendered` e validar o adaptador offline. Se GET do post em lixeira não for permitido, parar sem restaurar ou recriar. Nenhum POST/PUT/DELETE, merge, deploy ou alteração de produção está autorizado.
+
 # Gate WordPress: integração da proveniência e readback — 18/11/2026
 
 ## Descoberta do Gate ativo
