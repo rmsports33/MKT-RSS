@@ -142,3 +142,5 @@ Foram acrescentados dois testes de regressão em `tests/test_editorial_wordpress
 O campo opcional `youtube_uploadDate` era aceito como qualquer string não vazia e poderia chegar ao JSON-LD como data inválida. O importador agora aceita somente data ISO-8601 válida (`YYYY-MM-DD`) ou data/hora ISO-8601 com fuso explícito (por exemplo, `2026-10-01T12:00:00Z`); data impossível, texto livre e data/hora sem fuso são recusados. Foram adicionados casos válidos e inválidos em `tests/test_editorial_video.py`.
 
 A validação confirma apenas o formato e a validade calendárica, não a veracidade da data publicada pelo canal. A origem factual continua sujeita à verificação editorial humana. Os novos testes de data também aguardam execução no OpenCode e não fazem parte dos 93 testes anteriores.
+
+A ausência explícita (`null`) continua válida para esse campo opcional e é tratada como campo omitido; foi acrescentado teste de regressão para preservar essa compatibilidade.
