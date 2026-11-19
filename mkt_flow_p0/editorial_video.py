@@ -33,6 +33,7 @@ humana. A chave YOUTUBE_API_KEY, quando usada, fica so no ambiente.
 import html
 import json
 import re
+from datetime import date, datetime
 
 ID_YOUTUBE = re.compile(r"^[A-Za-z0-9_-]{11}$")
 DURACAO_TEXTO = re.compile(r"^(?:(\d{1,2}):)?(\d{1,2}):(\d{2})$")
@@ -204,6 +205,27 @@ def _opcionais(dados, local):
             dados.pop(chave)
 
 
+def _upload_date_valida(valor):
+    """Accept Schema.org date or timezone-qualified ISO-8601 dateTime only."""
+    if not isinstance(valor, str):
+        return False
+    if re.fullmatch(r"\\d{4}-\\d{2}-\\d{2}", valor):
+        try:
+            date.fromisoformat(valor)
+            return True
+        except ValueError:
+            return False
+    if not re.fullmatch(
+            r"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}"
+            r"(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})", valor):
+        return False
+    try:
+        parsed = datetime.fromisoformat(valor.replace("Z", "+00:00"))
+    except ValueError:
+        return False
+    return parsed.tzinfo is not None and parsed.utcoffset() is not None
+
+
 def _pontos(dados, local):
     pontos = dados.get("pontos")
     if pontos is None:
@@ -243,6 +265,8 @@ def extrair_video(fonte):
     if not ID_YOUTUBE.match(dados["youtube_id"]):
         raise ValueError("youtube_id invalido em %s: %r" % (local, dados["youtube_id"]))
     _opcionais(dados, local)
+    if "uploadDate" in dados and not _upload_date_valida(dados["uploadDate"]):
+        raise ValueError("youtube_uploadDate deve ser data ISO-8601 valida com fuso quando houver horario")
     _pontos(dados, local)
     if "duracao_iso" in dados:
         iso = duracao_para_iso(dados["duracao_iso"])
