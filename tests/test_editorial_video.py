@@ -152,3 +152,31 @@ def test_bloco_video_escapa_texto_e_mostra_duracao_e_credito():
     assert "Duração: 8:32" in bloco
     assert "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ" in bloco
     assert "https://www.youtube.com/watch?v=dQw4w9WgXcQ" in bloco
+
+@pytest.mark.parametrize("upload_date", [
+    "2026-10-01",
+    "2026-10-01T12:00:00Z",
+    "2026-10-01T12:00:00-03:00",
+    "2026-10-01T12:00:00.123+00:00",
+])
+def test_upload_date_iso8601_validas_sao_aceitas(upload_date):
+    video = ev.extrair_video({"video": {
+        "youtube_id": "dQw4w9WgXcQ", "titulo": "T", "canal": "C",
+        "uploadDate": upload_date,
+    }})
+    assert video["uploadDate"] == upload_date
+
+
+@pytest.mark.parametrize("upload_date", [
+    "ontem",
+    "2026-99-99",
+    "2026-10-01T12:00:00",
+    "2026-10-01T25:00:00Z",
+    "2026-10-01T12:00:00+25:00",
+])
+def test_upload_date_invalida_reprova_o_video(upload_date):
+    with pytest.raises(ValueError, match="youtube_uploadDate"):
+        ev.extrair_video({"video": {
+            "youtube_id": "dQw4w9WgXcQ", "titulo": "T", "canal": "C",
+            "uploadDate": upload_date,
+        }})
