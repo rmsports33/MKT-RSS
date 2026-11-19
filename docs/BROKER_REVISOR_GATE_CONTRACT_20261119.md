@@ -1,6 +1,6 @@
 # Contrato Broker–Revisor–Gate — revisão 2
 
-**Versão:** 2.0 (19/11/2026). **Substitui, sem apagar,** a versão 1 em `docs/BROKER_REVISOR_GATE_CONTRACT_20261119.md`, commit `9c5b596cd8aaa5fc97b7cb9b189f8ac2d849d284`, branch `docs/broker-revisor-gate-contract-20261119`. A branch da v1 permanece como histórico e não foi alterada.
+**Versão:** 2.1 (19/11/2026). **Substitui, sem apagar,** a revisão 2.0 em `docs/broker-revisor-gate-contract-20261119.md` no branch `docs/broker-revisor-gate-contract-rev2-20261119`, commit `5b15c719e651f4b467c87954b9da2c7163a52d23`. A v2.0 permanece intacta como histórico; a v1 permanece em `docs/broker-revisor-gate-contract-20261119` @ `9c5b596cd8aaa5fc97b7cb9b189f8ac2d849d284`.
 
 **Finalidade:** especificar, de forma verificável, a integração autenticada entre MKT-RSS (cliente), registro confiável do Revisor Único, Gate RC10.5 (WordPress) e broker `conexo/v1/editorial/broker/write`, **antes** de qualquer retirada do bloqueio `trusted_factual_review_broker_guard_not_integrated`.
 
@@ -26,6 +26,12 @@ Este documento não autoriza publicação, não implementa nada, não retira blo
 | O4 | Nonce atômico | §6 — transação, estado, unique key, recuperação após falha |
 | O5 | Relógios | §6.1 — medição de skew, janela reavaliada, bloqueio se não sincronizado |
 | O6 | Classes de evidência | §8 — offline / homologação real / restauração separadas |
+| 2.1-1 | Replay de envelope válido antigo | §3.2 — maior `registry_seq` aceito persistido pelo broker por `review_record_url`, atualização atômica (`CAS`) e `SEC-36` |
+| 2.1-2 | Transação local não torna HTTP atômico | §6.2 — reserva persistente, estado `IN_FLIGHT`, nonce no endpoint WordPress, reconciliação; sem alegação de atomicidade distribuída |
+| 2.1-3 | Duas operações concorrentes para a mesma versão | §6.2 — restrição única em `(post_id, version_sha256)` para estados ativos e bloqueio transacional; `SEC-38` |
+| 2.1-4 | Ausência confirmada × resultado desconhecido | §6.2 e `SEC-32/37` — ausência confirmada permite `FAILED`; leitura inconclusiva mantém `UNKNOWN`/`transport_unknown_inspect` |
+| 2.1-5 | Recuperação dependia de meta não listado | §3.4 — `meta._conexo_editorial_operation_nonce` listado e exigido na leitura autenticada de recuperação |
+| 2.1-6 | `verified` ambíguo no recibo | §3.5 — estados M5: `published`, `scheduled`, `idempotent`, `transport_unknown_inspect`; `verified` é só validação interna |
 
 ## 1. Escopo e não escopo
 
@@ -102,7 +108,13 @@ Verificação: `K_ISS_PUB[kid]`; `draft_sha256` recalculado por `draft_digest(E1
 
 Correção C2: a assinatura cobre **todos** os campos acima exceto `signature`, inclusive `served_at`, `registry_seq`, `protocol_version`, `alg` e `kid`. Qualquer alteração em metadados invalida a assinatura.
 
-Correção O3: `registry_seq` é **autoritativo no servidor do registro**, monotônico por `review_record_url`, emitido no envelope; o broker verifica contra o maior valor que o próprio servidor registrou/observou, e o armazena. Memória local do cliente pode ser *sinal* de suspeita, mas **nunca** é requisito de segurança nem fonte de verdade; `registry_seq_floor` foi removido do contrato.
+Correção O3/2.1-1: `registry_seq` é **autoritativo no servidor do registro**, monotônico por `review_record_url`, emitido no envelope; o broker mantém a autoridade local de *aceite* em armazenamento persistente:
+
+```
+conexo_registry_sequences(review_record_url PK, max_seq_accepted, updated_at)
+```
+
+A atualização é atômica por comparação e troca (`CAS`): o broker lê `max_seq_accepted`, valida assinatura, TTL, frescura e sequência, e só então faz `UPDATE ... WHERE max_seq_accepted = valor_lido`; se outra requisição tiver avançado a linha, a transação falha e o envelope é recusado. `seq <= max_seq_accepted` → `review_record_replay_detected`, mesmo com assinatura válida e `served_at` dentro da janela. A sequência **só avança após aceite completo**, nunca em falha; um envelope idêntico reapresentado é replay e não gera nova escrita. Memória local do cliente pode ser *sinal* de suspeita, mas **nunca** é requisito de segurança nem fonte de verdade; `registry_seq_floor` foi removido do contrato. Reinício do broker não pode zerar a memória — `SEC-36` prova persistência.
 
 Validação: assinatura, TTL do `record` ≤ 3600s, `served_at` conforme §6.1, `registry_seq` monotônico no servidor, `revoked is False`, `status=="FINAL"`, `independent is True`, igualdade de `draft_sha256`, `reviewer_id`, `evidence_refs` e `review_record_url` com M1.
 
@@ -127,23 +139,30 @@ Três leituras distintas, com papéis diferentes:
 
 | Endpoint | Nome | Autenticação | Campos exigidos | Papel |
 |---|---|---|---|---|
-| `GET /wp-json/wp/v2/posts/{id}?context=edit` | **E1** | sim | `id`, `status`, `modified`, `slug`, `categories`, `featured_media`, `title.raw`, `content.raw`, `link`, `meta._conexo_mkt_rss_run_id` | **única** fonte de versão; base de `draft_digest` e `content_digest` |
+| `GET /wp-json/wp/v2/posts/{id}?context=edit` | **E1** | sim | `id`, `status`, `modified`, `slug`, `categories`, `featured_media`, `title.raw`, `content.raw`, `link`, `meta._conexo_mkt_rss_run_id`, `meta._conexo_editorial_operation_nonce` | **única** fonte de versão; base de `draft_digest` e `content_digest`; na recuperação, o nonce é lido **autenticamente** aqui |
 | `GET /wp-json/wp/v2/posts/{id}?context=view` | **E2** | sim | `id`, `status`, `modified`, `slug`, `link`, `content.rendered` | checar que a representação REST pública corresponde ao mesmo objeto |
 | `GET /{slug}/?conexo_verify=<versão>` | **E3** | não | HTTP 200, `<title>`, `meta description`, `link rel=canonical`, iframe/`VideoObject` quando aplicável | conferir SEO público; **não** fornece `id`, `modified` ou `status` |
 
-Correlação obrigatória: E1 e E2 com mesmo `id`, mesmo `modified`, mesmo `status`, mesmo `slug`; `meta._conexo_mkt_rss_run_id` igual quando presente nos dois. E1↔E3 por `slug` + canonical exato + título/descrição esperados (padrão já usado em `tools/publish_owner_approved.py::verify_public_seo`). String achatada de conector nunca é promovida a `raw`. Divergências: `wordpress_context_*_mismatch` / `wordpress_content_raw_unavailable`.
+Correlação obrigatória: E1 e E2 com mesmo `id`, mesmo `modified`, mesmo `status`, mesmo `slug`; `meta._conexo_mkt_rss_run_id` igual quando presente nos dois. **Recuperação pós-falha (2.1-5):** o broker precisa ler `meta._conexo_editorial_operation_nonce` de E1 com a mesma identidade autenticada; ausência ou divergência desse meta **não** autoriza declarar `FAILED` — o caso permanece `UNKNOWN`/`transport_unknown_inspect` (`SEC-37`). Antes da escrita o meta pode não existir; depois dela, a confirmação da escrita depende dele. E1↔E3 por `slug` + canonical exato + título/descrição esperados (padrão já usado em `tools/publish_owner_approved.py::verify_public_seo`). String achatada de conector nunca é promovida a `raw`. Divergências: `wordpress_context_*_mismatch` / `wordpress_content_raw_unavailable`.
 
 ### 3.5 M5 — Recibo do broker (pós-escrita)
 
-Emitido somente após resultado conhecido da escrita:
+Emitido somente após resultado conhecido da escrita (correção 2.1-6). O campo `status` tem **exatamente** quatro valores:
+
+| `status` | Significado | Nova escrita? |
+|---|---|---|
+| `published` | publicação efetivamente confirmada por E1/E2/E3 | sim, 1 |
+| `scheduled` | agendamento efetivamente confirmado (`future`, `post_date_gmt` preservada) | sim, 1 |
+| `idempotent` | operação anterior recuperada, sem nova escrita | não |
+| `transport_unknown_inspect` | resultado ainda não comprovado; exige inspeção humana | não (automática) |
 
 ```json
-{"status":"verified|idempotent|transport_unknown_inspect|...",
- "post_id":0,"nonce":"<hex>","verified":true,
- "retry_automatic":false,"operation_nonce":"<hex>"}
+{"status":"published|scheduled|idempotent|transport_unknown_inspect",
+ "post_id":0,"nonce":"<hex>","retry_automatic":false,
+ "operation_nonce":"<hex>","intent":"publish|schedule"}
 ```
 
-Não contém selo novo de aprovação; não autoriza nada. `retry_automatic` é sempre `false` quando o resultado é incerto.
+`verified` **não é um status de publicação**: é, no máximo, um sinal interno de que as verificações M1–M4 passaram. Campo `verified` não deve aparecer no recibo como prova de publicação. `retry_automatic` é sempre `false` quando o resultado é incerto. Nenhum recibo contém selo novo de aprovação nem autoriza publicação posterior.
 
 ## 4. Ordem de verificação no broker
 
@@ -192,33 +211,37 @@ O broker mede o desvio de relógio na mesma requisição usando o cabeçalho `Da
 - `issued_at/expires_at` são sempre comparados com `now` local **após** a checagem de skew;
 - testes fixam relógio (`now`) e simulam skew de 60s e cabeçalho ausente (`SEC-34`, `SEC-35`).
 
-### 6.2 Nonce atômico (correções A3/O4)
+### 6.2 Reserva, nonce e reconciliação (correções A3/O4/2.1-2/2.1-3/2.1-4)
 
-Tabela do broker: `conexo_editorial_operations(nonce PK, post_id, version_sha256, body_sha256, state, created_at, updated_at)` com restrição única em `(post_id, nonce)` e índice em `version_sha256`.
+**Atomicidade distribuída não é afirmada.** Uma transação no banco do broker não torna atômica uma chamada HTTP ao WordPress. A garantia de "no máximo uma escrita" vem de três mecanismos, nesta ordem:
 
-Estados: `RESERVED` → `WRITTEN` | `FAILED`. A reserva e a decisão de escrita ocorrem na **mesma transação** com bloqueio de linha. Concorrência: o segundo pedido com o mesmo nonce bloqueia na linha e relê o estado.
+1. **Reserva persistente local** — `conexo_editorial_operations(nonce PK, post_id, version_sha256, body_sha256, state, created_at, updated_at)`, com chave única em `(post_id, nonce)` **e** restrição única em `(post_id, version_sha256)` para os estados ativos `RESERVED`, `IN_FLIGHT`, `WRITTEN` (2.1-3). A reserva usa `INSERT ... ON CONFLICT DO NOTHING` em transação com bloqueio de linha; conflito de versão ativa → `VERSION_ALREADY_IN_FLIGHT`/`VERSION_ALREADY_CONSUMED`, sem POST. Linhas `FAILED` podem ser removidas para permitir nova tentativa com outro nonce.
+2. **Idempotência no endpoint WordPress** — o broker envia `operation_nonce` e `version_sha256` na chamada ao Gate/broker; o WordPress persiste esse nonce como `meta._conexo_editorial_operation_nonce` e como chave única em sua própria tabela, recusando uma segunda escrita da mesma versão. O servidor, não o cliente, é a autoridade final da idempotência.
+3. **Reconciliação autenticada** — após timeout ou erro entre POST e recibo, o broker relê E1 (§3.4), incluindo `meta._conexo_editorial_operation_nonce`, e compara `post_id`, versão e nonce.
+
+Estados: `RESERVED` → `IN_FLIGHT` (gravado **antes** do POST) → `WRITTEN` | `FAILED` | `UNKNOWN`. `IN_FLIGHT` é a marca explícita de que uma chamada externa pode ter ocorrido; por isso **nenhum timeout, sozinho, autoriza `FAILED`**.
 
 Três classes de repetição:
 
 | Classe | Entrada | Resultado |
 |---|---|---|
-| Repetição segura | mesmo nonce, mesmo `body_sha256`, `WRITTEN` | devolver recibo `idempotent` anterior; **nenhuma** segunda escrita |
+| Repetição segura | mesmo nonce, mesmo `body_sha256`, `WRITTEN` | devolver M5 `idempotent` anterior; **nenhuma** segunda escrita |
 | Repetição conflitante | mesmo nonce, `body_sha256` diferente | `NONCE_BODY_CONFLICT`; nenhuma escrita |
-| Nonce já consumido em outra versão | nonce novo, porém `version_sha256` já `WRITTEN` | `VERSION_ALREADY_CONSUMED`; nenhuma escrita |
+| Versão já ativa/consumida | nonce novo, `(post_id, version_sha256)` já em estado ativo | `VERSION_ALREADY_IN_FLIGHT`/`VERSION_ALREADY_CONSUMED`; nenhuma escrita |
 
-Falha entre escrita e recibo: não marcar `FAILED` por timeout sozinho. Consultar E1 pelo `operation_nonce` persistido no post (`meta` do WordPress) e reconciliar:
+Reconciliação (2.1-4):
 
-- post presente → `WRITTEN`, devolver recibo idempotente;
-- post ausente com confirmação do WordPress → `FAILED`, nonce pode ser reutilizado com novo pedido;
-- resultado desconhecido → `transport_unknown_inspect`, `retry_automatic: false`, nenhuma escrita automática.
+- **Presença confirmada** — E1 autenticado traz o mesmo `operation_nonce`, `post_id` e versão → `WRITTEN`, M5 `published`/`scheduled` ou `idempotent` conforme a operação original; 0 nova escrita.
+- **Ausência confirmada** — E1 autenticado responde de forma inequívoca que não existe post com aquele nonce **e** o WordPress confirma que a transação não foi aplicada (consulta ao registro de idempotência do servidor) → `FAILED`; novo nonce pode ser usado, com nova validação M1–M4.
+- **Resultado desconhecido** — timeout, HTTP 5xx, JSON inválido, meta ausente/divergente ou resposta contraditória → `UNKNOWN`, M5 `transport_unknown_inspect`, `retry_automatic: false`, nenhuma escrita automática. **Não** é `FAILED`.
 
-TTL de 48h para limpeza de registros antigos, mantendo o hash do corpo por mais tempo para detectar replay tardio.
+TTL de 48h para limpeza de registros antigos, mantendo o hash do corpo e o `registry_seq` por mais tempo para detectar replay tardio. Testes `SEC-30`–`SEC-33`, `SEC-37` e `SEC-38` cobrem concorrência, queda e distinção de ausência.
 
 ## 7. Testes
 
 Convenção: testes OFFLINE usam HTTP mockado, relógio fixo e espião de `requests.post`; **nenhum deles publica de verdade**. Todo teste negativo afirma `requests.post` chamado zero vezes.
 
-### 7.1 Negativos — SEC-01…SEC-29 (implementar na Fase B, bloqueio intacto)
+### 7.1 Negativos da Fase B — SEC-01…SEC-29 e SEC-36 (bloqueio intacto)
 
 | ID | Cenário | Bloqueio esperado |
 |---|---|---|
@@ -235,7 +258,8 @@ Convenção: testes OFFLINE usam HTTP mockado, relógio fixo e espião de `reque
 | SEC-11 | envelope assinado com `K_ISS` em vez de `K_REG` | `review_record_signature_invalid` |
 | SEC-12 | `served_at = now-300s` | `review_record_stale_response` |
 | SEC-13 | `served_at = now+60s` | `review_record_stale_response` |
-| SEC-14 | `registry_seq` regression no servidor | `review_record_replay_detected` |
+| SEC-14 | `registry_seq` regressivo em envelope assinado e dentro da janela | `review_record_replay_detected` |
+| SEC-36 | envelope com `registry_seq` já aceito reapresentado após **reinício do broker** | `review_record_replay_detected` (persistência em `conexo_registry_sequences`) |
 | SEC-15 | `revoked = true` (assinado) | `review_record_mismatch` |
 | SEC-16 | `status = PENDING` | `review_record_mismatch` |
 | SEC-17 | `independent = false` | `review_record_mismatch` |
@@ -258,11 +282,11 @@ Convenção: testes OFFLINE usam HTTP mockado, relógio fixo e espião de `reque
 
 | ID | Entrada | Pré-condição | Resultado esperado |
 |---|---|---|---|
-| POS-01 | M1+M2+M3 válidos, E1/E2/E3 correlacionados, `intent=publish`, nonce N1 | perfil `staging`, relógio sincronizado, Turso relido | 1 POST no broker, `status=verified`, `retry_automatic=false` |
-| POS-02 | idem, `intent=schedule`, `post_date_gmt` futura | mesmo de POS-01 | 1 POST, `status=verified`, data preservada no WP |
+| POS-01 | M1+M2+M3 válidos, E1/E2/E3 correlacionados, `intent=publish`, nonce N1 | perfil `staging`, relógio sincronizado, Turso relido | 1 POST no broker, `status=published`, `retry_automatic=false` |
+| POS-02 | idem, `intent=schedule`, `post_date_gmt` futura | mesmo de POS-01 | 1 POST, `status=scheduled`, data preservada no WP |
 | POS-03 | repetição de POS-01 com mesmo nonce e mesmo corpo | `state=WRITTEN` | `status=idempotent`, **0** POST adicional |
 | POS-04 | repetição de POS-01 com mesmo nonce e corpo diferente | `state=WRITTEN` | `NONCE_BODY_CONFLICT`, 0 POST |
-| POS-05 | simulação de queda após POST antes do recibo | nonce persistido, WP consultável | recuperação por E1, `status=verified`/`idempotent`, sem segundo POST, evidência de restauração |
+| POS-05 | simulação de queda após POST antes do recibo | nonce persistido, E1 autenticado com `meta._conexo_editorial_operation_nonce` | recuperação por E1, `status=published`/`idempotent`, sem segundo POST, evidência de restauração |
 
 ### 7.3 Negativos adicionais de concorrência/tempo (Fase C)
 
@@ -270,7 +294,10 @@ Convenção: testes OFFLINE usam HTTP mockado, relógio fixo e espião de `reque
 |---|---|---|
 | SEC-30 | dois pedidos concorrentes com o mesmo nonce | 1 escrita, 1 `idempotent` |
 | SEC-31 | nonce reutilizado com `version_sha256` distinta | `VERSION_ALREADY_CONSUMED` |
-| SEC-32 | falha entre POST e recibo, WP ausente | `transport_unknown_inspect`, sem retry automático |
+| SEC-37 | queda após POST; E1 sem `meta._conexo_editorial_operation_nonce` ou com nonce divergente | `UNKNOWN` → M5 `transport_unknown_inspect`; **nunca** `FAILED` |
+| SEC-32a | queda após POST; E1 e registro de idempotência do WP confirmam **ausência** da escrita | `FAILED`, sem retry automático; novo nonce permitido após nova validação |
+| SEC-32b | queda após POST; leitura inconclusiva (timeout/5xx/JSON inválido) | `UNKNOWN` → `transport_unknown_inspect`; sem retry automático |
+| SEC-38 | duas operações concorrentes com o mesmo `(post_id, version_sha256)` | 1 reserva, a outra `VERSION_ALREADY_IN_FLIGHT`; 1 POST no máximo |
 | SEC-33 | `kid` de M3 revogado | `gate_owner_release_invalid` |
 | SEC-34 | skew de 60s | `CLOCK_SYNC_UNVERIFIED` |
 | SEC-35 | cabeçalho `Date` ausente | `CLOCK_SYNC_UNVERIFIED` |
@@ -290,21 +317,21 @@ Evidência de OFFLINE nunca é apresentada como homologação; evidência de hom
 
 ## 9. Critérios de aceitação para retirar o bloqueio
 
-1. 29 SEC + 6 testes de concorrência/tempo verdes no checkout preparado; SHA e contagem registrados.
-2. 5 positivos (`POS-01`…`POS-05`) verdes, com 1 POST no máximo por versão.
+1. `SEC-01`…`SEC-38` (incluindo `SEC-32a`/`SEC-32b`) verdes no checkout preparado; SHA e contagem registrados.
+2. 5 positivos (`POS-01`…`POS-05`) verdes, com 1 POST no máximo por versão e status M5 inequívoco.
 3. Homologação real com E1/E2/E3 lidos e correlacionados; logs e hashes no Registro Único.
 4. Restauração comprovada em ambiente isolado (manifesto datado + saída do restore + contagens confrontadas).
 5. M1/M2/M3 com assinatura assimétrica e `kid`; nenhum cliente com chave privada; HMAC legado só no servidor.
-6. Nonce atômico com transação e recuperação pós-falha provadas.
-7. Skew medido e janelas aplicadas; nenhum teste com relógio assumido correto.
+6. Reserva persistente com `IN_FLIGHT`, restrição única `(post_id, version_sha256)` e reconciliação provadas; nenhuma alegação de atomicidade distribuída.
+7. Skew medido e janelas aplicadas; nenhum teste com relógio assumido correto; `registry_seq` persistido no broker sobrevive a reinício.
 8. Revisão humana do proprietário, vinculada à versão exata; PR #130 sem merge/deploy automático; seção própria no Registro Único.
 
 ## 10. Ordem de trabalho autorizável
 
 1. Aprovação desta revisão documental (Fase A). Nada foi implementado.
-2. Fase B: implementar `SEC-01`…`SEC-29` em branch isolada, **sem alterar o bloqueio**; rodar suíte OFFLINE e registrar SHA.
-3. Validar criptografia (§3.1–3.3) e semântica de digests (§5) por revisão assistida e por teste vetorial com entradas fixas.
-4. Fase C: implementar M1–M4 no broker, nonce atômico, `kid`/rotação e `SEC-30`…`SEC-35`; `BLOCK-TEMP-01` só sai no commit que prova `CONTRACT-01…`.
+2. Fase B: implementar `SEC-01`…`SEC-29` e `SEC-36` em branch isolada, **sem alterar o bloqueio**; rodar suíte OFFLINE e registrar SHA.
+3. Validar criptografia (§3.1–§3.3) e semântica de digests (§5) por revisão assistida e por teste vetorial com entradas fixas.
+4. Fase C: implementar M1–M4 no broker, reserva/`IN_FLIGHT`, nonce no WordPress, restrição única de versão, `kid`/rotação e `SEC-30`…`SEC-38`; `BLOCK-TEMP-01` só sai no commit que prova `CONTRACT-01…`.
 5. Fase D: homologação real com origem isolada e restauração comprovada.
 6. Fase E: decisão de integração com os 8 critérios — até lá, PR #130 permanece draft.
 
@@ -322,8 +349,12 @@ Evidência de OFFLINE nunca é apresentada como homologação; evidência de hom
 - [x] C1–C4 e A1–A4 respondidos;
 - [x] cinco positivos identificados com entrada, pré-condição e resultado;
 - [x] M3 com formato, campos assinados, verificação e rotação;
-- [x] sequência autoritativa no servidor;
-- [x] nonce atômico e recuperação;
+- [x] sequência autoritativa no servidor e maior `registry_seq` aceito persistido no broker;
+- [x] reserva persistente, `IN_FLIGHT`, idempotência no WordPress e reconciliação sem atomicidade distribuída;
+- [x] restrição única `(post_id, version_sha256)`;
+- [x] ausência confirmada distinta de resultado desconhecido;
+- [x] meta de nonce do E1 na leitura autenticada de recuperação;
+- [x] M5 com estados `published`/`scheduled`/`idempotent`/`transport_unknown_inspect`;
 - [x] janelas temporais com medição de skew;
 - [x] OFFLINE × homologação × restauração separados.
 
