@@ -9,18 +9,29 @@ from editorial_publish_gate import authorize_publish
 from mkt_flow_p0.gate_unified import (GATE_CHECKS, advisory_gate_receipt,
                                        content_digest, read_owner_release,
                                        validate_owner_release)
+from mkt_flow_p0.editorial_provenance import (
+    MODULOS_OBRIGATORIOS, marcar, version_sha256_esperado)
 
-VERSION = "c" * 64
+VERSION = version_sha256_esperado()
+RAW = marcar(
+    "<p>Texto confirmado</p>",
+    modules={name: "EXECUTED" for name in MODULOS_OBRIGATORIOS},
+    voice_status="ASSISTED_ADAPTED",
+    substance_status="PASS",
+    image_rights_confirmed=True,
+    version_sha256=VERSION,
+)[0]
 
 POST = {"id": 9768, "status": "draft", "categories": [10],
         "slug": "noticia-verificada", "featured_media": 456,
-        "title": "Notícia verificada", "content": "<p>Texto confirmado</p>",
+        "title": "Notícia verificada",
+        "content": {"raw": RAW, "rendered": RAW},
         "link": "https://conexotech.com.br/?p=9768"}
 REVIEW = {"veredito": "APROVADO", "revisao_substantiva": True,
           "evidencias_verificadas": True, "aprovacao_atual": True}
 
 
-def owner_release(post_id=9768, content="<p>Texto confirmado</p>"):
+def owner_release(post_id=9768, content=RAW):
     return {
         "schema": "conexo-owner-release/1",
         "version_sha256": VERSION,

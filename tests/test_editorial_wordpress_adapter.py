@@ -83,8 +83,10 @@ def test_malformed_status_blocks():
 
 def test_separate_edit_and_view_contexts_are_combined_for_same_post_version():
     modified = "2026-11-18T09:00:00"
-    edit_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
-    view_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
+    edit_post = {**VIDEO_DRAFT, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
+    view_post = {**VIDEO_DRAFT, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
 
     combined, blockers = assemble_wordpress_context_readback(edit_post, view_post)
 
@@ -96,8 +98,10 @@ def test_separate_edit_and_view_contexts_are_combined_for_same_post_version():
 
 def test_separate_context_readback_rejects_different_post_ids():
     modified = "2026-11-18T09:00:00"
-    edit_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
-    view_post = {**VIDEO_DRAFT, "id": 43, "modified": modified, "content": VIDEO_BODY}
+    edit_post = {**VIDEO_DRAFT, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
+    view_post = {**VIDEO_DRAFT, "id": 43, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
 
     combined, blockers = assemble_wordpress_context_readback(edit_post, view_post)
 
@@ -106,8 +110,10 @@ def test_separate_context_readback_rejects_different_post_ids():
 
 
 def test_separate_context_readback_rejects_different_modified_versions():
-    edit_post = {**VIDEO_DRAFT, "modified": "2026-11-18T09:00:00", "content": VIDEO_BODY}
-    view_post = {**VIDEO_DRAFT, "modified": "2026-11-18T09:01:00", "content": VIDEO_BODY}
+    edit_post = {**VIDEO_DRAFT, "modified": "2026-11-18T09:00:00",
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
+    view_post = {**VIDEO_DRAFT, "modified": "2026-11-18T09:01:00",
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
 
     combined, blockers = assemble_wordpress_context_readback(edit_post, view_post)
 
@@ -115,10 +121,51 @@ def test_separate_context_readback_rejects_different_modified_versions():
     assert blockers == ["wordpress_context_version_mismatch"]
 
 
-def test_inspection_reads_edit_and_view_contexts_for_the_same_version():
+def test_separate_context_readback_rejects_flattened_edit_string():
     modified = "2026-11-18T09:00:00"
     edit_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
+    view_post = {**VIDEO_DRAFT, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
+
+    combined, blockers = assemble_wordpress_context_readback(edit_post, view_post)
+
+    assert combined is None
+    assert blockers == ["wordpress_content_raw_unavailable"]
+
+
+def test_separate_context_readback_rejects_flattened_view_string():
+    modified = "2026-11-18T09:00:00"
+    edit_post = {**VIDEO_DRAFT, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
     view_post = {**VIDEO_DRAFT, "modified": modified, "content": VIDEO_BODY}
+
+    combined, blockers = assemble_wordpress_context_readback(edit_post, view_post)
+
+    assert combined is None
+    assert blockers == ["wordpress_rendered_content_unavailable"]
+
+
+def test_separate_context_readback_rejects_conflicting_run_metadata():
+    modified = "2026-11-18T09:00:00"
+    edit_post = {**VIDEO_DRAFT, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY},
+                 "meta": {"_conexo_mkt_rss_run_id": "run-a"}}
+    view_post = {**VIDEO_DRAFT, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY},
+                 "meta": {"_conexo_mkt_rss_run_id": "run-b"}}
+
+    combined, blockers = assemble_wordpress_context_readback(edit_post, view_post)
+
+    assert combined is None
+    assert blockers == ["wordpress_context_meta_mismatch"]
+
+
+def test_inspection_reads_edit_and_view_contexts_for_the_same_version():
+    modified = "2026-11-18T09:00:00"
+    edit_post = {**VIDEO_DRAFT, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
+    view_post = {**VIDEO_DRAFT, "modified": modified,
+                 "content": {"raw": VIDEO_BODY, "rendered": VIDEO_BODY}}
     calls = []
 
     result = inspect_wordpress_draft(

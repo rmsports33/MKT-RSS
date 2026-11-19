@@ -113,14 +113,18 @@ def _video_markup_summary(content):
 
 
 def _context_content(post, field):
-    """Read the content string supplied by one explicitly requested REST context."""
+    """Read an explicit REST context field; a flattened string is never raw.
+
+    WordPress returns `content` as an object whose keys depend on `context`:
+    `raw` requires `context=edit`, while `rendered` comes from `context=view`.
+    A connector that flattens either response to a plain string cannot prove
+    which context produced it, so it is rejected here rather than promoted.
+    """
     content = post.get("content") if isinstance(post, dict) else None
-    if isinstance(content, str):
-        return content
-    if isinstance(content, dict):
-        value = content.get(field)
-        return value if isinstance(value, str) else None
-    return None
+    if not isinstance(content, dict):
+        return None
+    value = content.get(field)
+    return value if isinstance(value, str) else None
 
 
 def assemble_wordpress_context_readback(edit_post, view_post):
@@ -150,6 +154,18 @@ def assemble_wordpress_context_readback(edit_post, view_post):
     if (not isinstance(edit_status, str) or not edit_status.strip()
             or edit_status != view_status):
         return None, ["wordpress_context_status_mismatch"]
+
+    # When both REST contexts expose the run linkage, it must refer to the
+    # same execution. A missing meta in view context is normal; it is never
+    # treated as a positive MKT-RSS signal.
+    edit_meta = edit_post.get("meta")
+    view_meta = view_post.get("meta")
+    if (isinstance(edit_meta, dict) and isinstance(view_meta, dict)
+            and "_conexo_mkt_rss_run_id" in edit_meta
+            and "_conexo_mkt_rss_run_id" in view_meta
+            and edit_meta["_conexo_mkt_rss_run_id"]
+            != view_meta["_conexo_mkt_rss_run_id"]):
+        return None, ["wordpress_context_meta_mismatch"]
 
     raw = _context_content(edit_post, "raw")
     rendered = _context_content(view_post, "rendered")
