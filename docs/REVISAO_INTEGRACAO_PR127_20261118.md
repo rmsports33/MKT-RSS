@@ -1,3 +1,5 @@
+> **Estado consolidado em 19/11/2026 — prevalece sobre as seções históricas abaixo:** HEAD atual do PR #127: `77556a2a45afc3e27f57a98f45871e311e2fd74e`. Os resultados de 93 testes (43 + 40 + 10) pertencem ao SHA anterior `5406b076`; as regressões posteriores de JSON-LD, porta inválida e `uploadDate` ainda aguardam execução consolidada no HEAD atual. O ensaio temporário #9907 comprovou persistência/conservação funcional de iframe + VideoObject + marcador; o post está em lixeira. **A única pendência WordPress é confirmar por GET REST nativo a estrutura `content.raw` / `content.rendered` e executar offline o adaptador com esse envelope.** Nenhum merge, deploy ou alteração do Gate ativo foi autorizado.
+
 # Revisão de integração e remediação — PR #127 (18/11/2026)
 
 ## Estado executivo
