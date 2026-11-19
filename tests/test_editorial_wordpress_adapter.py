@@ -220,7 +220,7 @@ def test_readback_accepts_videoobject_in_jsonld_graph_and_type_array():
         "@graph": [video_object],
     })
     body = marked_body(
-        "<h2>Review</h2>\\n"
+        "<h2>Review</h2>\n"
         + bloco_video(VIDEO)
         + '<script type="application/ld+json">' + graph_document + "</script>"
     )
@@ -237,7 +237,7 @@ def test_readback_rejects_malformed_video_url_port_without_crashing():
         "youtube-nocookie.com/embed/dQw4w9WgXcQ",
         "youtube-nocookie.com:99999/embed/dQw4w9WgXcQ",
     )
-    body = marked_body("<h2>Review</h2>\\n" + iframe + "\n" + videoobject_jsonld(VIDEO))
+    body = marked_body("<h2>Review</h2>\n" + iframe + "\n" + videoobject_jsonld(VIDEO))
     result = validate_wordpress_content_readback({
         **VIDEO_DRAFT,
         "content": {"raw": body, "rendered": body},
