@@ -199,6 +199,20 @@ def test_SEC_36_accepted_sequence_survives_broker_restart():
         "review_record_replay_detected")
 
 
+def test_SEC_18_envelope_without_expiry_is_rejected():
+    issuer, issuer_pub, registry, registry_pub = _keys()
+    cert = sign_factual_certificate(_certificate_body(), issuer, kid="iss-2026-11")
+    record = _record()
+    record.pop("expires_at")
+    envelope = _envelope(registry, record=record)
+    assert _verify(cert, envelope, issuer_pub, registry_pub)["reason"] == (
+        "review_record_evidence_missing")
+    long_ttl = _record(issued_at=100, expires_at=100 + 3601)
+    assert _verify(cert, _envelope(registry, record=long_ttl),
+                   issuer_pub, registry_pub)["reason"] == (
+        "review_record_evidence_missing")
+
+
 def test_SEC_39_two_concurrent_requests_with_same_sequence():
     issuer, issuer_pub, registry, registry_pub = _keys()
     cert = sign_factual_certificate(_certificate_body(), issuer, kid="iss-2026-11")

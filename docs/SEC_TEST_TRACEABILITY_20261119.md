@@ -1,6 +1,6 @@
 # Rastreabilidade SEC/POS — Fase B (protocolo Ed25519 e registro autenticado)
 
-Commit validado: `8611b299617d4c20d00c9a02a5ff8d8769aaaa19`, branch `fix/ed25519-review-registry-boundary-20261119`, base `fb96e0c`. Documento de referência: `docs/BROKER_REVISOR_GATE_CONTRACT_20261119.md` v2.3 (`0979579`). Escopo autorizado: Fase B **restrita** a Ed25519 M1/M2 e fronteira autenticada do registro, em branch isolada, testes OFFLINE. Nada de broker, WordPress, Gate PHP, produção, bloqueio ou publicação foi alterado.
+Commit validado: `8611b299617d4c20d00c9a02a5ff8d8769aaaa19` (código e testes), `a971a59e9e08425e9e68b0fd54c50e183c48f1c0` (matriz); atualização SEC-18 em commit separado. Branch `fix/ed25519-review-registry-boundary-20261119`, base `fb96e0c`. Documento de referência: `docs/BROKER_REVISOR_GATE_CONTRACT_20261119.md` v2.3 (`0979579`). Escopo autorizado: Fase B **restrita** a Ed25519 M1/M2 e fronteira autenticada do registro, em branch isolada, testes OFFLINE. Nada de broker, WordPress, Gate PHP, produção, bloqueio ou publicação foi alterado.
 
 ## Resultados executados
 
@@ -14,7 +14,7 @@ Commit validado: `8611b299617d4c20d00c9a02a5ff8d8769aaaa19`, branch `fix/ed25519
 
 ## Matriz SEC
 
-`NOVO` = implementado e executado neste commit; `PREEXISTENTE` = coberto por teste já existente no baseline; `PENDENTE` = requisito do contrato sem teste executável ainda.
+`NOVO` = implementado e executado; `NOVO (nesta atualização)` = acrescentado após `a971a59`; `PREEXISTENTE` = coberto por teste já existente no baseline; `PENDENTE` = requisito do contrato sem teste executável ainda. Contagem: 17 novos, 12 preexistentes, 13 pendentes.
 
 | ID | Requisito resumido | Status | Evidência / teste |
 |---|---|---|---|
@@ -35,7 +35,7 @@ Commit validado: `8611b299617d4c20d00c9a02a5ff8d8769aaaa19`, branch `fix/ed25519
 | SEC-15 | registro revogado | PREEXISTENTE | `tests/test_editorial_trusted_review.py::test_signed_but_mismatched_record_is_rejected` (`revoked=True`) |
 | SEC-16 | `status != FINAL` | PREEXISTENTE | mesmo teste parametrizado (`status=PENDING`) |
 | SEC-17 | `independent != True` | PREEXISTENTE | mesmo teste parametrizado (`independent=False`) |
-| SEC-18 | sem `expires_at`/evidência | PARCIAL | `verify_registry_envelope` recusa, mas sem teste nominal nesta suíte |
+| SEC-18 | envelope sem `expires_at`/TTL inválido | NOVO (nesta atualização) | `test_SEC_18_envelope_without_expiry_is_rejected` (ausência de `expires_at` e TTL > 3600s) |
 | SEC-19 | E1/E2 divergentes | PREEXISTENTE | `tests/test_editorial_wordpress_adapter.py` (edit/view mismatch) |
 | SEC-20 | string achatada como raw | PREEXISTENTE | `test_editorial_wordpress_adapter.py` + `test_editorial_publish_gate.py` |
 | SEC-21 | M3 ausente | PREEXISTENTE | `test_gate_local_unification.py::test_publication_without_gate_release_is_blocked` |
@@ -79,3 +79,31 @@ Commit validado: `8611b299617d4c20d00c9a02a5ff8d8769aaaa19`, branch `fix/ed25519
 - M3 assinado pelo Gate PHP, nonce/idempotência do WordPress, allowlist de origem, skew e todas as garantias de escrita seguem pendentes.
 - `trusted_factual_review_broker_guard_not_integrated` continua ativo; PRs #129 e #130 seguem draft; nenhuma publicação, cron, merge ou deploy foi executado.
 - Suíte verde prova somente o escopo OFFLINE acima — não completa o contrato v2.3.
+
+## Verificação — HMAC legado não atravessa a fronteira de produção
+
+| Verificação | Comando | Observação | Status |
+|---|---|---|---|
+| Código de produção (master `101fe18`) não contém Ed25519 | `git grep -l Ed25519 101fe18 -- '*.py'` | nenhum arquivo; `verify_factual_certificate` é HMAC | PASS (o código novo não está em produção) |
+| Código Ed25519 está em branch isolada, não mesclada | `git ls-remote origin refs/heads/fix/ed25519-review-registry-boundary-20261119` | branch separada; master inalterado | PASS |
+| Fronteira do módulo ainda aceita envelope HMAC sem `alg` | leitura de `editorial_trusted_review.verify_independent_review` neste branch | ramo legado permanece por compatibilidade de testes | **FAIL se considerado requisito v2.3** |
+| Aplicação de `alg=Ed25519` obrigatório em todo consumidor de produção | — | depende da integração do broker e do Gate (Fase C) | **PENDENTE** |
+
+Conclusão honesta: hoje o HMAC legado **não** chega à produção porque o código Ed25519 não foi integrado e o broker de publicação não foi religado. Porém o módulo isolado ainda o aceita. A proibição efetiva por `alg` precisa ser implementada e testada na Fase C; qualquer afirmação de que já está bloqueada no código seria falsa.
+
+## Política de custódia e rotação de chaves — proposta, não decisão
+
+Não vou inventar mecanismo de segurança. Os pontos abaixo **exigem decisão do proprietário** antes da Fase C:
+
+| Tema | Opção proposta (requer aceite) | Decisão necessária |
+|---|---|---|
+| `K_ISS` privada | gerada no IAS; guardada em cofre do servidor de emissão, nunca em repositório | quem é o emissor autorizado e onde fica o cofre |
+| `K_REG` privada | gerada no serviço de registro; broker e cliente recebem só a pública | quem opera o registro e como a pública é distribuída |
+| `K_BROKER` | segredo interno do WordPress, nunca exportado | confirmação de que já existe cofre adequado |
+| Rotação | novo `kid`, sobreposição máxima de 24h, revogação explícita do antigo | gatilho (prazo, incidente, troca de operador) e janela aceita |
+| Revogação de emergência | lista de `kid` revogados consultada antes de qualquer aceite | quem pode revogar e como o aviso chega ao broker |
+| Recuperação | backup do cofre com restauração testada, sem exportar chave privada para chat/e-mail/issue | responsável e local do backup |
+| Auditoria | registrar `kid` usado e resultado, sem registrar segredos ou conteúdo do parecer | retenção dos logs |
+
+Nenhum destes itens foi implementado, provisionado ou presumido. Mantêm-se, por ora, somente as chaves de teste geradas em memória pelos testes OFFLINE.
+
