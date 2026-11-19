@@ -10,6 +10,7 @@ import hmac
 import json
 
 from editorial_factual_certificate import draft_digest, verify_factual_certificate
+from editorial_review_registry import verify_registry_envelope
 
 
 def _canonical_bytes(value):
@@ -25,11 +26,10 @@ def sign_registry_record(record, registry_signing_key):
 
 
 def verify_independent_review(post, certificate, signing_key, lookup_review,
-                              registry_verification_key, *, now=None):
+                              registry_verification_key, *, now=None,
+                              sequence_store=None):
     if not callable(lookup_review):
         return {"verified": False, "reason": "trusted_review_store_missing"}
-    if not isinstance(registry_verification_key, bytes) or len(registry_verification_key) < 32:
-        return {"verified": False, "reason": "trusted_registry_verification_key_missing"}
     if not verify_factual_certificate(post, certificate, signing_key, now=now):
         return {"verified": False, "reason": "certificate_invalid"}
     try:
@@ -38,18 +38,35 @@ def verify_independent_review(post, certificate, signing_key, lookup_review,
         return {"verified": False, "reason": "trusted_review_unavailable"}
     if not isinstance(envelope, dict):
         return {"verified": False, "reason": "review_record_missing"}
-    record = envelope.get("record")
-    signature = envelope.get("signature")
-    if not isinstance(record, dict) or not isinstance(signature, str) or len(signature) != 64:
-        return {"verified": False, "reason": "review_record_signature_missing"}
-    try:
-        expected_signature = hmac.new(
-            registry_verification_key, _canonical_bytes(record), hashlib.sha256
-        ).hexdigest()
-    except (TypeError, ValueError):
-        return {"verified": False, "reason": "review_record_invalid"}
-    if not hmac.compare_digest(signature, expected_signature):
-        return {"verified": False, "reason": "review_record_signature_invalid"}
+
+    alg = envelope.get("alg")
+    if alg == "Ed25519":
+        result = verify_registry_envelope(
+            envelope, registry_verification_key, now=now,
+            sequence_store=sequence_store)
+        if not result["verified"]:
+            return {"verified": False, "reason": result["reason"]}
+        record = result["record"]
+    elif alg is not None:
+        return {"verified": False, "reason": "review_record_algorithm_unsupported"}
+    else:
+        # Legacy HMAC path: server-only key, retained for pre-Ed25519 fixtures.
+        if (not isinstance(registry_verification_key, bytes)
+                or len(registry_verification_key) < 32):
+            return {"verified": False,
+                    "reason": "trusted_registry_verification_key_missing"}
+        record = envelope.get("record")
+        signature = envelope.get("signature")
+        if not isinstance(record, dict) or not isinstance(signature, str) or len(signature) != 64:
+            return {"verified": False, "reason": "review_record_signature_missing"}
+        try:
+            expected_signature = hmac.new(
+                registry_verification_key, _canonical_bytes(record), hashlib.sha256
+            ).hexdigest()
+        except (TypeError, ValueError):
+            return {"verified": False, "reason": "review_record_invalid"}
+        if not hmac.compare_digest(signature, expected_signature):
+            return {"verified": False, "reason": "review_record_signature_invalid"}
 
     required = (
         record.get("reviewer_id") == certificate["reviewer_id"]
