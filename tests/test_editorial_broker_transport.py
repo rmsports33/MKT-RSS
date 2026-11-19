@@ -134,15 +134,27 @@ class BrokerTests(unittest.TestCase):
         self.assertIs(out['retry_automatic'], False)
         self.assertEqual(len(http.posts), 1)
 
-    def test_transport_forwards_strict_mode_to_broker_without_signing_key(self):
+    def test_transport_refuses_broker_publish_before_any_write(self):
         from mkt_flow_p0.editorial_transport import publish_package
-        with patch.dict('os.environ', {'CONEXO_EDITORIAL_TRANSPORT': 'wp_broker',
-                                      'CONEXO_REQUIRE_SIGNED_SEO': '1', 'CONEXO_EDITORIAL_GATE_KEY': ''}), \
-             patch('mkt_flow_p0.editorial_broker_transport.publish_via_broker', return_value={'verified': True}) as broker:
-            out = publish_package(PACKAGE, core_root='/unused', actor_id=4,
-                wp_url='https://conexotech.com.br', wp_user='svc', wp_password='test', intent='publish')
-        self.assertTrue(out['verified'])
-        self.assertIs(broker.call_args.kwargs['require_signed_seo'], True)
+        for intent in ("publish", "schedule"):
+            with self.subTest(intent=intent):
+                with patch.dict('os.environ', {'CONEXO_EDITORIAL_TRANSPORT': 'wp_broker',
+                                              'CONEXO_REQUIRE_SIGNED_SEO': '1',
+                                              'CONEXO_EDITORIAL_GATE_KEY': ''}), \
+                     patch('mkt_flow_p0.editorial_broker_transport.publish_via_broker') as broker, \
+                     patch('mkt_flow_p0.editorial_transport.requests.post') as wp_post, \
+                     patch('mkt_flow_p0.editorial_transport.requests.get') as wp_get, \
+                     patch('mkt_flow_p0.editorial_transport.load_core') as load_core:
+                    out = publish_package(PACKAGE, core_root='/unused', actor_id=4,
+                        wp_url='https://conexotech.com.br', wp_user='svc', wp_password='test',
+                        intent=intent)
+                self.assertEqual(out['erro'], 'fluxo editorial bloqueado')
+                self.assertIn('trusted_factual_review_broker_guard_not_integrated', out['reason'])
+                self.assertNotIn('verified', out)
+                broker.assert_not_called()
+                wp_post.assert_not_called()
+                wp_get.assert_not_called()
+                load_core.assert_not_called()
 
     def test_success_only_broker_after_turso(self):
         http = FakeHTTP()
@@ -220,16 +232,24 @@ class BrokerTests(unittest.TestCase):
             hashlib.sha256(PACKAGE["payload"]["content"].encode()).hexdigest()
         )
 
-    def test_broker_resume_never_repeats_write(self):
+    def test_broker_resume_with_nonce_is_refused_before_any_write(self):
         from mkt_flow_p0.editorial_transport import publish_package
         with patch.dict("os.environ", {"CONEXO_EDITORIAL_TRANSPORT": "wp_broker"}), \
-             patch("mkt_flow_p0.editorial_broker_transport.publish_via_broker") as broker:
+             patch("mkt_flow_p0.editorial_broker_transport.publish_via_broker") as broker, \
+             patch("mkt_flow_p0.editorial_transport.requests.post") as wp_post, \
+             patch("mkt_flow_p0.editorial_transport.requests.get") as wp_get:
             result = publish_package(
                 PACKAGE, core_root="/unused", actor_id=7,
                 wp_url="https://conexotech.com.br", wp_user="svc", wp_password="test",
                 intent="publish", operation_nonce="a" * 32)
-        self.assertIn("reconciliacao", result["reason"])
+        # A retomada não pode repetir escrita: o guard bloqueia antes do broker,
+        # sem contato com o WordPress e sem consumir o nonce.
+        self.assertEqual(result["erro"], "fluxo editorial bloqueado")
+        self.assertIn("trusted_factual_review_broker_guard_not_integrated", result["reason"])
+        self.assertNotIn("verified", result)
         broker.assert_not_called()
+        wp_post.assert_not_called()
+        wp_get.assert_not_called()
 
     def test_existing_publisher_forwards_turso_trace(self):
         from mkt_flow_p0.wp_publisher import publicar_no_wordpress
