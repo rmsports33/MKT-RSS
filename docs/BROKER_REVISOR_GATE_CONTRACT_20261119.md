@@ -1,6 +1,6 @@
 # Contrato Broker–Revisor–Gate — revisão 2
 
-**Versão:** 2.1 (19/11/2026). **Substitui, sem apagar,** a revisão 2.0 em `docs/broker-revisor-gate-contract-20261119.md` no branch `docs/broker-revisor-gate-contract-rev2-20261119`, commit `5b15c719e651f4b467c87954b9da2c7163a52d23`. A v2.0 permanece intacta como histórico; a v1 permanece em `docs/broker-revisor-gate-contract-20261119` @ `9c5b596cd8aaa5fc97b7cb9b189f8ac2d849d284`.
+**Versão:** 2.2 (19/11/2026). **Substitui, sem apagar,** a revisão 2.1 em `docs/broker-revisor-gate-contract-rev21-20261119`, commit `0f052da7b2543e2378a38e133e7612bc65ce415d`. Histórico preservado: v1 `9c5b596…`, v2.0 `5b15c71…`, v2.1 `0f052da…`.
 
 **Finalidade:** especificar, de forma verificável, a integração autenticada entre MKT-RSS (cliente), registro confiável do Revisor Único, Gate RC10.5 (WordPress) e broker `conexo/v1/editorial/broker/write`, **antes** de qualquer retirada do bloqueio `trusted_factual_review_broker_guard_not_integrated`.
 
@@ -32,6 +32,10 @@ Este documento não autoriza publicação, não implementa nada, não retira blo
 | 2.1-4 | Ausência confirmada × resultado desconhecido | §6.2 e `SEC-32/37` — ausência confirmada permite `FAILED`; leitura inconclusiva mantém `UNKNOWN`/`transport_unknown_inspect` |
 | 2.1-5 | Recuperação dependia de meta não listado | §3.4 — `meta._conexo_editorial_operation_nonce` listado e exigido na leitura autenticada de recuperação |
 | 2.1-6 | `verified` ambíguo no recibo | §3.5 — estados M5: `published`, `scheduled`, `idempotent`, `transport_unknown_inspect`; `verified` é só validação interna |
+| 2.2-1 | E3 na etapa errada | §3.4 e §4 — E1/E2 **antes** do POST; E3 só depois de `published`; agendamento usa E1/E2 (`future` + `post_date_gmt`) e não exige E3; `POS-01`/`POS-02` ajustados |
+| 2.2-2 | Idempotência do WordPress incompleta | §6.3 — sequência transacional do endpoint: reserva antes da alteração do post, segunda requisição sem nova escrita, `IN_FLIGHT` inconclusivo, recuperação por idempotência + post autenticado |
+| 2.2-3 | CAS da sequência sem fechamento | §3.2 — inicialização da linha e CAS + reserva da operação na **mesma** transação do broker; `SEC-39` para concorrência com o mesmo `registry_seq` |
+| 2.2-4 | Restrição única não executável | §6.2 — tabela `conexo_editorial_version_claims` com `PRIMARY KEY (post_id, version_sha256)`, limpeza de `FAILED` na mesma transação e `WRITTEN` como versão consumida |
 
 ## 1. Escopo e não escopo
 
@@ -114,7 +118,9 @@ Correção O3/2.1-1: `registry_seq` é **autoritativo no servidor do registro**,
 conexo_registry_sequences(review_record_url PK, max_seq_accepted, updated_at)
 ```
 
-A atualização é atômica por comparação e troca (`CAS`): o broker lê `max_seq_accepted`, valida assinatura, TTL, frescura e sequência, e só então faz `UPDATE ... WHERE max_seq_accepted = valor_lido`; se outra requisição tiver avançado a linha, a transação falha e o envelope é recusado. `seq <= max_seq_accepted` → `review_record_replay_detected`, mesmo com assinatura válida e `served_at` dentro da janela. A sequência **só avança após aceite completo**, nunca em falha; um envelope idêntico reapresentado é replay e não gera nova escrita. Memória local do cliente pode ser *sinal* de suspeita, mas **nunca** é requisito de segurança nem fonte de verdade; `registry_seq_floor` foi removido do contrato. Reinício do broker não pode zerar a memória — `SEC-36` prova persistência.
+A atualização é atômica por comparação e troca (`CAS`): o broker lê `max_seq_accepted`, valida assinatura, TTL, frescura e sequência, e só então faz `UPDATE ... WHERE max_seq_accepted = valor_lido`; se outra requisição tiver avançado a linha, a transação falha e o envelope é recusado. `seq <= max_seq_accepted` → `review_record_replay_detected`, mesmo com assinatura válida e `served_at` dentro da janela. A sequência **só avança após aceite completo**, nunca em falha; um envelope idêntico reapresentado é replay e não gera nova escrita.
+
+**Inicialização e fechamento transacional (2.2-3):** se a linha não existir, ela é criada **dentro da mesma transação** com `INSERT ... ON CONFLICT DO NOTHING` e `max_seq_accepted = 0`, seguido de `SELECT ... FOR UPDATE`; um `registry_seq` válido deve ser > 0 para ser aceito. O `UPDATE ... CAS` da sequência e a `INSERT` da reserva da operação (§6.2) acontecem na **mesma transação do banco do broker**: se qualquer uma falhar, ambas são revertidas. Assim não existe estado em que a sequência avançou sem a operação correspondente, nem operação reservada com sequência não aceita. Duas requisições concorrentes com o **mesmo `registry_seq`** disputam a mesma linha: uma vence o CAS, a outra é recusada com `review_record_replay_detected` (`SEC-39`). Memória local do cliente pode ser *sinal* de suspeita, mas **nunca** é requisito de segurança nem fonte de verdade; `registry_seq_floor` foi removido do contrato. Reinício do broker não pode zerar a memória — `SEC-36` prova persistência.
 
 Validação: assinatura, TTL do `record` ≤ 3600s, `served_at` conforme §6.1, `registry_seq` monotônico no servidor, `revoked is False`, `status=="FINAL"`, `independent is True`, igualdade de `draft_sha256`, `reviewer_id`, `evidence_refs` e `review_record_url` com M1.
 
@@ -141,7 +147,14 @@ Três leituras distintas, com papéis diferentes:
 |---|---|---|---|---|
 | `GET /wp-json/wp/v2/posts/{id}?context=edit` | **E1** | sim | `id`, `status`, `modified`, `slug`, `categories`, `featured_media`, `title.raw`, `content.raw`, `link`, `meta._conexo_mkt_rss_run_id`, `meta._conexo_editorial_operation_nonce` | **única** fonte de versão; base de `draft_digest` e `content_digest`; na recuperação, o nonce é lido **autenticamente** aqui |
 | `GET /wp-json/wp/v2/posts/{id}?context=view` | **E2** | sim | `id`, `status`, `modified`, `slug`, `link`, `content.rendered` | checar que a representação REST pública corresponde ao mesmo objeto |
-| `GET /{slug}/?conexo_verify=<versão>` | **E3** | não | HTTP 200, `<title>`, `meta description`, `link rel=canonical`, iframe/`VideoObject` quando aplicável | conferir SEO público; **não** fornece `id`, `modified` ou `status` |
+| `GET /{slug}/?conexo_verify=<versão>` | **E3** | não | HTTP 200, `<title>`, `meta description`, `link rel=canonical`, iframe/`VideoObject` quando aplicável | conferir SEO público **após** `publish` confirmado; **nunca** pré-condição; não fornece `id`, `modified` ou `status` |
+
+**Momento das leituras (2.2-1):**
+
+| Momento | `publish` | `schedule` |
+|---|---|---|
+| Antes do POST | E1 + E2 autenticados, correlacionados e válidos | E1 + E2 autenticados, correlacionados e válidos |
+| Depois do POST | E1/E2 confirmam `status=publish` e `modified` novo; E3 confirma apresentação pública | E1/E2 confirmam `status=future` e `post_date_gmt` preservada; **E3 não é exigido** (a página ainda não é pública) |
 
 Correlação obrigatória: E1 e E2 com mesmo `id`, mesmo `modified`, mesmo `status`, mesmo `slug`; `meta._conexo_mkt_rss_run_id` igual quando presente nos dois. **Recuperação pós-falha (2.1-5):** o broker precisa ler `meta._conexo_editorial_operation_nonce` de E1 com a mesma identidade autenticada; ausência ou divergência desse meta **não** autoriza declarar `FAILED` — o caso permanece `UNKNOWN`/`transport_unknown_inspect` (`SEC-37`). Antes da escrita o meta pode não existir; depois dela, a confirmação da escrita depende dele. E1↔E3 por `slug` + canonical exato + título/descrição esperados (padrão já usado em `tools/publish_owner_approved.py::verify_public_seo`). String achatada de conector nunca é promovida a `raw`. Divergências: `wordpress_context_*_mismatch` / `wordpress_content_raw_unavailable`.
 
@@ -171,14 +184,14 @@ Pré-condições (antes de qualquer `POST` editorial):
 1. Perfil e allowlist de origem (§2.3); identidade de serviço; modo `wp_broker` explícito; intent ∈ {`publish`, `schedule`}.
 2. Pacote canônico: `stage == "ready"`, `version_sha256` 64 hex, `payload.wordpress.post_id` int > 0.
 3. Turso: `require_release_trace` com `run_id` válido, relido antes da escrita.
-4. M4: E1/E2/E3 correlacionados (§3.4); `content.raw` íntegro; sincronização de relógio verificada (§6.1).
+4. M4: **E1 + E2** autenticados e correlacionados (§3.4); `content.raw` íntegro; sincronização de relógio verificada. **E3 não é pré-condição.**
 5. M1: assinatura, TTL, identidade e `draft_digest(E1)`.
 6. M2: assinatura do envelope inteiro, frescura, sequência autoritativa, revogação, igualdade com M1.
 7. M3: assinatura do Gate, `kid`, TTL, owner 3, 13 checks, vínculo de post/versão.
 8. Ponte de digests (§5): `draft_digest(E1)` com M1/M2; `content_digest(E1.raw)` com M3; `E1.raw == package.payload.content` byte a byte.
-9. Escrita única com `operation_nonce` reservado atomicamente (§6). Só depois disso M5.
+9. Escrita única com reserva persistida (§6). **Depois do POST:** confirmar o resultado com E1/E2; para `publish`, E3 confirma a apresentação pública; para `schedule`, conferir `future` e `post_date_gmt` sem E3. Só então emitir M5.
 
-Nenhuma etapa autoriza a seguinte por omissão; falha é terminal, sem escrita.
+Nenhuma etapa autoriza a seguinte por omissão; falha é terminal, sem escrita. A pré-condição E3 em rascunho/agendado foi removida (2.2-1).
 
 ## 5. Definição formal dos digests (correção C4)
 
@@ -215,7 +228,21 @@ O broker mede o desvio de relógio na mesma requisição usando o cabeçalho `Da
 
 **Atomicidade distribuída não é afirmada.** Uma transação no banco do broker não torna atômica uma chamada HTTP ao WordPress. A garantia de "no máximo uma escrita" vem de três mecanismos, nesta ordem:
 
-1. **Reserva persistente local** — `conexo_editorial_operations(nonce PK, post_id, version_sha256, body_sha256, state, created_at, updated_at)`, com chave única em `(post_id, nonce)` **e** restrição única em `(post_id, version_sha256)` para os estados ativos `RESERVED`, `IN_FLIGHT`, `WRITTEN` (2.1-3). A reserva usa `INSERT ... ON CONFLICT DO NOTHING` em transação com bloqueio de linha; conflito de versão ativa → `VERSION_ALREADY_IN_FLIGHT`/`VERSION_ALREADY_CONSUMED`, sem POST. Linhas `FAILED` podem ser removidas para permitir nova tentativa com outro nonce.
+1. **Reserva persistente local** — `conexo_editorial_operations(nonce PK, post_id, version_sha256, body_sha256, state, created_at, updated_at)` e, para a versão, a tabela executável (2.2-4):
+
+   ```sql
+   CREATE TABLE conexo_editorial_version_claims (
+     post_id BIGINT NOT NULL,
+     version_sha256 CHAR(64) NOT NULL,
+     nonce CHAR(64) NOT NULL,
+     state VARCHAR(16) NOT NULL,
+     created_at DATETIME NOT NULL,
+     PRIMARY KEY (post_id, version_sha256),
+     UNIQUE KEY uq_claim_nonce (nonce)
+   );
+   ```
+
+   A `PRIMARY KEY (post_id, version_sha256)` é a restrição única — não um índice parcial, que não existe em MySQL. `WRITTEN` significa **versão consumida**: não pode ser repetida com outro nonce. Um `INSERT ... ON CONFLICT DO NOTHING` concorrente perde e recebe `VERSION_ALREADY_IN_FLIGHT`/`VERSION_ALREADY_CONSUMED` conforme o estado lido. Quando uma reserva vira `FAILED`, a linha de `version_claims` é **excluída na mesma transação** em que o estado muda, liberando a versão apenas para uma tentativa nova com nonce novo e revalidação M1–M4; limpeza por TTL não pode deixar `FAILED` ativo. A reserva, o CAS de `registry_seq` (§3.2) e a claim de versão ocorrem na mesma transação do broker.
 2. **Idempotência no endpoint WordPress** — o broker envia `operation_nonce` e `version_sha256` na chamada ao Gate/broker; o WordPress persiste esse nonce como `meta._conexo_editorial_operation_nonce` e como chave única em sua própria tabela, recusando uma segunda escrita da mesma versão. O servidor, não o cliente, é a autoridade final da idempotência.
 3. **Reconciliação autenticada** — após timeout ou erro entre POST e recibo, o broker relê E1 (§3.4), incluindo `meta._conexo_editorial_operation_nonce`, e compara `post_id`, versão e nonce.
 
@@ -236,6 +263,19 @@ Reconciliação (2.1-4):
 - **Resultado desconhecido** — timeout, HTTP 5xx, JSON inválido, meta ausente/divergente ou resposta contraditória → `UNKNOWN`, M5 `transport_unknown_inspect`, `retry_automatic: false`, nenhuma escrita automática. **Não** é `FAILED`.
 
 TTL de 48h para limpeza de registros antigos, mantendo o hash do corpo e o `registry_seq` por mais tempo para detectar replay tardio. Testes `SEC-30`–`SEC-33`, `SEC-37` e `SEC-38` cobrem concorrência, queda e distinção de ausência.
+
+### 6.3 Sequência transacional do endpoint WordPress (correção 2.2-2)
+
+O endpoint do WordPress é a autoridade da idempotência da escrita. A sequência é obrigatória:
+
+1. Recebe `operation_nonce` + `version_sha256` autenticados do broker; valida origem, permissões e o formato; sem nonce, recusa.
+2. **Antes** de qualquer alteração no post, abre transação no banco do WordPress e insere a reserva em `conexo_editorial_idempotency(nonce PK, post_id, version_sha256, state, post_id_resultante, created_at)`, com `state=IN_FLIGHT` e `PRIMARY KEY (nonce)`; conflito de nonce ou de versão encerra a requisição **sem escrita**.
+3. Executa a alteração do post (`publish`/`future`) e grava `meta._conexo_editorial_operation_nonce` na **mesma transação** do WordPress (post + postmeta + reserva). Só ao final marca `state=WRITTEN` com o `post_id` resultante.
+4. Uma segunda requisição com o mesmo nonce encontra a reserva e devolve o resultado já persistido — **não executa outra escrita**, mesmo que a primeira ainda esteja `IN_FLIGHT`.
+5. Queda com `IN_FLIGHT` permanece **inconclusiva**: nenhum retry automático. A recuperação consulta o registro de idempotência **e** o post autenticado (E1); só uma resposta inequívoca do servidor permite `WRITTEN` ou `FAILED`.
+6. A ausência do meta no post **não prova**, isoladamente, ausência da escrita: pode refletir falha entre a escrita do post e a gravação do meta. Nesse caso o estado é `UNKNOWN`/`transport_unknown_inspect`.
+
+Sem essa sequência no WordPress, a garantia de "no máximo uma escrita" não é cumprida: o broker sozinho não pode impô-la a um serviço remoto. Implementação é pré-condição da Fase C; até lá, o bloqueio permanece.
 
 ## 7. Testes
 
@@ -282,8 +322,8 @@ Convenção: testes OFFLINE usam HTTP mockado, relógio fixo e espião de `reque
 
 | ID | Entrada | Pré-condição | Resultado esperado |
 |---|---|---|---|
-| POS-01 | M1+M2+M3 válidos, E1/E2/E3 correlacionados, `intent=publish`, nonce N1 | perfil `staging`, relógio sincronizado, Turso relido | 1 POST no broker, `status=published`, `retry_automatic=false` |
-| POS-02 | idem, `intent=schedule`, `post_date_gmt` futura | mesmo de POS-01 | 1 POST, `status=scheduled`, data preservada no WP |
+| POS-01 | M1+M2+M3 válidos, E1/E2 correlacionados antes do POST, `intent=publish`, nonce N1 | perfil `staging`, relógio sincronizado, Turso relido | 1 POST; E1/E2 confirmam `publish`; E3 confirma apresentação pública; M5 `status=published`, `retry_automatic=false` |
+| POS-02 | idem, `intent=schedule`, `post_date_gmt` futura | mesmo de POS-01 | 1 POST; E1/E2 confirmam `future` e a data; **sem E3**; M5 `status=scheduled` |
 | POS-03 | repetição de POS-01 com mesmo nonce e mesmo corpo | `state=WRITTEN` | `status=idempotent`, **0** POST adicional |
 | POS-04 | repetição de POS-01 com mesmo nonce e corpo diferente | `state=WRITTEN` | `NONCE_BODY_CONFLICT`, 0 POST |
 | POS-05 | simulação de queda após POST antes do recibo | nonce persistido, E1 autenticado com `meta._conexo_editorial_operation_nonce` | recuperação por E1, `status=published`/`idempotent`, sem segundo POST, evidência de restauração |
@@ -298,6 +338,7 @@ Convenção: testes OFFLINE usam HTTP mockado, relógio fixo e espião de `reque
 | SEC-32a | queda após POST; E1 e registro de idempotência do WP confirmam **ausência** da escrita | `FAILED`, sem retry automático; novo nonce permitido após nova validação |
 | SEC-32b | queda após POST; leitura inconclusiva (timeout/5xx/JSON inválido) | `UNKNOWN` → `transport_unknown_inspect`; sem retry automático |
 | SEC-38 | duas operações concorrentes com o mesmo `(post_id, version_sha256)` | 1 reserva, a outra `VERSION_ALREADY_IN_FLIGHT`; 1 POST no máximo |
+| SEC-39 | duas requisições concorrentes com o **mesmo `registry_seq`** | 1 aceita, a outra `review_record_replay_detected`; 1 POST no máximo |
 | SEC-33 | `kid` de M3 revogado | `gate_owner_release_invalid` |
 | SEC-34 | skew de 60s | `CLOCK_SYNC_UNVERIFIED` |
 | SEC-35 | cabeçalho `Date` ausente | `CLOCK_SYNC_UNVERIFIED` |
@@ -317,7 +358,7 @@ Evidência de OFFLINE nunca é apresentada como homologação; evidência de hom
 
 ## 9. Critérios de aceitação para retirar o bloqueio
 
-1. `SEC-01`…`SEC-38` (incluindo `SEC-32a`/`SEC-32b`) verdes no checkout preparado; SHA e contagem registrados.
+1. `SEC-01`…`SEC-39` (incluindo `SEC-32a`/`SEC-32b`) verdes no checkout preparado; SHA e contagem registrados.
 2. 5 positivos (`POS-01`…`POS-05`) verdes, com 1 POST no máximo por versão e status M5 inequívoco.
 3. Homologação real com E1/E2/E3 lidos e correlacionados; logs e hashes no Registro Único.
 4. Restauração comprovada em ambiente isolado (manifesto datado + saída do restore + contagens confrontadas).
@@ -331,7 +372,7 @@ Evidência de OFFLINE nunca é apresentada como homologação; evidência de hom
 1. Aprovação desta revisão documental (Fase A). Nada foi implementado.
 2. Fase B: implementar `SEC-01`…`SEC-29` e `SEC-36` em branch isolada, **sem alterar o bloqueio**; rodar suíte OFFLINE e registrar SHA.
 3. Validar criptografia (§3.1–§3.3) e semântica de digests (§5) por revisão assistida e por teste vetorial com entradas fixas.
-4. Fase C: implementar M1–M4 no broker, reserva/`IN_FLIGHT`, nonce no WordPress, restrição única de versão, `kid`/rotação e `SEC-30`…`SEC-38`; `BLOCK-TEMP-01` só sai no commit que prova `CONTRACT-01…`.
+4. Fase C: implementar M1–M4 no broker, reserva/`IN_FLIGHT`, sequência do endpoint WordPress, `conexo_editorial_version_claims`, `kid`/rotação e `SEC-30`…`SEC-39`; `BLOCK-TEMP-01` só sai no commit que prova `CONTRACT-01…`.
 5. Fase D: homologação real com origem isolada e restauração comprovada.
 6. Fase E: decisão de integração com os 8 critérios — até lá, PR #130 permanece draft.
 
@@ -351,7 +392,10 @@ Evidência de OFFLINE nunca é apresentada como homologação; evidência de hom
 - [x] M3 com formato, campos assinados, verificação e rotação;
 - [x] sequência autoritativa no servidor e maior `registry_seq` aceito persistido no broker;
 - [x] reserva persistente, `IN_FLIGHT`, idempotência no WordPress e reconciliação sem atomicidade distribuída;
-- [x] restrição única `(post_id, version_sha256)`;
+- [x] restrição única executável e `WRITTEN` como versão consumida;
+- [x] inicialização e fechamento transacional do CAS de `registry_seq`, com teste de concorrência;
+- [x] sequência transacional do endpoint WordPress (`IN_FLIGHT` antes da escrita, segunda requisição sem nova escrita);
+- [x] E3 só após `publish`, nunca pré-condição de agendamento;
 - [x] ausência confirmada distinta de resultado desconhecido;
 - [x] meta de nonce do E1 na leitura autenticada de recuperação;
 - [x] M5 com estados `published`/`scheduled`/`idempotent`/`transport_unknown_inspect`;
