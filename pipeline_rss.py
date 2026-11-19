@@ -461,20 +461,19 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
 
 
 def autorizar_transicao_publicacao(post_persistido: dict, revisao_factual: dict = None, *, pacote_editorial=None, core_root=None,
-                                   review_certificate=None, review_signing_key=None, lookup_review=None, now=None) -> dict:
-    """Guard shared by any future WordPress publisher; no remote write.
+                                   review_certificate=None, review_signing_key=None, lookup_review=None,
+                                   registry_verification_key=None, now=None) -> dict:
+    """Shared fail-closed guard; the registry response needs its own signature.
 
-    The caller must supply a freshly read WordPress post and independently
-    certified editorial evidence. Never infer approval from RSS queue status.
-    The independent review is verified against the caller-supplied trusted
-    store; it never authorizes publication by itself.
+    The certificate issuer key and trusted-registry verification key are
+    independent secrets. A lookup callback is transport only, never proof.
     """
     from editorial_publish_gate import authorize_publish
     return authorize_publish(
         post_persistido, revisao_factual, package=pacote_editorial,
         core_root=core_root, review_certificate=review_certificate,
         review_signing_key=review_signing_key, lookup_review=lookup_review,
-        now=now)
+        registry_verification_key=registry_verification_key, now=now)
 
 
 def inspecionar_rascunho_wordpress(fetch_post, post_id: int, revisao_factual: dict) -> dict:
