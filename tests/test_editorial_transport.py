@@ -152,9 +152,24 @@ class TransportTests(unittest.TestCase):
         with patch("mkt_flow_p0.editorial_trace_gate.require_release_trace", side_effect=preflight), \
              patch.object(transport.requests,"get",side_effect=authenticated_get), \
              patch.object(transport.requests,"post") as post:
-            r=self.call(intent="publish",publication_reference="ordem sintética", trace_run_id=run_id)
-        self.assertIn("erro",r,r)
-        self.assertIn("trusted_factual_review_missing",r.get("reason",""))
+            results = [
+                self.call(intent=intent,publication_reference="ordem sintética", trace_run_id=run_id)
+                for intent in ("publish", "schedule")
+            ]
+        for r in results:
+            self.assertIn("erro",r,r)
+            self.assertIn("trusted_factual_review_missing",r.get("reason",""))
+        post.assert_not_called()
+
+    def test_broker_publish_and_schedule_fail_closed_until_guard_is_integrated(self):
+        with patch.dict(os.environ,{"CONEXO_EDITORIAL_TRANSPORT":"wp_broker"}), \
+             patch("mkt_flow_p0.editorial_broker_transport.publish_via_broker") as broker, \
+             patch.object(transport.requests,"post") as post:
+            for intent in ("publish","schedule"):
+                result=self.call(intent=intent,publication_reference="ordem sintética")
+                self.assertIn("trusted_factual_review_broker_guard_not_integrated",
+                              result.get("reason",""))
+        broker.assert_not_called()
         post.assert_not_called()
 
     def test_rss_source_must_match_apuration_before_transport(self):
