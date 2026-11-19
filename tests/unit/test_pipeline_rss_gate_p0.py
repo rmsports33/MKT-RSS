@@ -197,3 +197,24 @@ def test_gate_ligado_erro_de_validacao_bloqueia_fail_closed(monkeypatch, tmp_pat
     assert "validação indisponível" in r["aviso"]
     assert mocks.rewrite.call_count == 0
     assert mocks.publish.call_count == 0
+
+
+def test_publish_transition_wrapper_propagates_registry_verification_key(monkeypatch):
+    expected_key = b"registry-verification-key-material-32-bytes"
+    captured = {}
+
+    def fake_authorize(post, review, **kwargs):
+        captured.update(kwargs)
+        return {"autorizado": False, "bloqueios": ["test_only"]}
+
+    monkeypatch.setattr("editorial_publish_gate.authorize_publish", fake_authorize)
+    result = P.autorizar_transicao_publicacao(
+        {"id": 42}, {"veredito": "APROVADO"},
+        review_certificate={"signature": "placeholder"},
+        review_signing_key=b"certificate-key",
+        lookup_review=lambda _: {"verified": True},
+        registry_verification_key=expected_key,
+    )
+    assert result["autorizado"] is False
+    assert captured["registry_verification_key"] is expected_key
+    assert captured["lookup_review"] is not None
