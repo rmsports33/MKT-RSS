@@ -32,12 +32,14 @@ class _VideoMarkupParser(HTMLParser):
             return None
         try:
             parsed = urlsplit(url)
+            port = parsed.port
         except ValueError:
+            # urlsplit().port can raise for malformed or out-of-range ports.
             return None
         match = re.fullmatch(r"/embed/([A-Za-z0-9_-]{11})", parsed.path)
         if (parsed.scheme != "https"
                 or parsed.hostname not in {"youtube-nocookie.com", "www.youtube-nocookie.com"}
-                or parsed.username or parsed.password or parsed.port not in (None, 443)
+                or parsed.username or parsed.password or port not in (None, 443)
                 or match is None):
             return None
         return match.group(1)
@@ -69,15 +71,31 @@ class _VideoMarkupParser(HTMLParser):
             if "VideoObject" in raw:
                 self.invalid.append("jsonld")
             return
-        values = value if isinstance(value, list) else [value]
-        for item in values:
-            if not isinstance(item, dict) or item.get("@type") != "VideoObject":
+        for item in _jsonld_objects(value):
+            item_type = item.get("@type")
+            is_video_object = (
+                item_type == "VideoObject"
+                or (isinstance(item_type, list) and "VideoObject" in item_type)
+            )
+            if not is_video_object:
                 continue
             video_id = self._video_id(item.get("embedUrl"))
             if video_id is None:
                 self.invalid.append("videoobject")
             else:
                 self.schema_ids.append(video_id)
+
+
+def _jsonld_objects(value):
+    """Yield top-level JSON-LD objects, including objects nested in @graph."""
+    if isinstance(value, list):
+        for item in value:
+            yield from _jsonld_objects(item)
+    elif isinstance(value, dict):
+        yield value
+        graph = value.get("@graph")
+        if isinstance(graph, (dict, list)):
+            yield from _jsonld_objects(graph)
 
 
 def _video_markup_summary(content):
