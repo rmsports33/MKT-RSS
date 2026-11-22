@@ -542,6 +542,23 @@ nesta data), e não pendentes como constava em anotação anterior de sessão. O
 | Limites | Broker continua bloqueado (`trusted_factual_review_broker_guard_not_integrated`); nenhuma escrita em WordPress/Turso, nenhuma chave gerada, nenhum merge, deploy, push ou publicação; 0 GitHub Actions |
 | Falta para uso real | Provisionar `CONEXO_REVIEW_REGISTRY_URL` e o token, distribuir a pública de `K_REG` ao verificador, substituir `InMemorySequenceStore` pela tabela InnoDB da seção 32 e emitir owner-release real pelo Gate |
 
+## 40. Auditoria de alcance dos módulos — 22/11/2026
+
+| Item | Status |
+|---|---|
+| Pergunta | Quais módulos realmente executam quando o projeto gera um artigo (complemento da seção 24, achado A1) |
+| Método | Análise estática de AST, sem rede e sem escrita: `tools/audit_module_reachability.py`, fecho transitivo de imports a partir de `pipeline_rss.py`/`pipeline_p0.py` e das entradas operacionais (`tools/`, `scripts/`, `admin/`, CLI própria) |
+| Base auditada | `local/publish-path-proof-20261122` @ `5e66bbd` (base `382506a`, linha Ed25519) |
+| Resultado | 145 módulos: 2 entradas, 62 no fluxo do artigo, 68 operacionais, 11 só teste, 2 sem chamador |
+| Achado principal | O único fluxo agendado (`daily.yml`) usa `--queue-only`, que retorna logo após `rss_queue_collect.coletar()` (`pipeline_rss.py:723-737`): a agenda **só coleta e enfileira**; extração, redação, imagem e rascunho dependem de execução manual com flags |
+| Fora do fluxo de produção | `comparativo_flow`, `price_collector`, `links_internos` (nenhum importador), `stock_media_workflow` (só CLI com confirmação) |
+| Só teste | `editorial_atomic_transition`, `alerts`, `editorial_correction_queue`, `produtor_evidencias_noticia`, `scheduler`, `triagem_auth`, `vault`, `wordpress_blocks` e três de `whois_tool` |
+| Sem chamador | `mkt_flow_p0/conexo_gate_trace.py` (93 linhas) e `whois_tool/__init__.py` |
+| Limites | Import dinâmico por string variável e carga de núcleo externo não são cobertos; "alcançável" não significa "executado" — quase todo o fluxo está atrás de flag |
+| Documento | `docs/AUDITORIA_ALCANCE_MODULOS_20261122.md` (listas completas), no commit `5e66bbd` da branch acima |
+| Correção de registro | A afirmação anterior de que "todos os módulos são utilizados" era falsa: 13 módulos não são alcançados por nenhum caminho de produção |
+| Limites de execução | Nenhuma escrita em WordPress/Turso, nenhum broker, chave, merge, push, deploy ou publicação; 0 GitHub Actions |
+
 ## Referência por tema
 
 - SEO/GEO/AEO: `docs/REGRA15_NOTAS.md`, `docs/PENDENCIAS_2026-10-03.md`, `docs/CLOUD_EDITORIAL_20261109.md`
