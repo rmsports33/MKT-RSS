@@ -526,6 +526,22 @@ nesta data), e não pendentes como constava em anotação anterior de sessão. O
 #85 também está **MERGED** (`fix/independent-source-domain-20261110`). PRs #129 e
 #130 permanecem **draft** e são o material do Revisor Único/Gate.
 
+## 39. Adaptador real do registro do Revisor Único e ligação no guard — 22/11/2026
+
+| Item | Status |
+|---|---|
+| Origem | Achado A1 da seção 24: `lookup_review` não tinha implementação no repositório; a consulta era sempre injetada |
+| Branch e commit | `local/publish-path-proof-20261122` @ `db73938`, base `origin/fix/ed25519-review-registry-boundary-20261119` (`382506a`); worktree isolado, sem tocar master nem runtime |
+| Módulo novo | `editorial_review_lookup.py` — transporte puro: busca o envelope assinado em `review_record_url` e devolve o dicionário; nada decide ali |
+| Regras fail-closed | HTTPS apenas; só a origem configurada (bloqueia SSRF); redirect nunca seguido; status 200 obrigatório (404/410 = registro ausente); corpo limitado a 64 KiB antes de decodificar; JSON objeto obrigatório; motivos estáveis (`registry_url_not_allowed`, `registry_status_unexpected`, `registry_unreachable`, `registry_response_invalid`, `registry_response_too_large`, `registry_configuration_invalid`); token só no header e nunca em erro |
+| Configuração | `CONEXO_REVIEW_REGISTRY_URL` (obrigatória para ligar) e `CONEXO_REVIEW_REGISTRY_TOKEN` (opcional); sem a URL o adaptador não é criado e o gate segue reportando `trusted_review_store_missing` |
+| Ligação | `pipeline_rss.autorizar_transicao_publicacao` passa a repassar `require_contract_v23` e `review_sequence_store` e, quando nada é injetado, constrói o adaptador pelo ambiente; configuração malformada vira bloqueio estável em vez de exceção |
+| Testes novos | 21 do adaptador (`tests/test_review_lookup.py`) + 6 da ligação (`tests/test_review_lookup_wiring.py`); cadeia completa Ed25519 M1+M2 servida pelo adaptador real, incluindo corpo adulterado e replay |
+| Testes focados | 140 passed (gate, revisor, readback, HMAC, Ed25519, pipeline, publish CLI e os dois arquivos novos) |
+| Suíte completa (Windows) | 1659 passed, 34 failed, 1 skipped, 1 erro de coleta (`fcntl`) e 45 subtests — as 34 falhas e o erro são exatamente as preexistentes de ambiente já registradas nas seções 25–27; nenhuma falha em módulos de gate, revisor ou lookup |
+| Limites | Broker continua bloqueado (`trusted_factual_review_broker_guard_not_integrated`); nenhuma escrita em WordPress/Turso, nenhuma chave gerada, nenhum merge, deploy, push ou publicação; 0 GitHub Actions |
+| Falta para uso real | Provisionar `CONEXO_REVIEW_REGISTRY_URL` e o token, distribuir a pública de `K_REG` ao verificador, substituir `InMemorySequenceStore` pela tabela InnoDB da seção 32 e emitir owner-release real pelo Gate |
+
 ## Referência por tema
 
 - SEO/GEO/AEO: `docs/REGRA15_NOTAS.md`, `docs/PENDENCIAS_2026-10-03.md`, `docs/CLOUD_EDITORIAL_20261109.md`
