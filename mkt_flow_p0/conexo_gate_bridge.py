@@ -216,7 +216,7 @@ def validate_gate_snapshot(snapshot: dict) -> dict:
         "snapshot_id", "snapshot_sha256", "snapshot_digest_version",
         "fingerprint_version", "fingerprint_sha256",
     }
-    if set(snapshot) < required:
+    if not required.issubset(snapshot):
         missing = sorted(required - set(snapshot))
         raise ValueError("gate_snapshot_missing_fields:" + ",".join(missing))
     if not isinstance(snapshot.get("snapshot_id"), str) or not _UUID.fullmatch(snapshot["snapshot_id"]):
@@ -266,6 +266,8 @@ def _validate_gate_evidence(check_name: str, evidence: Any, snapshot_id: str) ->
         raise ValueError("gate_human_evidence_shape_invalid_" + check_name)
     kind = evidence["tipo"]
     reference = evidence["referencia"]
+    if not isinstance(kind, str):
+        raise ValueError("gate_human_evidence_type_invalid_" + check_name)
     description = evidence["descricao"]
     if kind not in HUMAN_EVIDENCE_TYPES:
         raise ValueError("gate_human_evidence_type_invalid_" + check_name)
@@ -389,6 +391,20 @@ def build_gate_quality_record_request(
             _validate_gate_evidence(name, item, snapshot["snapshot_id"])
             for item in raw_items
         ]
+        if name == "capa" and any(
+            item.get("attachment_id") != snapshot["featured_media"]
+            for item in normalized_items
+            if item.get("tipo") == "attachment"
+        ):
+            raise ValueError("gate_cover_attachment_must_match_featured_media")
+        reviewer_refs = reviewer_report["checks"][name].get("evidencia", [])
+        if not isinstance(reviewer_refs, list):
+            raise ValueError("reviewer_evidence_reference_list_invalid_" + name)
+        gate_refs = {item["referencia"] for item in normalized_items}
+        for reviewer_ref in reviewer_refs:
+            if isinstance(reviewer_ref, str) and reviewer_ref.startswith(("https://", "http://", "wp-attachment:", "snapshot:")):
+                if reviewer_ref not in gate_refs:
+                    raise ValueError("gate_evidence_does_not_cover_reviewer_reference_" + name)
         checks[name] = {
             "estado": "VERIFICADO",
             "origem": "humana",
