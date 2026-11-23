@@ -310,6 +310,27 @@ def test_review_report_with_pending_human_check_is_rejected():
         build_request(reviewer_report=report)
 
 
+def test_reviewer_report_persona_must_match_gate_brief_persona():
+    report = reviewer_report()
+    report["persona_sha256"] = "a" * 64
+    with pytest.raises(ValueError, match="reviewer_report_persona_hash_mismatch"):
+        build_request(reviewer_report=report)
+
+
+def test_reviewer_report_mkt_brief_must_match_the_current_mkt_brief():
+    report = reviewer_report()
+    report["brief_sha256"] = "a" * 64
+    with pytest.raises(ValueError, match="reviewer_report_brief_hash_mismatch"):
+        build_request(reviewer_report=report)
+
+
+def test_reviewer_report_lens_must_match_canonical_brief_genre():
+    report = reviewer_report()
+    report["voice_lens"] = "factual"
+    with pytest.raises(ValueError, match="reviewer_report_voice_lens_mismatch"):
+        build_request(reviewer_report=report)
+
+
 def test_gate_contract_requires_all_sixteen_human_evidence_groups():
     report = reviewer_report()
     evidence = gate_evidence(report)
@@ -335,7 +356,7 @@ def test_visual_evidence_requires_real_screenshot_type():
         "descricao": "Uma URL não substitui a captura visual.",
         "observado_em": "2026-11-23T13:00:00Z",
     }]
-    with pytest.raises(ValueError, match="gate_visual_review_requires_screenshot_visual_390"):
+    with pytest.raises(ValueError, match="gate_visual_screenshot_required_visual_390"):
         build_request(gate_human_evidence=evidence, reviewer_report=report)
 
 
