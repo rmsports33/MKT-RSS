@@ -559,6 +559,24 @@ nesta data), e não pendentes como constava em anotação anterior de sessão. O
 | Correção de registro | A afirmação anterior de que "todos os módulos são utilizados" era falsa: 13 módulos não são alcançados por nenhum caminho de produção |
 | Limites de execução | Nenhuma escrita em WordPress/Turso, nenhum broker, chave, merge, push, deploy ou publicação; 0 GitHub Actions |
 
+## 41. Credencial WordPress nesta máquina e defeito de renderização do #9900 — 22/11/2026
+
+| Item | Status |
+|---|---|
+| Pergunta | A credencial WordPress desta máquina funciona, e o rascunho #9900 está pronto para revisão? |
+| Credencial | `tools/wp_identity_preflight.py` respondeu `PASS`: autenticou como editor ID 4, com `read`, `edit_posts` e `publish_posts`, sem `manage_options`. Segredo só em `.env` local (ignorado pelo Git, `.gitignore:3`), nunca em log ou chat |
+| Leitura comprovada | `GET /wp-json/wp/v2/posts/9900?context=edit` e `GET /wp-json/wp/v2/media/9912?context=edit` — somente leitura, nenhuma escrita |
+| Estado do #9900 | `draft`, modificado `2026-11-19T09:47:48`, 6.172 caracteres, categoria 10, sem tags |
+| Capa | Mídia 9912 já associada: `smartphone-chamada-recebida-youcef-smahi.jpg`, 1024×1024, autor, página de origem, licença CC BY 4.0, ALT e legenda presentes |
+| Achado | O HTML do rascunho está partido: 51 `<p>` e 4 `<ol>`/3 `<ul>` onde cabem 14 `<p>`, 2 `<ol>` e 1 `<ul>`; frases cortadas a cada 78 colunas e listas numeradas recomeçando em 1 |
+| Causa raiz | `mkt_flow_p0/format.py::_markdown_blocos` emitia um `<p>` por linha de origem e fechava a lista a cada linha; a continuação de item caía fora do `<li>` |
+| Correção | Linhas consecutivas passam a formar um parágrafo/um item; só a linha em branco encerra o bloco. Célula de tabela passou a usar `_inline` (negrito dentro da tabela) |
+| Prova | Mesmo texto: 732 palavras antes e 732 depois, com diferença de multiconjunto de palavras vazia; 9 `<li>` preservados nos dois lados |
+| Testes | 5 testes novos em `tests/unit/test_format_p0.py`, incluindo regressão sobre o próprio insumo do #9900; 146 testes de formatação/renderização passam |
+| Limites | Nenhuma escrita em WordPress: o proprietário pediu para não gravar ainda. A capa de 1024×1024 está abaixo dos 1440 px do protocolo de imagem. O comentário de pacote do rascunho (`d814a825…`) não foi reproduzido a partir dos insumos locais, logo não serve como recibo de versão |
+| Documento | Correção em `mkt_flow_p0/format.py` e `tests/unit/test_format_p0.py`, branch `fix/renderer-paragrafo-quebrado-20261122` |
+| Limites de execução | Nenhuma escrita em WordPress/Turso, nenhum broker, chave nova, merge, push, deploy ou publicação; 0 GitHub Actions |
+
 ## Referência por tema
 
 - SEO/GEO/AEO: `docs/REGRA15_NOTAS.md`, `docs/PENDENCIAS_2026-10-03.md`, `docs/CLOUD_EDITORIAL_20261109.md`
