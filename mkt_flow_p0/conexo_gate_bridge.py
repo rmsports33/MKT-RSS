@@ -333,6 +333,15 @@ def _validate_mkt_report(report: dict, post: dict) -> str:
         raise ValueError("reviewer_report_must_not_authorize_publication")
     if not isinstance(report.get("reviewer"), str) or not report["reviewer"].strip():
         raise ValueError("reviewer_identity_label_missing")
+    reviewed_at = report.get("reviewed_at")
+    if not isinstance(reviewed_at, str) or not re.fullmatch(
+        r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z", reviewed_at
+    ):
+        raise ValueError("reviewer_report_timestamp_invalid")
+    try:
+        datetime.strptime(reviewed_at, "%Y-%m-%dT%H:%M:%SZ")
+    except ValueError as error:
+        raise ValueError("reviewer_report_timestamp_invalid") from error
     checks = report.get("checks")
     if not isinstance(checks, dict) or set(checks) != set(GATE_REQUIRED_CHECKS):
         raise ValueError("reviewer_v2_required_check_matrix_mismatch")
@@ -365,6 +374,15 @@ def build_gate_quality_record_request(
     reviewer_label = _validate_mkt_report(reviewer_report, wordpress_post)
 
     brief = normalize_gate_brief(mkt_brief, persona_profile=persona_profile)
+    normalized_mkt_brief = normalize_brief(mkt_brief)
+    expected_brief_hash = brief_hash(normalized_mkt_brief)
+    expected_persona_hash = hashlib.sha256(brief["persona"].encode("utf-8")).hexdigest()
+    if reviewer_report.get("brief_sha256") != expected_brief_hash:
+        raise ValueError("reviewer_report_brief_hash_mismatch")
+    if reviewer_report.get("persona_sha256") != expected_persona_hash:
+        raise ValueError("reviewer_report_persona_hash_mismatch")
+    if reviewer_report.get("voice_lens") != editorial_voice_plan(normalized_mkt_brief)["lens"]:
+        raise ValueError("reviewer_report_voice_lens_mismatch")
     if not isinstance(reviewer_key_id, str) or not 1 <= len(reviewer_key_id) <= 100:
         raise ValueError("reviewer_key_id_required")
 
