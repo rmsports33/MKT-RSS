@@ -1,0 +1,58 @@
+name: MKT-RSS Conexo Gate v3 bridge
+
+on:
+  push:
+    branches:
+      - feat/conexo-gate-v3-review-bridge-20261123
+    paths:
+      - 'mkt_flow_p0/conexo_gate_bridge.py'
+      - 'mkt_flow_p0/revisor_qualidade_unico.py'
+      - 'tests/test_conexo_gate_bridge.py'
+      - 'tests/test_revisor_qualidade_unico.py'
+      - '.github/workflows/conexo-gate-v3-bridge.yml'
+  pull_request:
+    branches:
+      - feat/hostinger-runtime-independente-20261113
+    paths:
+      - 'mkt_flow_p0/conexo_gate_bridge.py'
+      - 'mkt_flow_p0/revisor_qualidade_unico.py'
+      - 'tests/test_conexo_gate_bridge.py'
+      - 'tests/test_revisor_qualidade_unico.py'
+      - '.github/workflows/conexo-gate-v3-bridge.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: conexo-gate-v3-bridge-\${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bridge-contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: false
+
+      - name: Install minimal isolated test dependency
+        run: python -m pip install --disable-pip-version-check pytest
+
+      - name: Compile bridge and reviewer
+        run: |
+          python -m py_compile \
+            mkt_flow_p0/conexo_gate_bridge.py \
+            mkt_flow_p0/revisor_qualidade_unico.py \
+            tests/test_conexo_gate_bridge.py \
+            tests/test_revisor_qualidade_unico.py
+
+      - name: Run bridge and reviewer regression tests
+        run: |
+          python -m pytest \
+            tests/test_revisor_qualidade_unico.py \
+            tests/test_conexo_gate_bridge.py \
+            -q
