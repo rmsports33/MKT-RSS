@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: conexo-gate-v3-bridge-\${{ github.event.pull_request.number || github.ref }}
+  group: conexo-gate-v3-bridge-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
