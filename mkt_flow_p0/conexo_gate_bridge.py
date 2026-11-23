@@ -305,8 +305,6 @@ def _validate_gate_evidence(check_name: str, evidence: Any, snapshot_id: str) ->
         ):
             raise ValueError("gate_attachment_evidence_invalid_" + check_name)
 
-    if check_name in SCREENSHOT_REQUIRED and kind != "screenshot":
-        raise ValueError("gate_visual_review_requires_screenshot_" + check_name)
     if check_name in SOURCE_REQUIRED and kind not in {"url", "attachment"}:
         raise ValueError("gate_source_reference_required_" + check_name)
     if check_name in SNAPSHOT_REQUIRED and kind not in {"snapshot", "url", "attachment", "screenshot"}:
