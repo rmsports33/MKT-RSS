@@ -311,8 +311,6 @@ def _validate_gate_evidence(check_name: str, evidence: Any, snapshot_id: str) ->
         raise ValueError("gate_source_reference_required_" + check_name)
     if check_name in SNAPSHOT_REQUIRED and kind not in {"snapshot", "url", "attachment", "screenshot"}:
         raise ValueError("gate_snapshot_reference_required_" + check_name)
-    if check_name in INTERNAL_IMAGE_REQUIRED and kind not in {"snapshot", "attachment"}:
-        raise ValueError("gate_inline_image_reference_required")
 
     # Do not pass unknown evidence members to the Gate.
     normalized = {key: evidence[key] for key in required}
@@ -409,6 +407,10 @@ def build_gate_quality_record_request(
             _validate_gate_evidence(name, item, snapshot["snapshot_id"])
             for item in raw_items
         ]
+        if name in INTERNAL_IMAGE_REQUIRED and not any(
+            item.get("tipo") in {"snapshot", "attachment"} for item in normalized_items
+        ):
+            raise ValueError("gate_inline_image_reference_required")
         if name == "capa":
             cover_items = [item for item in normalized_items if item.get("tipo") == "attachment"]
             if not cover_items:
