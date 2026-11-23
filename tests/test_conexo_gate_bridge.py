@@ -307,7 +307,7 @@ def test_review_report_with_pending_human_check_is_rejected():
     report = reviewer_report()
     report["checks"]["persona"]["estado"] = "NAO_VERIFICADO"
     report["veredito"] = "REVISAO_NECESSARIA"
-    with pytest.raises(ValueError, match="independent_reviewer_did_not_pass"):
+    with pytest.raises(ValueError, match="reviewer_check_not_verified_persona"):
         build_request(reviewer_report=report)
 
 
