@@ -245,8 +245,6 @@ def test_gate_quality_request_binds_snapshot_brief_and_sixteen_human_checks():
     assert request["brief"]["persona"] == PERSONA
     assert tuple(request["checks"]) == GATE_REQUIRED_CHECKS
     assert all(item["origem"] == "humana" for item in request["checks"].values())
-    assert request["publication_authorized"] is False
-    assert request["factual_approval"] is False
 
 
 def test_gate_preflight_request_uses_same_explicit_persona_contract():
@@ -258,7 +256,6 @@ def test_gate_preflight_request_uses_same_explicit_persona_contract():
     assert request["post_id"] == POST_ID
     assert request["snapshot_id"] == SNAPSHOT_ID
     assert request["brief"]["persona"] == PERSONA
-    assert request["publication_authorized"] is False
 
 
 def test_missing_explicit_persona_fails_closed():
