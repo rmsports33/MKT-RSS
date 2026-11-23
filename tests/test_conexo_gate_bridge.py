@@ -393,3 +393,90 @@ def test_gate_evidence_timestamp_must_be_valid_utc():
     evidence["fontes"]["evidencia"][0]["observado_em"] = "2026-02-30T10:00:00Z"
     with pytest.raises(ValueError, match="gate_human_evidence_timestamp_invalid_fontes"):
         build_request(gate_human_evidence=evidence, reviewer_report=report)
+
+
+def test_persona_evidence_must_be_human_not_assisted():
+    post = wordpress_post()
+    evidence = reviewer_evidence(post)
+    evidence["persona"]["method"] = "assisted"
+    report = avaliar_artigo_gate_v3(
+        post,
+        brief=BRIEF,
+        persona_profile=PERSONA,
+        media={
+            "id": FEATURED_MEDIA_ID,
+            "alt_text": "Ilustração contextual da configuração analisada",
+            "description": "Fonte individual. Licença: https://source.example.org/license",
+        },
+        fontes=[{
+            "url": "https://source.example.org/primary",
+            "verificada": True,
+            "alegacoes": ["A documentação descreve os limites da configuração."],
+        }],
+        evidencias=evidence,
+        corpo_original_fonte=CONTENT_TEXT,
+    )
+    assert report["checks"]["persona"]["estado"] == "NAO_VERIFICADO"
+    assert report["veredito"] == "REVISAO_NECESSARIA"
+    assert report["publication_authorized"] is False
+
+
+def test_missing_persona_does_not_pass_reviewer_v2():
+    post = wordpress_post()
+    report = avaliar_artigo_gate_v3(
+        post,
+        brief=BRIEF,
+        persona_profile=None,
+        media={
+            "id": FEATURED_MEDIA_ID,
+            "alt_text": "Ilustração contextual da configuração analisada",
+            "description": "Fonte individual. Licença: https://source.example.org/license",
+        },
+        fontes=[{
+            "url": "https://source.example.org/primary",
+            "verificada": True,
+            "alegacoes": ["A documentação descreve os limites da configuração."],
+        }],
+        evidencias=reviewer_evidence(post),
+        corpo_original_fonte=CONTENT_TEXT,
+    )
+    assert report["checks"]["persona"]["estado"] == "NAO_VERIFICADO"
+    assert report["veredito"] == "REVISAO_NECESSARIA"
+
+
+def test_missing_alt_in_inline_image_blocks_reviewer_v2():
+    post = wordpress_post()
+    post["content"] = post["content"].replace(
+        'alt="Ilustração contextual da configuração analisada"', ""
+    )
+    report = avaliar_artigo_gate_v3(
+        post,
+        brief=BRIEF,
+        persona_profile=PERSONA,
+        media={
+            "id": FEATURED_MEDIA_ID,
+            "alt_text": "Ilustração contextual da configuração analisada",
+            "description": "Fonte individual. Licença: https://source.example.org/license",
+        },
+        fontes=[{
+            "url": "https://source.example.org/primary",
+            "verificada": True,
+            "alegacoes": ["A documentação descreve os limites da configuração."],
+        }],
+        evidencias=reviewer_evidence(post),
+        corpo_original_fonte=CONTENT_TEXT,
+    )
+    assert report["checks"]["imagens_internas"]["estado"] == "REPROVADO"
+    assert "imagens_internas" in report["bloqueios"]
+    assert report["publication_authorized"] is False
+
+
+def test_gate_evidence_must_cover_every_reviewer_reference():
+    report = reviewer_report()
+    evidence = gate_evidence(report)
+    evidence["fontes"]["evidencia"] = [
+        item for item in evidence["fontes"]["evidencia"]
+        if item["referencia"] != "https://source.example.org/primary"
+    ]
+    with pytest.raises(ValueError, match="gate_evidence_does_not_cover_reviewer_reference_fontes"):
+        build_request(gate_human_evidence=evidence, reviewer_report=report)
