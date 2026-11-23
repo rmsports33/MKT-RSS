@@ -265,6 +265,8 @@ def _validate_gate_evidence(check_name: str, evidence: Any, snapshot_id: str) ->
     if set(evidence) - allowed or not required.issubset(evidence):
         raise ValueError("gate_human_evidence_shape_invalid_" + check_name)
     kind = evidence["tipo"]
+    if not isinstance(kind, str):
+        raise ValueError("gate_human_evidence_type_invalid_" + check_name)
     reference = evidence["referencia"]
     if not isinstance(kind, str):
         raise ValueError("gate_human_evidence_type_invalid_" + check_name)
@@ -303,16 +305,12 @@ def _validate_gate_evidence(check_name: str, evidence: Any, snapshot_id: str) ->
 
     if check_name in SCREENSHOT_REQUIRED and kind != "screenshot":
         raise ValueError("gate_visual_review_requires_screenshot_" + check_name)
-    if check_name == "capa" and kind != "attachment":
-        raise ValueError("gate_cover_requires_featured_image_attachment")
     if check_name in SOURCE_REQUIRED and kind not in {"url", "attachment"}:
         raise ValueError("gate_source_reference_required_" + check_name)
     if check_name in SNAPSHOT_REQUIRED and kind not in {"snapshot", "url", "attachment", "screenshot"}:
         raise ValueError("gate_snapshot_reference_required_" + check_name)
     if check_name in INTERNAL_IMAGE_REQUIRED and kind not in {"snapshot", "attachment"}:
         raise ValueError("gate_inline_image_reference_required")
-    if check_name in {"visual_390", "visual_1440"} and kind != "screenshot":
-        raise ValueError("gate_visual_screenshot_required")
 
     # Do not pass unknown evidence members to the Gate.
     normalized = {key: evidence[key] for key in required}
@@ -391,12 +389,16 @@ def build_gate_quality_record_request(
             _validate_gate_evidence(name, item, snapshot["snapshot_id"])
             for item in raw_items
         ]
-        if name == "capa" and any(
-            item.get("attachment_id") != snapshot["featured_media"]
-            for item in normalized_items
-            if item.get("tipo") == "attachment"
+        if name == "capa":
+            cover_items = [item for item in normalized_items if item.get("tipo") == "attachment"]
+            if not cover_items:
+                raise ValueError("gate_cover_requires_featured_image_attachment")
+            if any(item.get("attachment_id") != snapshot["featured_media"] for item in cover_items):
+                raise ValueError("gate_cover_attachment_must_match_featured_media")
+        if name in SCREENSHOT_REQUIRED and not any(
+            item.get("tipo") == "screenshot" for item in normalized_items
         ):
-            raise ValueError("gate_cover_attachment_must_match_featured_media")
+            raise ValueError("gate_visual_screenshot_required_" + name)
         reviewer_refs = reviewer_report["checks"][name].get("evidencia", [])
         if not isinstance(reviewer_refs, list):
             raise ValueError("reviewer_evidence_reference_list_invalid_" + name)
@@ -418,10 +420,6 @@ def build_gate_quality_record_request(
         "reviewer_key_id": reviewer_key_id,
         "policy_version": GATE_POLICY_VERSION,
         "brief": brief,
-        "publication_authorized": False,
-        "factual_approval": False,
-        "contract": "conexo-quality-record/3",
-        "brief_schema": GATE_BRIEF_SCHEMA,
     }
 
 
