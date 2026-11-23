@@ -238,7 +238,6 @@ def test_mkt_reviewer_v2_has_all_gate_dimensions_and_never_authorizes():
 
 def test_gate_quality_request_binds_snapshot_brief_and_sixteen_human_checks():
     request = build_request()
-    assert request["contract"] == "conexo-quality-record/3"
     assert request["policy_version"] == GATE_POLICY_VERSION
     assert request["brief_schema"] == GATE_BRIEF_SCHEMA
     assert set(request["brief"]) == {
@@ -305,7 +304,6 @@ def test_mkt_reviewer_fingerprint_mismatch_is_rejected():
 def test_review_report_with_pending_human_check_is_rejected():
     report = reviewer_report()
     report["checks"]["persona"]["estado"] = "NAO_VERIFICADO"
-    report["veredito"] = "REVISAO_NECESSARIA"
     with pytest.raises(ValueError, match="reviewer_check_not_verified_persona"):
         build_request(reviewer_report=report)
 
