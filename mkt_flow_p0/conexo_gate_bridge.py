@@ -12,6 +12,8 @@ import re
 from typing import Any
 from urllib.parse import urlparse
 
+from mkt_flow_p0.editorial_substance import normalize_brief, brief_hash
+from mkt_flow_p0.editorial_voice_adapter import editorial_voice_plan
 from mkt_flow_p0.revisor_qualidade_unico import (
     GATE_REQUIRED_CHECKS,
     GATE_VERSAO,
