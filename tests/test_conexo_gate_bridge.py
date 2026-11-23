@@ -446,7 +446,10 @@ def test_missing_persona_does_not_pass_reviewer_v2():
 
 def test_missing_alt_in_inline_image_blocks_reviewer_v2():
     post = wordpress_post()
-    post["content"] = post["content"].replace(
+    post["content"]["raw"] = post["content"]["raw"].replace(
+        'alt="Ilustração contextual da configuração analisada"', ""
+    )
+    post["content"]["rendered"] = post["content"]["rendered"].replace(
         'alt="Ilustração contextual da configuração analisada"', ""
     )
     report = avaliar_artigo_gate_v3(
