@@ -577,6 +577,20 @@ nesta data), e não pendentes como constava em anotação anterior de sessão. O
 | Documento | Correção em `mkt_flow_p0/format.py` e `tests/unit/test_format_p0.py`, branch `fix/renderer-paragrafo-quebrado-20261122` |
 | Limites de execução | Nenhuma escrita em WordPress/Turso, nenhum broker, chave nova, merge, push, deploy ou publicação; 0 GitHub Actions |
 
+## 42. Validador de linguagem integrado ao pipeline — 23/11/2026
+
+| Item | Status |
+|---|---|
+| Pergunta | Como evitar que erros de linguagem (ortografia, tipografia, gramática, HTML) cheguem ao rascunho do WordPress sem revisão humana? |
+| Modulo novo | `mkt_flow_p0/linguagem_validator.py` — 17 funcoes de deteccao, 26 testes offline em `tests/unit/test_linguagem_validator.py` |
+| Tipos de erro detectados | Caracteres suspeitos (cirilico, grego, CJK, emoji, zero/letra O, largura plena); tipografia (aspas retas, hifen-travessao, espaco duplo, espaco antes de pontuacao, decimal com ponto, maiusculas excessas, cliches/jarcao, linguagem nao inclusiva); ortografia (acento ausente, palavra repetida, palavra excessiva, pleonasmo, padrão suspeito); gramatica (crase ausente, concordancia artigo/substantivo, concordancia sujeito/verbo, frase muito longa, voz passiva); HTML estrutural (URL solta, listas fragmentadas) |
+| Integracao | Chamado em `pipeline_rss.py` nos caminhos `handoff_only` e `CONEXO_RSS_DRAFT`/`CONEXO_RSS_DRAFT_STAGING=1`, antes de `stage_rss_draft`. Resultado gravado em `qualidade_editorial["auditoria_linguagem"]` |
+| Politica de execucao | Sinaliza pendencias; NUNCA bloqueia gravacao de rascunho nem autoriza publicacao. Publicacao continua condicionada a revisao humana (owner_id=3) + aceite explicito. Gate `GATE_PUBLICACAO_ENABLED` permanece `false`. |
+| Prova no #9900 | 75 alertas detectados no texto do #9900 (50 tipografia, 25 gramatica, 0 critica); maioria são problemas de formacao de paragrafo ja tratados por `mkt_flow_p0/html_paragrafos.py` |
+| Limites | Dicionario ortografico PT-BR minimo (pode gerar falso positivo em nomes tecnicos). Gramatica e concordancia sao heuristicas; revisao humana permanece obrigatoria. Nenhuma correcao automatica que altere o sentido do texto. |
+| Documento | `mkt_flow_p0/linguagem_validator.py`, `tests/unit/test_linguagem_validator.py`, `pipeline_rss.py` (integracao) |
+| Limites de execucao | Nenhuma escrita em WordPress/Turso, nenhum broker, chave nova, merge, push, deploy ou publicacao; 0 GitHub Actions |
+
 ## Referência por tema
 
 - SEO/GEO/AEO: `docs/REGRA15_NOTAS.md`, `docs/PENDENCIAS_2026-10-03.md`, `docs/CLOUD_EDITORIAL_20261109.md`

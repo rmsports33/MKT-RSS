@@ -381,6 +381,17 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         except ValueError:
             return {"acao": "falha", "motivo": "handoff_editorial_invalido",
                     "url": url_fonte, "escreveu": False}
+
+        # Validacao de linguagem no caminho handoff-only (sem escrita WP).
+        from mkt_flow_p0.linguagem_validator import validar_texto
+        try:
+            auditoria_linguagem = validar_texto(html, html_original=html)
+        except Exception as exc:
+            logger.warning("Validacao de linguagem falhou: %s", exc)
+            auditoria_linguagem = {"erro": "validacao_linguagem_indisponible",
+                                   "total_erros": 0}
+        qualidade_editorial["auditoria_linguagem"] = auditoria_linguagem
+
         return {
             "acao": "pacote_editorial_criado", "escreveu": False,
             "qualidade_editorial": qualidade_editorial,
@@ -405,6 +416,19 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         except ValueError:
             return {"acao": "falha", "motivo": "handoff_editorial_invalido",
                     "url": url_fonte, "escreveu": False}
+
+        # Validação de linguagem (ortografia, tipografia, gramática, HTML)
+        # antes de gravar no WordPress. Sinaliza pendências; nunca bloqueia
+        # a gravação de rascunho nem autoriza publicação.
+        from mkt_flow_p0.linguagem_validator import validar_texto
+        try:
+            auditoria_linguagem = validar_texto(html, html_original=html)
+        except Exception as exc:
+            logger.warning("Validacao de linguagem falhou: %s", exc)
+            auditoria_linguagem = {"erro": "validacao_linguagem_indisponible",
+                                   "total_erros": 0}
+        qualidade_editorial["auditoria_linguagem"] = auditoria_linguagem
+
         from mkt_flow_p0.wp_draft_staging import stage_rss_draft
         staged = stage_rss_draft(
             title=rw["titulo_seo"], content=html, source_url=url_fonte,
