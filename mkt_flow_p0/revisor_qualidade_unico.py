@@ -251,7 +251,7 @@ def avaliar_artigo_gate_v3(
     is a separate required input and is combined only by the bridge adapter.
     This report is diagnostic/human evidence; it never signs or authorizes.
     """
-    from mkt_flow_p0.editorial_substance import normalize_brief
+    from mkt_flow_p0.editorial_substance import normalize_brief, brief_hash
     from mkt_flow_p0.editorial_voice_adapter import editorial_voice_plan
 
     normalized_brief = None
@@ -348,7 +348,7 @@ def avaliar_artigo_gate_v3(
         "reviewed_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "reviewer": reviewer,
         "brief_sha256": (
-            __import__("mkt_flow_p0.editorial_substance", fromlist=["brief_hash"]).brief_hash(normalized_brief)
+            brief_hash(normalized_brief)
             if normalized_brief is not None else None
         ),
         "persona_sha256": hashlib.sha256(persona_profile.encode("utf-8")).hexdigest() if persona_profile else None,
