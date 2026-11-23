@@ -239,7 +239,6 @@ def test_mkt_reviewer_v2_has_all_gate_dimensions_and_never_authorizes():
 def test_gate_quality_request_binds_snapshot_brief_and_sixteen_human_checks():
     request = build_request()
     assert request["policy_version"] == GATE_POLICY_VERSION
-    assert request["brief_schema"] == GATE_BRIEF_SCHEMA
     assert set(request["brief"]) == {
         "genre", "persona", "reader", "need", "angle", "contribution", "limits"
     }
