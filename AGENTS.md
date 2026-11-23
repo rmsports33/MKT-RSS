@@ -1,8 +1,22 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
-## Registro único de auditorias — 18/11/2026 (precedência alta)
+## Ponto de entrada único — 18/11/2026 (precedência alta)
 
-Toda conferência, inventário, ficha, auditoria ou checagem deve começar e terminar por
+Para começar a trabalhar em qualquer plataforma (OpenCode, ChatGPT, DeepSeek, etc.),
+sempre use primeiro o arquivo **`tools/iniciar.py`** (ou **`iniciar.bat`** / **`iniciar.sh`**):
+
+```bash
+python tools/iniciar.py
+```
+
+Este arquivo sozinho:
+- Verifica se o registro único está completo
+- Atualiza automaticamente o registro (se precisar)
+- Diz em palavras simples se pode começar ou o que falta
+
+## Registro único de auditorias — 18/11/2026
+
+Toda conferência, inventário, ficha, auditoria ou checagem deve constar por
 `docs/REGISTRO_UNICO_20261118.md`. Um achado só tem status depois de constar ali;
 relatório solto que não está no registro é considerado inexistente.
 
