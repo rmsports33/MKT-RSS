@@ -7,6 +7,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from mkt_flow_p0.linguagem_validator import (
     ErroLinguagem,
     RelatorioLinguagem,
+    RelatorioVozEditorialMDA,
     validar_texto,
     validar_html_estrutural,
     detectar_caracteres_suspeitos,
@@ -23,6 +24,8 @@ from mkt_flow_p0.linguagem_validator import (
     detectar_cliches_jargao,
     detectar_linguagem_inclusiva,
     detectar_urls_em_texto,
+    detectar_metacomentarios,
+    verificar_voz_editorial_mda,
 )
 
 
@@ -174,4 +177,83 @@ def test_validar_texto_inclui_todos_tipos():
     assert "tipografia" in tipos
     assert "gramática" in tipos
     assert "html" in tipos
+
+
+def test_detecta_metacomentario_briefing():
+    texto = "Este texto segue o briefing editorial da Anatel."
+    erros = detectar_metacomentarios(texto)
+    assert any(e.codigo == "META-COMENTARIO" for e in erros)
+
+
+def test_detecta_metacomentario_modelo_linguagem():
+    texto = "Como modelo de linguagem, este artigo explica..."
+    erros = detectar_metacomentarios(texto)
+    assert any(e.codigo == "META-COMENTARIO" for e in erros)
+
+
+def test_detecta_placeholder_fonte():
+    texto = "Segundo [fonte] o número cresceu."
+    erros = detectar_metacomentarios(texto)
+    assert any(e.codigo == "META-PLACEHOLDER" for e in erros)
+
+
+def test_detecta_placeholder_todo():
+    texto = "Precisamos [TODO] revisar esta seção."
+    erros = detectar_metacomentarios(texto)
+    assert any(e.codigo == "META-PLACEHOLDER" for e in erros)
+
+
+def test_validar_texto_inclui_metacomentario():
+    texto = "Este texto segue o briefing editorial. [fonte] pendente."
+    erros = detectar_metacomentarios(texto)
+    codigos = {e.codigo for e in erros}
+    assert "META-COMENTARIO" in codigos
+    assert "META-PLACEHOLDER" in codigos
+    # via validar_texto (detecao de tipografia ainda funciona)
+    r = validar_texto(texto)
+    assert "tipografia" in r.contagem_por_tipo
+
+
+def test_verificar_voz_editorial_mda_sem_brief():
+    rel = verificar_voz_editorial_mda("Texto qualquer.")
+    assert rel.status_substancia is None
+    assert rel.lente is None
+
+
+def test_verificar_voz_editorial_mda_com_brief():
+    brief = {
+        "genre": "noticia",
+        "reader": "assinante de telecomunicações",
+        "need": "entender a decisão da Anatel sobre telemarketing",
+        "angle": "desligamento do bloqueio de telemarketing abusivo",
+        "contribution": "explicar o que muda na prática para o assinante",
+        "limits": "sem confirmação pública de cumprimento do prazo",
+    }
+    texto = ("A Anatel determina que a TIM desligue o bloqueio de telemarketing. "
+             "Este texto segue o briefing editorial.")
+    rel = verificar_voz_editorial_mda(texto, brief=brief)
+    assert rel.genero == "noticia"
+    assert rel.lente == "documental"
+    assert any("meta" in s.lower() for s in rel.sinais_placeholder)
+    assert rel.factual_approval is False
+    assert rel.publication_authorized is False
+
+
+def test_relatorio_voz_editorial_tem_campos():
+    brief = {
+        "genre": "analise",
+        "reader": "investidor financeiro",
+        "need": "entender o caso de preços dinâmicos",
+        "angle": "análise de preços em serviços de telecomunicações",
+        "contribution": "traz dados sobre variação de preços",
+        "limits": "sem preço atual confirmado por fonte oficial",
+    }
+    rel = verificar_voz_editorial_mda("Texto de teste.", brief=brief)
+    assert rel.brief_sha256 is not None
+    assert rel.lente_nome is not None
+    assert rel.plano_abertura is not None
+    assert rel.plano_desenvolvimento is not None
+    assert rel.plano_desfecho is not None
+    assert rel.movimento_tese is not None
+    assert rel.movimento_prova is not None
 

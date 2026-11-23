@@ -37,6 +37,9 @@ __all__ = [
     "detectar_cliches_jargao",
     "detectar_linguagem_inclusiva",
     "detectar_urls_em_texto",
+    "detectar_metacomentarios",
+    "RelatorioVozEditorialMDA",
+    "verificar_voz_editorial_mda",
 ]
 
 # ---------------------------------------------------------------------------
@@ -462,6 +465,58 @@ def detectar_crase(texto: str) -> list[ErroLinguagem]:
     return erros
 
 
+_METACOMENTARIOS = re.compile(
+    r"\b(?:este\s+texto\s+segue\s+o\s+briefing\s+editorial|"
+    r"como\s+modelo\s+de\s+linguagem|"
+    r"este\s+artigo\s+foi\s+(?:gerado|produzido)\s+(?:por|com)\s+(?:um\s+)?prompt|"
+    r"como\s+assistente\s+de\s+ia|"
+    r"como\s+ia\s+assistente|"
+    r"este\s+conteúdo\s+foi\s+(?:criado|elaborado)\s+(?:por|com)\s+ia|"
+    r"observação\s+do\s+editor|"
+    r"nota\s+editorial|"
+    r"pendente\s+de\s+revisão\s+humana\b)",
+    re.IGNORECASE,
+)
+
+_PLACEHOLDER_MARCADORES = re.compile(
+    r"\[(?:\s*(?:jogo|produto|modelo|marca|nome|empresa|autor|cidade|"
+    r"pre[cç]o|dado|n[uú]mero|fonte|link|imagem|data)"
+    r"(?:\s+(?:x|y|z|a\s+definir|a\s+confirmar))?\s*|"
+    r"(?:inserir|preencher|adicionar|substituir|todo|tbd|xxx)"
+    r"[^]\n]{0,80}|link\s+afiliado)\]",
+    re.IGNORECASE,
+)
+
+
+def detectar_metacomentarios(texto: str) -> list[ErroLinguagem]:
+    """Metacomentários e marcadores editoriais que não devem ir ao artigo publicado."""
+    erros: list[ErroLinguagem] = []
+
+    for m in _METACOMENTARIOS.finditer(texto):
+        erros.append(ErroLinguagem(
+            codigo="META-COMENTARIO",
+            tipo="metacomentario",
+            severidade="alta",
+            trecho=m.group(0)[:80],
+            posicao=m.start(),
+            descricao="Metacomentário sobre produção/briefing encontrado no corpo do texto",
+            sugestao="Remover o metacomentário; manter apenas o conteúdo editorial",
+        ))
+
+    for m in _PLACEHOLDER_MARCADORES.finditer(texto):
+        erros.append(ErroLinguagem(
+            codigo="META-PLACEHOLDER",
+            tipo="metacomentario",
+            severidade="crítica",
+            trecho=m.group(0)[:80],
+            posicao=m.start(),
+            descricao="Marcador editorial não resolvido (ex: [fonte], [inserir X], TODO)",
+            sugestao="Resolver o marcador com informação real ou retirar o trecho",
+        ))
+
+    return erros
+
+
 def validar_texto(texto: str, html_original: str | None = None) -> RelatorioLinguagem:
     """Executa todas as detecções de linguagem sobre o texto."""
     texto_limpo = _limpar_texto_html(texto)
@@ -471,9 +526,20 @@ def validar_texto(texto: str, html_original: str | None = None) -> RelatorioLing
     erros.extend(detectar_tipografia(texto_limpo))
     erros.extend(detectar_ortografia_simples(texto_limpo))
     erros.extend(detectar_crase(texto_limpo))
+    erros.extend(detectar_metacomentarios(texto_limpo))  # deteccao de metacomentarios e placeholders
+    erros.extend(detectar_repeticao(texto_limpo))
+    erros.extend(detectar_maiusculas_excesso(texto_limpo))
+    erros.extend(detectar_tamanho_frase(texto_limpo))
+    erros.extend(detectar_voz_passiva(texto_limpo))
+    erros.extend(detectar_concordancia_simples(texto_limpo))
+    erros.extend(detectar_redundancia(texto_limpo))
+    erros.extend(detectar_subject_verb_agreement(texto_limpo))
+    erros.extend(detectar_cliches_jargao(texto_limpo))
+    erros.extend(detectar_linguagem_inclusiva(texto_limpo))
+    erros.extend(detectar_urls_em_texto(texto_limpo))
 
-    # Ajustar posições para o texto original (aproximado)
-    # (posições são relativas ao texto limpo; suficiente para navegação)
+    if html_original:
+        erros.extend(validar_html_estrutural(html_original))
 
     return RelatorioLinguagem(
         texto=texto,
@@ -866,3 +932,110 @@ def validar_html_estrutural(html: str) -> list[ErroLinguagem]:
             sugestao="Executar reparo de parágrafos",
         ))
     return erros
+
+
+# ---------------------------------------------------------------------------
+# Integração com o módulo MDA (voz editorial e estilística)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class RelatorioVozEditorialMDA:
+    """Relatório de voz editorial e estilística via módulo MDA (apenas diagnóstico)."""
+    brief_sha256: str | None = None
+    genero: str | None = None
+    lente: str | None = None
+    lente_nome: str | None = None
+    plano_abertura: str | None = None
+    plano_desenvolvimento: str | None = None
+    plano_desfecho: str | None = None
+    movimento_tese: str | None = None
+    movimento_prova: str | None = None
+    movimento_consequencia: str | None = None
+    movimento_contrapeso: str | None = None
+    movimento_veredito: str | None = None
+    sinais_placeholder: list[str] = field(default_factory=list)
+    sinais_estilo: list[str] = field(default_factory=list)
+    sinais_tabela: list[str] = field(default_factory=list)
+    status_substancia: str | None = None
+    pendencias_substancia: list[str] = field(default_factory=list)
+    scores_substancia: dict = field(default_factory=dict)
+    recibos_faltantes: list[str] = field(default_factory=list)
+    factual_approval: bool = False
+    publication_authorized: bool = False
+
+
+def verificar_voz_editorial_mda(
+    markdown: str,
+    brief: dict | None = None,
+    review: dict | None = None,
+    receipts: dict | None = None,
+) -> RelatorioVozEditorialMDA:
+    """Verifica voz editorial e estilística via módulo MDA (apenas diagnóstico).
+
+    Usa `editorial_voice_adapter` (plano de voz, sinais de placeholder/estilo/tabela)
+    e `editorial_substance` (avaliação substantiva e prontidão editorial).
+    Nunca autoriza publicação; apenas sinaliza pendências para revisão humana.
+    """
+    relatorio = RelatorioVozEditorialMDA()
+
+    # --- Plano de voz editorial (lente MDA por gênero) ---
+    if brief is not None:
+        try:
+            from mkt_flow_p0.editorial_voice_adapter import (
+                editorial_voice_plan,
+                editorial_argument_plan,
+                surface_style_signals,
+                editorial_placeholder_signals,
+                markdown_table_structure_signals,
+            )
+            plano = editorial_voice_plan(brief)
+            argumento = editorial_argument_plan(brief)
+            movimentos = argumento["moves"]
+
+            relatorio.brief_sha256 = plano["brief_sha256"]
+            relatorio.genero = plano["genre"]
+            relatorio.lente = plano["lens"]
+            relatorio.lente_nome = plano["lens_name"]
+            relatorio.plano_abertura = plano["opening"]
+            relatorio.plano_desenvolvimento = plano["development"]
+            relatorio.plano_desfecho = plano["ending"]
+            relatorio.movimento_tese = movimentos.get("thesis")
+            relatorio.movimento_prova = movimentos.get("evidence")
+            relatorio.movimento_consequencia = movimentos.get("consequence")
+            relatorio.movimento_contrapeso = movimentos.get("tradeoff")
+            relatorio.movimento_veredito = movimentos.get("closing")
+
+            # Sinais de estilo (conectivos mecânicos, fechamento)
+            estilo = surface_style_signals(markdown)
+            relatorio.sinais_estilo = list(estilo.get("signals", []))
+
+            # Sinais de placeholder / metacomentário
+            placeholders = editorial_placeholder_signals(markdown)
+            relatorio.sinais_placeholder = list(placeholders.get("signals", []))
+
+            # Sinais de estrutura de tabela
+            tabelas = markdown_table_structure_signals(markdown)
+            relatorio.sinais_tabela = list(tabelas.get("signals", []))
+
+        except Exception as exc:  # diagnóstico nunca bloqueia o pipeline
+            relatorio.sinais_estilo.append(f"erro_mda_voz:{exc}")
+
+    # --- Avaliação substantiva (MDA) ---
+    if markdown and brief is not None:
+        try:
+            from mkt_flow_p0.editorial_substance import assess_editorial_release
+            release = assess_editorial_release(markdown, brief=brief, review=review, receipts=receipts)
+            relatorio.status_substancia = release.get("status")
+            relatorio.pendencias_substancia = list(release.get("blockers", []))
+            sub = release.get("substance", {})
+            relatorio.scores_substancia = dict(sub.get("scores", {}))
+            relatorio.factual_approval = bool(release.get("factual_approval"))
+            relatorio.publication_authorized = bool(release.get("publication_authorized"))
+
+            read = release.get("readiness", {})
+            relatorio.recibos_faltantes = list(read.get("missing_receipts", []))
+
+        except Exception as exc:
+            relatorio.pendencias_substancia.append(f"erro_mda_substancia:{exc}")
+
+    return relatorio

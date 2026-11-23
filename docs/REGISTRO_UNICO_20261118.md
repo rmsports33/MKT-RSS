@@ -591,6 +591,25 @@ nesta data), e não pendentes como constava em anotação anterior de sessão. O
 | Documento | `mkt_flow_p0/linguagem_validator.py`, `tests/unit/test_linguagem_validator.py`, `pipeline_rss.py` (integracao) |
 | Limites de execucao | Nenhuma escrita em WordPress/Turso, nenhum broker, chave nova, merge, push, deploy ou publicacao; 0 GitHub Actions |
 
+## 43. Metacomentários e voz editorial MDA — 23/11/2026
+
+| Item | Status |
+|---|---|
+| Pergunta | Como detectar metacomentários no corpo do texto e verificar estilística/voz editorial via módulo MDA antes da gravação no WordPress? |
+| Metacomentarios | `detectar_metacomentarios()` em `mkt_flow_p0/linguagem_validator.py` detecta: metatexto de produção ("este texto segue o briefing editorial", "como modelo de linguagem", "este artigo foi gerado por prompt"), marcadores não resolvidos ([fonte], [inserir X], TODO, TBD, XXX, link afiliado). Severidade: alta para metacomentário, crítica para placeholder. |
+| Voz editorial MDA | `verificar_voz_editorial_mda()` usa `mkt_flow_p0.editorial_voice_adapter` (plano de voz por gênero, sinais de placeholder, sinais de estilo, sinais de tabela) e `mkt_flow_p0.editorial_substance` (avaliação substantiva, prontidão editorial, recibos). |
+| Lentes MDA disponíveis | documental (noticia), analitica (analise), didatica (guia), comparativa (comparativo/review), factual (nota_breve), cientifica (quando angle contem termos de pesquisa). |
+| Sinais de estilo | Conectivos mecânicos (além disso, portanto, em suma...), revisar função do fechamento (em suma, em conclusão, por fim). |
+| Sinais de placeholder | Marcador editorial não resolvido, metatexto de produção no artigo. |
+| Sinais de tabela | Tabela markdown sem separador, colunas inconsistentes. |
+| Avaliação substantiva | Critérios MDA: reader_need, editorial_angle, decision_support, voice, source_limits. Pontuação 0-4 por critério, revisão humana exigida. |
+| Integracao | Chamado em `pipeline_rss.py` nos caminhos `handoff_only` e `CONEXO_RSS_DRAFT`/`CONEXO_RSS_DRAFT_STAGING=1`. Resultado em `qualidade_editorial["auditoria_linguagem"]` e `qualidade_editorial["auditoria_voz_editorial_mda"]`. |
+| Politica de execucao | Apenas diagnóstico; NUNCA bloqueia gravacao nem autoriza publicacao. Publicacao depende de revisao humana (owner_id=3) + aceite explicito. Gate `GATE_PUBLICACAO_ENABLED` permanece `false`. |
+| Testes | 34 testes em `tests/unit/test_linguagem_validator.py` (incluindo metacomentarios e integracao MDA). Todos passam. |
+| Limites | Dicionario ortografico PT-BR minimo. Gramatica e concordancia sao heuristicas. Voz editorial e avaliacao substantiva sao diagnosticos, nao aprovacao. Nenhuma correcao automatica que altere o sentido do texto. |
+| Documento | `mkt_flow_p0/linguagem_validator.py`, `tests/unit/test_linguagem_validator.py`, `pipeline_rss.py` |
+| Limites de execucao | Nenhuma escrita em WordPress/Turso, nenhum broker, chave nova, merge, push, deploy ou publicacao; 0 GitHub Actions |
+
 ## Referência por tema
 
 - SEO/GEO/AEO: `docs/REGRA15_NOTAS.md`, `docs/PENDENCIAS_2026-10-03.md`, `docs/CLOUD_EDITORIAL_20261109.md`
