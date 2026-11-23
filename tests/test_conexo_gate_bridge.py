@@ -191,15 +191,25 @@ def evidence_item(name):
 
 def gate_evidence(report=None):
     report = report or reviewer_report()
-    return {
-        key: {
+    result = {}
+    for key in GATE_REQUIRED_CHECKS:
+        items = [evidence_item(key)]
+        for ref in report["checks"][key].get("evidencia", []):
+            if isinstance(ref, str) and ref.startswith(("https://", "http://")):
+                if not any(item["referencia"] == ref for item in items):
+                    items.append({
+                        "tipo": "url",
+                        "referencia": ref,
+                        "descricao": "Referência citada pelo Revisor Único para esta versão.",
+                        "observado_em": "2026-11-23T13:00:00Z",
+                    })
+        result[key] = {
             "estado": "VERIFICADO",
             "reviewer": REVIEWER,
             "fingerprint": report["fingerprint"],
-            "evidencia": [evidence_item(key)],
+            "evidencia": items,
         }
-        for key in GATE_REQUIRED_CHECKS
-    }
+    return result
 
 
 def build_request(**overrides):
