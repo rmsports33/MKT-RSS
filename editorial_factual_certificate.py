@@ -3,6 +3,10 @@
 HMAC proves a trusted issuer signed the decision; it does NOT independently
 prove that the article's claims are true. Keep the publish gate closed until
 an independently reviewed evidence workflow and atomic WP transition exist.
+
+The issuer below is a signing primitive, not an identity provider. Its caller
+MUST obtain review_record from an authenticated independent-human workflow.
+This module does not authenticate a reviewer, fetch evidence, or publish.
 """
 import hashlib
 import hmac
@@ -44,6 +48,69 @@ def draft_digest(post):
     return hashlib.sha256(encoded).hexdigest()
 
 
+def _certificate_message(body):
+    return json.dumps(body, sort_keys=True, ensure_ascii=False,
+                      separators=(",", ":"), allow_nan=False).encode("utf-8")
+
+
+def issue_factual_certificate(post, review_record, key, *, now=None, ttl_seconds=86400):
+    """Sign a factual review record for one exact persisted draft.
+
+    Trust boundary: review_record must come from an authenticated,
+    independent-human review service. This function validates its shape but
+    cannot establish reviewer identity or independently verify evidence.
+
+    The key must remain in the trusted issuer environment and must never be
+    included in a package, certificate, repository, or client response.
+    """
+    if not isinstance(key, bytes) or len(key) < 32:
+        raise ValueError("factual_certificate_signing_key_invalid")
+    digest = draft_digest(post)
+    if not digest:
+        raise ValueError("factual_certificate_draft_not_signable")
+    if not isinstance(review_record, dict):
+        raise ValueError("factual_certificate_review_record_invalid")
+
+    reviewer_id = review_record.get("reviewer_id")
+    record_url = review_record.get("review_record_url")
+    evidence_refs = review_record.get("evidence_refs")
+    if (review_record.get("decision") != "APROVADO"
+            or review_record.get("review_type") != "independent_human"):
+        raise ValueError("factual_certificate_independent_human_approval_required")
+    if (not isinstance(reviewer_id, str) or not reviewer_id.strip()
+            or len(reviewer_id.strip()) > 120):
+        raise ValueError("factual_certificate_reviewer_invalid")
+    if (not isinstance(record_url, str) or not record_url.startswith("https://")
+            or len(record_url) > 2048):
+        raise ValueError("factual_certificate_review_record_url_invalid")
+    if (not isinstance(evidence_refs, list) or not 1 <= len(evidence_refs) <= 50
+            or not all(isinstance(item, str) and item.startswith("https://")
+                       and len(item) <= 2048 for item in evidence_refs)):
+        raise ValueError("factual_certificate_evidence_refs_invalid")
+    if len(set(evidence_refs)) != len(evidence_refs):
+        raise ValueError("factual_certificate_duplicate_evidence_ref")
+
+    issued_at = int(datetime.now(timezone.utc).timestamp()) if now is None else now
+    if type(issued_at) is not int:
+        raise ValueError("factual_certificate_issued_at_invalid")
+    if type(ttl_seconds) is not int or not 1 <= ttl_seconds <= 86400:
+        raise ValueError("factual_certificate_ttl_invalid")
+
+    body = {
+        "draft_sha256": digest,
+        "reviewer_id": reviewer_id.strip(),
+        "evidence_refs": list(evidence_refs),
+        "decision": "APROVADO",
+        "issued_at": issued_at,
+        "expires_at": issued_at + ttl_seconds,
+        "version": 1,
+        "review_type": "independent_human",
+        "review_record_url": record_url,
+    }
+    signature = hmac.new(key, _certificate_message(body), hashlib.sha256).hexdigest()
+    return {**body, "signature": signature}
+
+
 def verify_factual_certificate(post, certificate, key, *, now=None):
     """Validate issuer identity, article binding, TTL and HMAC. Never writes."""
     if not isinstance(certificate, dict) or not isinstance(key, bytes) or len(key) < 32:
@@ -75,9 +142,7 @@ def verify_factual_certificate(post, certificate, key, *, now=None):
         return False
     body = {k: v for k, v in certificate.items() if k != "signature"}
     try:
-        message = json.dumps(body, sort_keys=True, ensure_ascii=False,
-                             separators=(",", ":"), allow_nan=False).encode("utf-8")
-        expected = hmac.new(key, message, hashlib.sha256).hexdigest()
+        expected = hmac.new(key, _certificate_message(body), hashlib.sha256).hexdigest()
         return hmac.compare_digest(signature, expected)
     except (TypeError, ValueError):
         return False
