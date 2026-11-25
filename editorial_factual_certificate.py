@@ -12,6 +12,7 @@ import hashlib
 import hmac
 import json
 from datetime import datetime, timezone
+from urllib.parse import urlsplit
 
 
 def draft_digest(post):
@@ -53,6 +54,17 @@ def _certificate_message(body):
                       separators=(",", ":"), allow_nan=False).encode("utf-8")
 
 
+def _is_https_reference(value):
+    if not isinstance(value, str) or len(value) > 2048:
+        return False
+    try:
+        parsed = urlsplit(value)
+        return (parsed.scheme == "https" and bool(parsed.hostname)
+                and not parsed.username and not parsed.password)
+    except ValueError:
+        return False
+
+
 def issue_factual_certificate(post, review_record, key, *, now=None, ttl_seconds=86400):
     """Sign a factual review record for one exact persisted draft.
 
@@ -80,12 +92,10 @@ def issue_factual_certificate(post, review_record, key, *, now=None, ttl_seconds
     if (not isinstance(reviewer_id, str) or not reviewer_id.strip()
             or len(reviewer_id.strip()) > 120):
         raise ValueError("factual_certificate_reviewer_invalid")
-    if (not isinstance(record_url, str) or not record_url.startswith("https://")
-            or len(record_url) > 2048):
+    if not _is_https_reference(record_url):
         raise ValueError("factual_certificate_review_record_url_invalid")
     if (not isinstance(evidence_refs, list) or not 1 <= len(evidence_refs) <= 50
-            or not all(isinstance(item, str) and item.startswith("https://")
-                       and len(item) <= 2048 for item in evidence_refs)):
+            or not all(_is_https_reference(item) for item in evidence_refs)):
         raise ValueError("factual_certificate_evidence_refs_invalid")
     if len(set(evidence_refs)) != len(evidence_refs):
         raise ValueError("factual_certificate_duplicate_evidence_ref")
@@ -124,11 +134,11 @@ def verify_factual_certificate(post, certificate, key, *, now=None):
         return False
     if not isinstance(certificate.get("reviewer_id"), str) or not certificate["reviewer_id"].strip():
         return False
-    if not isinstance(certificate.get("review_record_url"), str) or not certificate["review_record_url"].startswith("https://"):
+    if not _is_https_reference(certificate.get("review_record_url")):
         return False
     if not isinstance(certificate.get("evidence_refs"), list) or not certificate["evidence_refs"]:
         return False
-    if not all(isinstance(x, str) and x.startswith("https://") for x in certificate["evidence_refs"]):
+    if not all(_is_https_reference(x) for x in certificate["evidence_refs"]):
         return False
     if type(certificate.get("expires_at")) is not int or type(certificate.get("issued_at")) is not int:
         return False
