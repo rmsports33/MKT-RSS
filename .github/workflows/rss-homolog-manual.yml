@@ -107,6 +107,7 @@ jobs:
           WP_URL: ${{ inputs.mode == 'draft' && secrets.WP_URL || '' }}
           WP_USER: ${{ inputs.mode == 'draft' && secrets.WP_USER || '' }}
           WP_APP_PASSWORD: ${{ inputs.mode == 'draft' && secrets.WP_APP_PASSWORD || '' }}
+          GITHUB_ENVIRONMENT: rss-homolog
         run: |
           python - <<'PY'
           import os
@@ -114,14 +115,19 @@ jobs:
           mode = os.getenv("MODE", "")
           if mode not in ("preflight", "handoff", "draft"):
               raise SystemExit("BLOCKED: invalid mode")
+          # rss-homolog is a VALIDATION environment: there is no staging WP.
+          # Any mode that would write to WordPress must fail here, before
+          # credentials, network calls or generation.
+          if mode == "draft":
+              # rss-homolog is validation only. Staging WP was discontinued and
+              # will not be recreated. Draft mode is disabled here: it would
+              # write a private draft to the PRODUCTION WordPress.
+              raise SystemExit(
+                  "BLOCKED: rss-homolog has no WordPress destination; "
+                  "draft mode disabled (use an explicitly authorized production workflow)"
+              )
           if mode in ("handoff", "draft") and os.getenv("QUOTA_CONFIRMATION") != "QUOTA_GRATUITA":
               raise SystemExit("BLOCKED: free quota not confirmed for generation")
-          if mode == "draft":
-              if os.getenv("DRAFT_CONFIRMATION") != "RASCUNHO":
-                  raise SystemExit("BLOCKED: explicit private-draft confirmation missing")
-              if (os.getenv("WP_URL", "").rstrip("/") != "https://conexotech.com.br"
-                      or not os.getenv("WP_USER") or not os.getenv("WP_APP_PASSWORD")):
-                  raise SystemExit("BLOCKED: WordPress target or credentials unavailable")
           key = os.getenv("GROQ_API_KEY", "").strip()
           model = os.getenv("GROQ_MODEL", "").strip()
           if not key or not model:
@@ -158,38 +164,14 @@ jobs:
           mkdir -p output/handoffs
           python pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-only --handoff-dir output/handoffs > rss-result.jsonl
 
-      - name: Stage exactly one private WordPress draft (no publication)
-        if: ${{ inputs.mode == 'draft' }}
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GROQ_MODEL: ${{ vars.GROQ_MODEL || secrets.GROQ_MODEL || 'openai/gpt-oss-120b' }}
-          WP_URL: ${{ secrets.WP_URL }}
-          WP_USER: ${{ secrets.WP_USER }}
-          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
-          CONEXO_RSS_DRAFT: '1'
-          CONEXO_RSS_DRAFT_STAGING: '0'
-          CONEXO_PRODUCT_LINKS_ENABLED: '1'
-          TURSO_DATABASE_URL: ${{ secrets.TURSO_DATABASE_URL }}
-          TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}
-          CONEXO_RSS_RESEARCH_FEEDS: '1'
-          CONEXO_RSS_RELATED_LINKS: '1'
-          FEATURED_MEDIA_ID: ${{ inputs.featured_media_id }}
-          MEDIA_RIGHTS: ${{ inputs.media_rights_confirmed }}
+      # WordPress draft staging was REMOVED from this workflow. Staging
+      # Hostinger was discontinued and will not be recreated. Creating a draft
+      # here would write to the production WordPress, so the step is disabled.
+      # Production drafts are created only by explicitly authorized workflows.
+      - name: WordPress draft staging disabled (no staging destination)
+        if: ${{ false }}
         run: |
-          mkdir -p output/handoffs
-          media_args=()
-          if [ -n "$FEATURED_MEDIA_ID" ]; then
-            case "$FEATURED_MEDIA_ID" in
-              *[!0-9]*|'') echo "BLOCKED: media ID inválido"; exit 2 ;;
-            esac
-            if [ "$MEDIA_RIGHTS" != "true" ]; then
-              echo "BLOCKED: direitos da imagem não confirmados"; exit 2
-            fi
-            media_args+=(--featured-media-id "$FEATURED_MEDIA_ID" --confirm-media-rights)
-          elif [ "$MEDIA_RIGHTS" = "true" ]; then
-            echo "BLOCKED: confirmação de direitos sem media ID"; exit 2
-          fi
-          python pipeline_rss.py --fonte tecnoblog --limit 1 --handoff-dir output/handoffs "${media_args[@]}" > rss-result.jsonl
+          echo "BLOCKED - no WordPress staging destination; use authorized production workflow"
 
       - name: Verify persisted result and hash (safe summary only)
         if: ${{ inputs.mode == 'handoff' || inputs.mode == 'draft' }}

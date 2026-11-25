@@ -13,6 +13,7 @@ from html.parser import HTMLParser
 
 from tools.wp_identity_preflight import check_identity
 from mkt_flow_p0.editorial_transport import SITE
+from mkt_flow_p0.wp_destination import VALIDATION_ENVIRONMENT
 from mkt_flow_p0.editorial_broker_transport import _get_json, publish_via_broker, BrokerBlocked
 from mkt_flow_p0.editorial_trace_gate import REQUIRED
 import requests
@@ -97,6 +98,10 @@ def owner_trace(packet):
 
 
 def release(post_id, version, execute=False, *, session=requests, identity=check_identity):
+    # Validation/homolog environment has no WordPress destination. Fail before
+    # any REST call (including reads) so production is never contacted here.
+    if os.environ.get("GITHUB_ENVIRONMENT", "").strip() == VALIDATION_ENVIRONMENT:
+        raise BrokerBlocked("VALIDATION_ENVIRONMENT_HAS_NO_WORDPRESS_DESTINATION")
     if identity(os.environ) != 'PASS':
         raise BrokerBlocked('MKT_SERVICE_IDENTITY_NOT_VERIFIED')
     if type(post_id) is not int or post_id < 1 or not re.fullmatch(r'[a-f0-9]{64}', version):

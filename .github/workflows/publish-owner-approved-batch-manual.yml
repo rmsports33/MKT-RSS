@@ -47,6 +47,8 @@ jobs:
           WP_URL: ${{ secrets.WP_URL }}
           WP_USER: ${{ secrets.WP_USER }}
           WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+          # Explicit production write authorization. Does NOT replace human approval.
+          WP_OPERATION_MODE: production
           TURSO_DATABASE_URL: libsql://mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
           CONEXO_TRACE_TURSO_ALLOWED_HOST: mkt-rss-homolog-rmsports33.aws-ap-northeast-1.turso.io
           TURSO_AUTH_TOKEN: ${{ secrets.TURSO_AUTH_TOKEN }}

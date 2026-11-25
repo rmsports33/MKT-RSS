@@ -12,6 +12,13 @@ import requests
 from pathlib import Path
 
 from mkt_flow_p0.editorial_transport import SITE, load_core
+from mkt_flow_p0.wp_destination import (
+    DestinationBlocked,
+    resolve as resolve_wp_destination,
+    assert_writable,
+    OPERATION_PUBLISH,
+    OPERATION_DRAFT,
+)
 from mkt_flow_p0.editorial_trace_gate import require_release_trace
 from mkt_flow_p0.editorial_trace_turso import save_turso_trace
 
@@ -45,7 +52,13 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                        post_date_gmt=None, trace_packet=None, timeout=15,
                        session=requests, require_signed_seo=False, owner_release=False):
     """One attempt, never automatically retry uncertain WordPress/Turso writes."""
-    if not isinstance(wp_url, str) or wp_url.rstrip("/") != SITE:
+    _op = OPERATION_PUBLISH if intent in {"publish", "schedule"} else OPERATION_DRAFT
+    try:
+        _dest = resolve_wp_destination(_op)
+        assert_writable(_dest, _op)
+    except DestinationBlocked as exc:
+        raise BrokerBlocked(str(exc)) from None
+    if not isinstance(wp_url, str) or wp_url.rstrip("/") != _dest.url:
         raise BrokerBlocked("WP_ORIGIN_NOT_ALLOWED")
     if not wp_user or not wp_password:
         raise BrokerBlocked("WP_SERVICE_ACCOUNT_NOT_CONFIGURED")
