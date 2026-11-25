@@ -13,7 +13,14 @@ import secrets
 from pathlib import Path
 import requests
 
-SITE = "https://conexotech.com.br"
+from mkt_flow_p0.wp_destination import (
+    CANONICAL_SITE as SITE,
+    DestinationBlocked,
+    resolve as resolve_wp_destination,
+    assert_writable,
+    OPERATION_PUBLISH,
+    OPERATION_DRAFT,
+)
 
 
 def _effective_seo_key():
@@ -95,10 +102,15 @@ def publish_package(package, *, core_root, wp_url, wp_user, wp_password,
     """
     nonce = operation_nonce
     try:
-        if not isinstance(wp_url, str) or wp_url.rstrip("/") != SITE or not wp_user or not wp_password:
-            raise ValueError("site/credenciais inválidos")
         if intent not in {"stage", "draft", "publish", "schedule"} or type(actor_id) is not int or actor_id <= 0:
             raise ValueError("intenção/ator inválidos")
+        # Fail-closed destination resolution BEFORE any REST call.
+        # No implicit fallback to production; validation context has no WP.
+        _op = OPERATION_PUBLISH if intent in {"publish", "schedule"} else OPERATION_DRAFT
+        _dest = resolve_wp_destination(_op)
+        assert_writable(_dest, _op)
+        if not isinstance(wp_url, str) or wp_url.rstrip("/") != _dest.url:
+            raise ValueError("site diverge do destino autorizado")
         # Explicit server-side broker mode, never an automatic fallback.
         # HMAC stays inside WP Vault; Turso trace/readback and the same
         # canonical independent quality+approval Gate remain mandatory.
