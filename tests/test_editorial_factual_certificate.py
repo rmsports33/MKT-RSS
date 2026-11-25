@@ -94,3 +94,11 @@ def test_issuer_rejects_duplicate_evidence_refs():
         issue_factual_certificate(POST, review_record(
             evidence_refs=["https://example.org/source", "https://example.org/source"]),
             KEY, now=100)
+
+def test_issuer_rejects_malformed_or_credential_bearing_https_references():
+    with pytest.raises(ValueError, match="review_record_url_invalid"):
+        issue_factual_certificate(POST, review_record(
+            review_record_url="https://"), KEY, now=100)
+    with pytest.raises(ValueError, match="evidence_refs_invalid"):
+        issue_factual_certificate(POST, review_record(
+            evidence_refs=["https://user:secret@example.org/source"]), KEY, now=100)
