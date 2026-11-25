@@ -22,6 +22,7 @@ from mkt_flow_p0.editorial_broker_transport import (
     BrokerBlocked, _get_json, publish_via_broker,
 )
 from mkt_flow_p0.editorial_transport import SITE
+from mkt_flow_p0.wp_destination import VALIDATION_ENVIRONMENT
 from tools.publish_owner_approved import owner_trace
 from tools.wp_identity_preflight import check_identity
 
@@ -37,7 +38,13 @@ POSTS = (
 )
 
 
+def _require_production_context():
+    if os.environ.get("GITHUB_ENVIRONMENT", "").strip() == VALIDATION_ENVIRONMENT:
+        raise BrokerBlocked("VALIDATION_ENVIRONMENT_HAS_NO_WORDPRESS_DESTINATION")
+
+
 def _site_post(post_id, session):
+    _require_production_context()
     auth = (os.environ["WP_USER"], os.environ["WP_APP_PASSWORD"])
     return _get_json(
         session, f"{SITE}/wp-json/wp/v2/posts/{post_id}?context=edit",
@@ -46,6 +53,7 @@ def _site_post(post_id, session):
 
 
 def _owner_receipt(post_id, session):
+    _require_production_context()
     auth = (os.environ["WP_USER"], os.environ["WP_APP_PASSWORD"])
     return _get_json(
         session, f"{SITE}/wp-json/conexo/v1/editorial/owner-release/{post_id}",
