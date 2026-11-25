@@ -47,6 +47,12 @@ Regra aplicada (somente tÃ­tulo e URL, sem IA):
 | Microsoft encerra suporte a documentos antigos do Word | NotÃ­cia | Afeta usuÃ¡rio comum, consequÃªncia prÃ¡tica clara |
 | Onde roda GTA 6: requisitos | Guia | Busca alta, resposta objetiva, sem preÃ§o |
 
+> **AtualizaÃ§Ã£o 25/11/2026:** a pauta "Anatel manda TIM desligar bloqueio de
+> telemarketing" foi **excluÃ­da** a pedido do proprietÃ¡rio: falta documentaÃ§Ã£o
+> oficial que comprove a matÃ©ria. Post #9900 movido para a lixeira (aÃ§Ã£o
+> reversÃ­vel, conteÃºdo preservado). EvidÃªncia:
+> `docs/editorial-evidence/9900/exclusion-20261125.json`.
+
 ### Os 6 recomendados para rejeiÃ§Ã£o
 
 | Pauta | Motivo |

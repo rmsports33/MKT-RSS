@@ -2,6 +2,11 @@
 
 # Duas pautas escolhidas â€” briefing e conferÃªncia â€” 17/11/2026
 
+> **AtualizaÃ§Ã£o 25/11/2026:** a pauta **Anatel/TIM** foi **excluÃ­da** pelo
+> proprietÃ¡rio por falta de documentaÃ§Ã£o oficial que comprove a matÃ©ria. O post
+> #9900 estÃ¡ na lixeira (conteÃºdo preservado, aÃ§Ã£o reversÃ­vel). EvidÃªncia:
+> `docs/editorial-evidence/9900/exclusion-20261125.json`.
+
 Escolha do proprietÃ¡rio em 17/11: **Anatel/TIM** e **Claro/Senado**.
 Nada foi publicado, nada foi aprovado, nenhuma imagem foi baixada.
 

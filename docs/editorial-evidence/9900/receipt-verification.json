@@ -1,0 +1,21 @@
+{
+  "schema": "conexo-receipt-verification/1",
+  "date": "2026-11-25",
+  "post_id": 9900,
+  "method": "mkt_flow_p0.editorial_provenance.verificar_recibo + validar — somente leitura no corpo baixado via GET autenticado",
+  "result": {
+    "reproduzivel_a_partir_do_corpo": true,
+    "hash_declarado": "d814a82573834d2990c9610f541e97cd10687f2fb1bf0dba07c1f06d9b30e2e7",
+    "hash_calculado": "d814a82573834d2990c9610f541e97cd10687f2fb1bf0dba07c1f06d9b30e2e7",
+    "hash_confere": true,
+    "gate_valido": false,
+    "gate_motivo": "voz_nao_aplicada"
+  },
+  "interpretation": "O hash da marca confere com o corpo atual. Isso é circular: prova que a marca corresponde ao texto, não que o texto veio de um pacote verificado. O registro antigo (REGISTRO_UNICO:576) dizia que o recibo não era reproduzível a partir dos insumos locais; a verificação de 25/11 mostra que ele é reproduzível a partir do próprio corpo, mas continua sem valor de aprovação porque voice_status=NOT_APPLIED e substance_status=PENDING.",
+  "consequences": [
+    "Não usar a correspondência de hash como prova de origem ou qualidade.",
+    "O bloqueio real não é divergência de hash, é ausência de voz aplicada e avaliação substantiva."
+  ],
+  "publication_authorized": false,
+  "human_acceptance": "PENDING"
+}

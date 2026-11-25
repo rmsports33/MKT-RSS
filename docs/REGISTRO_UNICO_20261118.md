@@ -625,12 +625,21 @@ nesta data), e não pendentes como constava em anotação anterior de sessão. O
 - M19 SEO: `docs/M19_INVENTARIO_SEO_20261117.md`
 - Gate política: `docs/EDITORIAL-IMMEDIATE-PUBLICATION-POLICY-20261113.md`
 - Vídeo: `docs/site/politica-curadoria-video.md`
+- OpenCode / navegador / imagens: `docs/AUDITORIA_OPENCODE_NAVEGADOR_IMAGENS_20261125.md` — auditoria 2026, permissões, política de imagens, catálogo de licenças e fontes de apuração aplicados em 25/11/2026 — 13 testes focados passaram
+- Comparativo Tecnoblog x ConexoTech: `docs/AUDITORIA_COMPARATIVO_TECNOBLOG_CONEXOTECH_20261125.md` — cadência, frescor, preços, SEO, itens em desuso e patches das melhorias fáceis — 25/11/2026
+- Origem e diretrizes do texto #9900: `docs/AUDITORIA_ORIGEM_TEXTO_9900_20261125.md` — motor MKT-RSS, voz NOT_APPLIED, substância PENDING, parágrafos quebrados e afirmações sem link — 25/11/2026
+- Mecanismo editorial completo: `docs/AUDITORIA_MECANISMO_EDITORIAL_COMPLETO_20261125.md` — 149 rascunhos varridos, 2 com marca, gerados x reescritos (#9813 ASSISTED_ADAPTED PASS x #9900 NOT_APPLIED PENDING), cadeia causal e 10 pontos de perda — 25/11/2026
+- Resoluções do mecanismo editorial: `docs/RESOLUCOES_MECANISMO_EDITORIAL_20261125.md` — origem registrada, EXECUTED separado de PASS, recibo verificável, reparo e lente MDA conectados, carimbo invalidado na edição — 116 testes aprovados em 25/11/2026
+- Reparo dos rascunhos #9900/#9906: `docs/editorial-evidence/9900/draft-repair-20261125.json` — #9900 de 51 para 15 parágrafos, afirmações sem fonte reescritas, novo hash com readback exato; #9906 sem alteração necessária — 25/11/2026
+- Exclusão da pauta Anatel/TIM (#9900): `docs/editorial-evidence/9900/exclusion-20261125.json` — proprietário revisou e concluiu que falta documentação oficial; post movido para lixeira via DELETE autorizado pelo Gate, readback `trash`, conteúdo preservado e hash inalterado — 25/11/2026
 
 <!-- registro-unico:auto:start -->
 
 ## Documentos de auditoria reconhecidos (atualizado automaticamente)
 
+- `docs/AUDITORIA_COMPARATIVO_TECNOBLOG_CONEXOTECH_20261125.md` — Auditoria comparativa — Tecnoblog x ConexoTech — 25/11/2026
 - `docs/AUDITORIA_MODULOS_CREDENCIAIS_20261118.md` — Auditoria de mÃ³dulos desligados e credenciais â€” 18/11/2026
+- `docs/AUDITORIA_OPENCODE_NAVEGADOR_IMAGENS_20261125.md` — Auditoria OpenCode 2026 — navegador, permissões e imagens — 25/11/2026
 - `docs/CREDENCIAL_MOTOR_20261117.md` — Credencial do motor editorial â€” 17/11/2026
 - `docs/GARGALO_RASCUNHO_WORDPRESS_20261117.md` — Gargalo entre geraÃ§Ã£o e WordPress â€” diagnÃ³stico e soluÃ§Ã£o â€” 17/11/2026
 - `docs/M07_FILA_CORRECAO_20261117.md` — M07 â€” Fila de correÃ§Ã£o de rascunhos â€” 17/11/2026

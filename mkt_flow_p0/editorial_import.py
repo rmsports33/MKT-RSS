@@ -7,6 +7,7 @@ import argparse
 import json
 import hashlib
 import os
+import re
 from pathlib import Path
 
 from mkt_flow_p0.editorial_identity import (
@@ -14,10 +15,49 @@ from mkt_flow_p0.editorial_identity import (
 )
 
 
+def normalizar_proveniencia_autoria(value):
+    """Registre quem escreveu o texto preexistente, sem inferir ferramenta/modelo.
+
+    Ausência é registrada explicitamente como NAO_REGISTRADA. Prova fornecida é
+    recusada (ValueError) se não trouxer tool, version e input_sha256 válidos.
+    Nunca altera o handoff: a validação de metadados é rígida.
+    """
+    if value is None:
+        return {"status": "NAO_REGISTRADA",
+                "reason": "prewritten_import_sem_prova_de_origem"}
+    if (not isinstance(value, dict)
+            or not {"tool", "version", "input_sha256"}.issubset(value)):
+        raise ValueError("prova de origem da autoria inválida")
+    tool, version, input_sha = value["tool"], value["version"], value["input_sha256"]
+    if not isinstance(tool, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,79}", tool.strip()):
+        raise ValueError("ferramenta de autoria inválida")
+    if not isinstance(version, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:+/-]{0,79}", version.strip()):
+        raise ValueError("versão da ferramenta de autoria inválida")
+    if not isinstance(input_sha, str) or not re.fullmatch(r"[0-9a-f]{64}", input_sha):
+        raise ValueError("hash de entrada da autoria inválido")
+    return {"status": "REGISTRADA", "tool": tool.strip(),
+            "version": version.strip(), "input_sha256": input_sha}
+
+
+_APPROVAL_OUTCOMES = frozenset({"PASS", "PRONTO_PARA_REVISAO_HUMANA"})
+
+
+def separar_execucao_aprovacao(module_manifest):
+    """Separa EXECUTED de PASS de forma conservadora; não autoriza publicação."""
+    manifest = module_manifest if isinstance(module_manifest, list) else []
+    return {
+        "executed": [m["id"] for m in manifest if isinstance(m, dict) and "id" in m],
+        "passed": [m["id"] for m in manifest if isinstance(m, dict)
+                   and m.get("outcome") in _APPROVAL_OUTCOMES],
+        "note": "EXECUTADO não é APROVADO; nenhum campo aqui autoriza publicação",
+    }
+
+
 def _preparar_handoff(payload):
     """Validate an editor/provider input without side effects."""
     required_payload = {"source_url", "source_name", "article", "research"}
-    optional_payload = {"editorial_voice_application", "editorial_brief", "editorial_substance_review"}
+    optional_payload = {"editorial_voice_application", "editorial_brief",
+                        "editorial_substance_review", "authoring_provenance"}
     if (not isinstance(payload, dict)
             or not required_payload.issubset(payload)
             or set(payload) - required_payload - optional_payload):
@@ -51,6 +91,7 @@ def importar_artigo_para_handoff(payload, output_dir):
 
 def processar_artigo_importado(payload, output_dir, *, genero="guia", image_manifest=None, image_base=None, offline=True, image_fit_review=None, development_receipt=None,
                                 featured_media_id=None, media_rights_confirmed=False,
+                                image_rights_evidence=None,
                                 verified_related_urls=None, force_development=False):
     """Always run editorial triage; online mode develops pending prose automatically.
 
@@ -69,6 +110,8 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         raise ValueError("adaptação online incompatível com offline")
     # Validate/renderability before creating an output directory or handoff.
     handoff = _preparar_handoff(payload)
+    # Origem da autoria é proveniência do insumo, não metadado do handoff.
+    authoring_provenance = normalizar_proveniencia_autoria(payload.get("authoring_provenance"))
     errors = validar_pacote(handoff["metadata"], handoff["markdown"])
     if errors:
         raise ValueError("; ".join(errors))
@@ -134,6 +177,15 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
     trace["events"][0] = {"stage": "authoring", "module_id": "mkt-rss.editorial-import",
         "module_version": "import-flow/2", "status": "DEVELOPED_WITH_PROVIDER" if development_receipt else "IMPORTED_NO_PROVIDER",
         "evidence_ref": "content-sha256:" + trace["content_sha256"]}
+    # Evento novo e separado: o evento de autoria existente permanece intacto.
+    provenance_event = {"stage": "authoring", "module_id": "mkt-rss.editorial-import-provenance",
+        "module_version": "import-flow/provenance-1", "status": authoring_provenance["status"]}
+    if authoring_provenance["status"] == "REGISTRADA":
+        provenance_event.update({k: authoring_provenance[k]
+                                 for k in ("tool", "version", "input_sha256")})
+    else:
+        provenance_event["reason"] = authoring_provenance["reason"]
+    trace["events"].append(provenance_event)
     trace["events"].append({"stage":"package_validation", "module_id":"mkt-rss.editorial-identity",
         "module_version":"import-flow/1", "status":"PASS"})
     trace_path = save_trace(trace, root)
@@ -170,9 +222,14 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
         "voice_quality_review":readiness.get("revisao_de_voz", "PENDENTE_AVALIACAO_HUMANA"),
         "image_research":image_plan, "image_generation_request":image_plan.get('generation_request'),
         "image_ai_used":bool(image_plan.get('ai_called')),
+        "image_rights": {"confirmed": bool(media_rights_confirmed),
+            "featured_media_id": featured_media_id, "evidence": image_rights_evidence},
+        "authoring_provenance": authoring_provenance,
         "related_links":"VERIFIED_BY_CALLER" if verified_related_urls else "NOT_VERIFIED",
         "provider_called":bool(development_receipt),"network_called":bool(development_receipt) or image_plan.get("network_called",False),"wordpress_written":False,
         "publication_authorized":False,"human_acceptance":"PENDING"}
+    # EXECUTED descreve execução; PASS descreve avaliação. Nada aqui autoriza publicação.
+    result["execution_vs_approval"] = separar_execucao_aprovacao(result["module_manifest"])
     # Proveniencia: o corpo gerado pelo motor sai marcado. O Gate recusa
     # rascunhos sem esta marca, independentemente de quem escreveu o texto.
     from mkt_flow_p0.editorial_provenance import marcar

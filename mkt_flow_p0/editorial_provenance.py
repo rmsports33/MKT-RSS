@@ -40,6 +40,45 @@ def marcar(corpo, *, modules, voice_status, substance_status, image_rights_confi
     return limpo.rstrip() + "\n" + marca, manifesto
 
 
+def verificar_recibo(corpo):
+    """Reconstrói o recibo a partir do proprio corpo e compara com a marca.
+
+    Nao concede aprovacao: apenas responde se o recibo e reproduzivel, isto e,
+    se os dados da marca geram exatamente a mesma marca quando recomputados.
+    Serve para detectar recibos que nao podem ser provados a partir do texto.
+    """
+    encontrado = PADRAO.search(corpo or "")
+    if not encontrado:
+        return {"reproduzivel": False, "motivo": "marca_ausente"}
+    try:
+        manifesto = json.loads(encontrado.group(1))
+    except ValueError:
+        return {"reproduzivel": False, "motivo": "manifesto_invalido"}
+    if not isinstance(manifesto, dict):
+        return {"reproduzivel": False, "motivo": "manifesto_invalido"}
+    limpo = PADRAO.sub("", corpo)
+    calculado = hash_corpo(limpo)
+    declarado = manifesto.get("content_sha256")
+    try:
+        _, reconstruido = marcar(
+            limpo,
+            modules=manifesto.get("modules") or {},
+            voice_status=manifesto.get("voice_status", "NOT_APPLIED"),
+            substance_status=manifesto.get("substance_status", "PENDING"),
+            image_rights_confirmed=bool(manifesto.get("image_rights_confirmed")),
+            version_sha256=str(manifesto.get("version_sha256") or ""))
+    except (TypeError, ValueError):
+        reconstruido = None
+    return {
+        "reproduzivel": reconstruido == manifesto,
+        "hash_declarado": declarado,
+        "hash_calculado": calculado,
+        "hash_confere": declarado == calculado,
+        "manifesto": manifesto,
+        "reconstruido": reconstruido,
+    }
+
+
 def validar(corpo):
     """Espelho local da checagem do Gate. Nao concede aprovacao alguma."""
     encontrado = PADRAO.search(corpo)

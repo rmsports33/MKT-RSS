@@ -1,0 +1,38 @@
+{
+  "schema": "conexo-draft-repair/1",
+  "date": "2026-11-25",
+  "posts": [
+    {
+      "post_id": 9900,
+      "status": "CORRIGIDO",
+      "paragrafos_antes": 51,
+      "paragrafos_depois": 15,
+      "sha256_antes": "4c54c89200ec0ae237f3a0454b699ae3c141e71415041683aa60eebcb8a9abba",
+      "sha256_depois": "6289191c92118e7cf252ccae2df03152c75d38b8b91c31150bd95a9f734c8f13",
+      "content_sha256_marca": "c1c48d72c568a0a711d4ea894a2881ef8606bdcbab59ed9efd9531c474f126f2",
+      "recibo_reproduzivel": true,
+      "gate_motivo": "voz_nao_aplicada",
+      "bloqueios_linguagem": [],
+      "voice_status": "NOT_APPLIED",
+      "substance_status": "PENDING",
+      "escrita_wordpress": "READBACK_EXATO",
+      "publication_authorized": false
+    },
+    {
+      "post_id": 9906,
+      "status": "SEM_ALTERACAO",
+      "paragrafos_antes": 22,
+      "paragrafos_depois": 22,
+      "sha256_antes": "1055ad90f7f4d8fed5de3489dff0d5b139048e03fc403ecbce7230332987f45f",
+      "sha256_depois": "1055ad90f7f4d8fed5de3489dff0d5b139048e03fc403ecbce7230332987f45f",
+      "content_sha256_marca": "fe6f60b4a09b1413c7648ecfedefdd3fdc7392cceacc4e2cc0092bfa464e727e",
+      "recibo_reproduzivel": true,
+      "gate_motivo": "voz_nao_aplicada",
+      "bloqueios_linguagem": [],
+      "voice_status": "NOT_APPLIED",
+      "substance_status": "PENDING",
+      "escrita_wordpress": null,
+      "publication_authorized": false
+    }
+  ]
+}

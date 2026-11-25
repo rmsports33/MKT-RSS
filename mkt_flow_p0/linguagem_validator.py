@@ -934,6 +934,31 @@ def validar_html_estrutural(html: str) -> list[ErroLinguagem]:
     return erros
 
 
+def bloqueios_para_rascunho(relatorio) -> list[dict]:
+    """Erros que impedem oferecer o rascunho para análise humana.
+
+    Conservador: bloqueia apenas severidade crítica e problemas estruturais ou
+    de caractere de severidade alta. Tipografia/gramática continuam como
+    pendências sinalizadas, porque são heurísticas com falso positivo.
+    """
+    erros = relatorio.get("erros", []) if isinstance(relatorio, dict) else relatorio.erros
+    bloqueios = []
+    for erro in erros:
+        item = erro if isinstance(erro, dict) else {
+            "codigo": erro.codigo, "tipo": erro.tipo,
+            "severidade": erro.severidade, "descricao": erro.descricao,
+        }
+        severidade = item.get("severidade")
+        tipo = item.get("tipo")
+        if severidade == "crítica" or (tipo in ("html", "caractere")
+                                       and severidade in ("alta", "crítica")):
+            bloqueios.append({
+                "codigo": item.get("codigo"), "tipo": tipo,
+                "severidade": severidade, "descricao": item.get("descricao"),
+            })
+    return bloqueios
+
+
 # ---------------------------------------------------------------------------
 # Integração com o módulo MDA (voz editorial e estilística)
 # ---------------------------------------------------------------------------

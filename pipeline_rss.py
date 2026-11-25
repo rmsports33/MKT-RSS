@@ -24,6 +24,39 @@ logger = logging.getLogger("pipeline_rss")
 DB_PATH = Path(__file__).parent / "mkt_flow_p0.db"
 
 
+def _reparar_html_fragmentado(html):
+    """Aplica o reparo de paragrafos apenas quando ha fragmentacao detectada.
+
+    Diagnostico: nao autoriza publicacao e nao altera o Markdown nem o handoff.
+    """
+    try:
+        from mkt_flow_p0.html_paragrafos import listas_seguidas, reparar_paragrafos
+        detectadas = listas_seguidas(html)
+        if detectadas <= 0:
+            return html, {"aplicado": False, "motivo": "sem_fragmentacao_detectada",
+                          "autoriza_publicacao": False}
+        reparado = reparar_paragrafos(html)
+        return reparado, {"aplicado": reparado != html,
+                          "fragmentacoes_detectadas": detectadas,
+                          "autoriza_publicacao": False}
+    except Exception as exc:
+        return html, {"aplicado": False, "erro": type(exc).__name__,
+                      "autoriza_publicacao": False}
+
+
+def _auditoria_voz_mda(texto_final, brief):
+    """Registra a lente MDA como diagnostico; nunca concede voz ou aprovacao."""
+    try:
+        from dataclasses import asdict
+        from mkt_flow_p0.linguagem_validator import verificar_voz_editorial_mda
+        relatorio = verificar_voz_editorial_mda(texto_final, brief=brief)
+        return {"executado": True, "relatorio": asdict(relatorio),
+                "avaliacao_humana": False, "autoriza_publicacao": False}
+    except Exception as exc:
+        return {"executado": False, "erro": type(exc).__name__,
+                "autoriza_publicacao": False}
+
+
 def init_db():
     con = sqlite3.connect(DB_PATH)
     con.execute("""CREATE TABLE IF NOT EXISTS rss_runs (
@@ -390,7 +423,13 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             logger.warning("Validacao de linguagem falhou: %s", exc)
             auditoria_linguagem = {"erro": "validacao_linguagem_indisponible",
                                    "total_erros": 0}
+        from dataclasses import asdict, is_dataclass
+        if is_dataclass(auditoria_linguagem):
+            auditoria_linguagem = asdict(auditoria_linguagem)
         qualidade_editorial["auditoria_linguagem"] = auditoria_linguagem
+        html, reparo_html = _reparar_html_fragmentado(html)
+        qualidade_editorial["reparo_html"] = reparo_html
+        qualidade_editorial["auditoria_voz_mda"] = _auditoria_voz_mda(texto_final, brief)
 
         return {
             "acao": "pacote_editorial_criado", "escreveu": False,
@@ -417,17 +456,31 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             return {"acao": "falha", "motivo": "handoff_editorial_invalido",
                     "url": url_fonte, "escreveu": False}
 
-        # Validação de linguagem (ortografia, tipografia, gramática, HTML)
-        # antes de gravar no WordPress. Sinaliza pendências; nunca bloqueia
-        # a gravação de rascunho nem autoriza publicação.
-        from mkt_flow_p0.linguagem_validator import validar_texto
+        # Reparo primeiro: o rascunho oferecido ao humano ja deve estar integro.
+        html, reparo_html = _reparar_html_fragmentado(html)
+        qualidade_editorial["reparo_html"] = reparo_html
+
+        # Validacao de linguagem apos o reparo. Erros criticos/estruturais
+        # bloqueiam a gravacao; heuristicas de estilo continuam sinalizadas.
+        from mkt_flow_p0.linguagem_validator import validar_texto, bloqueios_para_rascunho
         try:
             auditoria_linguagem = validar_texto(html, html_original=html)
         except Exception as exc:
             logger.warning("Validacao de linguagem falhou: %s", exc)
             auditoria_linguagem = {"erro": "validacao_linguagem_indisponible",
                                    "total_erros": 0}
+        from dataclasses import asdict, is_dataclass
+        if is_dataclass(auditoria_linguagem):
+            auditoria_linguagem = asdict(auditoria_linguagem)
         qualidade_editorial["auditoria_linguagem"] = auditoria_linguagem
+        qualidade_editorial["auditoria_voz_mda"] = _auditoria_voz_mda(texto_final, brief)
+
+        bloqueios = bloqueios_para_rascunho(auditoria_linguagem)
+        if bloqueios:
+            return {"acao": "falha",
+                    "motivo": "rascunho_bloqueado_por_auditoria_linguagem",
+                    "bloqueios": bloqueios, "escreveu": False, "url": url_fonte,
+                    "qualidade_editorial": qualidade_editorial}
 
         from mkt_flow_p0.wp_draft_staging import stage_rss_draft
         staged = stage_rss_draft(
