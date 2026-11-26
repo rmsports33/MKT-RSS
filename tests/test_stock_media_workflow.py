@@ -3,8 +3,9 @@ import io
 from unittest.mock import patch
 from PIL import Image
 
+from mkt_flow_p0.stock_media_multi_source import PIXABAY_LICENSE
 from mkt_flow_p0.stock_media_workflow import (
-    associar_foto_gratuita_a_rascunho, validar_escolha
+    ORIGEM_LICENCA, associar_foto_gratuita_a_rascunho, validar_escolha
 )
 
 PHOTO = {
@@ -228,3 +229,51 @@ def test_cli_sem_chave_gratuita_fica_pendente(monkeypatch, capsys):
     }):
         assert sm.main(["--discover", "tema"]) == 2
     assert "PESQUISA_BANCO_PENDENTE" in capsys.readouterr().out
+
+
+PIXABAY_PHOTO = {
+    "url": "https://pixabay.com/get/ed6a99fd0a76647_1280.jpg",
+    "pagina_origem": "https://pixabay.com/photos/smartphone-123/",
+    "autor": "AutorPixabay", "licenca_url": PIXABAY_LICENSE,
+    "origem": "pixabay",
+    "revisao_direitos": "APROVADO_PELO_EDITOR",
+    "revisao_visual": "APROVADO_PELO_EDITOR",
+    "alt_text": "Smartphone ilustrativo sobre fundo neutro",
+    "approved_post_id": 9769,
+    "approved_post_modified_gmt": PHOTO["approved_post_modified_gmt"],
+}
+
+
+class PixabayClient(Client):
+    def get(self, url, **kwargs):
+        if url.startswith("https://pixabay.com/get/"):
+            self.calls.append(("GET", url))
+            return Response(200, headers={"Content-Type": "image/jpeg"},
+                            image=_picture())
+        return super().get(url, **kwargs)
+
+
+def test_foto_pixabay_aprovada_gera_capa_e_credito():
+    cl = PixabayClient()
+    result = run(cl, PIXABAY_PHOTO)
+    assert result["status"] == "CAPA_ASSOCIADA_A_DRAFT"
+    img = Image.open(io.BytesIO(cl.created))
+    assert img.size == (1200, 675)
+    assert "AutorPixabay" in cl.metadata["caption"]
+    assert "Pixabay" in cl.metadata["caption"]
+    assert PIXABAY_LICENSE in cl.metadata["description"]
+    assert cl.metadata["alt_text"] == PIXABAY_PHOTO["alt_text"]
+
+
+def test_pixabay_com_licenca_de_outra_fonte_bloqueia_sem_rede():
+    cl = Client()
+    foto = dict(PIXABAY_PHOTO, licenca_url=ORIGEM_LICENCA)
+    assert run(cl, foto)["status"] == "BLOQUEADO"
+    assert cl.calls == []
+
+
+def test_pixabay_com_url_de_outra_fonte_bloqueia_sem_rede():
+    cl = Client()
+    foto = dict(PIXABAY_PHOTO, url="https://images.unsplash.com/photo-x")
+    assert run(cl, foto)["status"] == "BLOQUEADO"
+    assert cl.calls == []
