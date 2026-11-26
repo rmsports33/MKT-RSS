@@ -43,8 +43,29 @@ def _get_json(session, url, auth, timeout):
 def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                        trace_run_id, intent="publish", publication_reference=None,
                        post_date_gmt=None, trace_packet=None, timeout=15,
-                       session=requests, require_signed_seo=False, owner_release=False):
-    """One attempt, never automatically retry uncertain WordPress/Turso writes."""
+                       session=requests, require_signed_seo=False, owner_release=False,
+                       review_certificate=None, review_certificate_key=None,
+                       review_lookup=None, registry_verification_key=None):
+    """One attempt, never automatically retry uncertain WordPress/Turso writes.
+
+    When a Revisor Único review is supplied, it is verified against an
+    authenticated registry envelope BEFORE any WordPress write. All existing
+    checks remain mandatory; this guard is additive (fail-closed).
+    """
+    # Revisor Único guard — integrated fix for the broker authorization gap.
+    # Absence remains compatible with legacy owner_release/signed flows;
+    # presence requires full verification (never a self-declared PASS).
+    if review_certificate is not None:
+        from mkt_flow_p0.broker_revisor_guard import require_broker_review
+        try:
+            require_broker_review(
+                {"id": post_id} if isinstance(post_id, int) else None,
+                review_certificate,
+                review_certificate_key,
+                review_lookup,
+                registry_verification_key)
+        except Exception as exc:
+            raise BrokerBlocked(str(exc)) from None
     if not isinstance(wp_url, str) or wp_url.rstrip("/") != SITE:
         raise BrokerBlocked("WP_ORIGIN_NOT_ALLOWED")
     if not wp_user or not wp_password:
