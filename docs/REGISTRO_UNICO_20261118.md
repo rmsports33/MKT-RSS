@@ -630,6 +630,7 @@ nesta data), e não pendentes como constava em anotação anterior de sessão. O
 - Origem e diretrizes do texto #9900: `docs/AUDITORIA_ORIGEM_TEXTO_9900_20261125.md` — motor MKT-RSS, voz NOT_APPLIED, substância PENDING, parágrafos quebrados e afirmações sem link — 25/11/2026
 - Mecanismo editorial completo: `docs/AUDITORIA_MECANISMO_EDITORIAL_COMPLETO_20261125.md` — 149 rascunhos varridos, 2 com marca, gerados x reescritos (#9813 ASSISTED_ADAPTED PASS x #9900 NOT_APPLIED PENDING), cadeia causal e 10 pontos de perda — 25/11/2026
 - Resoluções do mecanismo editorial: `docs/RESOLUCOES_MECANISMO_EDITORIAL_20261125.md` — origem registrada, EXECUTED separado de PASS, recibo verificável, reparo e lente MDA conectados, carimbo invalidado na edição — 116 testes aprovados em 25/11/2026
+- Guia de teste de geração: `docs/GUIA_TESTE_GERACAO_ARTIGO_20261125.md` — passo a passo para gerar e revisar um artigo de teste sem publicar — 25/11/2026
 - Reparo dos rascunhos #9900/#9906: `docs/editorial-evidence/9900/draft-repair-20261125.json` — #9900 de 51 para 15 parágrafos, afirmações sem fonte reescritas, novo hash com readback exato; #9906 sem alteração necessária — 25/11/2026
 - Exclusão da pauta Anatel/TIM (#9900): `docs/editorial-evidence/9900/exclusion-20261125.json` — proprietário revisou e concluiu que falta documentação oficial; post movido para lixeira via DELETE autorizado pelo Gate, readback `trash`, conteúdo preservado e hash inalterado — 25/11/2026
 
