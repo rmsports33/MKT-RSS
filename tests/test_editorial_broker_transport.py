@@ -1,9 +1,24 @@
-"""Fail-closed broker adapter tests; no real WordPress, Turso or secrets."""
+"""Fail-closed broker adapter tests; no real WordPress, Turso or secrets.
+
+All HTTP calls use FakeHTTP/StrictHTTP (fully simulated). Production write is
+declared explicitly via synthetic env vars; no real network or credentials.
+"""
 import hashlib
+import os
 import unittest
 from unittest.mock import patch
 
 from mkt_flow_p0.editorial_broker_transport import publish_via_broker, BrokerBlocked
+from mkt_flow_p0.wp_destination import CANONICAL_SITE
+
+# Synthetic production authorization for these unit tests only.
+SYNTHETIC_PROD_ENV = {
+    "WP_OPERATION_MODE": "production",
+    "GITHUB_ENVIRONMENT": "",
+    "WP_URL": CANONICAL_SITE,
+    "WP_USER": "svc",
+    "WP_APP_PASSWORD": "test",
+}
 
 
 POST_ID = 9769
@@ -98,6 +113,13 @@ def run(http, **kwargs):
 
 
 class BrokerTests(unittest.TestCase):
+    def setUp(self):
+        self._env_patch = patch.dict(os.environ, SYNTHETIC_PROD_ENV, clear=False)
+        self._env_patch.start()
+
+    def tearDown(self):
+        self._env_patch.stop()
+
     def strict_run(self, http):
         seo = {'provider': 'native', 'canonical': 'https://conexotech.com.br/revisado/',
                'title': 'SEO revisto', 'description': 'Descricao revista.'}

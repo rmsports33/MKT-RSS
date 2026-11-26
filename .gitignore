@@ -9,6 +9,9 @@ credentials.json
 *.db-wal
 *.db-shm
 
+# artigos nao publicados nao entram no repositorio publico (evita canibalizar o site)
+artigos-pendentes/
+
 # whois cache
 .cache/whois/
 whois_report.json

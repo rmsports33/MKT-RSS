@@ -1,5 +1,34 @@
 # Memória do Projeto — MKT-RSS / MDA AUTO
 
+## Ponto de entrada único — 18/11/2026 (precedência alta)
+
+Para começar a trabalhar em qualquer plataforma (OpenCode, ChatGPT, DeepSeek, etc.),
+sempre use primeiro o arquivo **`tools/iniciar.py`** (ou **`iniciar.bat`** / **`iniciar.sh`**):
+
+```bash
+python tools/iniciar.py
+```
+
+Este arquivo sozinho:
+- Verifica se o registro único está completo
+- Atualiza automaticamente o registro (se precisar)
+- Diz em palavras simples se pode começar ou o que falta
+
+## Registro único de auditorias — 18/11/2026
+
+Toda conferência, inventário, ficha, auditoria ou checagem deve constar por
+`docs/REGISTRO_UNICO_20261118.md`. Um achado só tem status depois de constar ali;
+relatório solto que não está no registro é considerado inexistente.
+
+- Nenhum documento de auditoria novo é aceito no mesmo commit sem virar referência
+  no registro único.
+- Detalhe longo só fica em arquivo próprio quando não couber no registro; nesse caso
+  o registro aponta para ele, e não o contrário.
+- Relatório novo não deve repetir conteúdo que já está no registro; deve apontá-lo.
+- Toda execução de auditoria deve rodar `python tools/check_registro_unico.py`
+  antes de commit. Em clone novo, configurar uma vez: `git config core.hooksPath .githooks`
+  (o hook `.githooks/pre-commit` já roda a checagem automaticamente).
+
 ## Política de economia de execução — decisão do proprietário, 13/11/2026 (precedência alta)
 
 - **GitHub Actions não é executor padrão** de auditorias, testes, provas pontuais, reconciliações ou revisão editorial. A franquia de Actions está pressionada antes de completar o mês: priorizar WordPress MCP, HTTP/Turso existente (somente leitura quando apropriado), navegador em nuvem, execução isolada e documentos no Drive.

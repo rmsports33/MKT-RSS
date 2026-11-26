@@ -59,13 +59,43 @@ def _inline(texto: str) -> str:
 
 
 def _markdown_blocos(markdown: str) -> str:
-    """Converte subconjunto Markdown (H2/H3, listas ol/ul, hr, parágrafos)."""
+    """Converte subconjunto Markdown (H2/H3, listas ol/ul, hr, parágrafos).
+
+    Quebra de linha no arquivo é quebra visual, não de sentido: as linhas
+    consecutivas de um mesmo bloco formam UM parágrafo (ou UM item de lista).
+    Só a linha em branco encerra o bloco. Sem isso, um texto com quebra de
+    linha em 78 colunas virava um `<p>` por linha — defeito visto no rascunho
+    #9900 (17/11/2026), com frase partida em cinco parágrafos e listas
+    numeradas recomeçando em 1 a cada item.
+    """
     blocos, lista = [], None  # lista: None | "ol" | "ul"
-    def _fecha():
+    paragrafo, item = [], []
+
+    def _fecha_lista():
         nonlocal lista
         if lista:
             blocos.append(f"</{lista}>")
             lista = None
+
+    def _fecha_item():
+        if item:
+            blocos.append(f"<li>{_inline(' '.join(item))}</li>")
+            item.clear()
+
+    def _fecha():
+        if paragrafo:
+            blocos.append(f"<p>{_inline(' '.join(paragrafo))}</p>")
+            paragrafo.clear()
+        _fecha_item()
+        _fecha_lista()
+
+    def _abre_lista(tipo):
+        nonlocal lista
+        _fecha_item()
+        if lista != tipo:
+            _fecha_lista()
+            blocos.append(f"<{tipo}>")
+            lista = tipo
 
     for raw in (markdown or "").split("\n"):
         linha = raw.strip()
@@ -84,22 +114,23 @@ def _markdown_blocos(markdown: str) -> str:
             continue
         m = re.match(r"^\d+[.)]\s+(.*)$", linha)
         if m:
-            if lista != "ol":
+            if paragrafo:
                 _fecha()
-                blocos.append("<ol>")
-                lista = "ol"
-            blocos.append(f"<li>{_inline(m.group(1))}</li>")
+            _abre_lista("ol")
+            item.append(m.group(1))
             continue
         m = re.match(r"^[-*•]\s+(.*)$", linha)
         if m:
-            if lista != "ul":
+            if paragrafo:
                 _fecha()
-                blocos.append("<ul>")
-                lista = "ul"
-            blocos.append(f"<li>{_inline(m.group(1))}</li>")
+            _abre_lista("ul")
+            item.append(m.group(1))
             continue
-        _fecha()
-        blocos.append(f"<p>{_inline(linha)}</p>")
+        # Linha comum: continua o item aberto ou o parágrafo aberto.
+        if item:
+            item.append(linha)
+        else:
+            paragrafo.append(linha)
     _fecha()
     return "\n".join(blocos)
 
@@ -123,7 +154,7 @@ def markdown_para_html(markdown):
                     and all(re.fullmatch(r":?-{3,}:?", x) for x in divider)):
                 flush()
                 out.append("<table><thead><tr>" + "".join(
-                    "<th>" + html.escape(x) + "</th>" for x in header
+                    "<th>" + _inline(x) + "</th>" for x in header
                 ) + "</tr></thead><tbody>")
                 i += 2
                 while i < len(lines) and lines[i].strip().startswith("|"):
@@ -131,7 +162,7 @@ def markdown_para_html(markdown):
                     if len(cells) != len(header):
                         raise ValueError("Tabela Markdown com colunas inconsistentes")
                     out.append("<tr>" + "".join(
-                        "<td>" + html.escape(x) + "</td>" for x in cells
+                        "<td>" + _inline(x) + "</td>" for x in cells
                     ) + "</tr>")
                     i += 1
                 out.append("</tbody></table>")

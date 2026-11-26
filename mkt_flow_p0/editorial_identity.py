@@ -106,6 +106,73 @@ def verificar_aplicacao_voz(metadata):
     return normalizar_aplicacao_voz(metadata.get("editorial_voice_application"))
 
 
+def _dna_sha256_fornecido(dna_prompt_sha256):
+    """Resolve o hash do prompt DNA; nenhum valor alheio ao DNA vigente é aceito."""
+    value = DNA_PROMPT_SHA256 if dna_prompt_sha256 is None else dna_prompt_sha256
+    if not isinstance(value, str) or not re.fullmatch(r"[0-9a-f]{64}", value):
+        raise ValueError("hash do prompt DNA inválido")
+    if value != DNA_PROMPT_SHA256:
+        raise ValueError("hash do prompt DNA incompatível com o DNA vigente")
+    return value
+
+
+def _conteudo_sha256(markdown):
+    if not isinstance(markdown, str) or not markdown.strip():
+        raise ValueError("Markdown vazio ou inválido")
+    return hashlib.sha256(markdown.encode("utf-8")).hexdigest()
+
+
+def _provider_id_valido(provider_id):
+    if (not isinstance(provider_id, str)
+            or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9._:-]{0,79}", provider_id)):
+        raise ValueError("identificador do provedor inválido")
+    return provider_id
+
+
+def construir_prova_voz_assistida(markdown, provider_id, *, dna_prompt_sha256=None):
+    """Prova de adaptação assistida por provedor; NÃO é aprovação editorial/factual."""
+    proof = {
+        "status": "ASSISTED_ADAPTED",
+        "method": "assisted_editorial_adaptation",
+        "dna_prompt_sha256": _dna_sha256_fornecido(dna_prompt_sha256),
+        "content_sha256": _conteudo_sha256(markdown),
+        "provider_id": _provider_id_valido(provider_id),
+    }
+    return normalizar_aplicacao_voz(proof)
+
+
+def construir_prova_voz_humana(markdown, editor, *, dna_prompt_sha256=None):
+    """Atestado de revisão editorial humana da voz; NÃO é aceite de publicação."""
+    if not isinstance(editor, str):
+        raise ValueError("editor inválido")
+    editor = editor.strip()
+    if (not re.fullmatch(r"[^\r\n]{3,80}", editor)
+            or any(ord(ch) < 32 for ch in editor)):
+        raise ValueError("editor inválido")
+    proof = {
+        "status": "HUMAN_ADAPTED",
+        "method": "human_editorial_check",
+        "dna_prompt_sha256": _dna_sha256_fornecido(dna_prompt_sha256),
+        "content_sha256": _conteudo_sha256(markdown),
+        "editor": editor,
+    }
+    return normalizar_aplicacao_voz(proof)
+
+
+def construir_prova_voz_externa(prompt_sha256, provider_id, *, dna_prompt_sha256=None):
+    """Prova de system prompt externo; NÃO certifica texto final nem aprovação."""
+    if not isinstance(prompt_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", prompt_sha256):
+        raise ValueError("hash do prompt externo inválido")
+    proof = {
+        "status": "PROMPT_APPLIED",
+        "method": "external_provider.system_prompt",
+        "dna_prompt_sha256": _dna_sha256_fornecido(dna_prompt_sha256),
+        "prompt_sha256": prompt_sha256,
+        "provider_id": _provider_id_valido(provider_id),
+    }
+    return normalizar_aplicacao_voz(proof)
+
+
 def _url_valida(value):
     if not isinstance(value, str) or not value or len(value) > 2048:
         return False
@@ -332,7 +399,10 @@ def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None,
         result["metadata"]["image_resource"] = validate_resource(image_resource)
     if markdown_final != handoff["markdown"]:
         result["metadata"].pop("editorial_substance_review", None)
-        if result["metadata"].get("editorial_voice_application", {}).get("status") in {"HUMAN_ADAPTED", "ASSISTED_ADAPTED"}:
+        voz = result["metadata"].get("editorial_voice_application")
+        # Qualquer prova diferente de NOT_APPLIED se refere ao texto anterior:
+        # o hash do prompt (PROMPT_APPLIED) também deixa de descrever a versão final.
+        if isinstance(voz, dict) and voz.get("status") != "NOT_APPLIED":
             result["metadata"]["editorial_voice_application"] = normalizar_aplicacao_voz(None)
     result["markdown"] = markdown_final
     payload = {"metadata": result["metadata"], "markdown": markdown_final}

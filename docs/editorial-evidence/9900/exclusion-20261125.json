@@ -1,0 +1,14 @@
+{
+  "schema": "conexo-pauta-exclusion/1",
+  "date": "2026-11-25",
+  "post_id": 9900,
+  "reason": "Proprietario revisou o texto e concluiu que falta documentacao oficial que comprove a materia",
+  "action": "MOVE_TO_TRASH (reversivel)",
+  "status_antes": "draft",
+  "status_depois": "trash",
+  "content_sha256_antes": "6289191c92118e7cf252ccae2df03152c75d38b8b91c31150bd95a9f734c8f13",
+  "content_sha256_depois": "6289191c92118e7cf252ccae2df03152c75d38b8b91c31150bd95a9f734c8f13",
+  "conteudo_preservado_na_lixeira": true,
+  "outros_posts_alterados": [],
+  "publication_authorized": false
+}

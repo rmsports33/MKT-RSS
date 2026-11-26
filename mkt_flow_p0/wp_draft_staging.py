@@ -30,7 +30,10 @@ def _post_persist_remediation(post_id):
         # The persisted draft survives a separate bridge error.
         return "bridge_failed_inspect"
 
-ALLOWED_SITES = frozenset(("https://conexotech.com.br", "https://staging.conexotech.com.br"))
+# Staging Hostinger descontinuado em 25/11/2026 — nao sera reativado.
+# Nenhum destino de homologacao WordPress existe mais.
+# Ver docs/STAGING_DESCONTINUADO_20261125.md
+ALLOWED_SITES = frozenset(("https://conexotech.com.br",))
 
 
 def _slug(title, source_url):

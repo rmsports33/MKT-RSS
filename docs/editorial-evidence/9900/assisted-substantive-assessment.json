@@ -1,0 +1,58 @@
+{
+  "schema": "conexo-substantive-assessment/1",
+  "date": "2026-11-25",
+  "post_id": 9900,
+  "reviewer": "Avaliação assistida por OpenCode — NÃO é revisor humano independente, NÃO é assinante do Gate",
+  "scope": "Corpo autenticado do rascunho #9900 lido via GET; briefing em docs/PAUTAS_SELECIONADAS_20261117.md:49-82",
+  "ratings_note": "Notas 1-3 são priorização editorial assistida, subjetiva; NÃO licenciam publicação nem substituem avaliação humana.",
+  "status": "PENDING",
+  "criteria": [
+    {
+      "criterion": "reader_need",
+      "score": 2,
+      "evidence_quote": "Vale separar três coisas que costumam ser tratadas como uma só.",
+      "reason": "O texto reconhece a confusão do leitor, mas não entrega um passo a passo do que fazer com o bloqueio."
+    },
+    {
+      "criterion": "editorial_angle",
+      "score": 2,
+      "evidence_quote": "Na prática, o recado da agência é simples: bloquear chamada é permitido; bloquear sem explicar como, não.",
+      "reason": "Há tese explícita no fechamento, mas ela chega só no fim e convive com afirmações sem fonte no meio do texto."
+    },
+    {
+      "criterion": "decision_support",
+      "score": 1,
+      "evidence_quote": "Este texto será atualizado se a empresa ou a agência se pronunciarem.",
+      "reason": "O leitor sai sem uma ação concreta; o texto termina em promessa de atualização, não em orientação."
+    },
+    {
+      "criterion": "voice",
+      "score": 1,
+      "evidence_quote": "\"voice_status\": \"NOT_APPLIED\"",
+      "reason": "Não há prova verificável de aplicação do DNA; a marca de proveniência regula a ausência."
+    },
+    {
+      "criterion": "source_limits",
+      "score": 1,
+      "evidence_quote": "| 1 | Tecnoblog — \"Anatel manda TIM desligar função que bloqueia telemarketing\" (14/11/2026) | reportagem | ... |",
+      "reason": "A tabela de fontes traz nomes, sem URLs. Afirmações como 'a Anatel já publicou regras para esses sistemas' e 'Não Me Perturbe, mantido pela Anatel' não aparecem nas cinco afirmações com trecho literal da fonte."
+    }
+  ],
+  "declared_gaps_preserved": [
+    "despacho da Anatel não localizado publicamente",
+    "TIM não se manifestou até a publicação da fonte",
+    "zero links internos relacionados disponíveis"
+  ],
+  "blockers": [
+    "voice_status_not_applied",
+    "unsourced_claims",
+    "source_table_without_urls",
+    "draft_html_fragmented",
+    "image_rights_not_confirmed_in_package"
+  ],
+  "conclusion": "Avaliação assistida não fecha como PASS. O texto tem estrutura e honestidade parcial ao declarar lacunas, mas não sustenta a qualidade exigida para revisão humana.",
+  "factual_approval": false,
+  "publication_authorized": false,
+  "human_acceptance": "PENDING",
+  "independent_human_review": "NOT_PROVIDED"
+}
