@@ -12,6 +12,7 @@ from pathlib import Path
 from mkt_flow_p0.editorial_identity import (
     criar_handoff_chatgpt, salvar_handoff_chatgpt, validar_handoff_chatgpt,
 )
+from mkt_flow_p0.provider_budget import BUDGET
 
 
 def _preparar_handoff(payload):
@@ -162,6 +163,7 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
                 "gate_editorial_pos_ia","adaptador_contrato_editorial","editorial_trace","image_protocol","editorial_substance"]
         ],
         "completion_status":readiness["status"],
+        "provider_diagnostic": BUDGET.status(),
         "editorial_development": development_receipt or {"execution":"NOT_RUN", "reason":"prewritten_import_preserves_text",
             "next_action":"adapt_imported_article with an authorized provider, or supply a text-bound substantive review"},
         "article_complete_for_human_review":readiness["status"] == "PRONTO_PARA_REVISAO_HUMANA",
@@ -185,7 +187,8 @@ def resumo_execucao(result):
     keys = ("schema","version_sha256","content_sha256","modules_executed",
         "module_manifest","completion_status","article_complete_for_human_review",
         "editorial_voice_application","voice_quality_review","provider_called",
-        "network_called","wordpress_written","publication_authorized","human_acceptance")
+        "network_called","wordpress_written","publication_authorized","human_acceptance",
+        "provider_failure","provider_diagnostic")
     return {k: result[k] for k in keys if k in result}
 
 

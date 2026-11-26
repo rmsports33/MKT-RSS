@@ -636,9 +636,27 @@ def main():
                 if args.image_manifest.stat().st_size>512*1024:raise ValueError('IMAGE_MANIFEST_TOO_LARGE')
                 image=json.loads(args.image_manifest.read_text(encoding='utf-8'))
             payload = json.loads(data)
-            result = processar_artigo_importado(payload, args.handoff_dir, genero=args.genero,
-                image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,offline=args.offline,
-                force_development=args.adapt_editorial)
+            try:
+                result = processar_artigo_importado(payload, args.handoff_dir, genero=args.genero,
+                    image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,offline=args.offline,
+                    force_development=args.adapt_editorial)
+            except (ValueError, OSError, TypeError, KeyError) as exc:
+                codigo = getattr(exc, "code", None)
+                marcadores = ("adaptação editorial falhou", "briefing automático indisponível",
+                              "PROVIDER_", "429", "rate limit")
+                eh_provedor = (codigo in {"PROVIDER_AUTH", "PROVIDER_RATE_LIMIT",
+                               "PROVIDER_REQUEST", "PROVIDER_TIMEOUT", "PROVIDER_EXCEPTION"}
+                               or any(m in str(exc).casefold() for m in marcadores))
+                if args.offline or not eh_provedor or args.handoff_dir.exists():
+                    raise
+                # Falha de provedor não descarta o insumo: gera pacote pendente.
+                result = processar_artigo_importado(payload, args.handoff_dir, genero=args.genero,
+                    image_manifest=image,image_base=args.image_manifest.parent if args.image_manifest else None,
+                    offline=True)
+                result["provider_failure"] = {
+                    "code": codigo or "PROVIDER_UNAVAILABLE",
+                    "text_preserved": True, "review_pending": True,
+                }
         except (ValueError, OSError, TypeError, KeyError) as exc:
             print(json.dumps({"status":"BLOCKED","error_type":type(exc).__name__}))
             return 1

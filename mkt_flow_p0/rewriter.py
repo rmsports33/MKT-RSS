@@ -74,6 +74,9 @@ def _get_client():
     if not api_key:
         return None, "GROQ_API_KEY ausente no .env — obtenha em https://console.groq.com"
     try:
+        # Evita que o SDK imprima "HTTP Request: POST ... 429" no console do
+        # operador; os códigos sanitizados já vão no manifesto.
+        logging.getLogger("httpx").setLevel(logging.WARNING)
         return Groq(api_key=api_key, max_retries=0), ""
     except Exception as e:
         return None, "Falha ao inicializar Groq (detalhes privados omitidos)"
@@ -208,7 +211,8 @@ def reescrever_materia(
     if erro:
         return {"erro": erro}
 
-    modelo = _modelo()
+    from mkt_flow_p0.provider_budget import BUDGET, chamar_json, modelo_disponivel
+    modelo = modelo_disponivel(client, _modelo())
     # Fingerprint exactly the canonical messages sent to the provider, not
     # an approximation of the prompt. Never store raw prompt in telemetry.
     import hashlib
@@ -219,43 +223,12 @@ def reescrever_materia(
     prompt_sha256 = hashlib.sha256(json.dumps(
         messages, ensure_ascii=False, sort_keys=True, separators=(",", ":")
     ).encode("utf-8")).hexdigest()
-    try:
-        resp = client.chat.completions.create(
-            model=modelo,
-            messages=messages,
-            temperature=temperature,
-            max_tokens=max_tokens,
-            timeout=timeout,
-            response_format={"type": "json_object"},
-        )
-    except Exception as e:
-        msg = str(e)
-        if "401" in msg or "invalid_api_key" in msg.lower():
-            return {"erro": "GROQ_API_KEY inválida — gere outra em console.groq.com"}
-        if "429" in msg or "rate" in msg.lower():
-            # Export only bounded diagnostics, never response bodies or secrets.
-            import math
-            detail = msg.casefold()
-            scope = next((name for name, marker in (
-                ("tokens_per_day", "tokens per day"),
-                ("requests_per_day", "requests per day"),
-                ("tokens_per_minute", "tokens per minute"),
-                ("requests_per_minute", "requests per minute"),
-            ) if marker in detail), "unknown")
-            wait = None
-            try:
-                raw_wait = getattr(getattr(e, "response", None), "headers", {}).get("retry-after")
-                value = float(raw_wait)
-                if math.isfinite(value) and 0 <= value <= 86400:
-                    wait = math.ceil(value)
-            except (ValueError, TypeError, AttributeError):
-                pass
-            return {"erro": "Limite Groq atingido (429); preservar insumos e respeitar a quota gratuita.",
-                    "error_code": "PROVIDER_RATE_LIMIT", "limit_scope": scope,
-                    "retry_after_seconds": wait}
-        logger.warning("rewriter Groq falhou: tipo=%s, status=%s",
-                       type(e).__name__, getattr(e, "status_code", None))
-        return {"erro": "Falha Groq: provider_error (detalhes privados omitidos)"}
+    chamada = chamar_json(client, model=modelo, messages=messages,
+                          temperature=temperature, max_tokens=max_tokens,
+                          timeout=timeout, budget=BUDGET)
+    if "response" not in chamada:
+        return {**chamada, "modelo": modelo}
+    resp = chamada["response"]
 
     try:
         if getattr(resp.choices[0], "finish_reason", None) == "length":
@@ -348,6 +321,7 @@ def reescrever_materia(
         "fonte_nome": fonte_nome,
         "url_fonte": url_fonte,
         "modelo": modelo,
+        "provider_budget": dict(BUDGET.status()),
         "prompt_sha256": prompt_sha256,
         "uso_tokens": {"prompt": pt, "completion": ct, "total": pt + ct},
         "custo_usd_estimado": _estimar_custo(pt, ct),
