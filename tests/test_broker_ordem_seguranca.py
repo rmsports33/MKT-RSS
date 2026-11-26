@@ -158,21 +158,44 @@ def test_broker_entrega_post_e_hash_de_conteudo_autenticados_ao_revisor(monkeypa
     import mkt_flow_p0.wp_destination as wd
     from mkt_flow_p0 import broker_revisor_guard as guard
     from mkt_flow_p0 import readback_e1e2 as e12
+    from editorial_factual_certificate import draft_digest, issue_factual_certificate
+    from editorial_trusted_review import sign_registry_record
 
     monkeypatch.setattr(wd, "resolve", lambda op: wd.WpDestination(
         url=SITE, user="svc", password="pw", environment="", operation=op))
     monkeypatch.setattr(wd, "assert_writable", lambda dest, op: None)
-    monkeypatch.setenv("CONEXO_EDITORIAL_GATE_KEY", "c" * 40)
-    monkeypatch.setenv("CONEXO_REVIEW_REGISTRY_KEY", "r" * 40)
+
+    certificate_key = b"c" * 40
+    registry_key = b"r" * 40
+    post = {
+        "id": 41, "status": "draft", "title": {"raw": "Teste"},
+        "content": {"raw": "<p>Texto</p>"}, "slug": "teste",
+        "categories": [10], "featured_media": 12,
+    }
+    review = {
+        "reviewer_id": "7", "review_type": "independent_human",
+        "decision": "APROVADO", "evidence_refs": ["https://example.org/fonte"],
+        "review_record_url": "https://example.org/review/41",
+    }
+    certificate = issue_factual_certificate(post, review, certificate_key)
+    record = {
+        "reviewer_id": certificate["reviewer_id"],
+        "draft_sha256": draft_digest(post),
+        "decision": "APROVADO", "status": "FINAL", "independent": True,
+        "evidence_refs": certificate["evidence_refs"],
+        "review_record_url": certificate["review_record_url"], "revoked": False,
+    }
+    envelope = {
+        "record": record,
+        "signature": sign_registry_record(record, registry_key),
+    }
 
     observed = {}
-    def fake_guard(post, certificate, certificate_key, lookup, registry_key):
-        observed["post"] = post
-        observed["certificate"] = certificate
-        observed["certificate_key"] = certificate_key
-        observed["registry_key"] = registry_key
-        return {"verified": True}
-    monkeypatch.setattr(guard, "require_broker_review", fake_guard)
+    actual_guard = guard.require_broker_review
+    def spy_guard(authenticated_post, cert, cert_key, lookup, reg_key):
+        observed["post"] = authenticated_post
+        return actual_guard(authenticated_post, cert, cert_key, lookup, reg_key)
+    monkeypatch.setattr(guard, "require_broker_review", spy_guard)
 
     class _Core:
         @staticmethod
@@ -193,23 +216,19 @@ def test_broker_entrega_post_e_hash_de_conteudo_autenticados_ao_revisor(monkeypa
 
     package = _package()
     package["version_sha256"] = "b" * 64
-    package["review_certificate"] = {"synthetic": True}
     session = _Session()
     result = bt.publish_via_broker(
         package, core_root="/unused", wp_url=SITE, wp_user="svc", wp_password="pw",
         trace_run_id="run", intent="publish", publication_reference="REF-12345",
-        session=session)
+        session=session, review_certificate=certificate,
+        review_certificate_key=certificate_key,
+        registry_verification_key=registry_key,
+        review_lookup=lambda url: envelope)
 
     expected_content_hash = hashlib.sha256(b"<p>Texto</p>").hexdigest()
     assert result["verified"] is True
-    assert observed["post"] == {
-        "id": 41, "status": "draft", "title": {"raw": "Teste"},
-        "content": {"raw": "<p>Texto</p>"}, "slug": "teste",
-        "categories": [10], "featured_media": 12,
-    }
+    assert observed["post"] == post
     assert observed["expected_e1_sha256"] == expected_content_hash
     assert observed["expected_e1_sha256"] != "a" * 64
-    assert observed["certificate"] == {"synthetic": True}
-    assert observed["certificate_key"] != observed["registry_key"]
     assert session.posted is True
     assert all(auth == ("svc", "pw") for auth in session.auths)
