@@ -114,3 +114,11 @@ def test_sem_chave_de_verificacao_bloqueia():
     cert = _cert(post)
     with pytest.raises(g.BrokerReviewBlocked):
         g.build_review_lookup(lambda u: {}, registry_verification_key=b"short")
+
+
+def test_chave_do_registro_deve_ser_diferente_da_chave_do_certificado():
+    post = _post()
+    cert = _cert(post)
+    adapter = lambda url: _envelope(_record(post, cert))
+    with pytest.raises(g.BrokerReviewBlocked):
+        g.require_broker_review(post, cert, CERT_KEY, adapter, CERT_KEY, now=150)

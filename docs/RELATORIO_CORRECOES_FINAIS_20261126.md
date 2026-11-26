@@ -1,67 +1,53 @@
-# RELATÓRIO DE CORREÇÕES FINAIS — PR #135 e #136 (26/11/2026)
+# RELATÓRIO DE CORREÇÕES — PRs #135 e #136 (26/11/2026)
 
-## Classificação adotada
-- **PASS**: teste automatizado reproduzido localmente.
-- **PASS SIMULADO**: comportamento validado apenas com mocks/sessão simulada.
-- **PENDENTE**: depende de ambiente WordPress real (homologado).
-- **PENDENTE DE AUTORIZAÇÃO**: depende de operação real (publicação/escrita).
+## PR #135 — Gate V1
 
----
+- HEAD reportado: `cd92a5b9ff97d492d243b901b90ee144cf953dbe`.
+- Layout nativo, listagem, preview e ações ligadas ao formulário nativo.
+- Os 13 critérios humanos e suas evidências não são preenchidos automaticamente.
+- O carregamento está documentado no ponto `cxeg_standard_boot()`; a aplicação no plugin instalado ainda depende de autorização de upload/deploy.
+- Testes reportados pelo executor: 20 Python e 14 PHP.
+- Core RC10.4 e MU-plugins preservados.
 
-## PR #135 — Gate V1 (correções)
+## PR #136 — MKT-RSS: correções implementadas nesta rodada
 
-| # | Correção | Classificação | Evidência |
-|---|----------|---------------|-----------|
-| 1 | Conectar layout à tela nativa `cxeg_owner_page()` | ✅ PASS | hook `admin_notices` em `page=conexo-owner-review` |
-| 2 | Listagem e preview via rotas/funções nativas | ✅ PASS | `cxgna_eligible_drafts` + `/snapshot/{id}` |
-| 3 | SALVAR RESPOSTA executa salvamento nativo | ✅ PASS | `form.requestSubmit()` no formulário nativo |
-| 4 | Formulário nativo por ID único | ✅ PASS | `cxgv1nat-native-form` (sem `querySelector('form')`) |
-| 5 | Não marcar 13 critérios / não inventar evidências | ✅ PASS | JS não marca; PHP exige checks reais |
-| 6 | Destino nativo preservado | ✅ PASS | JS não altera `publication_mode` |
-| 7 | Reprovação no histórico nativo | ✅ PASS | `cxeg_review_{id}` com `decision=rejected` + nonce nativo |
-| — | Testes | ✅ PASS | 16 Python + 14 PHP |
+1. **Credenciais do destino:** argumentos do broker são comparados com o destino resolvido. Divergências bloqueiam antes de qualquer GET/POST. Após a comparação, as chamadas utilizam as credenciais e o `auth` do destino validado.
+2. **Chaves distintas:** o provisionador rejeita chaves fracas ou repetidas; o verificador independente também recusa reutilização da mesma chave.
+3. **Post completo na guarda:** E1 autenticado fornece ID, status, título bruto, conteúdo bruto, slug, categorias e imagem destacada. O broker passa esse post completo ao Revisor Único. A guarda ocorre depois das leituras e antes do único POST.
+4. **Hash correto:** E1 compara o SHA-256 do conteúdo bruto do pacote com o conteúdo realmente lido. O `snapshot_sha256` do Gate permanece separado e continua sendo usado no contrato de escrita; não é confundido com o hash do corpo.
+5. **Fail-closed:** falta de certificado, chaves inválidas/iguais, divergência de credenciais ou falha de leitura/correlação impedem a escrita.
 
-## PR #136 — MKT-RSS (complementos)
+## Testes adicionados/ajustados
 
-| # | Correção | Classificação | Evidência |
-|---|----------|---------------|-----------|
-| 1 | Adaptador real do registro confiável | ✅ PASS SIMULADO | `registry_adapter_real.py` + 2 testes mock |
-| 2 | Chaves separadas (sem expor valores) | ✅ PASS | `review_keys.keys_status()` + 2 testes |
-| 3 | Destino WordPress (PR #133) | ✅ PASS SIMULADO | `wp_destination` reforçado no broker |
-| 4 | E1 e E2 no servidor | ✅ PASS SIMULADO | `readback_e1e2.py` + 3 testes mock |
-| 5 | Guarda antes de qualquer escrita | ✅ PASS | teste prova POST não ocorre se guarda falha |
-| 6 | Readback e recibo verificáveis | ✅ PASS SIMULADO |Broker já valida readback + `retry_automatic=False` |
-| — | Testes novos | ✅ PASS | 7 + 2 testes |
-| — | Regressão V1 | ✅ PASS | 479 testes |
+- Rejeição de chaves iguais.
+- E1 devolve os campos completos necessários à vinculação do certificado.
+- Teste do broker verifica que a guarda recebe o post autenticado completo.
+- Teste do broker distingue hash do conteúdo e hash do snapshot.
+- Teste de divergência entre credenciais fornecidas e destino validado.
+- Fixtures legadas do broker passam a modelar E1/E2 e a guarda obrigatória.
 
-## Validação final do ciclo
+**Execução:** os testes foram atualizados no branch; a suíte Python e os logs de CI ainda precisam ser executados/confirmados. Não declarar PASS para os novos testes sem essa evidência.
 
-| Etapa | Classificação |
-|-------|---------------|
-| Seleção da pauta | ✅ PASS SIMULADO |
-| Geração do artigo | ✅ PASS SIMULADO |
-| Validação factual e editorial | ✅ PASS |
-| Certificação | ✅ PASS |
-| Revisão humana | ✅ PASS SIMULADO |
-| Aprovação | ✅ PASS SIMULADO |
-| Publicação autorizada | ⏸️ PENDENTE DE AUTORIZAÇÃO |
-| Readback do WordPress | ✅ PASS SIMULADO |
-| Recibo verificável | ✅ PASS SIMULADO |
+## Evidência operacional reportada anteriormente
 
-**Nenhuma publicação real foi declarada concluída.**
+- WordPress #9906: E1 `context=edit` e E2 `context=view` retornaram HTTP 200.
+- Mesmo ID/status draft e correlação de conteúdo foram reportados como verificados.
+- A chave separada `CONEXO_REVIEW_REGISTRY_KEY` estava ausente na última verificação.
+- A leitura isolada não prova a execução integrada da guarda com o registro real.
 
 ## Pendências
 
-| Item | Classificação |
-|------|---------------|
-| Adaptador real com credenciais de produção | ⏸️ PENDENTE (ambiente) |
-| E1/E2 no WordPress real | ⏸️ PENDENTE (ambiente homologado) |
-| Provisão das chaves separadas em produção | ⏸️ PENDENTE DE AUTORIZAÇÃO |
-| Publicação real + readback remoto | ⏸️ PENDENTE DE AUTORIZAÇÃO |
-| Capturas do painel em homologado | ⏸️ PENDENTE |
+| Item | Estado |
+|---|---|
+| Provisionar `CONEXO_REVIEW_REGISTRY_KEY` por canal seguro | PENDENTE |
+| Executar a suíte atualizada em Python 3.11 | PENDENTE DE EXECUÇÃO |
+| Confirmar workflow CI/manual | PENDENTE |
+| Aplicar o layout no plugin Gate V1 instalado | PENDENTE DE AUTORIZAÇÃO |
+| Publicação real e readback pós-escrita | PENDENTE DE AUTORIZAÇÃO ESPECÍFICA |
 
-## Restrições respeitadas
-- ✅ Sem merge, deploy, upload ou escrita em produção
-- ✅ Sem SSH em produção
-- ✅ Sem publicar artigos reais
-- ✅ Sem excluir plugins, criar outro Gate ou refatorar fora do escopo
+## Limites
+
+- Sem merge, deploy ou upload.
+- Sem POST/escrita/publicação no WordPress ou Turso.
+- Sem SSH em produção.
+- Sem exclusão de plugins, novo Gate ou alteração do core RC10.4/MU-plugins.

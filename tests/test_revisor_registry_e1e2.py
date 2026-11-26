@@ -45,6 +45,8 @@ def test_chaves_iguais_bloqueiam(monkeypatch):
     monkeypatch.setenv("CONEXO_EDITORIAL_GATE_KEY", "x" * 40)
     monkeypatch.setenv("CONEXO_REVIEW_REGISTRY_KEY", "x" * 40)
     assert keys.keys_status()["safe_for_publication"] is False
+    with pytest.raises(keys.ReviewKeyProvisioningBlocked):
+        keys.ensure_distinct_keys(b"x" * 40, b"x" * 40)
 
 
 def test_adaptador_real_retorna_envelope():
@@ -67,6 +69,7 @@ def test_e1e2_correlacionado():
     s = _Session({
         "edit": _Resp(200, {"id": 41, "status": "draft",
                              "title": {"raw": "Titulo"},
+                             "slug": "teste", "categories": [10], "featured_media": 12,
                              "content": {"raw": raw}}),
         "view": _Resp(200, {"id": 41, "status": "draft",
                              "content": {"rendered": raw}}),
@@ -75,6 +78,11 @@ def test_e1e2_correlacionado():
     assert out["verified"] is True
     assert out["content_sha256"] == digest
     assert out["e1e2_correlated"] is True
+    assert out["review_post"] == {
+        "id": 41, "status": "draft", "title": {"raw": "Titulo"},
+        "content": {"raw": raw}, "slug": "teste",
+        "categories": [10], "featured_media": 12,
+    }
     assert len(s.calls) == 2  # E1 e E2 antes da escrita
 
 
@@ -82,6 +90,7 @@ def test_e1e2_sem_hash_esperado_bloqueia():
     raw = "<p>Texto</p>"
     s = _Session({
         "edit": _Resp(200, {"id": 41, "status": "draft", "title": {"raw": "T"},
+                             "slug": "teste", "categories": [10], "featured_media": 12,
                              "content": {"raw": raw}}),
         "view": _Resp(200, {"id": 41, "status": "draft",
                              "content": {"rendered": "<h1>T</h1>" + raw}}),
@@ -97,6 +106,7 @@ def test_e1e2_renderizado_divergente_bloqueia():
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     s = _Session({
         "edit": _Resp(200, {"id": 41, "status": "draft", "title": {"raw": "T"},
+                             "slug": "teste", "categories": [10], "featured_media": 12,
                              "content": {"raw": raw}}),
         "view": _Resp(200, {"id": 41, "status": "draft",
                              "content": {"rendered": "<p>Texto alterado sem autorizacao</p>"}}),
@@ -110,6 +120,7 @@ def test_e1e2_status_divergente_bloqueia():
     raw = "<p>Texto</p>"
     s = _Session({
         "edit": _Resp(200, {"id": 41, "status": "draft", "title": {"raw": "T"},
+                             "slug": "teste", "categories": [10], "featured_media": 12,
                              "content": {"raw": raw}}),
         "view": _Resp(200, {"id": 41, "status": "publish",
                              "content": {"rendered": "T" + raw}}),
@@ -122,6 +133,7 @@ def test_e1e2_hash_divergente_bloqueia():
     raw = "<p>Texto</p>"
     s = _Session({
         "edit": _Resp(200, {"id": 41, "status": "draft", "title": {"raw": "T"},
+                             "slug": "teste", "categories": [10], "featured_media": 12,
                              "content": {"raw": raw}}),
         "view": _Resp(200, {"id": 41, "status": "draft",
                              "content": {"rendered": "T" + raw}}),

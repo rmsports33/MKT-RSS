@@ -30,6 +30,10 @@ def verify_independent_review(post, certificate, signing_key, lookup_review,
         return {"verified": False, "reason": "trusted_review_store_missing"}
     if not isinstance(registry_verification_key, bytes) or len(registry_verification_key) < 32:
         return {"verified": False, "reason": "trusted_registry_verification_key_missing"}
+    if not isinstance(signing_key, bytes) or len(signing_key) < 32:
+        return {"verified": False, "reason": "trusted_certificate_signing_key_missing"}
+    if hmac.compare_digest(signing_key, registry_verification_key):
+        return {"verified": False, "reason": "trusted_review_keys_not_distinct"}
     if not verify_factual_certificate(post, certificate, signing_key, now=now):
         return {"verified": False, "reason": "certificate_invalid"}
     try:

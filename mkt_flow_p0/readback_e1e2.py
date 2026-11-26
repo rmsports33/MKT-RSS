@@ -64,6 +64,35 @@ def validate_e1_e2(post_id, wp_user, wp_app_password, *, session=requests,
         raise E1E2Blocked("E1_RAW_CONTENT_MISSING")
     if not isinstance(rendered, str) or not rendered.strip():
         raise E1E2Blocked("E2_RENDERED_CONTENT_MISSING")
+
+    # A assinatura factual vincula o artigo completo. Estes dados vêm da
+    # resposta autenticada E1 (context=edit), não do pacote enviado pelo caller.
+    title = e1.get("title")
+    slug = e1.get("slug")
+    categories = e1.get("categories")
+    featured_media = e1.get("featured_media")
+    if (
+        not isinstance(title, dict)
+        or not isinstance(title.get("raw"), str)
+        or not title["raw"].strip()
+        or not isinstance(slug, str)
+        or not slug.strip()
+        or not isinstance(categories, list)
+        or any(type(category) is not int or category <= 0 for category in categories)
+        or type(featured_media) is not int
+        or featured_media <= 0
+    ):
+        raise E1E2Blocked("E1_REVIEW_BINDING_FIELDS_MISSING")
+
+    review_post = {
+        "id": post_id,
+        "status": e1["status"],
+        "title": {"raw": title["raw"]},
+        "content": {"raw": raw},
+        "slug": slug,
+        "categories": categories,
+        "featured_media": featured_media,
+    }
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     # Hash esperado é OBRIGATÓRIO: sem ele não é possível provar que E1/E2
     # correspondem à versão aprovada.
@@ -82,4 +111,5 @@ def validate_e1_e2(post_id, wp_user, wp_app_password, *, session=requests,
     if not texto_raw or texto_rendered != texto_raw:
         raise E1E2Blocked("E1E2_RENDERED_CONTENT_MISMATCH")
     return {"verified": True, "post_id": post_id, "status": e1["status"],
-            "content_sha256": digest, "e1e2_correlated": True}
+            "content_sha256": digest, "e1e2_correlated": True,
+            "review_post": review_post}

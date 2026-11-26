@@ -6,6 +6,7 @@ nunca retorna, imprime ou registra os valores.
 """
 from __future__ import annotations
 
+import hmac
 import os
 
 MIN_KEY_BYTES = 32
@@ -36,6 +37,20 @@ def registry_verification_key() -> bytes:
     if len(key) < MIN_KEY_BYTES:
         raise ReviewKeyProvisioningBlocked("REGISTRY_VERIFICATION_KEY_MISSING")
     return key
+
+
+def ensure_distinct_keys(certificate: bytes, registry: bytes):
+    """Reject weak or reused keys in every broker publication path."""
+    if (not isinstance(certificate, (bytes, bytearray))
+            or len(certificate) < MIN_KEY_BYTES
+            or not isinstance(registry, (bytes, bytearray))
+            or len(registry) < MIN_KEY_BYTES):
+        raise ReviewKeyProvisioningBlocked("REVIEW_KEYS_INVALID")
+    certificate = bytes(certificate)
+    registry = bytes(registry)
+    if hmac.compare_digest(certificate, registry):
+        raise ReviewKeyProvisioningBlocked("REVIEW_KEYS_MUST_BE_DISTINCT")
+    return certificate, registry
 
 
 def keys_status() -> dict:
