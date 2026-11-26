@@ -45,7 +45,8 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                        post_date_gmt=None, trace_packet=None, timeout=15,
                        session=requests, require_signed_seo=False, owner_release=False,
                        review_certificate=None, review_certificate_key=None,
-                       review_lookup=None, registry_verification_key=None):
+                       review_lookup=None, registry_verification_key=None,
+                       validate_e1e2_enabled=False):
     """One attempt, never automatically retry uncertain WordPress/Turso writes.
 
     When a Revisor Único review is supplied, it is verified against an
@@ -171,6 +172,16 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
         expected["post_date_gmt"] = post_date_gmt
     elif post_date_gmt is not None:
         raise BrokerBlocked("SCHEDULE_GMT_UNEXPECTED")
+
+    # E1+E2 autenticados antes de qualquer escrita (contrato 2.3).
+    # Quando habilitado, exige GET context=edit e context=view correlacionados.
+    if validate_e1e2_enabled:
+        from mkt_flow_p0.readback_e1e2 import validate_e1_e2, E1E2Blocked
+        try:
+            validate_e1_e2(post_id, wp_user, wp_password, session=session,
+                           timeout=timeout, expected_sha256=None)
+        except E1E2Blocked as exc:
+            raise BrokerBlocked(str(exc)) from None
 
     try:
         response = session.post(f"{SITE}/wp-json/conexo/v1/editorial/broker/write",
