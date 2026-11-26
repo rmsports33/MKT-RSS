@@ -187,7 +187,10 @@ class BrokerTests(unittest.TestCase):
         self.assertNotIn("signature", http.posts[0][1]["json"])
         self.assertNotIn("receipt", http.posts[0][1]["json"])
         self.assertEqual(http.posts[0][1]["json"]["executor"], "mkt_rss")
-        self.assertEqual(len(http.gets), 2)
+        # E1 (context=edit) + E2 (context=view) + 2 snapshots (antes/depois do POST)
+        self.assertEqual(len(http.gets), 4)
+        self.assertTrue(any("context=edit" in u for u in http.gets), "E1 obrigatório")
+        self.assertTrue(any("context=view" in u for u in http.gets), "E2 obrigatório")
 
     def test_turso_not_verified_no_wp_requests(self):
         http = FakeHTTP()
