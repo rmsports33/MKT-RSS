@@ -70,6 +70,20 @@ def processar_capa(imagem_bytes: bytes, largura: int = CAPA_LARGURA, altura: int
     return {"bytes": buf.getvalue(), "largura": largura, "altura": altura, "content_type": "image/jpeg"}
 
 
+def _fallback_pixabay(consulta: str, timeout: int):
+    """Segunda fonte gratuita. Nunca promove candidato a licenciado."""
+    try:
+        from mkt_flow_p0.stock_media_multi_source import buscar_pixabay
+        pix = buscar_pixabay(consulta, timeout=timeout)
+        if isinstance(pix, dict) and pix.get("candidatos"):
+            return {"candidatos": pix["candidatos"],
+                    "proxima_etapa": "REVISAO_HUMANA_DE_MIDIA",
+                    "fonte": "pixabay"}
+    except Exception:
+        pass
+    return None
+
+
 def buscar_fallback(consulta: str, timeout: int = 10) -> dict:
     """Banco gratuito (Unsplash com key free). Sem key → erro orientando a colar imagem."""
     try:
@@ -111,6 +125,9 @@ def buscar_fallback(consulta: str, timeout: int = 10) -> dict:
         r.raise_for_status()
         resultados = (r.json().get("results") or [])
         if not resultados:
+            fb = _fallback_pixabay(consulta, timeout)
+            if fb:
+                return fb
             return {"erro": "Banco gratuito não encontrou resultados na consulta",
                     "proxima_etapa": "AVALIAR_GERACAO_IA"}
         # Não promover automaticamente a primeira foto a imagem licenciada.
@@ -131,30 +148,18 @@ def buscar_fallback(consulta: str, timeout: int = 10) -> dict:
                     "revisao_direitos": "PENDENTE", "revisao_visual": "PENDENTE"})
         if not candidatos:
             # Unsplash não trouxe candidatos: tenta a segunda fonte gratuita.
-            try:
-                from mkt_flow_p0.stock_media_multi_source import buscar_pixabay
-                pix = buscar_pixabay(consulta, timeout=timeout)
-                if isinstance(pix, dict) and pix.get("candidatos"):
-                    return {"candidatos": pix["candidatos"],
-                            "proxima_etapa": "REVISAO_HUMANA_DE_MIDIA",
-                            "fonte": "pixabay"}
-            except Exception:
-                pass
+            fb = _fallback_pixabay(consulta, timeout)
+            if fb:
+                return fb
             return {"erro": "Nenhuma imagem gratuita atende à resolução mínima",
                     "proxima_etapa": "AVALIAR_GERACAO_IA"}
         return {"candidatos": candidatos, "proxima_etapa": "REVISAO_HUMANA_DE_MIDIA",
                 "fonte": "unsplash"}
-    except Exception as e:
+    except Exception:
         # Se a chamada do Unsplash falhar, tenta Pixabay antes de desistir.
-        try:
-            from mkt_flow_p0.stock_media_multi_source import buscar_pixabay
-            pix = buscar_pixabay(consulta, timeout=timeout)
-            if isinstance(pix, dict) and pix.get("candidatos"):
-                return {"candidatos": pix["candidatos"],
-                        "proxima_etapa": "REVISAO_HUMANA_DE_MIDIA",
-                        "fonte": "pixabay"}
-        except Exception:
-            pass
+        fb = _fallback_pixabay(consulta, timeout)
+        if fb:
+            return fb
         return {"erro": "Banco gratuito temporariamente indisponível",
                 "proxima_etapa": "PESQUISA_BANCO_PENDENTE"}
 

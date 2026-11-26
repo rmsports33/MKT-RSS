@@ -11,9 +11,30 @@ from urllib.parse import urlsplit
 import requests
 
 from mkt_flow_p0.image_handler import processar_capa, MAX_BYTES
+from mkt_flow_p0.stock_media_multi_source import PIXABAY_LICENSE
 from mkt_flow_p0.wp_publisher import _auth_header
 
 ORIGEM_LICENCA = "https://unsplash.com/license"
+
+# Contrato por fonte: domínios fixos e licença oficial de cada banco gratuito.
+FONTES = {
+    "unsplash": {
+        "url_host": "images.unsplash.com", "url_prefix": "/photo-",
+        "pagina_host": "unsplash.com", "pagina_prefix": "/photos/",
+        "licenca": ORIGEM_LICENCA, "nome": "Unsplash",
+    },
+    "pixabay": {
+        "url_host": "pixabay.com", "url_prefix": "/get/",
+        "pagina_host": "pixabay.com", "pagina_prefix": "/",
+        "licenca": PIXABAY_LICENSE, "nome": "Pixabay",
+    },
+}
+
+
+def _fonte_da_foto(foto):
+    """Compatibilidade: fichas antigas sem 'origem' continuam sendo Unsplash."""
+    origem = (foto.get("origem") or "unsplash") if isinstance(foto, dict) else "unsplash"
+    return origem, FONTES.get(origem)
 
 
 def _https_host(url, host, path_prefix="/"):
@@ -36,9 +57,16 @@ def validar_escolha(foto):
                 "approved_post_id", "approved_post_modified_gmt"}
     if not isinstance(foto, dict) or not required.issubset(foto):
         raise ValueError("ficha de mídia incompleta")
-    if (not _https_host(foto["url"], "images.unsplash.com", "/photo-")
-            or not _https_host(foto["pagina_origem"], "unsplash.com", "/photos/")
-            or foto["licenca_url"] != ORIGEM_LICENCA
+    origem, cfg = _fonte_da_foto(foto)
+    if cfg is None:
+        raise ValueError("fonte de mídia desconhecida")
+    url_ok = _https_host(foto["url"], cfg["url_host"], cfg["url_prefix"])
+    if origem == "pixabay":
+        # previewURL / imagem original também podem vir de cdn.pixabay.com/photo/
+        url_ok = url_ok or _https_host(foto["url"], "cdn.pixabay.com", "/photo/")
+    if (not url_ok
+            or not _https_host(foto["pagina_origem"], cfg["pagina_host"], cfg["pagina_prefix"])
+            or foto["licenca_url"] != cfg["licenca"]
             or not isinstance(foto["autor"], str) or not foto["autor"].strip()
             or not isinstance(foto["alt_text"], str) or not foto["alt_text"].strip()
             or foto["revisao_direitos"] != "APROVADO_PELO_EDITOR"
@@ -86,7 +114,7 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
         if isinstance(post.get("featured_media"), int) and post["featured_media"] > 0:
             return {"status": "BLOQUEADO", "motivo": "post_ja_possui_imagem",
                     "media_id": post["featured_media"], "escreveu": False}
-        # Só imagens.unsplash.com; proíbe redirecionamentos e mídia arbitrária.
+        # Só domínios das fontes gratuitas validadas; proíbe redirecionamentos.
         downloaded = request_client.get(foto["url"], timeout=timeout,
                                         stream=True, allow_redirects=False)
         if downloaded.status_code != 200 or not (
@@ -114,14 +142,15 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
                 recheck.json().get("modified_gmt") != foto["approved_post_modified_gmt"]):
             return {"status": "BLOQUEADO", "motivo": "estado_do_draft_mudou",
                     "escreveu": False}
-        caption = "Foto: " + foto["autor"].strip() + " / Unsplash"
+        origem, cfg = _fonte_da_foto(foto)
+        caption = "Foto: " + foto["autor"].strip() + " / " + cfg["nome"]
         description = ("Origem: " + foto["pagina_origem"] +
-                       " | Licença: " + ORIGEM_LICENCA +
+                       " | Licença: " + foto["licenca_url"] +
                        " | Uso editorial aprovado pelo editor; imagem ilustrativa.")
         upload = request_client.post(
             api + "/media",
             headers={**auth, "Content-Disposition":
-                     'attachment; filename="conexotech-unsplash-cover.jpg"',
+                     f'attachment; filename="conexotech-{origem}-cover.jpg"',
                      "Content-Type": "image/jpeg"},
             data=capa["bytes"], timeout=timeout, allow_redirects=False)
         if (upload.status_code != 201 or
@@ -155,7 +184,7 @@ def associar_foto_gratuita_a_rascunho(foto, *, post_id, wp_url, wp_user,
         if (media.get("id") != media_id or media.get("alt_text") != foto["alt_text"]
                 or caption not in str(raw_caption)
                 or foto["pagina_origem"] not in str(raw_description)
-                or ORIGEM_LICENCA not in str(raw_description)):
+                or foto["licenca_url"] not in str(raw_description)):
             return {"status": "INSPECIONAR", "motivo": "media_metadados_divergentes",
                     "media_id": media_id, "escreveu": True, "retry_automatico": False}
         last_check = request_client.get(
