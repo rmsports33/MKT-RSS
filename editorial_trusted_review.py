@@ -1,24 +1,60 @@
-"""Fail-closed human review attestation, distinct from signature verification.
+"""Fail-closed verification of a separately signed independent-review record.
 
-A certificate signature authenticates the issuer, not the existence of an
-independent editorial review. A trusted review store must be queried separately.
-This function performs no network operation of its own.
+The certificate HMAC authenticates the certificate issuer. The registry envelope
+uses a DIFFERENT key and authenticates the fetched record returned by the lookup
+adapter. The adapter is transport only; its data is never trusted without this
+second signature. No network operation or publication is performed here.
 """
+import hashlib
+import hmac
+import json
+
 from editorial_factual_certificate import draft_digest, verify_factual_certificate
 
 
-def verify_independent_review(post, certificate, signing_key, lookup_review, *,
-                              now=None):
+def _canonical_bytes(value):
+    return json.dumps(value, sort_keys=True, ensure_ascii=False,
+                      separators=(",", ":"), allow_nan=False).encode("utf-8")
+
+
+def sign_registry_record(record, registry_signing_key):
+    """Test/issuer helper: produce the detached HMAC for a trusted registry record."""
+    if not isinstance(record, dict) or not isinstance(registry_signing_key, bytes) or len(registry_signing_key) < 32:
+        raise ValueError("trusted_registry_key_invalid")
+    return hmac.new(registry_signing_key, _canonical_bytes(record), hashlib.sha256).hexdigest()
+
+
+def verify_independent_review(post, certificate, signing_key, lookup_review,
+                              registry_verification_key, *, now=None):
     if not callable(lookup_review):
         return {"verified": False, "reason": "trusted_review_store_missing"}
+    if not isinstance(registry_verification_key, bytes) or len(registry_verification_key) < 32:
+        return {"verified": False, "reason": "trusted_registry_verification_key_missing"}
+    if not isinstance(signing_key, bytes) or len(signing_key) < 32:
+        return {"verified": False, "reason": "trusted_certificate_signing_key_missing"}
+    if hmac.compare_digest(signing_key, registry_verification_key):
+        return {"verified": False, "reason": "trusted_review_keys_not_distinct"}
     if not verify_factual_certificate(post, certificate, signing_key, now=now):
         return {"verified": False, "reason": "certificate_invalid"}
     try:
-        record = lookup_review(certificate["review_record_url"])
+        envelope = lookup_review(certificate["review_record_url"])
     except Exception:
         return {"verified": False, "reason": "trusted_review_unavailable"}
-    if not isinstance(record, dict):
+    if not isinstance(envelope, dict):
         return {"verified": False, "reason": "review_record_missing"}
+    record = envelope.get("record")
+    signature = envelope.get("signature")
+    if not isinstance(record, dict) or not isinstance(signature, str) or len(signature) != 64:
+        return {"verified": False, "reason": "review_record_signature_missing"}
+    try:
+        expected_signature = hmac.new(
+            registry_verification_key, _canonical_bytes(record), hashlib.sha256
+        ).hexdigest()
+    except (TypeError, ValueError):
+        return {"verified": False, "reason": "review_record_invalid"}
+    if not hmac.compare_digest(signature, expected_signature):
+        return {"verified": False, "reason": "review_record_signature_invalid"}
+
     required = (
         record.get("reviewer_id") == certificate["reviewer_id"]
         and record.get("draft_sha256") == draft_digest(post)
