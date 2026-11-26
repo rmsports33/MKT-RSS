@@ -156,7 +156,14 @@ function cxgv1nat_handle_reject() {
     if (!$id || !function_exists('cxgv1nat_is_owner') || !cxgv1nat_is_owner()) {
         return;
     }
-    check_admin_referer('cxeg_owner_review_' . $id); // nonce nativo reaproveitado
+    check_admin_referer('cxeg_owner_review_' . $id); // nonce nativo do artigo correto
+
+    // Defesa em profundidade: o post_id do POST deve ser o da página
+    // (evita aplicar decisão ao artigo errado).
+    $page_id = isset($_GET['post_id']) ? absint($_GET['post_id']) : 0;
+    if ($page_id && $page_id !== $id) {
+        return;
+    }
     $snapshot = cxeg_snapshot($id);
     $hash = $snapshot ? cxeg_hash($snapshot) : '';
     $expected = isset($_POST['snapshot_sha256']) ? sanitize_text_field(wp_unslash($_POST['snapshot_sha256'])) : '';

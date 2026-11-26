@@ -133,6 +133,22 @@ def test_reprovacao_no_historico_nativo():
     assert "check_admin_referer" in tpl
 
 
+def test_selecao_recarrega_com_post_id():
+    """Trocar de artigo recarrega com ?post_id=novo (nonce correto do servidor)."""
+    js = _read("gate_v1_layout_nativo.js")
+    assert "newId === selectedId" in js
+    assert "url.searchParams.set('post_id'" in js
+    assert "window.location.href" in js
+
+
+def test_nonce_e_post_id_correlacionados():
+    """Handler de reprovação valida post_id da página contra o do POST."""
+    tpl = _read("gate_v1_layout_nativo_template.php")
+    assert "check_admin_referer('cxeg_owner_review_' . $id)" in tpl
+    assert "$page_id !== $id" in tpl
+    assert "hash_equals($hash, $expected)" in tpl
+
+
 def test_js_nao_cria_endpoint():
     js = _read("gate_v1_layout_nativo.js")
     assert "register_rest_route" not in js

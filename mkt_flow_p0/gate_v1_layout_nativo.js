@@ -59,14 +59,23 @@
     }
 
     // Seleção na lista (renderizada no servidor com dados nativos).
+    // SEGURANÇA: o formulário nativo, seu nonce (cxeg_owner_review_{id}) e o
+    // snapshot são gerados no servidor PARA UM post_id específico. Trocar o
+    // artigo sem recarregar deixaria o formulário apontando para o artigo
+    // inicial. Portanto, ao selecionar OUTRO artigo, navegamos com
+    // ?post_id=<novo> para o Gate gerar formulário, nonce e hash corretos.
     if (el.list) {
         Array.prototype.forEach.call(el.list.querySelectorAll('.cxgv1nat-item'), function (item) {
             item.addEventListener('click', function () {
-                Array.prototype.forEach.call(el.list.querySelectorAll('.cxgv1nat-item'), function (c) { c.classList.remove('sel'); });
-                item.classList.add('sel');
-                selectedId = parseInt(item.getAttribute('data-id'), 10);
-                snapshot = item.getAttribute('data-snapshot') || snapshot;
-                preview(selectedId);
+                var newId = parseInt(item.getAttribute('data-id'), 10);
+                if (newId === selectedId) {
+                    preview(newId); // mesmo artigo: apenas atualiza preview
+                    return;
+                }
+                var url = new URL(window.location.href);
+                url.searchParams.set('page', 'conexo-owner-review');
+                url.searchParams.set('post_id', String(newId));
+                window.location.href = url.toString();
             });
         });
     }
