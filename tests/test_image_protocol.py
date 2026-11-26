@@ -67,5 +67,25 @@ class ImageProtocolTests(unittest.TestCase):
             manifest['visual_review']='ASSISTED_VISUAL_CHECK_COMPLETED';(root/'desktop.jpg').write_bytes(b'tampered')
             with self.assertRaises(ValueError):validate_prepared_manifest(manifest,base_dir=root)
 
+    def test_source_outside_whitelist_is_refused(self):
+        resource=copy.deepcopy(plan_image('teclado do iPhone')['resource'])
+        resource['source_page']='https://site-fora-da-lista.example/foto'
+        with self.assertRaisesRegex(ValueError,'IMAGE_SOURCE_NOT_ALLOWED'):
+            validate_resource(resource)
+
+    def test_credit_uses_registry_source_name(self):
+        from mkt_flow_p0.image_protocol import image_figure,load_registry
+        registry=load_registry()
+        resource=copy.deepcopy(plan_image('teclado do iPhone')['resource'])
+        resource['source_page']='https://www.pexels.com/photo/robot-6019019/'
+        resource['license']='Pexels License'
+        resource['license_url']=registry['licenses']['Pexels License']['url']
+        resource.pop('source_name',None)
+        resource['author']='Laura Musikanski'
+        validate_resource(resource)
+        figure=image_figure(resource,'https://conexotech.com.br/capa.jpg')
+        self.assertIn('/ Pexels.',figure)
+        self.assertNotIn('Wikimedia Commons',figure)
+
 
 if __name__=='__main__':unittest.main()
