@@ -84,3 +84,8 @@ def test_sem_chave_pixabay_falha_segura(monkeypatch):
     monkeypatch.delenv("PIXABAY_API_KEY", raising=False)
     out = sm.buscar_pixabay("x", session=_Session({}))
     assert out.get("erro") == "PIXABAY_KEY_AUSENTE"
+
+
+def test_url_licenca_pixabay_oficial():
+    """URL conferida em pixabay.com/service/license-summary/ (20/10/2026)."""
+    assert sm.PIXABAY_LICENSE == "https://pixabay.com/service/license-summary/"

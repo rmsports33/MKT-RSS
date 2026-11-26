@@ -33,7 +33,7 @@ except Exception:
 
 
 UNSPLASH_LICENSE = "https://unsplash.com/license"
-PIXABAY_LICENSE = "https://pixabay.com/service/license/summary/"
+PIXABAY_LICENSE = "https://pixabay.com/service/license-summary/"
 MIN_W, MIN_H = 1440, 810
 
 
