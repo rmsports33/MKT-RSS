@@ -88,6 +88,8 @@ def review_with_provider(markdown, brief):
                     "Se o artigo declarar teste próprio, benchmark, fotografia ou uso do produto, "
                     "exija evidência de realização e atribuição; dados de terceiros não viram teste "
                     "do ConexoTech. Verifique preço por fonte/data/mercado/variante. "
+                     "Se o texto citar anúncio, lançamento, produto, data ou número ausente das fontes fornecidas, "
+                     "trate como alegação inventada: marque source_limits com nota baixa e cite o trecho literal. "
                     "Verifique se uma recomendação contradiz o sintoma do leitor ou extrapola "
                     "a força da pesquisa. Critique o texto efetivo, não suas intenções ou beleza formal. "
                     "Sinais superficiais de estilo são pistas para revisar, não prova semântica de falha. "
