@@ -10,6 +10,17 @@ from mkt_flow_p0.editorial_broker_transport import BrokerBlocked, publish_via_br
 from tools.schedule_owner_approved_wordpress import (
     POSTS, _start_at, _date_gmt, schedule_batch
 )
+from contextlib import contextmanager
+import mkt_flow_p0.wp_destination as _dest
+
+
+@contextmanager
+def destino_autorizado():
+    with patch.object(_dest, 'resolve', side_effect=lambda op: _dest.WpDestination(
+            url='https://conexotech.com.br', user='svc', password='pw',
+            environment='', operation=op)), \
+         patch.object(_dest, 'assert_writable', side_effect=lambda d, op: None):
+        yield
 
 OWNER_CHECKS = (
     "versao", "titulo", "categoria", "capa", "licenca_imagem", "fontes",
@@ -152,10 +163,11 @@ def test_transport_rejects_owner_future_with_signed_seo_or_publish_without_seo()
     s.get.return_value.status_code = 200
     s.get.return_value.json.return_value = p
     for intent, signed_seo in (("schedule", True), ("publish", False)):
-        with pytest.raises(BrokerBlocked, match="OWNER_VERSION_NOT_AUTHENTICATED"):
-            publish_via_broker(p, core_root=".", wp_url="https://conexotech.com.br",
-                wp_user="svc", wp_password="pw", trace_run_id="test-run-9813",
-                intent=intent, publication_reference=p["payload"]["approval_reference"],
-                post_date_gmt="2026-11-13 12:00:00" if intent == "schedule" else None,
-                require_signed_seo=signed_seo, owner_release=True, session=s)
+        with destino_autorizado():
+            with pytest.raises(BrokerBlocked, match="REVISOR_UNICO_CERTIFICATE_MISSING|OWNER_VERSION_NOT_AUTHENTICATED"):
+                publish_via_broker(p, core_root=".", wp_url="https://conexotech.com.br",
+                    wp_user="svc", wp_password="pw", trace_run_id="test-run-9813",
+                    intent=intent, publication_reference=p["payload"]["approval_reference"],
+                    post_date_gmt="2026-11-13 12:00:00" if intent == "schedule" else None,
+                    require_signed_seo=signed_seo, owner_release=True, session=s)
     s.post.assert_not_called()

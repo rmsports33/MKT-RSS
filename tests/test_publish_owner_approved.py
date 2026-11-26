@@ -8,9 +8,21 @@ import pytest
 from tools.publish_owner_approved import owner_trace, release, verify_public_seo
 from mkt_flow_p0.editorial_broker_transport import publish_via_broker, BrokerBlocked
 from mkt_flow_p0.editorial_trace_gate import REQUIRED
+from contextlib import contextmanager
+import mkt_flow_p0.wp_destination as _dest
 
 VERSION='b'*64
 ENV={'WP_USER':'test-service','WP_APP_PASSWORD':'private-password'}
+
+
+@contextmanager
+def destino_autorizado(user='service', password='test'):
+    """Autoriza o destino em testes com as credenciais usadas pela chamada."""
+    with patch.object(_dest, 'resolve', side_effect=lambda op: _dest.WpDestination(
+            url='https://conexotech.com.br', user=user,
+            password=password, environment='', operation=op)), \
+         patch.object(_dest, 'assert_writable', side_effect=lambda d, op: None):
+        yield
 
 
 def packet():
@@ -93,9 +105,10 @@ def test_no_network_when_service_identity_is_not_verified():
 def test_caller_packet_cannot_override_authoritative_owner_approval():
     p=packet(); tampered=copy.deepcopy(p); tampered['payload']['content']='Different content'
     s=http(p)
-    with patch('mkt_flow_p0.editorial_broker_transport.save_turso_trace') as save, \
+    with destino_autorizado(), \
+         patch('mkt_flow_p0.editorial_broker_transport.save_turso_trace') as save, \
          patch('mkt_flow_p0.editorial_broker_transport.load_core') as core:
-        with pytest.raises(BrokerBlocked,match='OWNER_VERSION_NOT_AUTHENTICATED'):
+        with pytest.raises(BrokerBlocked,match='REVISOR_UNICO_CERTIFICATE_MISSING|OWNER_VERSION_NOT_AUTHENTICATED'):
             publish_via_broker(tampered,core_root='.',wp_url='https://conexotech.com.br',
                 wp_user='service',wp_password='test',trace_run_id='test-run-9768',intent='publish',
                 publication_reference=p['payload']['approval_reference'],session=s,

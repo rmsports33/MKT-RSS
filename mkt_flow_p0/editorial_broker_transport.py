@@ -6,6 +6,7 @@ and invokes the canonical Gate, which enforces independent human approval.
 The authorized Turso trace must exist and read back BEFORE WordPress POST.
 """
 import hashlib
+import hmac
 import json
 import re
 import requests
@@ -43,8 +44,47 @@ def _get_json(session, url, auth, timeout):
 def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                        trace_run_id, intent="publish", publication_reference=None,
                        post_date_gmt=None, trace_packet=None, timeout=15,
-                       session=requests, require_signed_seo=False, owner_release=False):
-    """One attempt, never automatically retry uncertain WordPress/Turso writes."""
+                       session=requests, require_signed_seo=False, owner_release=False,
+                       review_certificate=None, review_certificate_key=None,
+                       review_lookup=None, registry_verification_key=None):
+    """One attempt, never automatically retry uncertain WordPress/Turso writes.
+
+    When a Revisor Único review is supplied, it is verified against an
+    authenticated registry envelope BEFORE any WordPress write. All existing
+    checks remain mandatory; this guard is additive (fail-closed).
+    """
+    # Destino WordPress fail-closed (PR #133) — validado ANTES de qualquer
+    # guarda e de qualquer escrita.
+    from mkt_flow_p0.wp_destination import (
+        DestinationBlocked, resolve as _resolve_dest,
+        assert_writable as _assert_writable,
+        OPERATION_PUBLISH as _OP_PUBLISH,
+        OPERATION_DRAFT as _OP_DRAFT,
+    )
+    _op = _OP_PUBLISH if intent in {"publish", "schedule"} else _OP_DRAFT
+    try:
+        _dest = _resolve_dest(_op)
+        _assert_writable(_dest, _op)
+    except DestinationBlocked as exc:
+        raise BrokerBlocked(str(exc)) from None
+
+    # Argumentos do chamador devem corresponder ao destino central validado.
+    if (
+        not isinstance(wp_url, str)
+        or wp_url.rstrip("/") != _dest.url.rstrip("/")
+        or not isinstance(wp_user, str)
+        or wp_user != _dest.user
+        or not isinstance(wp_password, str)
+        or not hmac.compare_digest(
+            wp_password.encode("utf-8"), _dest.password.encode("utf-8")
+        )
+    ):
+        raise BrokerBlocked("WP_DESTINATION_ARGUMENT_MISMATCH")
+    # Daqui em diante, todos os transportes usam somente a identidade resolvida.
+    wp_url, wp_user, wp_password = _dest.url, _dest.user, _dest.password
+
+    # Identificador e versão DEVEM ser extraídos e validados ANTES de qualquer
+    # guarda (correção do bug de variável não inicializada na revisão anterior).
     if not isinstance(wp_url, str) or wp_url.rstrip("/") != SITE:
         raise BrokerBlocked("WP_ORIGIN_NOT_ALLOWED")
     if not wp_user or not wp_password:
@@ -64,6 +104,34 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
     version = package.get("version_sha256")
     if not isinstance(version, str) or not _SHA.fullmatch(version):
         raise BrokerBlocked("CANONICAL_VERSION_INVALID")
+
+    # Preparar a guarda obrigatória do Revisor Único. A validação da assinatura
+    # será feita após E1: a guarda precisa receber os campos completos e
+    # autenticados do rascunho, não apenas {"id": post_id}.
+    _review_guard_context = None
+    if intent in _ALLOWED:
+        from mkt_flow_p0.broker_revisor_guard import require_broker_review
+        from mkt_flow_p0.review_keys import (
+            certificate_key, registry_verification_key as _registry_key,
+            ensure_distinct_keys)
+        from mkt_flow_p0.registry_adapter_real import build_registry_adapter
+        _cert = review_certificate or package.get("review_certificate") \
+            or package.get("editorial_factual_certificate") \
+            or (package.get("payload") or {}).get("review_certificate")
+        if not isinstance(_cert, dict):
+            raise BrokerBlocked("REVISOR_UNICO_CERTIFICATE_MISSING")
+        try:
+            _cert_key = review_certificate_key or certificate_key()
+            _reg_key = registry_verification_key or _registry_key()
+            _cert_key, _reg_key = ensure_distinct_keys(_cert_key, _reg_key)
+            _lookup = review_lookup or build_registry_adapter(
+                wp_user=wp_user, wp_app_password=wp_password, session=session,
+                timeout=timeout)
+        except Exception as exc:
+            raise BrokerBlocked(str(exc)) from None
+        _review_guard_context = (
+            require_broker_review, _cert, _cert_key, _lookup, _reg_key
+        )
 
     # Retain the canonical validator from Conexo OS. Local PASS is not a
     # publication approval; the WP Gate independently checks review+quality.
@@ -106,7 +174,7 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
     except (ValueError, TypeError, KeyError):
         raise BrokerBlocked("TRACE_TURSO_RELEASE_NOT_VERIFIED") from None
 
-    auth = (wp_user, wp_password)
+    auth = _dest.auth
     seo_hash = None
     if require_signed_seo:
         seo = payload.get("seo")
@@ -150,6 +218,25 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
         expected["post_date_gmt"] = post_date_gmt
     elif post_date_gmt is not None:
         raise BrokerBlocked("SCHEDULE_GMT_UNEXPECTED")
+
+    # E1+E2 autenticados. Aqui expected_sha256 é o hash do corpo bruto,
+    # não o snapshot_sha256 do Gate (que inclui campos além do conteúdo).
+    from mkt_flow_p0.readback_e1e2 import validate_e1_e2, E1E2Blocked
+    try:
+        e1e2 = validate_e1_e2(
+            post_id, wp_user, wp_password, session=session, timeout=timeout,
+            expected_sha256=hashlib.sha256(article.encode("utf-8")).hexdigest())
+    except E1E2Blocked as exc:
+        raise BrokerBlocked(str(exc)) from None
+
+    # A guarda verifica o certificado contra o post integral lido por E1.
+    # Esta autorização é exigida antes do único POST de escrita do broker.
+    if _review_guard_context is not None:
+        _guard, _cert, _cert_key, _lookup, _reg_key = _review_guard_context
+        try:
+            _guard(e1e2["review_post"], _cert, _cert_key, _lookup, _reg_key)
+        except Exception as exc:
+            raise BrokerBlocked(str(exc)) from None
 
     try:
         response = session.post(f"{SITE}/wp-json/conexo/v1/editorial/broker/write",

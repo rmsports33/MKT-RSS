@@ -1,5 +1,6 @@
 """Fail-closed broker adapter tests; no real WordPress, Turso or secrets."""
 import hashlib
+import os
 import unittest
 from unittest.mock import patch
 
@@ -18,6 +19,7 @@ PACKAGE = {
         "content": CONTENT,
         "wordpress": {"post_id": POST_ID},
     },
+    "review_certificate": {"synthetic": True},
 }
 
 
@@ -39,6 +41,13 @@ class FakeHTTP:
     def get(self, url, **kwargs):
         self.gets.append(url)
         assert kwargs.get("allow_redirects") is False
+        if "context=edit" in url:
+            return Resp(200, {"id": POST_ID, "status": "draft",
+                "title": {"raw": "Notícia"}, "content": {"raw": self.body},
+                "slug": "noticia", "categories": [10], "featured_media": 12})
+        if "context=view" in url:
+            return Resp(200, {"id": POST_ID, "status": "draft",
+                "content": {"rendered": self.body}})
         status = "publish" if self.posts else "draft"
         snap = {"ID": POST_ID, "post_status": status, "post_content": self.body}
         return Resp(200, {"snapshot": snap, "snapshot_sha256": SHA})
@@ -90,7 +99,7 @@ def run(http, **kwargs):
     return publish_via_broker(
         PACKAGE, core_root="/tmp/synthetic-conexo",
         wp_url="https://conexotech.com.br",
-        wp_user="synthetic-svc", wp_password="synthetic-app-password",
+        wp_user="svc", wp_password="test",
         trace_run_id=RUN, intent="publish",
         publication_reference="HUMAN-APPROVAL-SYNTHETIC",
         session=http, **kwargs,
@@ -98,6 +107,25 @@ def run(http, **kwargs):
 
 
 class BrokerTests(unittest.TestCase):
+    def setUp(self):
+        self._env_patch = patch.dict(os.environ, {
+            "WP_OPERATION_MODE": "production",
+            "GITHUB_ENVIRONMENT": "",
+            "WP_URL": "https://conexotech.com.br",
+            "WP_USER": "svc",
+            "WP_APP_PASSWORD": "test",
+            "CONEXO_EDITORIAL_GATE_KEY": "c" * 40,
+            "CONEXO_REVIEW_REGISTRY_KEY": "r" * 40,
+        }, clear=False)
+        self._env_patch.start()
+        self._guard_patch = patch(
+            "mkt_flow_p0.broker_revisor_guard.require_broker_review",
+            return_value={"verified": True})
+        self._guard_patch.start()
+
+    def tearDown(self):
+        self._guard_patch.stop()
+        self._env_patch.stop()
     def strict_run(self, http):
         seo = {'provider': 'native', 'canonical': 'https://conexotech.com.br/revisado/',
                'title': 'SEO revisto', 'description': 'Descricao revista.'}
@@ -159,7 +187,10 @@ class BrokerTests(unittest.TestCase):
         self.assertNotIn("signature", http.posts[0][1]["json"])
         self.assertNotIn("receipt", http.posts[0][1]["json"])
         self.assertEqual(http.posts[0][1]["json"]["executor"], "mkt_rss")
-        self.assertEqual(len(http.gets), 2)
+        # E1 (context=edit) + E2 (context=view) + 2 snapshots (antes/depois do POST)
+        self.assertEqual(len(http.gets), 4)
+        self.assertTrue(any("context=edit" in u for u in http.gets), "E1 obrigatório")
+        self.assertTrue(any("context=view" in u for u in http.gets), "E2 obrigatório")
 
     def test_turso_not_verified_no_wp_requests(self):
         http = FakeHTTP()
