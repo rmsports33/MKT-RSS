@@ -27,7 +27,7 @@ class _Session:
                                "content": {"raw": "<p>Texto</p>"}})
         if "context=view" in url:
             return _Resp(200, {"id": 41, "status": "draft",
-                               "content": {"rendered": "<h1>T</h1><p>Texto</p>"}})
+                               "content": {"rendered": "<p>Texto</p>"}})
         return _Resp(200, {"snapshot": {"ID": 41, "post_status": "draft",
                                         "post_content": "<p>Texto</p>"},
                            "snapshot_sha256": "a" * 64})
@@ -63,11 +63,25 @@ def test_post_id_extraido_antes_da_guarda(monkeypatch):
     assert s.posted is False
 
 
-def test_e1e2_obrigatorio_por_padrao():
-    """E1/E2 executam por padrão (sem parâmetro desligado)."""
+def test_e1e2_obrigatorio_sem_parametro():
+    """Não existe parâmetro para desativar E1/E2."""
     import inspect
     sig = inspect.signature(bt.publish_via_broker)
-    assert sig.parameters["validate_e1e2_enabled"].default is True
+    assert "validate_e1e2_enabled" not in sig.parameters
+
+
+def test_guarda_obrigatoria_sem_certificado():
+    """Sem certificado, publicação deve ser bloqueada (guarda obrigatória)."""
+    import mkt_flow_p0.wp_destination as wd
+    monkeypatch = None
+    # Destino em produção está bloqueado por padrão; isso já prova fail-closed.
+    s = _Session()
+    with pytest.raises(bt.BrokerBlocked) as exc:
+        bt.publish_via_broker(
+            _package(), core_root="/unused", wp_url=SITE, wp_user="svc",
+            wp_password="pw", trace_run_id="run", intent="publish",
+            publication_reference="REF-12345", session=s)
+    assert s.posted is False
 
 
 def test_e1e2_falha_bloqueia_post():

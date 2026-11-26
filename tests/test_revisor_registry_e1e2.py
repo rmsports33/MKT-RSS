@@ -69,12 +69,41 @@ def test_e1e2_correlacionado():
                              "title": {"raw": "Titulo"},
                              "content": {"raw": raw}}),
         "view": _Resp(200, {"id": 41, "status": "draft",
-                             "content": {"rendered": "<h1>Titulo</h1>" + raw}}),
+                             "content": {"rendered": raw}}),
     })
     out = e12.validate_e1_e2(41, "svc", "pw", session=s, expected_sha256=digest)
     assert out["verified"] is True
     assert out["content_sha256"] == digest
+    assert out["e1e2_correlated"] is True
     assert len(s.calls) == 2  # E1 e E2 antes da escrita
+
+
+def test_e1e2_sem_hash_esperado_bloqueia():
+    raw = "<p>Texto</p>"
+    s = _Session({
+        "edit": _Resp(200, {"id": 41, "status": "draft", "title": {"raw": "T"},
+                             "content": {"raw": raw}}),
+        "view": _Resp(200, {"id": 41, "status": "draft",
+                             "content": {"rendered": "<h1>T</h1>" + raw}}),
+    })
+    with pytest.raises(e12.E1E2Blocked) as exc:
+        e12.validate_e1_e2(41, "svc", "pw", session=s, expected_sha256=None)
+    assert "E1_EXPECTED_HASH_REQUIRED" in str(exc.value)
+
+
+def test_e1e2_renderizado_divergente_bloqueia():
+    """Renderizado com texto diferente do bruto deve bloquear."""
+    raw = "<p>Texto original aprovado</p>"
+    digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    s = _Session({
+        "edit": _Resp(200, {"id": 41, "status": "draft", "title": {"raw": "T"},
+                             "content": {"raw": raw}}),
+        "view": _Resp(200, {"id": 41, "status": "draft",
+                             "content": {"rendered": "<p>Texto alterado sem autorizacao</p>"}}),
+    })
+    with pytest.raises(e12.E1E2Blocked) as exc:
+        e12.validate_e1_e2(41, "svc", "pw", session=s, expected_sha256=digest)
+    assert "E1E2_RENDERED_CONTENT_MISMATCH" in str(exc.value)
 
 
 def test_e1e2_status_divergente_bloqueia():

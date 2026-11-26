@@ -45,8 +45,7 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                        post_date_gmt=None, trace_packet=None, timeout=15,
                        session=requests, require_signed_seo=False, owner_release=False,
                        review_certificate=None, review_certificate_key=None,
-                       review_lookup=None, registry_verification_key=None,
-                       validate_e1e2_enabled=True):
+                       review_lookup=None, registry_verification_key=None):
     """One attempt, never automatically retry uncertain WordPress/Turso writes.
 
     When a Revisor Único review is supplied, it is verified against an
@@ -90,14 +89,22 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
     if not isinstance(version, str) or not _SHA.fullmatch(version):
         raise BrokerBlocked("CANONICAL_VERSION_INVALID")
 
-    # Revisor Único guard — agora com post_id já validado.
-    # Quando há certificado, chaves e adaptador são conectados automaticamente
-    # ao executor real (sem expor segredos). Nenhum POST sem guarda válida.
-    if review_certificate is not None:
+    # Revisor Único guard — OBRIGATÓRIA para publish/schedule.
+    # Não existe caminho alternativo que dispense a autorização humana:
+    # o certificado é obtido do pacote quando não fornecido explicitamente.
+    # Chaves e adaptador são conectados automaticamente ao executor real.
+    if intent in _ALLOWED:  # publish e schedule — sempre exige guarda
         from mkt_flow_p0.broker_revisor_guard import require_broker_review
-        from mkt_flow_p0.review_keys import certificate_key, registry_verification_key as _registry_key
+        from mkt_flow_p0.review_keys import (
+            certificate_key, registry_verification_key as _registry_key,
+            ReviewKeyProvisioningBlocked)
         from mkt_flow_p0.registry_adapter_real import build_registry_adapter
-        from mkt_flow_p0.review_keys import ReviewKeyProvisioningBlocked
+        # Certificado: parâmetro explícito ou do pacote canônico.
+        _cert = review_certificate or package.get("review_certificate") \
+            or package.get("editorial_factual_certificate") \
+            or (package.get("payload") or {}).get("review_certificate")
+        if not isinstance(_cert, dict):
+            raise BrokerBlocked("REVISOR_UNICO_CERTIFICATE_MISSING")
         try:
             _cert_key = review_certificate_key or certificate_key()
             _reg_key = registry_verification_key or _registry_key()
@@ -105,7 +112,7 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                 wp_user=wp_user, wp_app_password=wp_password, session=session,
                 timeout=timeout)
             require_broker_review(
-                {"id": post_id}, review_certificate, _cert_key, _lookup, _reg_key)
+                {"id": post_id}, _cert, _cert_key, _lookup, _reg_key)
         except (ReviewKeyProvisioningBlocked, Exception) as exc:
             raise BrokerBlocked(str(exc)) from None
 
@@ -195,15 +202,14 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
     elif post_date_gmt is not None:
         raise BrokerBlocked("SCHEDULE_GMT_UNEXPECTED")
 
-    # E1+E2 autenticados antes de qualquer escrita (contrato 2.3).
-    # Quando habilitado, exige GET context=edit e context=view correlacionados.
-    if validate_e1e2_enabled:
-        from mkt_flow_p0.readback_e1e2 import validate_e1_e2, E1E2Blocked
-        try:
-            validate_e1_e2(post_id, wp_user, wp_password, session=session,
-                           timeout=timeout, expected_sha256=None)
-        except E1E2Blocked as exc:
-            raise BrokerBlocked(str(exc)) from None
+    # E1+E2 SEMPRE obrigatórios antes de qualquer escrita (contrato 2.3).
+    # Sem parâmetro de desativação e com o hash esperado da versão aprovada.
+    from mkt_flow_p0.readback_e1e2 import validate_e1_e2, E1E2Blocked
+    try:
+        validate_e1_e2(post_id, wp_user, wp_password, session=session,
+                       timeout=timeout, expected_sha256=sha)
+    except E1E2Blocked as exc:
+        raise BrokerBlocked(str(exc)) from None
 
     try:
         response = session.post(f"{SITE}/wp-json/conexo/v1/editorial/broker/write",

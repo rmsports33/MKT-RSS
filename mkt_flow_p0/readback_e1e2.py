@@ -10,6 +10,8 @@ autenticado; em testes é validado com sessão simulada (PASS SIMULADO).
 from __future__ import annotations
 
 import hashlib
+import html
+import re
 
 import requests
 
@@ -63,11 +65,21 @@ def validate_e1_e2(post_id, wp_user, wp_app_password, *, session=requests,
     if not isinstance(rendered, str) or not rendered.strip():
         raise E1E2Blocked("E2_RENDERED_CONTENT_MISSING")
     digest = hashlib.sha256(raw.encode("utf-8")).hexdigest()
-    if expected_sha256 and digest != expected_sha256:
+    # Hash esperado é OBRIGATÓRIO: sem ele não é possível provar que E1/E2
+    # correspondem à versão aprovada.
+    if (not isinstance(expected_sha256, str)
+            or not re.fullmatch(r"[a-f0-9]{64}", expected_sha256)):
+        raise E1E2Blocked("E1_EXPECTED_HASH_REQUIRED")
+    if digest != expected_sha256:
         raise E1E2Blocked("E1_CONTENT_HASH_MISMATCH")
-    # Correlação mínima: o texto renderizado deve conter o título do bruto.
-    title = (e1.get("title") or {}).get("raw") or ""
-    if title and title not in rendered:
-        raise E1E2Blocked("E1E2_CONTENT_NOT_CORRELATED")
+    # Correlação efetiva: normalizar bruto e renderizado e comparar o conteúdo
+    # textual completo (não apenas a presença do título).
+    def _texto(s):
+        s = re.sub(r"<[^>]+>", " ", s)
+        s = html.unescape(s)
+        return re.sub(r"\s+", " ", s).strip()
+    texto_raw, texto_rendered = _texto(raw), _texto(rendered)
+    if not texto_raw or texto_rendered != texto_raw:
+        raise E1E2Blocked("E1E2_RENDERED_CONTENT_MISMATCH")
     return {"verified": True, "post_id": post_id, "status": e1["status"],
-            "content_sha256": digest}
+            "content_sha256": digest, "e1e2_correlated": True}
