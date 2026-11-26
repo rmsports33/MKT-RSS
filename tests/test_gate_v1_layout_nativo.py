@@ -83,9 +83,54 @@ def test_motivos_e_justificativa():
 
 def test_sem_publicacao_automatica_no_aprovador():
     code = _read("gate_v1_layout_nativo.php")
-    # O aprovador usa 'hold' por padrão no destino; publish nunca é forçado.
     assert "'hold'" in code
     assert "cxq_process_approved_intent" in code
+
+
+def test_conectado_a_tela_nativa():
+    """Layout conectado via hook admin_notices na página nativa."""
+    tpl = _read("gate_v1_layout_nativo_template.php")
+    assert "add_action('admin_notices', 'cxgv1nat_render_above_native_form'" in tpl
+    assert "conexo-owner-review" in tpl
+
+
+def test_formulario_nativo_por_id_unico():
+    """Não usar document.querySelector('form') de forma ambígua."""
+    js = _read("gate_v1_layout_nativo.js")
+    tpl = _read("gate_v1_layout_nativo_template.php")
+    assert "document.querySelector('form')" not in js
+    assert "cxgv1nat-native-form" in tpl
+    assert "getElementById(cfg.formId" in js
+
+
+def test_nao_marca_13_criterios_automaticamente():
+    """JS não marca checks nem cria evidências; PHP exige checks reais."""
+    js = _read("gate_v1_layout_nativo.js")
+    php = _read("gate_v1_layout_nativo.php")
+    assert "c.checked = true" not in js
+    assert "Falta verificação humana com evidência" in php
+    assert "$checks = array();" not in php
+
+
+def test_destino_nativo_preservado():
+    """JS não altera publication_mode (apenas menção em comentário)."""
+    js = _read("gate_v1_layout_nativo.js")
+    # Remover comentários para verificar código executável
+    code = "\n".join(
+        linha for linha in js.splitlines()
+        if not linha.strip().startswith("*") and not linha.strip().startswith("//")
+    )
+    assert "publication_mode" not in code
+
+
+def test_reprovacao_no_historico_nativo():
+    """Reprovação grava em cxeg_review_{id} com decision=rejected."""
+    php = _read("gate_v1_layout_nativo.php")
+    tpl = _read("gate_v1_layout_nativo_template.php")
+    assert "'decision' => 'rejected'" in php
+    assert "cxeg_review_" in php
+    assert "cxgv1nat_handle_reject" in tpl
+    assert "check_admin_referer" in tpl
 
 
 def test_js_nao_cria_endpoint():

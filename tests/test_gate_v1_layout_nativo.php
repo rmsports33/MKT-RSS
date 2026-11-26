@@ -97,14 +97,25 @@ class NatTest {
         $this->ok($d['id'] === 9900, 'Detalhe do artigo');
         $this->ok($d['snapshot_sha256'] === $hash, 'Hash do snapshot');
 
-        // Aprovação (modo hold não publica)
-        $r = cxgv1nat_approve(9900, $hash, 'hold');
-        $this->ok(!empty($r['ok']) && $r['decision'] === 'approved', 'Aprovação nativa');
-        $this->ok($r['destination'] === 'hold', 'Destino hold (sem publicação)');
+        // Aprovação SEM checks deve ser bloqueada (não inventar evidências)
+        $r0 = cxgv1nat_approve(9900, $hash, 'hold');
+        $this->ok(!empty($r0['error']), 'Aprovação sem checklist humano bloqueia');
+
+        // Checklist REAL (fornecido pelo humano via formulário nativo)
+        $checks = array();
+        foreach (cxeg_quality_required_checks() as $key) {
+            $checks[$key] = array('estado' => 'VERIFICADO',
+                'evidencia' => array('Evidência humana conferida para ' . $key . ' no artigo 9900.'));
+        }
+
+        // Aprovação com checks (destino nativo 'hold')
+        $r = cxgv1nat_approve(9900, $hash, 'hold', $checks);
+        $this->ok(!empty($r['ok']) && $r['decision'] === 'approved', 'Aprovação nativa com checklist');
+        $this->ok($r['destination'] === 'hold', 'Destino hold preservado');
         $this->ok(isset($GLOBALS['nat_options']['cxeg_review_9900']), 'Histórico nativo preservado');
 
         // Hash divergente bloqueia
-        $r2 = cxgv1nat_approve(9900, 'hash_errado', 'hold');
+        $r2 = cxgv1nat_approve(9900, 'hash_errado', 'hold', $checks);
         $this->ok(!empty($r2['error']), 'Hash divergente bloqueia');
 
         // Reprovação

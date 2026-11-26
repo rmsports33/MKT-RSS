@@ -160,7 +160,7 @@ function cxgv1nat_rejection_reasons() {
  * APROVAR — usa EXCLUSIVAMENTE os mecanismos nativos do Gate V1.
  * Não grava em filas próprias. Não cria review paralelo.
  */
-function cxgv1nat_approve($id, $expected_hash, $mode = 'hold') {
+function cxgv1nat_approve($id, $expected_hash, $mode = 'hold', $checks = null) {
     if (!cxgv1nat_is_owner()) {
         return array('error' => 'Usuário não autorizado.');
     }
@@ -196,13 +196,18 @@ function cxgv1nat_approve($id, $expected_hash, $mode = 'hold') {
         return array('error' => 'SEO inválido.');
     }
 
-    // Verificação obrigatória nativa (13 itens) — mesma regra da tela existente.
-    $checks = array();
+    // Verificação obrigatória nativa (13 itens).
+    // NUNCA inventar evidências: exige os checks reais do formulário nativo.
+    if (!is_array($checks)) {
+        return array('error' => 'Checklist humano ausente. Preencha os 13 critérios no formulário nativo.');
+    }
     foreach (cxeg_quality_required_checks() as $key) {
-        $checks[$key] = array(
-            'estado' => 'VERIFICADO',
-            'evidencia' => array('Conferência humana via painel nativo #' . $id . '; versão ' . $hash),
-        );
+        $check = $checks[$key] ?? null;
+        if (!is_array($check) || ($check['estado'] ?? '') !== 'VERIFICADO'
+            || !is_array($check['evidencia'] ?? null) || count($check['evidencia']) !== 1
+            || !is_string($check['evidencia'][0]) || strlen(trim($check['evidencia'][0])) < 8) {
+            return array('error' => 'Falta verificação humana com evidência: ' . $key);
+        }
     }
 
     // Aceite nativo do proprietário (grava cxeg_review_ e cxeg_quality_).

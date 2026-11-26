@@ -1,7 +1,11 @@
 /**
- * Gate V1 — layout nativo: preview dinâmico e decisão via formulário nativo.
- * NÃO cria endpoints novos: usa GET conexo/v1/editorial/snapshot/{id} (nativo)
- * e submete o formulário nativo existente no Gate.
+ * Gate V1 — layout nativo: preview dinâmico e decisão via formulário NATIVO.
+ *
+ * - Preview usa a rota nativa existente: GET /conexo/v1/editorial/snapshot/{id}
+ * - SALVAR RESPOSTA (APROVAR) submete o formulário nativo identificado por ID.
+ * - NÃO marca os 13 critérios humanos nem inventa evidências.
+ * - NÃO altera `publication_mode` (destino nativo preservado).
+ * - Reprovação usa o handler nativo com o nonce nativo.
  */
 (function () {
     'use strict';
@@ -9,9 +13,8 @@
     var root = document.getElementById('cxgv1nat-root');
     if (!root) return;
 
-    var postId = parseInt(root.getAttribute('data-post-id'), 10);
+    var selectedId = parseInt(root.getAttribute('data-post-id'), 10);
     var snapshot = root.getAttribute('data-snapshot');
-    var selected = null;
     var decision = null;
 
     var el = {
@@ -33,69 +36,39 @@
         el.msg.hidden = false;
     }
 
-    function headers() {
-        return { 'X-WP-Nonce': cfg.nonce || '' };
+    // Preview dinâmico via rota NATIVA existente (somente leitura autenticada).
+    function preview(id) {
+        fetch(cfg.apiBase + '/snapshot/' + id, {
+            credentials: 'same-origin',
+            headers: { 'X-WP-Nonce': cfg.nonce || '' }
+        })
+        .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+        .then(function (data) {
+            var s = data.snapshot || {};
+            snapshot = data.snapshot_sha256 || snapshot;
+            el.detail.innerHTML = '<h4>' + esc(s.post_title || '') + '</h4>' +
+                '<p class="cxgv1nat-sub2">' + esc(s.post_modified || '') + '</p>' +
+                '<div class="cxgv1nat-body">' + (s.post_content || '') + '</div>';
+            var pv = document.getElementById('cxgv1nat-tab-preview');
+            if (pv) pv.innerHTML = el.detail.innerHTML;
+            var det = document.getElementById('cxgv1nat-tab-details');
+            if (det) det.innerHTML = '<p>ID: ' + esc(id) + '</p><p>Status: ' + esc(s.post_status || '') + '</p><p>Snapshot: <code>' + esc(snapshot) + '</code></p>';
+            resetDecision();
+        })
+        .catch(function (e) { showMsg('Falha no preview: ' + e.message, false); });
     }
 
-    // Carrega lista de rascunhos elegíveis — somente leitura via endpoint nativo.
-    function loadList() {
-        fetch('?page=conexo-owner-review&cxgv1nat=list', { credentials: 'same-origin' })
-            .then(function (r) { return r.json(); })
-            .then(function (data) {
-                if (data.error) { showMsg(data.error, false); return; }
-                var items = data.items || [];
-                document.getElementById('cxgv1nat-total').textContent = data.total || 0;
-                document.getElementById('cxgv1nat-ready').textContent = items.filter(function (i) { return i.status === 'ready'; }).length;
-                document.getElementById('cxgv1nat-blocked').textContent = items.filter(function (i) { return i.status === 'blocked'; }).length;
-                el.list.innerHTML = '';
-                items.forEach(function (it) {
-                    var div = document.createElement('div');
-                    div.className = 'cxgv1nat-item';
-                    div.setAttribute('data-id', it.id);
-                    var thumb = it.thumbnail_url
-                        ? '<img class="cxgv1nat-thumb" src="' + esc(it.thumbnail_url) + '" alt="' + esc(it.thumbnail_alt || '') + '">'
-                        : '<div class="cxgv1nat-thumb-ph">Sem imagem</div>';
-                    div.innerHTML = thumb + '<div><strong>' + esc(it.title) + '</strong>' +
-                        '<div class="cxgv1nat-meta"><span>' + esc(fmtDate(it.date)) + '</span>' +
-                        '<span class="cxgv1nat-pill ' + (it.status === 'blocked' ? 'blocked' : '') + '">' + esc(it.status) + '</span>' +
-                        (it.categories || []).map(function (c) { return '<span>' + esc(c) + '</span>'; }).join('') +
-                        '</div></div>';
-                    div.addEventListener('click', function () { selectArticle(it); });
-                    el.list.appendChild(div);
-                });
-            })
-            .catch(function () { showMsg('Falha ao carregar fila.', false); });
-    }
-
-    // Preview dinâmico via endpoint nativo de snapshot (leitura autenticada).
-    function selectArticle(item) {
-        selected = item;
-        Array.prototype.forEach.call(el.list.children, function (c) { c.classList.remove('sel'); });
-        var target = el.list.querySelector('[data-id="' + item.id + '"]');
-        if (target) target.classList.add('sel');
-
-        fetch(cfg.apiBase + '/snapshot/' + item.id, { credentials: 'same-origin', headers: headers() })
-            .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
-            .then(function (data) {
-                var snap = data.snapshot || {};
-                snapshot = data.snapshot_sha256 || item.snapshot_sha256 || snapshot;
-                root.setAttribute('data-snapshot', snapshot);
-                el.detail.innerHTML = '<h4>' + esc(snap.post_title || item.title) + '</h4>' +
-                    '<p class="cxgv1nat-sub2">' + esc(fmtDate(snap.post_modified || item.date)) + '</p>' +
-                    '<div class="cxgv1nat-body">' + (snap.post_content || '') + '</div>';
-                var pv = document.getElementById('cxgv1nat-tab-preview');
-                if (pv) pv.innerHTML = el.detail.innerHTML;
-                var det = document.getElementById('cxgv1nat-tab-details');
-                if (det) det.innerHTML = '<p><strong>ID:</strong> ' + esc(item.id) + '</p>' +
-                    '<p><strong>Status:</strong> ' + esc(snap.post_status || '') + '</p>' +
-                    '<p><strong>Snapshot:</strong> <code>' + esc(snapshot) + '</code></p>';
-                var vf = document.getElementById('cxgv1nat-tab-verification');
-                if (vf) vf.innerHTML = (item.issues && item.issues.length)
-                    ? '<ul>' + item.issues.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul>'
-                    : '<p>Sem pendências técnicas detectadas.</p>';
-                resetDecision();
-            })
-            .catch(function (e) { showMsg('Falha no preview: ' + e.message, false); });
+    // Seleção na lista (renderizada no servidor com dados nativos).
+    if (el.list) {
+        Array.prototype.forEach.call(el.list.querySelectorAll('.cxgv1nat-item'), function (item) {
+            item.addEventListener('click', function () {
+                Array.prototype.forEach.call(el.list.querySelectorAll('.cxgv1nat-item'), function (c) { c.classList.remove('sel'); });
+                item.classList.add('sel');
+                selectedId = parseInt(item.getAttribute('data-id'), 10);
+                snapshot = item.getAttribute('data-snapshot') || snapshot;
+                preview(selectedId);
+            });
+        });
     }
 
     function resetDecision() {
@@ -129,44 +102,72 @@
 
     function updateRejectState() {
         if (decision !== 'reject') return;
-        var anyReason = !!el.reasons.querySelector('input:checked');
-        el.save.disabled = !(anyReason && el.just.value.trim() !== '');
+        var any = !!el.reasons.querySelector('input:checked');
+        el.save.disabled = !(any && el.just.value.trim() !== '');
     }
     el.reasons.addEventListener('change', updateRejectState);
     el.just.addEventListener('input', updateRejectState);
 
-    // SALVAR RESPOSTA: preenche e submete o formulário NATIVO do Gate V1.
+    /**
+     * SALVAR RESPOSTA:
+     *  - APROVAR: valida que o revisor preencheu os 13 critérios no formulário
+     *    nativo e submete ESSE formulário (salvamento nativo). Nunca marca
+     *    critérios nem cria evidências. Não altera publication_mode.
+     *  - NÃO APROVAR: submete ao handler nativo (admin_init) com nonce nativo.
+     */
     el.save.addEventListener('click', function () {
-        if (!selected) { showMsg('Selecione um artigo.', false); return; }
+        if (!selectedId) { showMsg('Selecione um artigo.', false); return; }
         if (!decision) { showMsg('Escolha uma decisão.', false); return; }
 
-        var nativeForm = document.querySelector('form');
-        if (!nativeForm) { showMsg('Formulário nativo do Gate não encontrado.', false); return; }
-
-        if (decision === 'reject') {
-            var checked = el.reasons.querySelectorAll('input:checked');
-            if (!checked.length || !el.just.value.trim()) {
-                showMsg('Motivo e justificativa são obrigatórios.', false);
+        if (decision === 'approve') {
+            var form = document.getElementById(cfg.formId || 'cxgv1nat-native-form');
+            if (!form) {
+                showMsg('Formulário nativo do Gate não encontrado.', false);
                 return;
             }
-            // Reprovação: registra no mecanismo nativo via campo de evidência.
-            var reasonText = Array.prototype.map.call(checked, function (i) { return i.value; }).join(', ');
-            var firstCheck = nativeForm.querySelector('input[name="checked[versao]"]');
-            var firstEv = nativeForm.querySelector('textarea[name="evidence[versao]"]');
-            if (firstCheck) firstCheck.checked = false; // não aprova
-            if (firstEv) firstEv.value = 'REPROVADO: ' + reasonText + ' — ' + el.just.value.trim();
-            showMsg('Reprovação registrada no formulário nativo. Confirme abaixo.', true);
+            // Não inventar evidências: exige que o humano tenha preenchido.
+            var checks = form.querySelectorAll('input[name^="checked["]');
+            var missing = 0, noEvidence = 0;
+            Array.prototype.forEach.call(checks, function (c) {
+                var name = c.getAttribute('name');
+                var key = name.slice(name.indexOf('[') + 1, name.lastIndexOf(']'));
+
+                if (!c.checked) { missing++; return; }
+                var ev = form.querySelector('textarea[name="evidence[' + key + ']"]');
+                if (!ev || ev.value.trim() === '') { noEvidence++; }
+            });
+            if (missing > 0 || noEvidence > 0 || checks.length === 0) {
+                showMsg('Preencha os ' + checks.length + ' critérios humanos (faltam ' + missing +
+                    ' e ' + noEvidence + ' sem evidência) no formulário nativo abaixo. O layout não marca nem inventa evidências.', false);
+                return;
+            }
+            // Submete o formulário NATIVO — destino (publication_mode) preservado.
+            showMsg('Aprovação pronta: confirming pelo mecanismo nativo do Gate…', true);
+            if (typeof form.requestSubmit === 'function') { form.requestSubmit(); }
+            else { form.submit(); }
             return;
         }
 
-        // Aprovação: marca os 13 checks nativos e o aceite, mantém destino 'hold'.
-        Array.prototype.forEach.call(nativeForm.querySelectorAll('input[name^="checked["]'), function (c) { c.checked = true; });
-        var accept = nativeForm.querySelector('input[name="owner_accept"]');
-        if (accept) accept.checked = true;
-        Array.prototype.forEach.call(nativeForm.querySelectorAll('input[name="publication_mode"]'), function (r) {
-            if (r.value === 'hold') r.checked = true;
-        });
-        showMsg('Aprovação preparada no formulário nativo (destino: manter em espera). Confirme abaixo.', true);
+        // Reprovação: handler nativo, nonce nativo, histórico nativo.
+        var checked = el.reasons.querySelectorAll('input:checked');
+        if (!checked.length || !el.just.value.trim()) {
+            showMsg('Selecione ao menos um motivo e escreva a justificativa.', false);
+            return;
+        }
+        var data = new FormData();
+        data.append('cxgv1nat_reject', '1');
+        data.append('post_id', String(selectedId));
+        data.append('snapshot_sha256', snapshot || '');
+        var nonceInput = document.getElementById('cxgv1nat-native-form')
+            ? document.getElementById('cxgv1nat-native-form').querySelector('input[name="_wpnonce"]')
+            : null;
+        data.append('_wpnonce', nonceInput ? nonceInput.value : '');
+        Array.prototype.forEach.call(checked, function (i) { data.append('cxgv1nat_reason[]', i.value); });
+        data.append('cxgv1nat_justification', el.just.value.trim());
+
+        fetch(window.location.href, { method: 'POST', body: data, credentials: 'same-origin' })
+        .then(function (r) { if (r.ok) { window.location.reload(); } else { showMsg('Falha ao registrar reprovação.', false); } })
+        .catch(function () { showMsg('Falha de rede ao registrar reprovação.', false); });
     });
 
     Array.prototype.forEach.call(el.tabs, function (tab) {
@@ -183,11 +184,4 @@
         if (s === null || s === undefined) return '';
         var d = document.createElement('div'); d.textContent = String(s); return d.innerHTML;
     }
-    function fmtDate(s) {
-        if (!s) return '';
-        var d = new Date(s.replace(' ', 'T'));
-        return isNaN(d.getTime()) ? s : d.toLocaleString('pt-BR');
-    }
-
-    loadList();
 })();
