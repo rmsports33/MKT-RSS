@@ -1,0 +1,51 @@
+/**
+ * Gate V1 — layout nativo de duas colunas (visual do PR #134, sem lógica paralela).
+ */
+.cxgv1nat-shell{max-width:1400px;margin:14px 0;--b:#dce2ec;--m:#526279;--p:#2256cc;--bg:#fff;--sub:#f6f8fc;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;color:#202d42}
+.cxgv1nat-shell *{box-sizing:border-box}
+.cxgv1nat-shell h2{font-size:21px;margin:0 0 8px}
+.cxgv1nat-shell h3{font-size:16px;margin:0 0 10px}
+.cxgv1nat-head{margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--b)}
+.cxgv1nat-sub{color:var(--m);margin:0;font-size:13px}
+.cxgv1nat-stats{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px;margin-bottom:14px}
+.cxgv1nat-stats>div{background:var(--bg);border:1px solid var(--b);border-radius:10px;padding:12px}
+.cxgv1nat-stats strong{display:block;font-size:24px}
+.cxgv1nat-stats span{color:var(--m);font-size:12px}
+.cxgv1nat-layout{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(340px,1fr);gap:16px;align-items:start}
+.cxgv1nat-panel{background:var(--bg);border:1px solid var(--b);border-radius:12px;padding:16px;min-width:0}
+.cxgv1nat-list{max-height:68vh;overflow-y:auto;display:flex;flex-direction:column;gap:8px}
+.cxgv1nat-item{border:1px solid var(--b);border-radius:10px;padding:10px;display:flex;gap:10px;cursor:pointer;align-items:start}
+.cxgv1nat-item:hover,.cxgv1nat-item.sel{border-color:var(--p);background:#f1f5ff}
+.cxgv1nat-thumb{width:76px;height:76px;object-fit:cover;border-radius:8px;flex-shrink:0;background:#eef2f7}
+.cxgv1nat-thumb-ph{width:76px;height:76px;border-radius:8px;background:#eef2f7;display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--m);flex-shrink:0}
+.cxgv1nat-item strong{display:block;font-size:14px;margin-bottom:4px}
+.cxgv1nat-meta{font-size:11px;color:var(--m);display:flex;gap:6px;flex-wrap:wrap}
+.cxgv1nat-pill{background:#eef4ff;color:#1e4bb0;border-radius:20px;padding:2px 7px}
+.cxgv1nat-pill.blocked{background:#fff2db;color:#885009}
+.cxgv1nat-detail{border-bottom:1px solid var(--b);padding-bottom:12px;margin-bottom:10px}
+.cxgv1nat-detail img{max-width:100%;max-height:260px;object-fit:cover;border-radius:8px;margin-bottom:10px}
+.cxgv1nat-detail h4{margin:0 0 6px;font-size:18px}
+.cxgv1nat-detail .cxgv1nat-sub2{color:var(--m);font-size:13px;margin:0 0 8px}
+.cxgv1nat-detail .cxgv1nat-body{font-size:13px;line-height:1.6;max-height:200px;overflow:auto}
+.cxgv1nat-muted{color:var(--m);font-style:italic;font-size:13px}
+.cxgv1nat-tabs{display:flex;gap:6px;margin-bottom:10px}
+.cxgv1nat-tab{border:1px solid var(--b);background:var(--sub);border-radius:6px;padding:7px 12px;cursor:pointer;font-size:13px}
+.cxgv1nat-tab.active{background:var(--p);color:#fff;border-color:var(--p)}
+.cxgv1nat-tabcontent{display:none;font-size:13px}
+.cxgv1nat-tabcontent.active{display:block}
+.cxgv1nat-decision{background:var(--sub);border:1px solid var(--b);border-radius:12px;padding:14px;margin-top:14px}
+.cxgv1nat-buttons{display:flex;gap:10px;flex-wrap:wrap}
+.cxgv1nat-btn-approve,.cxgv1nat-btn-reject{flex:1;padding:12px 16px;border:none;border-radius:6px;color:#fff;font-weight:600;cursor:pointer}
+.cxgv1nat-btn-approve{background:#17683e}
+.cxgv1nat-btn-reject{background:#b32d2e}
+.cxgv1nat-btn-approve.sel{box-shadow:0 0 0 3px rgba(23,104,62,.3)}
+.cxgv1nat-btn-reject.sel{box-shadow:0 0 0 3px rgba(179,45,46,.3)}
+.cxgv1nat-reasons{margin:12px 0;border:1px solid var(--b);border-radius:8px;background:#fff}
+.cxgv1nat-reasons label{display:block;margin:6px 0;font-weight:400;font-size:12px}
+.cxgv1nat-reasons input{margin-right:6px}
+.cxgv1nat-btn-save{background:var(--p);color:#fff;padding:11px 24px;border:none;border-radius:6px;font-weight:600;cursor:pointer}
+.cxgv1nat-btn-save:disabled{opacity:.5;cursor:not-allowed}
+.cxgv1nat-msg{margin-top:10px;padding:9px 12px;border-radius:6px;font-size:13px}
+.cxgv1nat-msg.ok{background:#e4f5e9;color:#17683e}
+.cxgv1nat-msg.err{background:#fdecea;color:#b32d2e}
+@media(max-width:1050px){.cxgv1nat-layout{grid-template-columns:1fr}.cxgv1nat-stats{grid-template-columns:repeat(3,1fr)}}
