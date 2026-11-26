@@ -197,21 +197,35 @@ def plan_image_batch(titles, *, offline=True, content_fit=None):
 
 
 def prepare_assets(resource, image_bytes):
-    """Use the existing Pillow cover pipeline for licensed or generated artwork."""
+    """Use the existing Pillow cover pipeline for licensed or generated artwork.
+
+    A marca d'água ConexoTech é aplicada ANTES dos recortes, para que desktop e
+    mobile a contenham. É Own-brand: não conflita com a regra que proíbe marca
+    de terceiros (`PASS_NO_THIRD_PARTY_BRANDING`).
+    """
     from mkt_flow_p0.image_handler import processar_capa
+    from mkt_flow_p0.image_watermark import aplicar_marca
     from PIL import Image
     import io
+    import tempfile
     resource=validate_resource(resource)
     with Image.open(io.BytesIO(image_bytes)) as image:
         if image.width<1440 or image.height<810:raise ValueError('IMAGE_RESOLUTION_TOO_SMALL')
         if image.width*image.height>40_000_000:raise ValueError('IMAGE_PIXEL_LIMIT')
+    # Aplica selo próprio em arquivo temporário; preserve os bytes originais.
+    with tempfile.TemporaryDirectory() as tmp:
+        src=Path(tmp)/'original.jpg'; dst=Path(tmp)/'marcada.jpg'
+        src.write_bytes(image_bytes)
+        marca=aplicar_marca(src,dst)
+        marked_bytes=dst.read_bytes()
     assets={}
     for name,width,height in (('desktop',1440,810),('mobile',390,219)):
-        result=processar_capa(image_bytes,largura=width,altura=height)
+        result=processar_capa(marked_bytes,largura=width,altura=height)
         if 'erro' in result:raise ValueError('IMAGE_PROCESSING_FAILED')
         assets[name]={'bytes':result['bytes'],'width':width,'height':height,
                       'sha256':hashlib.sha256(result['bytes']).hexdigest(),'mime_type':'image/jpeg'}
-    return {'resource':resource,'original_sha256':hashlib.sha256(image_bytes).hexdigest(),'assets':assets}
+    return {'resource':resource,'original_sha256':hashlib.sha256(image_bytes).hexdigest(),
+            'watermark':{k:v for k,v in marca.items() if k!='destino'},'assets':assets}
 
 
 def validate_prepared_manifest(manifest, *, base_dir):
