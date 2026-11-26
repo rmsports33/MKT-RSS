@@ -149,6 +149,24 @@ def test_nonce_e_post_id_correlacionados():
     assert "hash_equals($hash, $expected)" in tpl
 
 
+def test_patch_carregamento_documentado():
+    """Ponto de carregamento pelo bootstrap do plugin está documentado."""
+    from pathlib import Path
+    patch = (Path(__file__).parent.parent / "docs" / "patches"
+             / "GATE_V1_CARREGAMENTO_PAINEL.md").read_text(encoding="utf-8")
+    assert "conexo-editorial-gate.php" in patch
+    assert "cxeg_standard_boot" in patch
+    assert "require_once __DIR__ . '/includes/gate_v1_layout_nativo.php'" in patch
+    assert "admin_notices" in patch
+
+
+def test_diferenca_preview_recarregamento_documentada():
+    patch = (Path(__file__).parent.parent / "docs" / "patches"
+             / "GATE_V1_CARREGAMENTO_PAINEL.md").read_text(encoding="utf-8")
+    assert "preview dinâmico" in patch.lower() or "preview din	¢mico" in patch
+    assert "recarregamento" in patch.lower() or "recarregamento" in patch
+
+
 def test_js_nao_cria_endpoint():
     js = _read("gate_v1_layout_nativo.js")
     assert "register_rest_route" not in js
