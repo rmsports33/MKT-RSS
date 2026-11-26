@@ -7,9 +7,12 @@ from pathlib import Path
 from urllib.parse import urlsplit
 
 CATALOG = Path(__file__).resolve().parents[1] / 'data/licensed-image-catalog.json'
-LICENSES = {'CC0-1.0': 'https://creativecommons.org/publicdomain/zero/1.0/',
-            'CC-BY-4.0': 'https://creativecommons.org/licenses/by/4.0/',
-            'CC-BY-SA-4.0': 'https://creativecommons.org/licenses/by-sa/4.0/'}
+REGISTRY = Path(__file__).resolve().parents[1] / 'data/image-rights-registry.json'
+
+
+def load_registry():
+    """Licenças e domínios aceitos, lidos de um único arquivo de regras."""
+    return json.loads(REGISTRY.read_text(encoding='utf-8'))
 
 
 def validate_resource(resource):
@@ -25,18 +28,48 @@ def validate_resource(resource):
     for key in ('id','source_page','image_url','author','license','license_url','checked_at','alt','caption','credit'):
         if not isinstance(resource.get(key),str) or not resource[key].strip():
             raise ValueError('IMAGE_PROVENANCE_INCOMPLETE')
-    if (resource['license'] not in LICENSES or resource['license_url'] != LICENSES[resource['license']]
+    registry = load_registry()
+    license_rule = registry['licenses'].get(resource['license'])
+    if (license_rule is None or resource['license_url'] != license_rule['url']
             or resource.get('rights_review') != 'DOCUMENTED_SOURCE_CHECK'):
         raise ValueError('IMAGE_LICENSE_NOT_DOCUMENTED')
     for key in ('source_page','image_url','license_url'):
         p=urlsplit(resource[key])
         if p.scheme!='https' or not p.hostname or p.username or p.password or p.port is not None:
             raise ValueError('IMAGE_URL_INVALID')
+    # A página de origem precisa estar na lista branca; o crédito sai daqui, não de texto digitado.
+    host=(urlsplit(resource['source_page']).hostname or '').lower().rstrip('.')
+    if not any(host==domain or host.endswith('.'+domain) for domain in registry['sources']):
+        raise ValueError('IMAGE_SOURCE_NOT_ALLOWED')
     return copy.deepcopy(resource)
 
 
-def _generation_request(title, reason, candidate=None):
-    """Return an explicit request for the available image-generation tool."""
+def _generation_request(title, reason, candidate=None, artigo=None):
+    """Return an explicit request for the available image-generation tool.
+
+    When the full article is supplied, the prompt is derived from the matter
+    itself (see image_prompt_from_article) instead of a generic keyword prompt.
+    """
+    prompt_info = None
+    if isinstance(artigo, dict):
+        try:
+            from mkt_flow_p0.image_prompt_from_article import construir_prompt_imagem
+            prompt_info = construir_prompt_imagem({**artigo, 'titulo': artigo.get('titulo') or title})
+        except (ValueError, TypeError):
+            prompt_info = None
+
+    if prompt_info:
+        prompt = prompt_info['prompt']
+        constraints = prompt_info['constraints']
+        base = prompt_info['base_do_artigo']
+    else:
+        prompt = ('Create a relevant editorial image for the article "'+title+'". '
+                  'Match the article language, device context, and subject. '
+                  'Do not use a merely keyword-matched but visually misleading image. '
+                  'Avoid logos, fake screenshots, and unsupported UI details.')
+        constraints = ['relevant_to_article','no_misleading_interface','no_logos']
+        base = {'titulo': title, 'subtitulo': '', 'temas_detectados': []}
+
     return {
         'status':'AI_GENERATION_REQUIRED',
         'next_step':'GENERATE_RELEVANT_IMAGE',
@@ -45,11 +78,9 @@ def _generation_request(title, reason, candidate=None):
         'generation_request':{
             'schema':'conexo-image-generation-request/1',
             'article_title':title,
-            'prompt':('Create a relevant editorial image for the article "'+title+'". '
-                      'Match the article language, device context, and subject. '
-                      'Do not use a merely keyword-matched but visually misleading image. '
-                      'Avoid logos, fake screenshots, and unsupported UI details.'),
-            'constraints':['relevant_to_article','no_misleading_interface','no_logos'],
+            'prompt':prompt,
+            'base_do_artigo':base,
+            'constraints':constraints,
         },
         'network_called':False,'ai_called':False,'wordpress_written':False,
     }
@@ -81,7 +112,7 @@ def reserve_image_candidate(plan, used_image_identifiers):
     return True
 
 
-def plan_image(title, *, offline=True, content_fit=None, used_image_identifiers=None):
+def plan_image(title, *, offline=True, content_fit=None, used_image_identifiers=None, artigo=None):
     """Check free/licensed sources first; an incongruent candidate requires AI generation.
 
     A keyword match is only a candidate. The caller must pass content_fit='PASS'
@@ -101,7 +132,7 @@ def plan_image(title, *, offline=True, content_fit=None, used_image_identifiers=
                 duplicate_sources.append(resource['id'])
                 continue
             if content_fit == 'INCONGRUENT':
-                return _generation_request(title,'FREE_CANDIDATE_NOT_CONGRUENT',resource['id'])
+                return _generation_request(title,'FREE_CANDIDATE_NOT_CONGRUENT',resource['id'],artigo)
             return {'status':'CANDIDATE_LICENSE_DOCUMENTED',
                     'resource':resource,
                     'content_fit_review':'PASS' if content_fit == 'PASS' else 'PENDING',
@@ -125,7 +156,7 @@ def plan_image(title, *, offline=True, content_fit=None, used_image_identifiers=
     ]
     if content_fit == 'INCONGRUENT':
         return _generation_request(title,'FREE_CANDIDATES_NOT_CONGRUENT',
-                                   [item.get('pagina_origem') or item.get('page_url') or item.get('url') for item in candidates])
+                                   [item.get('pagina_origem') or item.get('page_url') or item.get('url') for item in candidates],artigo)
     if candidates and content_fit == 'PASS':
         return {'status':'CANDIDATES_REQUIRE_LICENSE_REVIEW',
                 'research':found,'content_fit_review':'PASS',
@@ -141,7 +172,7 @@ def plan_image(title, *, offline=True, content_fit=None, used_image_identifiers=
         return {'status':'FREE_STOCK_RESEARCH_PENDING','next_step':'FREE_STOCK_RESEARCH',
                 'network_called':True,'ai_called':False,'wordpress_written':False}
     return _generation_request(title,'NO_DISTINCT_FREE_CANDIDATE'
-                               if duplicate_sources or used else 'NO_SUITABLE_FREE_CANDIDATE')
+                               if duplicate_sources or used else 'NO_SUITABLE_FREE_CANDIDATE',artigo)
 
 
 def plan_image_batch(titles, *, offline=True, content_fit=None):
@@ -166,21 +197,35 @@ def plan_image_batch(titles, *, offline=True, content_fit=None):
 
 
 def prepare_assets(resource, image_bytes):
-    """Use the existing Pillow cover pipeline for licensed or generated artwork."""
+    """Use the existing Pillow cover pipeline for licensed or generated artwork.
+
+    A marca d'água ConexoTech é aplicada ANTES dos recortes, para que desktop e
+    mobile a contenham. É Own-brand: não conflita com a regra que proíbe marca
+    de terceiros (`PASS_NO_THIRD_PARTY_BRANDING`).
+    """
     from mkt_flow_p0.image_handler import processar_capa
+    from mkt_flow_p0.image_watermark import aplicar_marca
     from PIL import Image
     import io
+    import tempfile
     resource=validate_resource(resource)
     with Image.open(io.BytesIO(image_bytes)) as image:
         if image.width<1440 or image.height<810:raise ValueError('IMAGE_RESOLUTION_TOO_SMALL')
         if image.width*image.height>40_000_000:raise ValueError('IMAGE_PIXEL_LIMIT')
+    # Aplica selo próprio em arquivo temporário; preserve os bytes originais.
+    with tempfile.TemporaryDirectory() as tmp:
+        src=Path(tmp)/'original.jpg'; dst=Path(tmp)/'marcada.jpg'
+        src.write_bytes(image_bytes)
+        marca=aplicar_marca(src,dst)
+        marked_bytes=dst.read_bytes()
     assets={}
     for name,width,height in (('desktop',1440,810),('mobile',390,219)):
-        result=processar_capa(image_bytes,largura=width,altura=height)
+        result=processar_capa(marked_bytes,largura=width,altura=height)
         if 'erro' in result:raise ValueError('IMAGE_PROCESSING_FAILED')
         assets[name]={'bytes':result['bytes'],'width':width,'height':height,
                       'sha256':hashlib.sha256(result['bytes']).hexdigest(),'mime_type':'image/jpeg'}
-    return {'resource':resource,'original_sha256':hashlib.sha256(image_bytes).hexdigest(),'assets':assets}
+    return {'resource':resource,'original_sha256':hashlib.sha256(image_bytes).hexdigest(),
+            'watermark':{k:v for k,v in marca.items() if k!='destino'},'assets':assets}
 
 
 def validate_prepared_manifest(manifest, *, base_dir):
@@ -214,6 +259,11 @@ def image_figure(resource, desktop, mobile=None):
     if resource.get('source_type') == 'ai_generated':
         attribution=e(resource['credit'])
     else:
+        source=resource.get('source_name')
+        if not source:
+            host=(urlsplit(resource['source_page']).hostname or '').lower().rstrip('.')
+            source=next((name for domain,name in load_registry()['sources'].items()
+                         if host==domain or host.endswith('.'+domain)), 'Fonte')
         attribution=('Foto: <a href="'+e(resource['source_page'])+'">'+e(resource['author'])+
-                     '</a> / Wikimedia Commons. <a href="'+e(resource['license_url'])+'">'+e(resource['license'])+'</a>.')
+                     '</a> / '+e(source)+'. <a href="'+e(resource['license_url'])+'">'+e(resource['license'])+'</a>.')
     return '<figure>'+picture+'<figcaption>'+e(resource['caption'])+' '+attribution+'</figcaption></figure>'
