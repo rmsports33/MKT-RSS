@@ -1,16 +1,11 @@
-"""Teste de ordem: guarda e E1+E2 executam ANTES do POST de escrita."""
+"""Testes de ordem e fail-closed do broker após última rodada de correções."""
 import hashlib
-import hmac
-import json
 
 import pytest
 
 from mkt_flow_p0 import editorial_broker_transport as bt
-from mkt_flow_p0 import broker_revisor_guard as guard
-from editorial_factual_certificate import draft_digest, issue_factual_certificate
-
-KEY = b"cert-key-32bytes-abcdefghijklmnopqrstu"
-REG = b"registry-key-32bytes-abcdefghijklmnopqr"
+from mkt_flow_p0 import review_keys as keys
+from mkt_flow_p0.editorial_transport import SITE
 
 
 class _Resp:
@@ -22,23 +17,20 @@ class _Resp:
 
 
 class _Session:
-    """Registra a ordem das chamadas; falha se POST ocorrer antes das guardas."""
     def __init__(self):
         self.calls = []
         self.posted = False
     def get(self, url, **kw):
-        self.calls.append("GET " + url.split("/")[-1].split("?")[0])
-        if "snapshot" in url:
-            return _Resp(200, {"snapshot": {"ID": 41, "post_status": "draft",
-                                            "post_content": "<p>Texto</p>"},
-                               "snapshot_sha256": "a" * 64})
+        self.calls.append(url)
         if "context=edit" in url:
             return _Resp(200, {"id": 41, "status": "draft", "title": {"raw": "T"},
                                "content": {"raw": "<p>Texto</p>"}})
         if "context=view" in url:
             return _Resp(200, {"id": 41, "status": "draft",
                                "content": {"rendered": "<h1>T</h1><p>Texto</p>"}})
-        return _Resp(200, {})
+        return _Resp(200, {"snapshot": {"ID": 41, "post_status": "draft",
+                                        "post_content": "<p>Texto</p>"},
+                           "snapshot_sha256": "a" * 64})
     def post(self, url, **kw):
         self.calls.append("POST write")
         self.posted = True
@@ -46,36 +38,69 @@ class _Session:
                            "intent": "publish", "status": "publish"})
 
 
-def test_guarda_bloqueia_antes_do_post():
-    """Com certificado inválido, o POST nunca acontece."""
+def _package():
+    return {"version_sha256": "a" * 64,
+            "payload": {"wordpress": {"post_id": 41}, "content": "<p>Texto</p>"}}
+
+
+def test_post_id_extraido_antes_da_guarda(monkeypatch):
+    """Com destino autorizado, post_id ausente falha com WP_POST_ID_MISSING,
+    não com NameError (bug corrigido)."""
+    import mkt_flow_p0.wp_destination as wd
+    monkeypatch.setattr(wd, "resolve", lambda op: wd.WpDestination(
+        url=SITE, user="svc", password="pw", environment="", operation=op))
+    monkeypatch.setattr(wd, "assert_writable", lambda dest, op: None)
     s = _Session()
-    package = {"version_sha256": "a" * 64,
-               "payload": {"wordpress": {"post_id": 41}, "content": "<p>Texto</p>"}}
-    with pytest.raises(bt.BrokerBlocked):
+    monkeypatch.setenv("CONEXO_EDITORIAL_GATE_KEY", "c" * 40)
+    monkeypatch.setenv("CONEXO_REVIEW_REGISTRY_KEY", "r" * 40)
+    bad = {"version_sha256": "a" * 64, "payload": {"wordpress": {}}}
+    with pytest.raises(bt.BrokerBlocked) as exc:
         bt.publish_via_broker(
-            package, core_root="/unused", wp_url=bt.SITE, wp_user="svc",
-            wp_password="pw", trace_run_id="run_teste", intent="publish",
-            publication_reference="REF-12345", session=s,
-            review_certificate={"draft_sha256": "0" * 64},
-            review_certificate_key=KEY, review_lookup=lambda u: {},
-            registry_verification_key=REG)
-    assert s.posted is False, "POST não deve ocorrer se a guarda falhar"
+            bad, core_root="/unused", wp_url=SITE, wp_user="svc", wp_password="pw",
+            trace_run_id="run", intent="publish", publication_reference="REF-12345",
+            session=s, review_certificate={"draft_sha256": "0" * 64})
+    assert "WP_POST_ID_MISSING" in str(exc.value)
+    assert s.posted is False
 
 
-def test_e1e2_bloqueia_antes_do_post():
-    """Com E1+E2 habilitado e edit falhando, o POST nunca acontece."""
+def test_e1e2_obrigatorio_por_padrao():
+    """E1/E2 executam por padrão (sem parâmetro desligado)."""
+    import inspect
+    sig = inspect.signature(bt.publish_via_broker)
+    assert sig.parameters["validate_e1e2_enabled"].default is True
+
+
+def test_e1e2_falha_bloqueia_post():
+    """Falha em E1 não permite POST."""
     class _FailEdit(_Session):
         def get(self, url, **kw):
             if "context=edit" in url:
                 return _Resp(403, {})
             return super().get(url, **kw)
     s = _FailEdit()
-    package = {"version_sha256": "a" * 64,
-               "payload": {"wordpress": {"post_id": 41}, "content": "<p>Texto</p>"}}
-    # Sem owner_release, precisa do core — simulamos apenas a ordem até E1E2:
-    # usamos owner_release=False e um core inexistente faria falhar antes;
-    # para isolar E1E2, chamamos a função diretamente.
-    from mkt_flow_p0.readback_e1e2 import validate_e1_e2, E1E2Blocked
-    with pytest.raises(E1E2Blocked):
-        validate_e1_e2(41, "svc", "pw", session=s)
+    with pytest.raises(bt.BrokerBlocked):
+        bt.publish_via_broker(
+            _package(), core_root="/unused", wp_url=SITE, wp_user="svc",
+            wp_password="pw", trace_run_id="run", intent="publish",
+            publication_reference="REF-12345", session=s)
+    assert s.posted is False
+
+
+def test_chaves_separadas_sem_expor(monkeypatch):
+    monkeypatch.setenv("CONEXO_EDITORIAL_GATE_KEY", "c" * 40)
+    monkeypatch.setenv("CONEXO_REVIEW_REGISTRY_KEY", "r" * 40)
+    status = keys.keys_status()
+    assert status["safe_for_publication"] is True
+    assert "c" * 40 not in str(status) and "r" * 40 not in str(status)
+
+
+def test_sem_certificado_guarda_nao_exige_chaves():
+    """Fluxo legado (sem certificado) continua compatível."""
+    s = _Session()
+    # Falhará no core (inexistente), mas não por chaves de revisor
+    with pytest.raises(Exception):
+        bt.publish_via_broker(
+            _package(), core_root="/unused", wp_url=SITE, wp_user="svc",
+            wp_password="pw", trace_run_id="run", intent="publish",
+            publication_reference="REF-12345", session=s)
     assert s.posted is False

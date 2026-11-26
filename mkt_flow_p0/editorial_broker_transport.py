@@ -46,27 +46,30 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
                        session=requests, require_signed_seo=False, owner_release=False,
                        review_certificate=None, review_certificate_key=None,
                        review_lookup=None, registry_verification_key=None,
-                       validate_e1e2_enabled=False):
+                       validate_e1e2_enabled=True):
     """One attempt, never automatically retry uncertain WordPress/Turso writes.
 
     When a Revisor Único review is supplied, it is verified against an
     authenticated registry envelope BEFORE any WordPress write. All existing
     checks remain mandatory; this guard is additive (fail-closed).
     """
-    # Revisor Único guard — integrated fix for the broker authorization gap.
-    # Absence remains compatible with legacy owner_release/signed flows;
-    # presence requires full verification (never a self-declared PASS).
-    if review_certificate is not None:
-        from mkt_flow_p0.broker_revisor_guard import require_broker_review
-        try:
-            require_broker_review(
-                {"id": post_id} if isinstance(post_id, int) else None,
-                review_certificate,
-                review_certificate_key,
-                review_lookup,
-                registry_verification_key)
-        except Exception as exc:
-            raise BrokerBlocked(str(exc)) from None
+    # Destino WordPress fail-closed (PR #133) — validado ANTES de qualquer
+    # guarda e de qualquer escrita.
+    from mkt_flow_p0.wp_destination import (
+        DestinationBlocked, resolve as _resolve_dest,
+        assert_writable as _assert_writable,
+        OPERATION_PUBLISH as _OP_PUBLISH,
+        OPERATION_DRAFT as _OP_DRAFT,
+    )
+    _op = _OP_PUBLISH if intent in {"publish", "schedule"} else _OP_DRAFT
+    try:
+        _dest = _resolve_dest(_op)
+        _assert_writable(_dest, _op)
+    except DestinationBlocked as exc:
+        raise BrokerBlocked(str(exc)) from None
+
+    # Identificador e versão DEVEM ser extraídos e validados ANTES de qualquer
+    # guarda (correção do bug de variável não inicializada na revisão anterior).
     if not isinstance(wp_url, str) or wp_url.rstrip("/") != SITE:
         raise BrokerBlocked("WP_ORIGIN_NOT_ALLOWED")
     if not wp_user or not wp_password:
@@ -86,6 +89,25 @@ def publish_via_broker(package, *, core_root, wp_url, wp_user, wp_password,
     version = package.get("version_sha256")
     if not isinstance(version, str) or not _SHA.fullmatch(version):
         raise BrokerBlocked("CANONICAL_VERSION_INVALID")
+
+    # Revisor Único guard — agora com post_id já validado.
+    # Quando há certificado, chaves e adaptador são conectados automaticamente
+    # ao executor real (sem expor segredos). Nenhum POST sem guarda válida.
+    if review_certificate is not None:
+        from mkt_flow_p0.broker_revisor_guard import require_broker_review
+        from mkt_flow_p0.review_keys import certificate_key, registry_verification_key as _registry_key
+        from mkt_flow_p0.registry_adapter_real import build_registry_adapter
+        from mkt_flow_p0.review_keys import ReviewKeyProvisioningBlocked
+        try:
+            _cert_key = review_certificate_key or certificate_key()
+            _reg_key = registry_verification_key or _registry_key()
+            _lookup = review_lookup or build_registry_adapter(
+                wp_user=wp_user, wp_app_password=wp_password, session=session,
+                timeout=timeout)
+            require_broker_review(
+                {"id": post_id}, review_certificate, _cert_key, _lookup, _reg_key)
+        except (ReviewKeyProvisioningBlocked, Exception) as exc:
+            raise BrokerBlocked(str(exc)) from None
 
     # Retain the canonical validator from Conexo OS. Local PASS is not a
     # publication approval; the WP Gate independently checks review+quality.
