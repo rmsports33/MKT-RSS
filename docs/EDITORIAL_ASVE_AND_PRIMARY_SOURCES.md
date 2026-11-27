@@ -99,7 +99,7 @@ O exemplo não representa uma afirmação verificada. Antes do uso real, substit
 
 ### Registro de P2 no backlog existente
 
-Os achados P2 são encaminhados para `mkt_flow_p0.fila_pautas.registrar_topico_asve`, somente depois de a releitura do WordPress confirmar o mesmo fingerprint do rascunho, usando o mesmo armazenamento SQLite/Turso da fila editorial atual. A chave idempotente combina ID do artigo, hash da versão e ID do achado. Não cria um URL falso, RSS artificial, tabela de pauta duplicada ou nova fila. O status inicial é `DESCOBERTA`; o tema não é automaticamente selecionado ou produzido.
+Os achados P2 são encaminhados para `mkt_flow_p0.fila_pautas.registrar_topico_asve`, somente quando `--register-asve-topics` for explicitamente informado e depois de a releitura do WordPress confirmar o mesmo fingerprint do rascunho, usando o mesmo armazenamento SQLite/Turso da fila editorial atual. Sem essa segunda flag, o P2 permanece apenas no recibo ASVE e nenhuma gravação na fila compartilhada ocorre. A chave idempotente combina ID do artigo, hash da versão e ID do achado. Não cria um URL falso, RSS artificial, tabela de pauta duplicada ou nova fila. O status inicial é `DESCOBERTA`; o tema não é automaticamente selecionado ou produzido.
 
 ## Controle de custos
 
@@ -113,7 +113,7 @@ O adaptador utiliza o cliente e orçamento compartilhados já disponíveis. A ch
 - `tests/test_wp_quality_executor.py`: flag opt-in, recibo, páginas publicadas e uso de cliente simulado.
 - `tests/test_fila_pautas.py`: idempotência do backlog e ausência de escrita WordPress.
 
-Foram adicionados 35 casos focados: 14 para ASVE, 7 para o catálogo de fontes, 6 para a integração do Revisor Único, 5 para o executor WordPress e 3 para o backlog P2. **A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
+Foram adicionados 36 casos focados: 14 para ASVE, 7 para o catálogo de fontes, 6 para a integração do Revisor Único, 6 para o executor WordPress e 3 para o backlog P2. **A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
 
 ## Homologação editorial
 
