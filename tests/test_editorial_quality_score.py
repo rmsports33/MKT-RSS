@@ -175,8 +175,8 @@ def test_pesquisa_fallback_e_manual_e_nao_gera_nameerror_ou_bloqueio():
 
 
 def test_urls_brasileiras_nao_contam_como_mencao_de_contexto_local():
-    texto = "# Tecnologia\\n\\nUm tema global, sem afirmação específica sobre o Brasil."
-    texto += "\\n\\nFonte: https://conexotech.com.br/materia/"
+    texto = "# Tecnologia. Um tema global sem recorte geográfico específico."
+    texto += " Fonte: https://conexotech.com.br/materia/"
     r = avaliar_artigo(
         texto, brief=BRIEF, sources=FONTES, genero="analise",
         title="Título", meta="M" * 70, image_rights=True,
