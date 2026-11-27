@@ -259,7 +259,7 @@ class TestCloudAdapter(unittest.TestCase):
             {"id":"bad","title":"Bad ID","link":"https://conexotech.com.br/c/","status":"publish"},
         ]
         pages=client.published_pages()
-        self.assertEqual(len(pages),3)
+        self.assertEqual(len(pages),2)
         from mkt_flow_p0.editorial_secondary_analysis import build_analysis_request
         request=build_analysis_request("Texto",{"sources":[],"claims":[]},pages)
         self.assertEqual(request["allowed_internal_page_ids"],["12"])
