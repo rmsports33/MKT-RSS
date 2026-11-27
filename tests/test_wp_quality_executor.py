@@ -302,7 +302,8 @@ class TestCloudAdapter(unittest.TestCase):
             db=str(Path(root)/"reviews.db")
             queue=str(Path(root)/"queue.db")
             report,_=review_once(client,9768,{**complete_evidence(client.p),"asve_dossier":dossier},
-                db,run_asve=True,asve_analyzer=analyzer,topic_db_path=queue)
+                db,run_asve=True,asve_analyzer=analyzer,topic_db_path=queue,
+                register_asve_topics=True)
             topics=listar_topicos_asve(db_path=queue)
             self.assertEqual(len(topics),1)
             self.assertEqual(topics[0]["origin_article_id"],"wp:9768")
@@ -346,8 +347,56 @@ class TestCloudAdapter(unittest.TestCase):
             queue=str(Path(root)/"queue.db")
             with self.assertRaisesRegex(WPReadError,"changed while reviewing"):
                 review_once(client,9768,{**complete_evidence(client.p),"asve_dossier":dossier},
-                    str(Path(root)/"reviews.db"),run_asve=True,asve_analyzer=analyzer,topic_db_path=queue)
+                    str(Path(root)/"reviews.db"),run_asve=True,asve_analyzer=analyzer,topic_db_path=queue,
+                    register_asve_topics=True)
             self.assertFalse(Path(queue).exists())
+
+
+    def test_wp_executor_keeps_p2_suggestions_out_of_shared_queue_by_default(self):
+        from mkt_flow_p0.editorial_secondary_analysis import SCHEMA
+        with tempfile.TemporaryDirectory() as root:
+            client=FakeWP()
+            dossier={
+                "sources":[{
+                    "source_id":"s1","url":"https://www.epe.gov.br/pde","publisher":"EPE",
+                    "source_type":"planning_document","source_role":"primary_origin",
+                    "published_at":"2026-11-01","reference_period":"2026-2036",
+                    "locator":"Caderno de demanda, tabela 1",
+                    "methodology":"Cenário EPE publicado",
+                    "limitations":"Projeção condicionada a premissas",
+                    "retrieved_at":"2026-11-27T10:00:00Z"
+                }],
+                "claims":[{
+                    "claim_id":"c1","claim_text":"A projeção aumenta.",
+                    "source_ids":["s1"],"source_role":"primary_origin",
+                    "verification_status":"PROJETADA"
+                }]
+            }
+            def analyzer(prompt):
+                import re
+                digest=re.search(r'"article_sha256":"([a-f0-9]{64})"',prompt).group(1)
+                return {"schema":SCHEMA,"article_sha256":digest,"findings":[{
+                    "finding_id":"f-p2","priority":"P2","dimension":"conexoes_relevantes",
+                    "location":"Conclusão","observation":"A rede merece aprofundamento.",
+                    "reader_impact":"A pauta amplia a compreensão.",
+                    "evidence_refs":[],"claim_refs":[],
+                    "recommended_action":"Avaliar criação de matéria separada.",
+                    "internal_page_refs":[],
+                    "future_topic":{
+                        "title":"Confiabilidade de redes elétricas",
+                        "rationale":"A nova demanda exige planejamento de infraestrutura.",
+                        "research_question":"Como a rede pode atender data centers?"
+                    }
+                }]}
+            queue=str(Path(root)/"shared-queue.db")
+            report,_=review_once(
+                client,9768,{**complete_evidence(client.p),"asve_dossier":dossier},
+                str(Path(root)/"reviews.db"),run_asve=True,asve_analyzer=analyzer,
+                topic_db_path=queue
+            )
+            self.assertFalse(Path(queue).exists())
+            self.assertNotIn("asve_future_topics_registered",report)
+            self.assertEqual(report["secondary_analysis_status"],"P2_BACKLOG_ONLY")
 
 
 
