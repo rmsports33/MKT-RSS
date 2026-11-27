@@ -73,11 +73,20 @@ def test_fonte_unica_limita_nota_a_69():
     assert r["nota"] <= 69
 
 
-def test_contexto_brasileiro_inventado_bloqueia():
+def test_contexto_brasileiro_exige_verificacao_por_claim_sem_falso_pass_de_dominio():
     texto = TEXTO + "\n\nNo Brasil, o consumidor paga reais acima da média."
-    r = avaliar_artigo(texto, brief=BRIEF, sources=FONTES, genero="analise",
+    # Mesmo um domínio .com.br em outra fonte não prova que ela sustenta esta claim.
+    fontes_locais = {"sources": [
+        *FONTES["sources"],
+        {"name": "Portal", "url": "https://exemplo.com.br/", "facts": ["Conteúdo sem relação com a afirmação."]},
+    ]}
+    r = avaliar_artigo(texto, brief=BRIEF, sources=fontes_locais, genero="analise",
                        title="T", meta="M" * 70, review_status="PROMPT_APPLIED")
-    assert "publico_brasileiro" in r["bloqueios"]
+    check = next(c for c in r["checks"] if c["id"] == "publico_brasileiro")
+    assert check["status"] == "REVIEW_REQUIRED"
+    assert check["severidade"] == "advisory"
+    assert "publico_brasileiro" not in r["bloqueios"]
+    assert "publico_brasileiro" not in r["pendencias"]
 
 
 def test_limite_brasileiro_nao_e_contexto_inventado():
