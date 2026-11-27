@@ -260,5 +260,6 @@ def executar_revisao_com_asve(parecer_principal, artigo, dossie_evidencias,
         "review": combinado,
         "secondary_analysis": recibo,
         "publication_authorized": False,
-        "network_or_provider_used": analyzer is None,
+        "existing_provider_invoked": analyzer is None,
+        "analyzer_injected_by_orchestrator": analyzer is not None,
     }
