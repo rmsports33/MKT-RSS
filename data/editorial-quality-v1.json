@@ -1,7 +1,7 @@
 {
   "schema": "conexo-editorial-quality-contract/1",
-  "version": "1.0",
-  "status": "canonical_draft_pending_owner_confirmation",
+  "version": "1.1",
+  "status": "canonical_draft_for_offline_implementation",
   "source_of_truth": "conexo-os/docs/EDITORIAL_QUALITY_CONTRACT.md",
   "scale": {
     "min": 0,
@@ -178,5 +178,152 @@
     "visual_390",
     "visual_1440"
   ],
-  "contract_sha256": "30ecf890fd0d42b01ceee56b29654e3ef0e3c0e209e76fe9fa17304bdb53de63"
+  "editorial_identity": {
+    "motto": "O objetivo é fazer do ConexoTech uma publicação que não apenas acompanha os acontecimentos tecnológicos, mas ajuda o leitor a compreender como eles se conectam.",
+    "principles": [
+      "explicar conexões entre acontecimentos",
+      "não publicar apenas para preencher calendário",
+      "construir conhecimento acumulado com cobertura, análise e explicadores",
+      "preservar apuração independente, autoria humana e relevância para o Brasil"
+    ]
+  },
+  "global_context": {
+    "rule": "Para temas de alcance mundial, pesquisar o panorama global antes de aprofundar o recorte brasileiro.",
+    "sequence": [
+      "escopo global e evolução do tema",
+      "diferenças entre regiões/continentes quando materialmente relevantes",
+      "causas, interesses, infraestrutura e consequências adjacentes",
+      "o que os dados permitem e não permitem concluir",
+      "implicações e contexto brasileiro sustentados por fontes"
+    ],
+    "exceptions": "Temas estritamente locais podem começar pelo contexto local; não fabricar uma seção internacional sem relevância.",
+    "adjacent_topics": "Investigar conexões causais ou consequências relevantes; quando o aprofundamento exigir outro artigo, registrar pauta futura em vez de sobrecarregar a matéria atual."
+  },
+  "source_evidence": {
+    "rule": "Rastrear afirmações materiais até a origem adequada ao tipo de afirmação. Fonte primária é relativa à afirmação; um domínio ou TLD nunca comprova por si só a veracidade.",
+    "required_claim_fields": [
+      "claim_id",
+      "claim_text",
+      "source_ids",
+      "source_role",
+      "verification_status"
+    ],
+    "required_source_fields": [
+      "source_id",
+      "url",
+      "publisher",
+      "source_type",
+      "source_role",
+      "published_at",
+      "reference_period",
+      "locator",
+      "methodology",
+      "limitations",
+      "retrieved_at"
+    ],
+    "source_roles": [
+      "primary_origin",
+      "independent_measurement",
+      "secondary_analysis",
+      "interested_party_statement",
+      "discovery_lead"
+    ],
+    "verification_statuses": [
+      "CONFIRMADA",
+      "CORROBORADA",
+      "ATRIBUIDA",
+      "PROJETADA",
+      "NAO_VERIFICADA"
+    ],
+    "rules": [
+      "Distinguir fato observado, declaração, estimativa, projeção e interpretação.",
+      "Registrar página, seção, tabela, endpoint ou identificador onde o dado aparece.",
+      "Procurar uma hipótese alternativa ou evidência contrária para a tese central.",
+      "Fontes que reproduzem o mesmo comunicado não contam como corroboração independente.",
+      "Um comunicado de parte interessada comprova que a declaração foi feita; não valida automaticamente a alegação subjacente.",
+      "Preprints devem ser identificados e não apresentados como consenso revisado por pares.",
+      "Datas de publicação, consulta e período de referência são campos distintos."
+    ]
+  },
+  "secondary_analysis": {
+    "schema": "conexo-editorial-secondary-analysis/1",
+    "name": "Análise Secundária de Valor Editorial (ASVE)",
+    "purpose": "Identificar somente melhorias materiais que ampliem a compreensão, a precisão ou a continuidade editorial, sem reescrever o artigo.",
+    "independent_context": [
+      "artigo e hash exato",
+      "dossiê de evidências",
+      "catálogo de páginas internas publicadas"
+    ],
+    "excluded_inputs": [
+      "parecer da revisão principal",
+      "propostas de reescrita de etapas anteriores"
+    ],
+    "dimensions": [
+      "contexto_global",
+      "conexoes_relevantes",
+      "contrapontos_e_limitacoes",
+      "valor_original_para_o_leitor",
+      "continuidade_editorial"
+    ],
+    "priorities": {
+      "P0": "bloqueio factual, metodológico ou editorial que exige correção antes da aprovação",
+      "P1": "melhoria material que deve receber decisão editorial antes da publicação",
+      "P2": "pauta futura ou aprofundamento separado; não bloqueia o artigo atual"
+    },
+    "finding_fields": [
+      "finding_id",
+      "priority",
+      "location",
+      "observation",
+      "reader_impact",
+      "evidence_refs",
+      "claim_refs",
+      "recommended_action",
+      "internal_page_refs",
+      "future_topic"
+    ],
+    "limits": {
+      "max_findings": 5,
+      "zero_findings_allowed": true,
+      "rewrite_article": false,
+      "cosmetic_feedback": false,
+      "invent_internal_links": false,
+      "authorize_publication": false
+    },
+    "disposition_rules": {
+      "P0": [
+        "incorporated"
+      ],
+      "P1": [
+        "incorporated",
+        "accepted_with_reason",
+        "rejected_with_reason",
+        "deferred_to_topic"
+      ],
+      "P2": [
+        "registered_as_future_topic",
+        "not_pursued_with_reason"
+      ]
+    },
+    "closure": "Após decisão, verificar somente apontamentos afetados e hash da versão nova; não reiniciar análise ampla sem mudança material de escopo."
+  },
+  "article_structure": {
+    "h1": "Um H1 principal, claro e específico, alinhado à promessa real do artigo.",
+    "h2": "Seções principais que expressem movimentos do argumento, não metacomentários.",
+    "h3": "Subdivisões apenas quando necessárias e subordinadas ao H2 correspondente.",
+    "opening": "Apresentar problema, tensão, relevância e motivo para continuar a leitura.",
+    "body": "Preferir parágrafos que desenvolvam raciocínio; usar listas apenas quando melhorarem comparação, sequência ou consulta.",
+    "headings": "Títulos literais, específicos e informativos; não existe fórmula de headings que, isoladamente, garanta retenção.",
+    "flow": "Construir progressão lógica entre pergunta, evidência, explicação, consequência e conclusão."
+  },
+  "internal_linking": {
+    "rule": "Linkar apenas páginas existentes, publicadas e pertinentes; âncora deve descrever o destino e a relação contextual.",
+    "no_quota": true,
+    "bidirectional": "Quando fizer sentido editorial, relacionar página central, explicadores e notícias novas nos dois sentidos, sem automatizar links irrelevantes."
+  },
+  "history": {
+    "version_binding": "Cada execução guarda contrato/hash do contrato, modelo, hash do briefing, hash do artigo, dossiê de fontes, resultado ASVE, decisões e pendências.",
+    "quality_claim": "Não declarar homologação de qualidade sem piloto A/B cego com pelo menos três gêneros e avaliação humana independente."
+  },
+  "contract_sha256": "966310987434eefb48ac6358fdb3eb01ade22ef37634902752ef081215dba701"
 }
