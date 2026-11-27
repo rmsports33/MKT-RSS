@@ -54,7 +54,7 @@ Dimensões:
 
 O retorno aceita de zero a cinco apontamentos:
 - **P0:** falha material factual/metodológica/editorial. Mantém `REVISAO_NECESSARIA`; corrigir e fazer nova análise vinculada ao novo hash.
-- **P1:** melhoria material. Exige decisão editorial registrada para a versão exata. Aceitar/rejeitar/transferir para pauta exige justificativa.
+- **P1:** melhoria material. Exige decisão editorial registrada para a versão exata: incorporar ou aceitar/rejeitar com justificativa. P1 não pode ser silenciosamente rebaixado para pauta futura; aprofundamentos separados são P2.
 - **P2:** pauta futura separada, não bloqueia o artigo atual.
 
 Cada apontamento exige localização, observação, impacto para o leitor, evidências/claims existentes, ação recomendada, IDs de páginas internas publicadas quando aplicável e, para P2, título, justificativa e pergunta de pesquisa. O validador rejeita IDs inventados, páginas não publicadas, respostas que tentem reescrever o texto, campos extras e versões divergentes. Zero achados é um resultado válido.
@@ -113,7 +113,7 @@ O adaptador utiliza o cliente e orçamento compartilhados já disponíveis. A ch
 - `tests/test_wp_quality_executor.py`: flag opt-in, recibo, páginas publicadas e uso de cliente simulado.
 - `tests/test_fila_pautas.py`: idempotência do backlog e ausência de escrita WordPress.
 
-Foram adicionados 33 casos focados: 13 para ASVE, 7 para o catálogo de fontes, 5 para a integração do Revisor Único, 5 para o executor WordPress e 3 para o backlog P2. **A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
+Foram adicionados 35 casos focados: 14 para ASVE, 7 para o catálogo de fontes, 6 para a integração do Revisor Único, 5 para o executor WordPress e 3 para o backlog P2. **A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
 
 ## Homologação editorial
 
