@@ -17,6 +17,7 @@ import stat
 import sys
 import urllib.parse
 import urllib.request
+from copy import deepcopy
 from datetime import datetime, timezone
 
 from mkt_flow_p0.revisor_qualidade_unico import avaliar_artigo, verificar_versao
