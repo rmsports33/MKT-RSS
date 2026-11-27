@@ -264,6 +264,92 @@ class TestCloudAdapter(unittest.TestCase):
         request=build_analysis_request("Texto",{"sources":[],"claims":[]},pages)
         self.assertEqual(request["allowed_internal_page_ids"],["12"])
 
+    def test_wp_executor_registers_p2_only_after_version_recheck(self):
+        from mkt_flow_p0.editorial_secondary_analysis import SCHEMA
+        from mkt_flow_p0.fila_pautas import listar_topicos_asve
+        with tempfile.TemporaryDirectory() as root:
+            client=FakeWP()
+            dossier={
+                "sources":[{
+                    "source_id":"s1","url":"https://www.epe.gov.br/pde","publisher":"EPE",
+                    "source_type":"planning_document","source_role":"primary_origin",
+                    "published_at":"2026-11-01","reference_period":"2026-2036",
+                    "locator":"Caderno de demanda, tabela 1",
+                    "methodology":"Cenário EPE publicado",
+                    "limitations":"Projeção condicionada a premissas",
+                    "retrieved_at":"2026-11-27T10:00:00Z"
+                }],
+                "claims":[{
+                    "claim_id":"c1","claim_text":"A projeção aumenta.",
+                    "source_ids":["s1"],"source_role":"primary_origin",
+                    "verification_status":"PROJETADA"
+                }]
+            }
+            def analyzer(prompt):
+                import re
+                digest=re.search(r'"article_sha256":"([a-f0-9]{64})"',prompt).group(1)
+                return {"schema":SCHEMA,"article_sha256":digest,"findings":[{
+                    "finding_id":"f-p2","priority":"P2","dimension":"conexoes_relevantes",
+                    "location":"Conclusão","observation":"A confiabilidade de rede merece pauta própria.",
+                    "reader_impact":"O aprofundamento amplia a cobertura sem alongar esta notícia.",
+                    "evidence_refs":[],"claim_refs":[],"recommended_action":"Registrar pauta futura.",
+                    "internal_page_refs":[],"future_topic":{
+                        "title":"Confiabilidade elétrica de data centers",
+                        "rationale":"Grandes cargas dependem de rede e disponibilidade.",
+                        "research_question":"Como transmissão e armazenamento acompanham novas cargas?"
+                    }
+                }]}
+            db=str(Path(root)/"reviews.db")
+            queue=str(Path(root)/"queue.db")
+            report,_=review_once(client,9768,{**complete_evidence(client.p),"asve_dossier":dossier},
+                db,run_asve=True,asve_analyzer=analyzer,topic_db_path=queue)
+            topics=listar_topicos_asve(db_path=queue)
+            self.assertEqual(len(topics),1)
+            self.assertEqual(topics[0]["origin_article_id"],"wp:9768")
+            self.assertEqual(len(report["asve_future_topics_registered"]),1)
+            self.assertEqual(report["secondary_analysis_status"],"P2_BACKLOG_ONLY")
+
+    def test_wp_executor_does_not_register_p2_for_concurrently_changed_article(self):
+        from mkt_flow_p0.editorial_secondary_analysis import SCHEMA
+        with tempfile.TemporaryDirectory() as root:
+            client=FakeWP(mutate=True)
+            dossier={
+                "sources":[{
+                    "source_id":"s1","url":"https://www.epe.gov.br/pde","publisher":"EPE",
+                    "source_type":"planning_document","source_role":"primary_origin",
+                    "published_at":"2026-11-01","reference_period":"2026-2036",
+                    "locator":"Caderno de demanda, tabela 1",
+                    "methodology":"Cenário EPE publicado",
+                    "limitations":"Projeção condicionada a premissas",
+                    "retrieved_at":"2026-11-27T10:00:00Z"
+                }],
+                "claims":[{
+                    "claim_id":"c1","claim_text":"A projeção aumenta.",
+                    "source_ids":["s1"],"source_role":"primary_origin",
+                    "verification_status":"PROJETADA"
+                }]
+            }
+            def analyzer(prompt):
+                import re
+                digest=re.search(r'"article_sha256":"([a-f0-9]{64})"',prompt).group(1)
+                return {"schema":SCHEMA,"article_sha256":digest,"findings":[{
+                    "finding_id":"f-p2","priority":"P2","dimension":"conexoes_relevantes",
+                    "location":"Conclusão","observation":"A rede merece aprofundamento.",
+                    "reader_impact":"A pauta amplia o tema.",
+                    "evidence_refs":[],"claim_refs":[],"recommended_action":"Registrar pauta.",
+                    "internal_page_refs":[],"future_topic":{
+                        "title":"Rede para data centers",
+                        "rationale":"Tema adjacente de infraestrutura.",
+                        "research_question":"Como atender novas cargas?"
+                    }
+                }]}
+            queue=str(Path(root)/"queue.db")
+            with self.assertRaisesRegex(WPReadError,"changed while reviewing"):
+                review_once(client,9768,{**complete_evidence(client.p),"asve_dossier":dossier},
+                    str(Path(root)/"reviews.db"),run_asve=True,asve_analyzer=analyzer,topic_db_path=queue)
+            self.assertFalse(Path(queue).exists())
+
+
 
 if __name__ == "__main__":
     unittest.main()
