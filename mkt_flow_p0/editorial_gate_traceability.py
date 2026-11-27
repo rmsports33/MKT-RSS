@@ -72,15 +72,35 @@ def build_gate_traceability_sidecar(
     decisions = decisions or []
     disposition = validate_dispositions(asve_receipt, decisions)
     findings = asve_receipt.get("findings", [])
+    if (not isinstance(findings, list) or len(findings) > 5
+            or asve_receipt.get("finding_count") != len(findings)
+            or asve_receipt.get("rewrote_article") is not False
+            or asve_receipt.get("publication_authorized") is not False):
+        raise ValueError("GATE_TRACE_ASVE_RECEIPT_INVALID")
+    allowed_sources = set(request.get("allowed_source_ids", []))
+    allowed_claims = set(request.get("allowed_claim_ids", []))
+    allowed_pages = set(request.get("allowed_internal_page_ids", []))
+    finding_ids = set()
+    for finding in findings:
+        if not isinstance(finding, dict):
+            raise ValueError("GATE_TRACE_ASVE_FINDING_INVALID")
+        fid = finding.get("finding_id")
+        if not isinstance(fid, str) or not fid or fid in finding_ids:
+            raise ValueError("GATE_TRACE_ASVE_FINDING_ID_INVALID")
+        finding_ids.add(fid)
+        if (not set(finding.get("evidence_refs", [])) <= allowed_sources
+                or not set(finding.get("claim_refs", [])) <= allowed_claims
+                or not set(finding.get("internal_page_refs", [])) <= allowed_pages):
+            raise ValueError("GATE_TRACE_ASVE_UNKNOWN_REFERENCE")
     p0 = [f["finding_id"] for f in findings if f.get("priority") == "P0"]
     p1 = [f["finding_id"] for f in findings if f.get("priority") == "P1"]
     p2 = [f["finding_id"] for f in findings if f.get("priority") == "P2"]
     if p0:
         handoff = "BLOCKED_P0_REQUIRES_NEW_ARTICLE_VERSION"
-    elif disposition["status"] != "CLOSED" or p1:
+    elif disposition["status"] != "CLOSED":
         handoff = "EDITORIAL_DECISION_REQUIRED"
     else:
-        handoff = "READY_FOR_GATE_REVIEW"
+        handoff = "TRACEABILITY_COMPLETE_FOR_GATE_CONSUMER"
 
     body = {
         "schema": SCHEMA,
@@ -127,9 +147,10 @@ def validate_gate_traceability_sidecar(sidecar: dict) -> dict:
         raise ValueError("GATE_TRACE_HASH_MISMATCH")
     if sidecar.get("publication_authorized") is not False:
         raise ValueError("GATE_TRACE_PUBLICATION_FLAG_INVALID")
-    if sidecar.get("current_gate_accepts_sidecar") is True:
+    compatibility = sidecar.get("gate_contract_compatibility")
+    if not isinstance(compatibility, dict) or compatibility.get("current_gate_accepts_sidecar") is not False:
         raise ValueError("GATE_TRACE_FALSE_GATE_COMPATIBILITY")
-    if sidecar.get("gate_contract_compatibility", {}).get("current_contract") != "cxeg-package:v1":
+    if compatibility.get("current_contract") != "cxeg-package:v1":
         raise ValueError("GATE_TRACE_GATE_CONTRACT_INVALID")
     return {
         "valid": True,
