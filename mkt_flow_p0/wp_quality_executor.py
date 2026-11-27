@@ -220,6 +220,8 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         corpo_original_fonte=evidence.get("corpo_original_fonte"),
     )
     asve_result = None
+    gate_traceability_sidecar = None
+    primary_review_for_trace = deepcopy(report)
     if run_asve:
         dossier = evidence.get("asve_dossier")
         if not isinstance(dossier, dict):
@@ -235,10 +237,19 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         )
         report = asve_result["review"]
         report["asve_receipt"] = asve_result["secondary_analysis"]
+        from mkt_flow_p0.editorial_gate_traceability import build_gate_traceability_sidecar
+        gate_traceability_sidecar = build_gate_traceability_sidecar(
+            raw_content["raw"], dossier, primary_review_for_trace,
+            asve_result["secondary_analysis"], pages, asve_decisions
+        )
     # Detect concurrent edits between read and commit of the private report.
     latest = client.post(post_id)
     if not isinstance(latest, dict) or latest.get("status") != "draft" or not verificar_versao(report, latest):
         raise WPReadError("Article changed while reviewing; rerun")
+    # Persist receipts and optional sidecar only after the exact WordPress version
+    # has been re-read and matched. The sidecar is NOT accepted by Gate v1.
+    if gate_traceability_sidecar is not None:
+        report["gate_traceability_sidecar"] = gate_traceability_sidecar
     # Persist P2 only after the exact WordPress version has been re-read and matched.
     if run_asve and asve_result and register_asve_topics:
         report["asve_future_topics_registered"] = []
@@ -301,6 +312,8 @@ def main(argv=None):
                         help="JSON list of owner decisions bound to the receipt article_sha256")
     parser.add_argument("--asve-receipt-output-file",
                         help="Write the new ASVE receipt to a new private JSON file (never overwrites)")
+    parser.add_argument("--gate-traceability-output-file",
+                        help="Export a hash-linked Gate sidecar; current cxeg-package:v1 does not consume it")
     parser.add_argument("--submit-quality", action="store_true",
                         help="Requires independent human-reviewer WordPress identity; does NOT publish")
     args = parser.parse_args(argv)
@@ -315,6 +328,8 @@ def main(argv=None):
         parser.error("Evidence must be JSON object")
     if (args.register_asve_topics and not args.secondary_analysis):
         parser.error("--register-asve-topics requires --secondary-analysis")
+    if (args.gate_traceability_output_file and not args.secondary_analysis):
+        parser.error("--gate-traceability-output-file requires --secondary-analysis")
     if (args.asve_receipt_file or args.asve_decisions_file or args.asve_receipt_output_file) and not args.secondary_analysis:
         parser.error("ASVE receipt/decision files require --secondary-analysis")
     if args.asve_decisions_file and not args.asve_receipt_file:
@@ -354,6 +369,21 @@ def main(argv=None):
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(report["asve_receipt"], handle, ensure_ascii=False, sort_keys=True)
             handle.write("\n")
+    if args.gate_traceability_output_file:
+        sidecar = report.get("gate_traceability_sidecar")
+        if not isinstance(sidecar, dict):
+            parser.error("No Gate traceability sidecar available")
+        output_path = Path(args.gate_traceability_output_file).expanduser()
+        if output_path.exists() or output_path.is_symlink():
+            parser.error("Gate traceability output exists; refusing overwrite")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        fd = os.open(str(output_path), flags, stat.S_IRUSR | stat.S_IWUSR)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(sidecar, handle, ensure_ascii=False, sort_keys=True)
+            handle.write("\\n")
     # Only status/fingerprint/check names; no confidential evidence or secrets in logs.
     print(json.dumps({
         "post_id": report["post_id"],
@@ -366,6 +396,9 @@ def main(argv=None):
         "asve_findings": report.get("secondary_analysis", {}).get("finding_count", 0),
         "asve_future_topics_registered": len(report.get("asve_future_topics_registered", [])),
         "asve_topic_persistence_enabled": args.register_asve_topics,
+        "gate_traceability_status": report.get("gate_traceability_sidecar", {}).get("handoff_status", "NOT_CREATED"),
+        "gate_sidecar_exported": bool(args.gate_traceability_output_file),
+        "gate_current_contract_consumes_sidecar": False,
     }, ensure_ascii=False))
     return 0 if report["veredito"] == "APTO_PARA_APROVACAO" else 2
 
