@@ -97,7 +97,23 @@ Cada apontamento exige localização, observação, impacto para o leitor, evid�
 
 O exemplo não representa uma afirmação verificada. Antes do uso real, substituir reticências por URL, documento, datas, localização, metodologia e limitações efetivamente conferidas.
 
-### Registro de P2 no backlog existente
+### Relação com o avaliador de qualidade 0–100
+
+O score é diagnóstico e não certifica a origem nem o suporte semântico das
+afirmações. Em especial:
+
+- quantidade de links internos não é quota de qualidade: ausência de link não
+  bloqueia; mais de três links é apenas aviso para avaliar pertinência;
+- o mapa de raciocínio Canaltech é referência de comparação/review e não deve
+  penalizar notícia, análise, guia ou nota breve;
+- a presença de palavras como “Brasil” ou de um domínio `.gov.br`/`.com.br`
+  não comprova que uma fonte sustenta uma claim. O score sinaliza necessidade
+  de revisão por claim, sem emitir PASS factual ou bloquear por heurística lexical.
+
+Essas regras preservam a separação entre detecção automática, dossiê de
+evidências, julgamento editorial e autorização do Gate.
+
+## Registro de P2 no backlog existente
 
 Os achados P2 são encaminhados para `mkt_flow_p0.fila_pautas.registrar_topico_asve`, somente quando `--register-asve-topics` for explicitamente informado e depois de a releitura do WordPress confirmar o mesmo fingerprint do rascunho, usando o mesmo armazenamento SQLite/Turso da fila editorial atual. Sem essa segunda flag, o P2 permanece apenas no recibo ASVE e nenhuma gravação na fila compartilhada ocorre. A chave idempotente combina ID do artigo, hash da versão e ID do achado. Não cria um URL falso, RSS artificial, tabela de pauta duplicada ou nova fila. O status inicial é `DESCOBERTA`; o tema não é automaticamente selecionado ou produzido.
 
@@ -118,3 +134,11 @@ Foram adicionados 36 casos focados: 14 para ASVE, 7 para o catálogo de fontes, 
 ## Homologação editorial
 
 Depois dos testes locais, executar um piloto sem publicação com três a cinco artigos de gêneros diferentes. Comparar os achados ASVE com avaliação humana independente e medir: utilidade, falsos positivos, decisões aceitas/rejeitadas, esforço editorial e temas P2 realmente aproveitados. Só declarar homologação de qualidade depois de um piloto cego com pelo menos três gêneros. Gate e aprovação humana continuam separados.
+
+### Regressões adicionais do avaliador de qualidade
+
+Foram acrescentados três testes em `tests/test_editorial_quality_score.py` para
+assegurar que o mapa de raciocínio seja aplicado somente a gêneros compatíveis,
+que links acima da recomendação não se tornem bloqueio e que uma URL de domínio
+brasileiro não valide automaticamente afirmações sobre o Brasil. Esses testes
+estão adicionados ao PR, mas ainda não foram executados nesta sessão.
