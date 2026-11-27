@@ -86,7 +86,7 @@ class UniqueReviewerASVETests(unittest.TestCase):
         self.assertEqual(result["review"]["secondary_analysis_status"], "NO_MATERIAL_FINDINGS")
         self.assertFalse(result["publication_authorized"])
         self.assertTrue(result["analyzer_injected_by_orchestrator"])
-        self.assertFalse(result["existing_provider_invoked")
+        self.assertFalse(result["existing_provider_invoked"])
 
 
 if __name__ == "__main__":
