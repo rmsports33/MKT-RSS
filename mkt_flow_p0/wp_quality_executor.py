@@ -204,6 +204,7 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         )
         report = asve["review"]
         report["asve_receipt"] = asve["secondary_analysis"]
+        report["asve_future_topics_registered"] = asve["future_topics_registered"]
     # Detect concurrent edits between read and commit of the private report.
     latest = client.post(post_id)
     if not isinstance(latest, dict) or latest.get("status") != "draft" or not verificar_versao(report, latest):
@@ -274,6 +275,7 @@ def main(argv=None):
         "sent_to_gate": response is not None,
         "asve_status": report.get("secondary_analysis_status", "NOT_RUN"),
         "asve_findings": report.get("secondary_analysis", {}).get("finding_count", 0),
+        "asve_future_topics_registered": len(report.get("asve_future_topics_registered", [])),
     }, ensure_ascii=False))
     return 0 if report["veredito"] == "APTO_PARA_APROVACAO" else 2
 
