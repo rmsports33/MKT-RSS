@@ -318,7 +318,7 @@ def main(argv=None):
         fd = os.open(str(output_path), flags, stat.S_IRUSR | stat.S_IWUSR)
         with os.fdopen(fd, "w", encoding="utf-8") as handle:
             json.dump(report["asve_receipt"], handle, ensure_ascii=False, sort_keys=True)
-            handle.write("\\n")
+            handle.write("\n")
     # Only status/fingerprint/check names; no confidential evidence or secrets in logs.
     print(json.dumps({
         "post_id": report["post_id"],
