@@ -240,7 +240,7 @@ def incorporar_analise_secundaria(parecer, artigo_markdown, recibo_asve, decisoe
 def executar_revisao_com_asve(parecer_principal, artigo, dossie_evidencias,
                               paginas_publicadas, *, analyzer=None, decisoes=None,
                               origin_article_id=None, persist_future_topics=False,
-                              topic_db_path=None):
+                              topic_db_path=None, recibo_existente=None):
     """Orchestrate the existing primary review plus one independent ASVE pass.
 
     When analyzer is omitted, the opt-in adapter uses the current MKT-RSS
@@ -249,12 +249,16 @@ def executar_revisao_com_asve(parecer_principal, artigo, dossie_evidencias,
     """
     from mkt_flow_p0.editorial_secondary_analysis import (
         analisar_com_provedor_editorial_existente,
-        run_secondary_analysis,
+        build_analysis_request, run_secondary_analysis, validate_analysis_result,
     )
-    callback = analyzer or analisar_com_provedor_editorial_existente
-    recibo = run_secondary_analysis(
-        artigo, dossie_evidencias, paginas_publicadas, callback
-    )
+    if recibo_existente is not None:
+        request = build_analysis_request(artigo, dossie_evidencias, paginas_publicadas)
+        recibo = validate_analysis_result(recibo_existente, request)
+    else:
+        callback = analyzer or analisar_com_provedor_editorial_existente
+        recibo = run_secondary_analysis(
+            artigo, dossie_evidencias, paginas_publicadas, callback
+        )
     combinado = incorporar_analise_secundaria(
         parecer_principal, artigo, recibo, decisoes
     )
@@ -277,6 +281,7 @@ def executar_revisao_com_asve(parecer_principal, artigo, dossie_evidencias,
         "secondary_analysis": recibo,
         "future_topics_registered": registered,
         "publication_authorized": False,
-        "existing_provider_invoked": analyzer is None,
+        "existing_provider_invoked": recibo_existente is None and analyzer is None,
         "analyzer_injected_by_orchestrator": analyzer is not None,
+        "cached_receipt_used": recibo_existente is not None,
     }
