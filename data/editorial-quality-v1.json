@@ -73,9 +73,8 @@
     },
     {
       "id": "links_internos",
-      "rule": "Links internos reais, publicados e contextuais; nenhuma quota mínima.",
-      "severity": "warning",
-      "max_recommended": 3
+      "rule": "Links internos somente quando a página existente acrescentar contexto; pertinência humana e contextual, sem quota mínima ou máxima.",
+      "severity": "advisory"
     },
     {
       "id": "imagem_direitos",
@@ -324,5 +323,5 @@
     "version_binding": "Cada execução guarda contrato/hash do contrato, modelo, hash do briefing, hash do artigo, dossiê de fontes, resultado ASVE, decisões e pendências.",
     "quality_claim": "Não declarar homologação de qualidade sem piloto A/B cego com pelo menos três gêneros e avaliação humana independente."
   },
-  "contract_sha256": "8d59e75e4fb03b899ceee73051d7a19794da2ff9b91b2870d4907a7b7c5b30b8"
+  "contract_sha256": "6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7"
 }
