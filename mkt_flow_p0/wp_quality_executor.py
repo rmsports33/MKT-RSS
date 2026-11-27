@@ -175,9 +175,11 @@ def _canonical_sha(value):
 
 def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
                 run_asve=False, asve_analyzer=None, topic_db_path=None,
-                asve_receipt=None, asve_decisions=None):
+                register_asve_topics=False, asve_receipt=None, asve_decisions=None):
     if type(post_id) is not int or post_id <= 0:
         raise ValueError("post_id invalid")
+    if register_asve_topics and not run_asve:
+        raise ValueError("ASVE topic registration requires run_asve=True")
     first = client.post(post_id)
     if not isinstance(first, dict) or first.get("status") != "draft" or first.get("id") != post_id:
         raise WPReadError("WordPress post is not the requested draft")
@@ -210,7 +212,7 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
     if not isinstance(latest, dict) or latest.get("status") != "draft" or not verificar_versao(report, latest):
         raise WPReadError("Article changed while reviewing; rerun")
     # Persist P2 only after the exact WordPress version has been re-read and matched.
-    if run_asve and asve_result:
+    if run_asve and asve_result and register_asve_topics:
         report["asve_future_topics_registered"] = []
         from mkt_flow_p0.fila_pautas import registrar_topico_asve
         for finding in asve_result["secondary_analysis"].get("findings", []):
@@ -263,6 +265,8 @@ def main(argv=None):
     parser.add_argument("--db", default=os.environ.get("CONEXO_QUALITY_DB", "/tmp/conexo-private-quality.sqlite"))
     parser.add_argument("--secondary-analysis", action="store_true",
                         help="Run an independent ASVE pass using the existing provider budget")
+    parser.add_argument("--register-asve-topics", action="store_true",
+                        help="Explicitly persist P2 findings to the shared existing editorial queue")
     parser.add_argument("--asve-receipt-file",
                         help="Reuse a previous receipt for the exact article version; avoids another model call")
     parser.add_argument("--asve-decisions-file",
@@ -281,6 +285,8 @@ def main(argv=None):
     evidence = json.loads(file_path.read_text(encoding="utf-8"))
     if not isinstance(evidence, dict):
         parser.error("Evidence must be JSON object")
+    if (args.register_asve_topics and not args.secondary_analysis):
+        parser.error("--register-asve-topics requires --secondary-analysis")
     if (args.asve_receipt_file or args.asve_decisions_file or args.asve_receipt_output_file) and not args.secondary_analysis:
         parser.error("ASVE receipt/decision files require --secondary-analysis")
     if args.asve_decisions_file and not args.asve_receipt_file:
@@ -303,6 +309,7 @@ def main(argv=None):
     report, response = review_once(
         client, args.post_id, evidence, args.db,
         submit_quality=args.submit_quality, run_asve=args.secondary_analysis,
+        register_asve_topics=args.register_asve_topics,
         asve_receipt=cached_receipt, asve_decisions=decisions
     )
     if args.asve_receipt_output_file:
@@ -330,6 +337,7 @@ def main(argv=None):
         "asve_status": report.get("secondary_analysis_status", "NOT_RUN"),
         "asve_findings": report.get("secondary_analysis", {}).get("finding_count", 0),
         "asve_future_topics_registered": len(report.get("asve_future_topics_registered", [])),
+        "asve_topic_persistence_enabled": args.register_asve_topics,
     }, ensure_ascii=False))
     return 0 if report["veredito"] == "APTO_PARA_APROVACAO" else 2
 
