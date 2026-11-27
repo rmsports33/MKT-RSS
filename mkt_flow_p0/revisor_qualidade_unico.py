@@ -235,3 +235,30 @@ def incorporar_analise_secundaria(parecer, artigo_markdown, recibo_asve, decisoe
     combinado["publication_authorized"] = False
     combinado["publicacao_autorizada"] = False
     return combinado
+
+
+def executar_revisao_com_asve(parecer_principal, artigo, dossie_evidencias,
+                              paginas_publicadas, *, analyzer=None, decisoes=None):
+    """Orchestrate the existing primary review plus one independent ASVE pass.
+
+    When analyzer is omitted, the opt-in adapter uses the current MKT-RSS
+    provider and shared budget. This function is not called implicitly by
+    article import or WordPress; the authorized orchestrator must invoke it.
+    """
+    from mkt_flow_p0.editorial_secondary_analysis import (
+        analisar_com_provedor_editorial_existente,
+        run_secondary_analysis,
+    )
+    callback = analyzer or analisar_com_provedor_editorial_existente
+    recibo = run_secondary_analysis(
+        artigo, dossie_evidencias, paginas_publicadas, callback
+    )
+    combinado = incorporar_analise_secundaria(
+        parecer_principal, artigo, recibo, decisoes
+    )
+    return {
+        "review": combinado,
+        "secondary_analysis": recibo,
+        "publication_authorized": False,
+        "network_or_provider_used": analyzer is None,
+    }
