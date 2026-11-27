@@ -102,8 +102,10 @@ O exemplo não representa uma afirmação verificada. Antes do uso real, substit
 O score é diagnóstico e não certifica a origem nem o suporte semântico das
 afirmações. Em especial:
 
-- quantidade de links internos não é quota de qualidade: ausência de link não
-  bloqueia; mais de três links é apenas aviso para avaliar pertinência;
+- quantidade de links internos não é quota nem gatilho automático: zero,
+  um ou vários links não geram bloqueio ou penalidade por contagem; quando
+  houver links, existência do destino, publicação, âncora e pertinência
+  contextual ficam para revisão humana;
 - o mapa de raciocínio Canaltech é referência de comparação/review e não deve
   penalizar notícia, análise, guia ou nota breve;
 - a presença de palavras como “Brasil” ou de um domínio `.gov.br`/`.com.br`
