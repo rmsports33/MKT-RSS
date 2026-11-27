@@ -6,7 +6,7 @@ Não criar terceiro sistema de recibos. As implementações já existentes são 
 
 - `mkt_flow_p0/editorial_trace.py` — envelope `conexo-editorial-executor-events/1`, com `article_id`, `run_id`, `content_sha256` e eventos por estágio.
 - Gate V1 PR #137 — `gate_v1_registry_route.php`, envelope `{record, signature}` com HMAC de chave separada.
-- Gate V2 — `OperationLedger`, `ReceiptService` e `AuditLog`, com `operation_id`, `receipt_id`, `event_id` e corrente local de eventos.
+- Gate V2 — descontinuado: PR #87 encerrado sem merge e sem deploy. Não é fonte de recibo, trilha nem autorização.
 
 ## Campos obrigatórios do evento
 
@@ -36,6 +36,6 @@ Para `producer=external`, o texto é preservado e rotulado como externo; qualque
 ## Gate
 
 - **Rascunho privado:** exige proveniência verificável, mas não parecer humano.
-- **Publicação:** exige todos os estágios aplicáveis da trilha, parecer humano vigente, assinatura do Gate V1 e recibo do Gate V2.
+- **Publicação:** exige todos os estágios aplicáveis da trilha, parecer humano vigente e assinatura do Gate V1 RC10.4 vinculada à versão do conteúdo.
 
-A corrente local do Gate V2 não é blockchain e não é à prova de adulteração; serve como trilha auditável dentro do recibo assinado.
+A trilha `conexo-editorial-executor-events/1` não é blockchain nem à prova de adulteração. A autoridade é o Gate V1 com registro assinado e parecer humano; nenhum terceiro sistema de recibos é exigido ou autorizado.
