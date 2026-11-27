@@ -1,0 +1,49 @@
+# Avaliador editorial 0–100 do MKT-RSS (27/11/2026)
+
+## O que é
+
+`mkt_flow_p0/editorial_quality_score.py` lê o contrato único copiado em
+`data/editorial-quality-v1.json` (hash `30ecf890…`) e produz um **recibo de qualidade**
+para cada artigo. Não é aprovação, não prova fatos e não publica.
+
+## Como a nota é formada
+
+| Parte | Peso | Origem |
+|---|---:|---|
+| Nota assistida | 70% | Rubrica 0–4 dos 5 critérios × 5 |
+| Nota estrutural | 30% | Checagens determinísticas + cobertura do mapa Canaltech |
+
+Bloqueios (fonte única, direito de imagem, links acima de 3, voz ausente,
+contexto brasileiro inventado) limitam a nota a **69**. Avisos (sem links
+internos, vídeo fora de review, texto curto) descontam 5 pontos cada.
+
+## Padrão de comparação
+
+O mapa de raciocínio vem da análise Canaltech do Galaxy S26 FE salva no projeto.
+São comparados os movimentos — problema do leitor, tese, evidências,
+consequências, trade-offs e veredito condicional — nunca o texto ou o template.
+
+## Público brasileiro
+
+Relevância local entra apenas com fonte. Menções negativas ("não há dados
+brasileiros") não são penalizadas. Contexto afirmativo sem fonte bloqueia.
+Sem fonte brasileira, a regra é pesquisar notícia semelhante em sites tech/afins
+e registrar como `PENDING_HUMAN_REVIEW`.
+
+## Integração
+
+- `editorial_import.processar_artigo_importado` grava `quality-receipt.json` no pacote;
+- `resumo_execucao` inclui `quality_score`;
+- Gate V1 mostra a nota assistida e exige a nota humana (0–100).
+
+## Exemplo real — #9925
+
+Nota assistida 100, estrutural 63, **nota final 69**. Bloqueio: `multifonte`
+(uma fonte apenas). Pendência: `pesquisa_fallback`. Cobertura do mapa Canaltech: 0,67.
+Isso representa honestamente o artigo: bem avaliado pela rubrica assistida, mas
+ainda abaixo do padrão por falta de apuração multifonte.
+
+## Testes
+
+`tests/test_editorial_quality_score.py` — 7 testes, sem rede. Suíte relacionada:
+82 testes aprovados.

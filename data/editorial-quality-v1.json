@@ -1,0 +1,182 @@
+{
+  "schema": "conexo-editorial-quality-contract/1",
+  "version": "1.0",
+  "status": "canonical_draft_pending_owner_confirmation",
+  "source_of_truth": "conexo-os/docs/EDITORIAL_QUALITY_CONTRACT.md",
+  "scale": {
+    "min": 0,
+    "max": 100,
+    "confirmed": false,
+    "note": "Escala proposta; aguardando confirmação do proprietário."
+  },
+  "publication_threshold": null,
+  "notes": {
+    "assisted": {
+      "producer": "mkt_rss",
+      "authorizes_publication": false,
+      "description": "Nota automática orienta a revisão; nunca substitui aceite humano."
+    },
+    "human": {
+      "producer": "owner_in_gate",
+      "authorizes_publication": false,
+      "required_for_publication": true,
+      "description": "Nota do proprietário, vinculada ao hash da versão examinada."
+    }
+  },
+  "criteria": [
+    {
+      "id": "reader_need",
+      "label": "Necessidade do leitor",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    },
+    {
+      "id": "editorial_angle",
+      "label": "Recorte editorial",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    },
+    {
+      "id": "decision_support",
+      "label": "Contribuição para decidir",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    },
+    {
+      "id": "voice",
+      "label": "Voz editorial",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    },
+    {
+      "id": "source_limits",
+      "label": "Limites das fontes",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "multifonte",
+      "rule": "Pelo menos 2 domínios de publicação distintos e verificáveis",
+      "severity": "blocker",
+      "applies_to": [
+        "noticia",
+        "guia",
+        "analise",
+        "comparativo",
+        "review"
+      ],
+      "exception": [
+        "nota_breve"
+      ]
+    },
+    {
+      "id": "links_internos",
+      "rule": "Até 3 links internos reais e publicados; sem mínimo artificial",
+      "severity": "warning",
+      "pending_owner_decision": "Confirmar se haverá mínimo de 3 links"
+    },
+    {
+      "id": "imagem_direitos",
+      "rule": "Direitos confirmados, crédito e licença registrados",
+      "severity": "blocker"
+    },
+    {
+      "id": "video_review",
+      "rule": "Vídeo obrigatório somente em review de produto com youtube_id válido e aprovado por humano",
+      "severity": "blocker_when_applicable",
+      "applies_to": [
+        "review"
+      ],
+      "note": "Em outros artigos, vídeo só quando houver fonte fidedigna e necessário ao entendimento."
+    },
+    {
+      "id": "voz",
+      "rule": "PROMPT_APPLIED, ASSISTED_ADAPTED ou HUMAN_ADAPTED, com hash vinculado",
+      "severity": "blocker"
+    },
+    {
+      "id": "seo",
+      "rule": "Título, descrição e canonical coerentes com a versão examinada",
+      "severity": "blocker"
+    },
+    {
+      "id": "tamanho",
+      "rule": "Contagem de palavras conforme referência do gênero é aviso, não bloqueio",
+      "severity": "warning"
+    },
+    {
+      "id": "publico_brasileiro",
+      "rule": "Relevância para o leitor brasileiro verificável em fonte; nunca inventar contexto brasileiro",
+      "severity": "blocker_when_invented",
+      "warning_when_absent": true
+    },
+    {
+      "id": "pesquisa_fallback",
+      "rule": "Sem contexto brasileiro verificável, pesquisar notícia semelhante em sites tech ou afins que agregue informação nova, marcada PENDING_HUMAN_REVIEW",
+      "severity": "warning"
+    }
+  ],
+  "reference_pattern": {
+    "source_doc": "docs/EDITORIAL_REFERENCE_CANALTECH_S26FE_20261110.md",
+    "source_article": "https://canaltech.com.br/smartphone/galaxy-s26-fe-e-bom-mas-depende-de-desconto-para-fazer-sentido/",
+    "nature": "mapa de raciocínio usado para comparação; não copiar texto nem impor template",
+    "movements": [
+      "problema do leitor",
+      "tese ou recorte",
+      "evidências relevantes",
+      "consequências práticas",
+      "alternativas e trade-offs",
+      "recomendação condicionada aos fatos"
+    ],
+    "checks": [
+      "tese explícita e condicional",
+      "perfis de leitor: para quem a escolha faz ou não sentido",
+      "cada especificação produz consequência prática",
+      "concessões não escondidas",
+      "procedência explícita da evidência: própria, terceiros ou inferência",
+      "seções orientadas por perguntas reais do leitor",
+      "veredito proporcional às evidências",
+      "preço e disponibilidade com data, mercado e variante quando aplicável"
+    ]
+  },
+  "brazilian_focus": {
+    "rule": "O público brasileiro é a referência; relevância local deve ser verificada em fontes",
+    "never_invent": true,
+    "when_absent": "sem penalidade se não houver fonte brasileira; penalidade se contexto brasileiro for inventado"
+  },
+  "fallback_research": {
+    "when": "quando não houver contexto brasileiro verificável",
+    "action": "pesquisar notícias semelhantes em sites de tecnologia ou áreas afins que tragam informação nova ao artigo",
+    "label": "PENDING_HUMAN_REVIEW",
+    "require": [
+      "url https",
+      "data da publicação",
+      "nome da fonte",
+      "afirmações ligadas ao texto"
+    ],
+    "forbidden": [
+      "inventar pauta brasileira",
+      "copiar texto de terceiros",
+      "usar fonte única como artigo"
+    ]
+  },
+  "human_checks_count": 13,
+  "human_checks": [
+    "versao",
+    "titulo",
+    "categoria",
+    "capa",
+    "licenca_imagem",
+    "fontes",
+    "alegacoes",
+    "links_internos",
+    "seo",
+    "html",
+    "revisao_substantiva",
+    "visual_390",
+    "visual_1440"
+  ],
+  "contract_sha256": "30ecf890fd0d42b01ceee56b29654e3ef0e3c0e209e76fe9fa17304bdb53de63"
+}
