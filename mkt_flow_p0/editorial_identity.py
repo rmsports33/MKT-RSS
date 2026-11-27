@@ -164,8 +164,23 @@ def normalizar_fontes_complementares(contexto):
     return normalized
 
 
+TIPOS_ORIGEM = frozenset(("RSS_LIVE", "QUEUED_RSS", "EXTERNAL_PAUTA", "EXTERNAL_CONTENT"))
+PRODUTORES = frozenset(("mkt_rss", "mkt_rss_adapted", "external"))
+
+
+def normalizar_producao(producer=None, origin_kind=None, evidence=None):
+    """Origem da pauta e produtor efetivo sao campos distintos e auditaveis."""
+    producer = producer or "external"
+    origin_kind = origin_kind or "EXTERNAL_CONTENT"
+    if producer not in PRODUTORES or origin_kind not in TIPOS_ORIGEM:
+        raise ValueError("producao editorial invalida")
+    ev = evidence if isinstance(evidence, dict) else {}
+    return {"producer": producer, "kind": origin_kind, "evidence": ev}
+
+
 def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_complementar=None,
-                          voice_application=None, editorial_brief=None, editorial_review=None):
+                          voice_application=None, editorial_brief=None, editorial_review=None,
+                          producer=None, origin_kind=None, producer_evidence=None):
     """Entrega metadata+Markdown compatíveis com editorial_core_offline.
 
     Não altera o conteúdo, não promove stage e não aproveita aceite prévio.
@@ -205,7 +220,8 @@ def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_compl
             "human_editor": "Reinaldo Mendes", "dna_reference": DNA_REFERENCE
         },
         "editorial_voice_application": voice_application,
-        "origin": {"system": "MKT-RSS", "source_url": url_fonte},
+        "origin": {"system": "MKT-RSS", "source_url": url_fonte,
+                   **normalizar_producao(producer, origin_kind, producer_evidence)},
     }
     if editorial_brief is not None:
         from mkt_flow_p0.editorial_substance import normalize_brief
@@ -253,6 +269,16 @@ def validar_handoff_chatgpt(handoff):
             or not isinstance(seo.get("slug"), str)
             or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", seo["slug"])):
         raise ValueError("identidade, SEO ou origem inválida")
+    # Produtor interno so e aceito com evidencia ligada ao texto desta versao.
+    producao = normalizar_producao(origin.get("producer"), origin.get("kind"),
+                                   origin.get("evidence"))
+    if producao["producer"] in ("mkt_rss", "mkt_rss_adapted"):
+        ev = producao["evidence"]
+        atual = hashlib.sha256(markdown.encode("utf-8")).hexdigest()
+        if (ev.get("generation_status") != "PASS"
+                or not isinstance(ev.get("content_sha256"), str)
+                or not hmac.compare_digest(ev["content_sha256"], atual)):
+            raise ValueError("producao interna sem evidencia verificavel de geracao")
     try:
         voice_application = normalizar_aplicacao_voz(m.get("editorial_voice_application"))
     except (TypeError, ValueError):
@@ -344,6 +370,11 @@ def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None,
         result["metadata"].pop("editorial_substance_review", None)
         if result["metadata"].get("editorial_voice_application", {}).get("status") in {"HUMAN_ADAPTED", "ASSISTED_ADAPTED"}:
             result["metadata"]["editorial_voice_application"] = normalizar_aplicacao_voz(None)
+    origem = result["metadata"].get("origin", {})
+    if (origem.get("producer") in ("mkt_rss", "mkt_rss_adapted")
+            and isinstance(origem.get("evidence"), dict)):
+        origem["evidence"]["content_sha256"] = hashlib.sha256(
+            markdown_final.encode("utf-8")).hexdigest()
     result["markdown"] = markdown_final
     payload = {"metadata": result["metadata"], "markdown": markdown_final}
     result["version_sha256"] = hashlib.sha256(json.dumps(

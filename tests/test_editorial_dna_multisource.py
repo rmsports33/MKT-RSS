@@ -56,7 +56,10 @@ def test_handoff_preserves_identity_origin_and_review_pending():
     assert packet["schema"] == "conexo-editorial-handoff/1"
     assert packet["wordpress_written"] is False
     assert packet["review_status"] == "PENDING_HUMAN_REVIEW"
-    assert m["origin"] == {"system": "MKT-RSS", "source_url": SOURCE}
+    assert m["origin"]["system"] == "MKT-RSS"
+    assert m["origin"]["source_url"] == SOURCE
+    assert m["origin"]["kind"] == "EXTERNAL_CONTENT"
+    assert m["origin"]["producer"] == "external"
     assert m["editorial_identity"]["brand"] == "ConexoTech"
     assert m["editorial_identity"]["voice"] == "Conexo Insight"
     assert m["review"]["approved"] is False

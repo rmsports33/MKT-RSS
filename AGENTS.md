@@ -33,8 +33,9 @@
 - Adaptação feita por Codex/ChatGPT pode usar ASSISTED_ADAPTED com hash do conteúdo;
   nunca usar HUMAN_ADAPTED para personificar o proprietário nem alegar chamada de
   system prompt externo que não ocorreu. Edição invalida a avaliação textual.
-- Aplicar até três links internos realmente relacionados; não completar quota com
-  links irrelevantes. Links internos presentes sem verificação continuam pendentes.
+- Aplicar links internos somente quando acrescentarem contexto real e estiverem
+  publicados; não existe quota mínima ou máxima. Links presentes sem verificação
+  continuam pendentes.
 - No workflow manual, github.sha fixa o código da própria execução e evita rodar
   um snapshot antigo depois de corrigir o motor. Não ativa cron nem publicação.
 - Critério técnico não certifica fatos nem padrão acima da média. Artigo final e

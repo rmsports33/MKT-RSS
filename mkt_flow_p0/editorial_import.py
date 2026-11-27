@@ -15,7 +15,8 @@ from mkt_flow_p0.editorial_identity import (
 from mkt_flow_p0.provider_budget import BUDGET
 
 
-def _preparar_handoff(payload):
+def _preparar_handoff(payload, *, producer="external", origin_kind="EXTERNAL_CONTENT",
+                      producer_evidence=None):
     """Validate an editor/provider input without side effects."""
     required_payload = {"source_url", "source_name", "article", "research"}
     optional_payload = {"editorial_voice_application", "editorial_brief", "editorial_substance_review"}
@@ -38,7 +39,9 @@ def _preparar_handoff(payload):
         fonte_nome=source_name, contexto_complementar=payload["research"],
         voice_application=payload.get("editorial_voice_application"),
         editorial_brief=payload.get("editorial_brief"),
-        editorial_review=payload.get("editorial_substance_review"))
+        editorial_review=payload.get("editorial_substance_review"),
+        producer=producer, origin_kind=origin_kind,
+        producer_evidence=producer_evidence)
     return handoff
 
 
@@ -88,7 +91,14 @@ def processar_artigo_importado(payload, output_dir, *, genero="guia", image_mani
             current_assessment["status"] != "PASS" or not voice_applied):
         from mkt_flow_p0.editorial_development import adapt_imported_article
         payload, development_receipt = adapt_imported_article(payload, genre=genero)
-        handoff = _preparar_handoff(payload)
+        texto_adaptado = payload["article"]["texto_markdown"]
+        handoff = _preparar_handoff(
+            payload, producer="mkt_rss_adapted", origin_kind="EXTERNAL_CONTENT",
+            producer_evidence={
+                "generation_status": "PASS",
+                "content_sha256": hashlib.sha256(texto_adaptado.encode("utf-8")).hexdigest(),
+                "adaptation_outcome": development_receipt.get("outcome"),
+            })
         errors = validar_pacote(handoff["metadata"], handoff["markdown"])
         if errors:
             raise ValueError("; ".join(errors))

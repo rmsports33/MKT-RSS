@@ -187,6 +187,9 @@ def reescrever_materia(
     editorial_brief: dict = None,
     editorial_feedback=None,
     genre: str = None,
+    *,
+    origin_kind: str = "RSS_LIVE",
+    producer: str = "mkt_rss",
 ) -> dict:
     """
     Reescreve 1 matéria. Gate de entrada: texto <100 palavras = {"erro"}
@@ -308,6 +311,13 @@ def reescrever_materia(
                     "method": "mkt_flow_p0.rewriter.system_prompt",
                     "dna_prompt_sha256": DNA_PROMPT_SHA256,
                     "prompt_sha256": prompt_sha256,
+                },
+                producer=producer, origin_kind=origin_kind,
+                producer_evidence={
+                    "generation_status": "PASS",
+                    "modelo": modelo,
+                    "prompt_sha256": prompt_sha256,
+                    "content_sha256": hashlib.sha256(texto.encode("utf-8")).hexdigest(),
                 })
         except ValueError as exc:
             # Um erro no intercâmbio consultivo não pode apagar artigo gerado.

@@ -3,7 +3,7 @@
 ## O que é
 
 `mkt_flow_p0/editorial_quality_score.py` lê o contrato único copiado em
-`data/editorial-quality-v1.json` (hash `e9158844…`) e produz um **recibo diagnóstico**
+`data/editorial-quality-v1.json` (hash `6b55c87c…`) e produz um **recibo diagnóstico**
 para cada artigo. Não é aprovação factual, não substitui a decisão editorial e
 não publica. Nota alta nunca autoriza publicação.
 
