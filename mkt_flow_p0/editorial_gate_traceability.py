@@ -95,10 +95,13 @@ def build_gate_traceability_sidecar(
     p0 = [f["finding_id"] for f in findings if f.get("priority") == "P0"]
     p1 = [f["finding_id"] for f in findings if f.get("priority") == "P1"]
     p2 = [f["finding_id"] for f in findings if f.get("priority") == "P2"]
+    primary_verdict = str(primary_review.get("veredito") or "")
     if p0:
         handoff = "BLOCKED_P0_REQUIRES_NEW_ARTICLE_VERSION"
     elif disposition["status"] != "CLOSED":
         handoff = "EDITORIAL_DECISION_REQUIRED"
+    elif primary_verdict != "APTO_PARA_APROVACAO":
+        handoff = "PRIMARY_REVIEW_NOT_READY"
     else:
         handoff = "TRACEABILITY_COMPLETE_FOR_GATE_CONSUMER"
 
