@@ -1,28 +1,74 @@
 # Fontes de Origem e Análise Secundária de Valor Editorial (ASVE)
 
-**Contrato:** Conexo OS v1.1 · SHA-256 `966310987434eefb48ac6358fdb3eb01ade22ef37634902752ef081215dba701`.
+**Contrato canônico:** Conexo OS v1.1 · SHA-256 `e915884437f1ddad629b59a575d312fcb2f36e18cb1c2b855880e4931c867512`.
 
-## Arquitetura existente preservada
+## Arquitetura preservada
 
-O MKT-RSS já dispõe de pesquisa complementar, pacote de handoff, contrato estruturado de evidências e `mkt_flow_p0.revisor_qualidade_unico`. Esta entrega acrescenta:
-- catálogo versionado e classificador consultivo de fontes;
-- metadados mínimos por afirmação/fonte;
-- uma segunda modalidade de análise, sem criar um segundo agente de revisão;
-- validação de IDs, limite de cinco achados, prioridades, hash de versão e decisões.
+O MKT-RSS mantém o produtor editorial, o Revisor Único, o Gate e o mecanismo de handoff existentes. Esta implementação acrescenta uma modalidade ao revisor existente e amplia a trilha de evidências; não cria outro agente, revisor, publicador, serviço de IA, chave ou cron.
 
-`fontes_primarias.json` permanece como lista positiva legada para o fluxo de fabricantes/produtos. O novo `data/editorial-primary-source-registry-v1.json` é um catálogo transversal de descoberta. Não substituir um pelo outro nem tratar catálogo, domínio ou TLD como prova factual.
+## Catálogo de fontes de origem
 
-## Fonte de origem: usar corretamente
+`data/editorial-primary-source-registry-v1.json` contém 18 pontos de entrada:
+- Brasil: EPE, ONS, ANEEL, CCEE, Anatel, MCom, IBGE, Portal da Legislação/Planalto, Diário Oficial da União e Fala.BR (canal para solicitações LAI).
+- Internacional: IEA, Ember, EIA e Eurostat.
+- Descoberta científica: Crossref e OpenAlex.
+- Tecnologia, segurança e mercado: NIST NVD e SEC EDGAR.
 
-`mkt_flow_p0.primary_source_registry.classify_source_url(url)` retorna uma sugestão de origem e um estado inicial `NAO_VERIFICADA`. A função:
-- aceita somente HTTPS sem userinfo e portas não padrão;
-- identifica correspondência exata ou subdomínio de uma instituição cadastrada;
-- nunca marca um fato como confirmado;
-- classifica domínios desconhecidos como `discovery_lead`, mesmo quando usam TLD institucional.
+O catálogo é uma lista de descoberta, não uma whitelist de verdade. A correspondência de host sugere instituição e papel provável, mas sempre retorna `NAO_VERIFICADA`. Domínio `.gov`, `.edu`, DOI, PDF, HTTPS ou nome conhecido não comprovam uma afirmação.
 
-`validate_source_record` confere se o registro documenta URL, responsável, tipo, papel, data de publicação, período de referência, localização na fonte, metodologia, limitações e data de consulta. `validate_claim_record` verifica a estrutura e os IDs referenciados, mas retorna explicitamente `factuality_verified=false` e `semantic_support_verified=false`.
+Para legislação e decisões, abrir o texto original, edição do Diário Oficial e eventuais retificações. Quando a informação não estiver publicada, Fala.BR pode ser utilizado para solicitar documentos e séries sob a LAI. A resposta obtida precisa ser preservada com protocolo, data, anexos e limites de acesso; o canal de pedidos não é fonte factual em si.
 
-Exemplo de dossiê:
+A lista legada `mkt_flow_p0/fontes_primarias.json` permanece específica para a seleção de fabricantes/fornecedores. Ela não deve ser usada como catálogo universal nem misturada ao classificador geral.
+
+## Classificação por afirmação
+
+O papel de uma fonte é relativo à afirmação:
+- `primary_origin`: entidade que produziu a informação ou o documento original.
+- `independent_measurement`: medição ou verificação independente.
+- `secondary_analysis`: análise de terceiros a partir de fontes/dados.
+- `interested_party_statement`: declaração de parte interessada.
+- `discovery_lead`: pista de pesquisa ainda não validada.
+
+Estados: `CONFIRMADA`, `CORROBORADA`, `ATRIBUIDA`, `PROJETADA` e `NAO_VERIFICADA`.
+
+`mkt_flow_p0.primary_source_registry` oferece:
+- `load_registry()`: validar a estrutura do catálogo e IDs.
+- `classify_source_url(url)`: classificar uma URL como pista, nunca como fato validado.
+- `validate_source_record(source)`: exigir URL, responsável, tipo, papel, data publicada, período de referência, localização exata, metodologia, limitações e data de consulta.
+- `validate_claim_record(claim, sources)`: conferir estrutura e referências; retorna explicitamente `factuality_verified=false` e `semantic_support_verified=false`.
+
+O dossiê ASVE também aplica esses validadores antes de enviar o material ao modelo. Projeções, estimativas, declarações e medições permanecem distintas. Fontes que apenas reproduzem o mesmo release não contam como corroboração independente. A apuração procura evidências contrárias e hipóteses alternativas.
+
+## Análise Secundária de Valor Editorial
+
+Módulo: `mkt_flow_p0/editorial_secondary_analysis.py`.
+
+A ASVE é uma segunda leitura independente, com contexto separado da revisão principal. Recebe o texto exato e seu SHA-256, o dossiê estruturado e um catálogo de páginas internas. O prompt não recebe o parecer da revisão principal e trata artigo/documentos/claims/páginas como dados não confiáveis, ignorando eventuais instruções embutidas.
+
+Dimensões:
+1. contexto global;
+2. conexões relevantes e temas adjacentes;
+3. contrapontos e limitações;
+4. valor original para o leitor;
+5. continuidade editorial.
+
+O retorno aceita de zero a cinco apontamentos:
+- **P0:** falha material factual/metodológica/editorial. Mantém `REVISAO_NECESSARIA`; corrigir e fazer nova análise vinculada ao novo hash.
+- **P1:** melhoria material. Exige decisão editorial registrada para a versão exata. Aceitar/rejeitar/transferir para pauta exige justificativa.
+- **P2:** pauta futura separada, não bloqueia o artigo atual.
+
+Cada apontamento exige localização, observação, impacto para o leitor, evidências/claims existentes, ação recomendada, IDs de páginas internas publicadas quando aplicável e, para P2, título, justificativa e pergunta de pesquisa. O validador rejeita IDs inventados, páginas não publicadas, respostas que tentem reescrever o texto, campos extras e versões divergentes. Zero achados é um resultado válido.
+
+## Integração no Revisor Único e no executor
+
+- `incorporar_analise_secundaria(...)` preserva o parecer principal e acopla o recibo; nunca autoriza publicação.
+- `executar_revisao_com_asve(...)` orquestra a chamada independente e a integração.
+- `analisar_com_provedor_editorial_existente(prompt)` usa o cliente Groq já presente no projeto e o mesmo `provider_budget.BUDGET`. A chamada é opt-in; não cria provedor, conta, chave nem orçamento separado.
+- O executor privado `mkt_flow_p0.wp_quality_executor` aceita `--secondary-analysis`. Sem a flag, o fluxo anterior não muda. Com a flag, usa o corpo bruto do post em rascunho, o dossiê `asve_dossier` fornecido no arquivo de evidências e consulta até 75 posts publicados via REST somente leitura. O recibo é vinculado ao conteúdo examinado e guardado no relatório privado.
+- O executor relê o post e verifica o fingerprint depois da análise; se o rascunho mudou, falha e exige nova execução.
+- Nenhuma operação da ASVE altera corpo, metadados, status ou publicação do WordPress. A opção anterior `--submit-quality` é separada e não publica o artigo; deve continuar sujeita às salvaguardas do Gate.
+
+### Exemplo de dossiê mínimo (estrutura ilustrativa)
 
 ```json
 {
@@ -49,49 +95,26 @@ Exemplo de dossiê:
 }
 ```
 
-Não copiar esse exemplo como dado real sem preencher os identificadores, datas, página e metodologia efetivamente verificados. Campos ausentes devem ser `not_provided` ou `not_applicable`, nunca inferidos.
+O exemplo não representa uma afirmação verificada. Antes do uso real, substituir reticências por URL, documento, datas, localização, metodologia e limitações efetivamente conferidas.
 
-## ASVE: segunda leitura, não reescrita
+### Registro de P2 no backlog existente
 
-Módulo: `mkt_flow_p0/editorial_secondary_analysis.py`.
+Os achados P2 são encaminhados para `mkt_flow_p0.fila_pautas.registrar_topico_asve`, usando o mesmo armazenamento SQLite/Turso da fila editorial atual. A chave idempotente combina ID do artigo, hash da versão e ID do achado. Não cria um URL falso, RSS artificial, tabela de pauta duplicada ou nova fila. O status inicial é `DESCOBERTA`; o tema não é automaticamente selecionado ou produzido.
 
-Integração proposta com o Revisor Único existente:
-1. Executar a revisão principal normalmente.
-2. Construir uma entrada ASVE independente com o artigo, dossiê e páginas internas publicadas. Não transmitir o parecer principal nem feedback de reescrita.
-3. O orquestrador existente chama o analisador/modelo que já estiver disponível e autorizado, usando `build_analysis_request(...)` e `run_secondary_analysis(..., analyzer)`. Não é criado serviço, chave, cron ou provedor novo.
-4. Validar o retorno por `validate_analysis_result`.
-5. Anexar ao recibo do Revisor Único com `attach_to_unique_reviewer`. A função preserva o veredito principal, não escreve no WordPress e mantém autorização de publicação falsa.
-6. Depois da decisão editorial, registrar as disposições com `validate_dispositions`, sempre vinculadas ao hash do artigo.
+## Controle de custos
 
-A modalidade cobre contexto global, conexões relevantes, contrapontos/limitações, valor original para o leitor e continuidade editorial. Aceita de zero a cinco apontamentos. P0 exige incorporação para fechar; P1 requer decisão e justificativa quando não incorporado; P2 é pauta futura e não bloqueia o artigo atual.
+O adaptador utiliza o cliente e orçamento compartilhados já disponíveis. A chamada adicional só ocorre quando a ASVE é explicitamente solicitada por código/orquestrador ou pela flag `--secondary-analysis`. O modo offline continua sem chamada de modelo. Nenhum plano pago, API key ou serviço externo novo foi adicionado.
 
-Cada apontamento inclui localização, observação, impacto para o leitor, referências a fontes/claims existentes, ação recomendada, referências somente a páginas publicadas do ConexoTech e, quando P2, uma pauta futura estruturada.
+## Testes adicionados
 
-## Limites de segurança
+- `tests/test_editorial_secondary_analysis.py`: hash, limites, P0/P1/P2, dossiê completo, referências válidas, rejeição de reescrita, decisões e versionamento.
+- `tests/test_primary_source_registry.py`: catálogo, papel consultivo, TLD desconhecido, HTTPS e validação de claims.
+- `tests/test_editorial_secondary_reviewer_integration.py`: fluxo combinado, decisões e persistência P2.
+- `tests/test_wp_quality_executor.py`: flag opt-in, recibo, páginas publicadas e uso de cliente simulado.
+- `tests/test_fila_pautas.py`: idempotência do backlog e ausência de escrita WordPress.
 
-- Sem reescrita, parágrafos substitutos ou comentários cosméticos.
-- Sem URLs de evidência ou páginas internas inventadas.
-- Sem análise apresentada como prova factual.
-- Sem alteração do corpo, metadados ou status de WordPress.
-- Sem autorização, aprovação ou publicação.
-- O hash do artigo precisa corresponder exatamente à versão analisada.
-- Um resultado com zero achados é válido e não deve ser penalizado.
-- Uma segunda passada pontual verifica apenas as decisões aplicadas; não reabre análise ampla sem mudança material.
+**A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
 
-## Custos e execução
+## Homologação editorial
 
-O módulo não acessa rede e não chama modelo por conta própria. O analisador é injetado pelo orquestrador. Assim, a ASVE pode usar o provedor e a cota já disponíveis; não gera nova despesa automaticamente. O pipeline RSS não executará uma segunda chamada de IA por padrão.
-
-## Testes
-
-- `tests/test_editorial_secondary_analysis.py`: contratos, hash, limites, P0/P1/P2, links internos publicados, rejeição de reescrita, decisões e preservação do veredito.
-- `tests/test_primary_source_registry.py`: catálogo, domínio conhecido como pista, TLD desconhecido sem confiança automática, HTTPS e estrutura de claims.
-- `tests/test_editorial_secondary_reviewer_integration.py`: integração com o Revisor Único, invocação independente e registro de P2 na fila existente.
-- `tests/test_wp_quality_executor.py`: flag opt-in, hash, dossiê e páginas publicadas usando cliente WordPress simulado.
-- `tests/test_fila_pautas.py`: idempotência do backlog P2, versão exata do artigo e ausência de escrita no WordPress.
-
-Foram adicionados 31 casos de teste focados (13 ASVE, 7 catálogo de fontes, 5 integração com Revisor Único, 3 executor WP e 3 fila de pautas). **A execução dos novos testes ainda não foi efetuada neste ambiente**; não declarar PASS até executar no checkout integral. A suíte anterior de PR #142 não substitui os novos testes nem uma homologação do fluxo de IA.
-
-## Homologação futura
-
-Executar offline no checkout integral, depois o piloto ASVE em três a cinco artigos de gêneros diferentes, sem publicação. Comparar achados com avaliação humana independente e medir utilidade, falsos positivos, esforço de decisão e taxa de apontamentos rejeitados. Só declarar qualidade homologada após piloto cego em pelo menos três gêneros. O Gate e a decisão humana de publicação permanecem intactos.
+Depois dos testes locais, executar um piloto sem publicação com três a cinco artigos de gêneros diferentes. Comparar os achados ASVE com avaliação humana independente e medir: utilidade, falsos positivos, decisões aceitas/rejeitadas, esforço editorial e temas P2 realmente aproveitados. Só declarar homologação de qualidade depois de um piloto cego com pelo menos três gêneros. Gate e aprovação humana continuam separados.
