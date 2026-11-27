@@ -20,7 +20,7 @@ Mudanças aditivas:
 
 - Canônico: `conexo-os/docs/EDITORIAL_QUALITY_CONTRACT.md`
 - JSON: `conexo-os/contracts/editorial-quality-v1.json`
-- Hash: `85a3377b87b0d9b8aac9a62cca0c8e38d37df3d49c3da3c9d56868d5c474d6fe`
+- Hash: `30ecf890fd0d42b01ceee56b29654e3ef0e3c0e209e76fe9fa17304bdb53de63`
 
 Escala e linha de corte seguem **aguardando confirmação do proprietário**. Nenhuma nota é publicação automática.
 
