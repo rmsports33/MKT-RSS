@@ -124,6 +124,37 @@ class UniqueReviewerASVETests(unittest.TestCase):
             self.assertFalse(result["publication_authorized"])
 
 
+    def test_cached_receipt_reuses_same_hash_for_p1_decision_without_provider(self):
+        article, dossier = data()
+        request = build_analysis_request(article, dossier, [])
+        raw_receipt = {
+            "schema":SCHEMA, "article_sha256":request["article_sha256"],
+            "findings":[{
+                "finding_id":"f-p1","priority":"P1","dimension":"contrapontos_e_limitacoes",
+                "location":"Projeção",
+                "observation":"A projeção não identifica a hipótese principal.",
+                "reader_impact":"O leitor pode interpretar o cenário como resultado garantido.",
+                "evidence_refs":["s1"],"claim_refs":["c1"],
+                "recommended_action":"Decidir se a hipótese deve ser explicitada.",
+                "internal_page_refs":[],"future_topic":None
+            }]
+        }
+        decision={"finding_id":"f-p1","article_sha256":request["article_sha256"],
+                  "disposition":"accepted_with_reason",
+                  "rationale":"A premissa está contextualizada no parágrafo imediatamente anterior."}
+        main={"veredito":"APTO_PARA_APROVACAO","pendencias":[]}
+        result=executar_revisao_com_asve(
+            main,article,dossier,[],recibo_existente=raw_receipt,decisoes=[decision]
+        )
+        self.assertTrue(result["cached_receipt_used"])
+        self.assertFalse(result["existing_provider_invoked"])
+        self.assertEqual(result["review"]["secondary_analysis_status"],"DECISIONS_RECORDED")
+        self.assertEqual(result["review"]["veredito"],"APTO_PARA_APROVACAO")
+        with self.assertRaisesRegex(ValueError,"VERSION_MISMATCH"):
+            executar_revisao_com_asve(main,article+" alterado",dossier,[],
+                recibo_existente=raw_receipt,decisoes=[decision])
+
+
 
 if __name__ == "__main__":
     unittest.main()
