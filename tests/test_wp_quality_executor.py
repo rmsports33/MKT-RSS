@@ -240,6 +240,9 @@ class TestCloudAdapter(unittest.TestCase):
             self.assertEqual(len(seen),1)
             self.assertEqual(report["secondary_analysis_status"],"NO_MATERIAL_FINDINGS")
             self.assertEqual(report["secondary_analysis"]["finding_count"],0)
+            self.assertEqual(report["gate_traceability_sidecar"]["article_sha256"],
+                             report["secondary_analysis"]["article_sha256"])
+            self.assertFalse(report["gate_traceability_sidecar"]["gate_contract_compatibility"]["current_gate_accepts_sidecar"])
             self.assertFalse(report["publication_authorized"])
             self.assertEqual(client.writes,[])
 
