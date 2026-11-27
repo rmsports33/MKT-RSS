@@ -25,9 +25,11 @@
       "access": "public",
       "urls": [
         "https://www.epe.gov.br/pt/publicacoes-dados-abertos/dados-abertos",
-        "https://www.epe.gov.br/pt/publicacoes-dados-abertos/ferramentas-interativas"
+        "https://www.epe.gov.br/pt/publicacoes-dados-abertos/ferramentas-interativas",
+        "https://epe.gov.br/sites-pt/publicacoes-dados-abertos/publicacoes/PublicacoesArquivos/publicacao-982/topico-860/PDE%202036_Relat%C3%B3rio%20S%C3%ADntese_rev3_2026-10-08.pdf",
+        "https://www.epe.gov.br/sites-pt/publicacoes-dados-abertos/publicacoes/PublicacoesArquivos/publicacao-982/topico-851/PDE%202036_Caderno%20de%20Demanda%20de%20Energia_v1_2026-10-27.pdf"
       ],
-      "notes": "Preferir caderno, tabela e versão originais do PDE/BEN; projeções devem manter cenário, premissas e horizonte."
+      "notes": "Preferir caderno, tabela e versão originais do PDE/BEN. Incluir Relatório Síntese PDE 2036 (v1/consulta pública, out/2026) e Caderno de Demanda (v1, 27/10/2026); projeções devem manter cenário, premissas e horizonte. Conferir taxas de crescimento contra valores de início e fim, unidade e escopo antes de publicar."
     },
     {
       "id": "br-ons",
@@ -313,9 +315,10 @@
       "default_role": "primary_origin",
       "access": "public",
       "urls": [
-        "https://www.planalto.gov.br/ccivil_03/"
+        "https://www.planalto.gov.br/ccivil_03/",
+        "https://planalto.gov.br/ccivil_03/_ato2023-2026/2026/lei/l15504.htm"
       ],
-      "notes": "Preferir o texto legal consolidado e conferir alterações, vigência e publicação oficial."
+      "notes": "Preferir texto legal consolidado e conferir alterações, vigência e publicação oficial. Lei 15.504/2026 institui o Redata; verificar requisitos legais e regulamentação vigente antes de afirmar condições de habilitação."
     },
     {
       "id": "br-dou",
