@@ -8,7 +8,7 @@ O MKT-RSS mantém o produtor editorial, o Revisor Único, o Gate e o mecanismo d
 
 ## Catálogo de fontes de origem
 
-`data/editorial-primary-source-registry-v1.json` contém 18 pontos de entrada:
+`data/editorial-primary-source-registry-v1.json` contém 21 pontos de entrada:
 - Brasil: EPE, ONS, ANEEL, CCEE, Anatel, MCom, IBGE, Portal da Legislação/Planalto, Diário Oficial da União e Fala.BR (canal para solicitações LAI).
 - Internacional: IEA, Ember, EIA e Eurostat.
 - Descoberta científica: Crossref e OpenAlex.
