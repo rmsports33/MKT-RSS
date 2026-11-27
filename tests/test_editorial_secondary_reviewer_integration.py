@@ -1,4 +1,6 @@
 import unittest
+import tempfile
+from pathlib import Path
 
 from mkt_flow_p0.editorial_secondary_analysis import SCHEMA, build_analysis_request, validate_analysis_result
 from mkt_flow_p0.revisor_qualidade_unico import (
@@ -87,6 +89,40 @@ class UniqueReviewerASVETests(unittest.TestCase):
         self.assertFalse(result["publication_authorized"])
         self.assertTrue(result["analyzer_injected_by_orchestrator"])
         self.assertFalse(result["existing_provider_invoked"])
+
+    def test_p2_future_topic_registers_in_existing_queue_without_wp_write(self):
+        article, dossier = data()
+        request = build_analysis_request(article, dossier, [])
+        def analyzer(_prompt):
+            return {
+                "schema": SCHEMA,
+                "article_sha256": request["article_sha256"],
+                "findings": [{
+                    "finding_id":"f-p2","priority":"P2","dimension":"conexoes_relevantes",
+                    "location":"Seção final","observation":"A rede elétrica merece aprofundamento separado.",
+                    "reader_impact":"O tema amplia a compreensão sem sobrecarregar esta notícia.",
+                    "evidence_refs":[],"claim_refs":[],
+                    "recommended_action":"Registrar uma pauta de aprofundamento.",
+                    "internal_page_refs":[],
+                    "future_topic":{
+                        "title":"Confiabilidade das redes para data centers",
+                        "rationale":"A expansão de grandes cargas depende de infraestrutura de transmissão e estabilidade.",
+                        "research_question":"Quais reforços de rede, armazenamento e regras de conexão serão necessários?"
+                    }
+                }]
+            }
+        with tempfile.TemporaryDirectory() as root:
+            main={"veredito":"APTO_PARA_APROVACAO","pendencias":[]}
+            result=executar_revisao_com_asve(
+                main,article,dossier,[],analyzer=analyzer,origin_article_id="wp:9925",
+                persist_future_topics=True,topic_db_path=str(Path(root)/"queue.db")
+            )
+            self.assertEqual(len(result["future_topics_registered"]),1)
+            self.assertTrue(result["future_topics_registered"][0]["novo"])
+            self.assertEqual(result["future_topics_registered"][0]["estado"],"DESCOBERTA")
+            self.assertEqual(result["review"]["secondary_analysis_status"],"P2_BACKLOG_ONLY")
+            self.assertFalse(result["publication_authorized"])
+
 
 
 if __name__ == "__main__":
