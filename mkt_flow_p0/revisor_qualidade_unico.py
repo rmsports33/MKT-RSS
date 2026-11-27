@@ -146,14 +146,10 @@ def avaliar_artigo(post, *, media=None, fontes=None, evidencias=None,
     else:
         checks["alegacoes"] = _check("NAO_VERIFICADO", "texto_original_para_confronto_ausente")
     internos = [link for link in links if urlparse(link).hostname in (HOST, "www." + HOST)]
-    # Quantidade nao basta: pertinencia precisa de revisao substantiva.
-    # The DNA permits UP TO 3 genuinely related links, not a quota of 3.
-    # Relevance and deliberate absence require version-bound human evidence.
-    if len(set(internos)) > 3:
-        checks["links_internos"] = _check("REPROVADO", "mais_de_tres_links_internos",
-                                          sorted(set(internos)))
-    else:
-        checks["links_internos"] = _evidence(evidencias, "links_internos", fingerprint)
+    # Quantidade nao comprova nem reprova relevancia. Nao ha quota minima
+    # nem limite numerico; a pertinencia e a decisao deliberada de nao linkar
+    # dependem de evidencia humana vinculada ao fingerprint desta versao.
+    checks["links_internos"] = _evidence(evidencias, "links_internos", fingerprint)
     slug = _str(post.get("slug"))
     checks["seo"] = _check(
         "VERIFICADO" if 20 <= len(slug) <= 100 and len(excerpt) >= 80 and
