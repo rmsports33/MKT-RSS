@@ -65,9 +65,35 @@ class WPClient:
             result = json.loads(data)
         except (ValueError, UnicodeError) as exc:
             raise WPReadError("Invalid WordPress response") from exc
-        if not isinstance(result, dict):
-            raise WPReadError("Invalid WordPress object")
+        if not isinstance(result, (dict, list)):
+            raise WPReadError("Invalid WordPress response object")
         return result
+
+    def published_pages(self, limit=75):
+        """Read-only catalogue of real published posts for ASVE link validation."""
+        if type(limit) is not int or not 1 <= limit <= 75:
+            raise ValueError("Published page limit invalid")
+        rows = self.call(
+            "GET",
+            "wp/v2/posts?status=publish&per_page=" + str(limit) +
+            "&_fields=id,title,link,status"
+        )
+        if not isinstance(rows, list):
+            raise WPReadError("Published pages endpoint returned invalid data")
+        output = []
+        for row in rows:
+            if not isinstance(row, dict) or type(row.get("id")) is not int:
+                continue
+            title = row.get("title")
+            if isinstance(title, dict):
+                title = title.get("rendered", "")
+            output.append({
+                "page_id": str(row["id"]),
+                "title": str(title or "")[:240],
+                "url": row.get("link", ""),
+                "status": row.get("status", ""),
+            })
+        return output
 
     def post(self, post_id):
         return self.call("GET", "wp/v2/posts/" + str(post_id) + "?context=edit")
@@ -147,7 +173,8 @@ def _canonical_sha(value):
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
-def review_once(client, post_id, evidence, db_path, *, submit_quality=False):
+def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
+                run_asve=False, asve_analyzer=None):
     if type(post_id) is not int or post_id <= 0:
         raise ValueError("post_id invalid")
     first = client.post(post_id)
@@ -161,6 +188,20 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False):
         evidencias=evidence.get("evidencias", {}),
         corpo_original_fonte=evidence.get("corpo_original_fonte"),
     )
+    if run_asve:
+        dossier = evidence.get("asve_dossier")
+        if not isinstance(dossier, dict):
+            raise ValueError("ASVE requires a complete asve_dossier in the evidence file")
+        raw_content = first.get("content")
+        if not isinstance(raw_content, dict) or not isinstance(raw_content.get("raw"), str):
+            raise WPReadError("ASVE requires raw article content for exact version binding")
+        from mkt_flow_p0.revisor_qualidade_unico import executar_revisao_com_asve
+        pages = client.published_pages(limit=75)
+        asve = executar_revisao_com_asve(
+            report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer
+        )
+        report = asve["review"]
+        report["asve_receipt"] = asve["secondary_analysis"]
     # Detect concurrent edits between read and commit of the private report.
     latest = client.post(post_id)
     if not isinstance(latest, dict) or latest.get("status") != "draft" or not verificar_versao(report, latest):
@@ -203,6 +244,8 @@ def main(argv=None):
     parser.add_argument("--post-id", type=int, required=True)
     parser.add_argument("--evidence-file", required=True)
     parser.add_argument("--db", default=os.environ.get("CONEXO_QUALITY_DB", "/tmp/conexo-private-quality.sqlite"))
+    parser.add_argument("--secondary-analysis", action="store_true",
+                        help="Run an independent ASVE pass using the existing provider budget")
     parser.add_argument("--submit-quality", action="store_true",
                         help="Requires independent human-reviewer WordPress identity; does NOT publish")
     args = parser.parse_args(argv)
@@ -217,7 +260,8 @@ def main(argv=None):
         parser.error("Evidence must be JSON object")
     client = WPClient(site, user, password)
     report, response = review_once(client, args.post_id, evidence, args.db,
-                                   submit_quality=args.submit_quality)
+                                   submit_quality=args.submit_quality,
+                                   run_asve=args.secondary_analysis)
     # Only status/fingerprint/check names; no confidential evidence or secrets in logs.
     print(json.dumps({
         "post_id": report["post_id"],
@@ -226,6 +270,8 @@ def main(argv=None):
         "bloqueios": report["bloqueios"], "pendencias": report["pendencias"],
         "stored_private": True,
         "sent_to_gate": response is not None,
+        "asve_status": report.get("secondary_analysis_status", "NOT_RUN"),
+        "asve_findings": report.get("secondary_analysis", {}).get("finding_count", 0),
     }, ensure_ascii=False))
     return 0 if report["veredito"] == "APTO_PARA_APROVACAO" else 2
 
