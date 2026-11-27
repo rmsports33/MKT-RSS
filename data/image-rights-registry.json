@@ -1,0 +1,122 @@
+{
+  "licenses": {
+    "CC0-1.0": {
+      "url": "https://creativecommons.org/publicdomain/zero/1.0/",
+      "credit_required": false,
+      "commercial_ok": true,
+      "derivatives_ok": true
+    },
+    "CC-BY-4.0": {
+      "url": "https://creativecommons.org/licenses/by/4.0/",
+      "credit_required": true,
+      "commercial_ok": true,
+      "derivatives_ok": true
+    },
+    "CC-BY-SA-4.0": {
+      "url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "credit_required": true,
+      "commercial_ok": true,
+      "derivatives_ok": true,
+      "share_alike": true
+    },
+    "Pexels License": {
+      "url": "https://www.pexels.com/license/",
+      "credit_required": false,
+      "commercial_ok": true,
+      "derivatives_ok": true,
+      "no_resale": true
+    },
+    "Unsplash License": {
+      "url": "https://unsplash.com/license",
+      "credit_required": false,
+      "commercial_ok": true,
+      "derivatives_ok": true,
+      "no_competing_service": true
+    },
+    "Pixabay License": {
+      "url": "https://pixabay.com/service/license/",
+      "credit_required": false,
+      "commercial_ok": true,
+      "derivatives_ok": true,
+      "no_resale": true
+    }
+  },
+  "sources": {
+    "commons.wikimedia.org": "Wikimedia Commons",
+    "openverse.org": "Openverse",
+    "pexels.com": "Pexels",
+    "unsplash.com": "Unsplash",
+    "pixabay.com": "Pixabay",
+    "flickr.com": "Flickr",
+    "europeana.eu": "Europeana",
+    "si.edu": "Smithsonian Open Access",
+    "metmuseum.org": "The Met",
+    "rijksmuseum.nl": "Rijksmuseum",
+    "artic.edu": "Art Institute of Chicago",
+    "clevelandart.org": "Cleveland Museum of Art",
+    "loc.gov": "Library of Congress",
+    "nasa.gov": "NASA",
+    "noaa.gov": "NOAA",
+    "usgs.gov": "USGS",
+    "geograph.org.uk": "Geograph",
+    "burst.shopify.com": "Burst",
+    "stocksnap.com": "StockSnap",
+    "reshot.com": "Reshot",
+    "rawpixel.com": "Rawpixel",
+    "picjumbo.com": "Picjumbo",
+    "kaboompics.com": "Kaboompics",
+    "freepik.com": "Freepik"
+  },
+  "research_sources": {
+    "x.com": "X (antigo Twitter)",
+    "twitter.com": "X (antigo Twitter)",
+    "theverge.com": "The Verge",
+    "techcrunch.com": "TechCrunch",
+    "wired.com": "WIRED",
+    "techradar.com": "TechRadar",
+    "engadget.com": "Engadget",
+    "arstechnica.com": "Ars Technica",
+    "cnet.com": "CNET",
+    "zdnet.com": "ZDNET",
+    "tomshardware.com": "Tom's Hardware",
+    "androidauthority.com": "Android Authority",
+    "9to5google.com": "9to5Google",
+    "9to5mac.com": "9to5Mac",
+    "macrumors.com": "MacRumors",
+    "gsmarena.com": "GSMArena",
+    "notebookcheck.net": "Notebookcheck",
+    "theregister.com": "The Register",
+    "reuters.com": "Reuters",
+    "apnews.com": "Associated Press",
+    "bbc.com": "BBC",
+    "theguardian.com": "The Guardian",
+    "nytimes.com": "The New York Times",
+    "bloomberg.com": "Bloomberg",
+    "tecnoblog.net": "Tecnoblog",
+    "canaltech.com.br": "Canaltech",
+    "exame.com": "Exame",
+    "olhardigital.com.br": "Olhar Digital",
+    "oficinadanet.com.br": "Oficina da Net",
+    "promobit.com.br": "Promobit",
+    "toptecnologia.blog": "Top Tecnologia",
+    "jacotei.com.br": "JáCotei",
+    "macmagazine.com.br": "MacMagazine",
+    "mundoconectado.com.br": "Mundo Conectado",
+    "thetech.com.br": "The Tech",
+    "gizmodo.com.br": "Gizmodo Brasil",
+    "fccid.io": "FCC ID (espelho de homologação)"
+  },
+  "official_sources": {
+    "gov.br": "Governo Federal / Anatel",
+    "apple.com": "Apple",
+    "support.apple.com": "Apple Support",
+    "news.samsung.com": "Samsung Newsroom",
+    "blog.google": "Google Blog",
+    "developer.android.com": "Android Developers",
+    "nvidia.com": "NVIDIA",
+    "microsoft.com": "Microsoft",
+    "lg.com": "LG Newsroom",
+    "aboutamazon.com": "Amazon",
+    "meta.com": "Meta"
+  }
+}
