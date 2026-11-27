@@ -131,7 +131,7 @@ def checagens_deterministicas(*, markdown, sources, genero, title, meta,
     # Detectar menção territorial no texto, nunca na URL/bibliografia.
     texto_sem_urls = re.sub(r"https?://\\S+", " ", texto)
     br_mencionado = bool(BR_PADRAO.search(texto_sem_urls))
-    br_texto = _br_afirmativo(texto)
+    br_texto = _br_afirmativo(texto_sem_urls)
     checagens = []
 
     def add(id_, ok, evidencia, severidade="blocker"):
