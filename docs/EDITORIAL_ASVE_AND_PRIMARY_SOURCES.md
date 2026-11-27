@@ -113,7 +113,7 @@ O adaptador utiliza o cliente e orçamento compartilhados já disponíveis. A ch
 - `tests/test_wp_quality_executor.py`: flag opt-in, recibo, páginas publicadas e uso de cliente simulado.
 - `tests/test_fila_pautas.py`: idempotência do backlog e ausência de escrita WordPress.
 
-**A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
+Foram adicionados 33 casos focados: 13 para ASVE, 7 para o catálogo de fontes, 5 para a integração do Revisor Único, 5 para o executor WordPress e 3 para o backlog P2. **A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
 
 ## Homologação editorial
 
