@@ -157,9 +157,10 @@ def build_analysis_request(article_markdown: str, evidence_dossier: dict,
         "reader_impact, evidence_refs, claim_refs, recommended_action, internal_page_refs "
         "e future_topic. Use apenas IDs disponibilizados."
     )
-    prompt = instruction + "\n\nINPUT_JSON:\n" + json.dumps(
-        payload, ensure_ascii=False, separators=(",", ":")
-    )
+    encoded_payload = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
+    if len(encoded_payload) > 180000:
+        raise ValueError("ASVE_INPUT_TOO_LARGE")
+    prompt = instruction + "\n\nINPUT_JSON:\n" + encoded_payload
     return {
         "schema": SCHEMA,
         "article_sha256": article_hash,
