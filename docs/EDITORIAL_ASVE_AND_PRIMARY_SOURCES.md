@@ -20,6 +20,39 @@ Para legislação e decisões, abrir o texto original, edição do Diário Ofici
 
 A lista legada `mkt_flow_p0/fontes_primarias.json` permanece específica para a seleção de fabricantes/fornecedores. Ela não deve ser usada como catálogo universal nem misturada ao classificador geral.
 
+## Duas trilhas distintas: descoberta editorial e evidência primária
+
+O projeto mantém duas trilhas que não devem ser confundidas:
+
+1. **Descoberta de pauta (RSS e imprensa):** `mkt_flow_p0/rss_ingestor.py` e
+   `research_candidates.py` coletam manchetes e resumos de feeds editoriais já
+   configurados. O material é rotulado como pista/RSS pendente de apuração; serve
+   para descobrir acontecimentos, encontrar termos e direcionar a pesquisa.
+   Não confirma fatos, não equivale a corroboração independente e não pode
+   alimentar automaticamente uma claim como `CONFIRMADA`.
+2. **Apuração de origem (documentos, bases e APIs):** o catálogo
+   `data/editorial-primary-source-registry-v1.json` orienta a busca direta de
+   datasets, documentos originais, registros legais, estudos e APIs de quem
+   produziu a informação. A fonte concreta e seu locator são registrados por
+   afirmação no dossiê.
+
+As listas RSS existentes são majoritariamente fontes jornalísticas de
+tecnologia, não um monitor completo de órgãos primários. Nenhum URL de feed
+oficial deve ser inventado nem tratado como oficial só porque foi publicado
+por um agregador. Quando um órgão não oferece feed oficial verificável, usar
+seu catálogo oficial de publicações, API, página de dados abertos ou boletim
+institucional; registrar data da consulta e versão do documento. O monitor de
+RSS atual continua sendo uma camada de descoberta, não uma automação de
+apuração nem um novo cron.
+
+**Exemplo recente de uso correto:** a pauta de data centers foi aprofundada
+diretamente com o PDE 2036 e seu Caderno de Demanda da EPE, e com a Lei
+15.504/2026 no Portal da Legislação. Esses documentos foram adicionados às
+URLs do registro EPE/Planalto sem criar registros ou serviços paralelos. Uma
+taxa de 13,7% publicada pela EPE não foi combinada automaticamente com a série
+3→30 TWh; a discrepância aritmética aparente foi registrada para esclarecimento
+da origem, base e escopo.
+
 ## Classificação por afirmação
 
 O papel de uma fonte é relativo à afirmação:
