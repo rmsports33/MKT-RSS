@@ -64,7 +64,7 @@ Cada apontamento exige localização, observação, impacto para o leitor, evid�
 - `incorporar_analise_secundaria(...)` preserva o parecer principal e acopla o recibo; nunca autoriza publicação.
 - `executar_revisao_com_asve(...)` orquestra a chamada independente e a integração.
 - `analisar_com_provedor_editorial_existente(prompt)` usa o cliente Groq já presente no projeto e o mesmo `provider_budget.BUDGET`. A chamada é opt-in; não cria provedor, conta, chave nem orçamento separado.
-- O executor privado `mkt_flow_p0.wp_quality_executor` aceita `--secondary-analysis`. Sem a flag, o fluxo anterior não muda. Com a flag, usa o corpo bruto do post em rascunho, o dossiê `asve_dossier` fornecido no arquivo de evidências e consulta até 75 posts publicados via REST somente leitura. O recibo é vinculado ao conteúdo examinado e guardado no relatório privado.
+- O executor privado `mkt_flow_p0.wp_quality_executor` aceita `--secondary-analysis`. Sem a flag, o fluxo anterior não muda. Com a flag, usa o corpo bruto do post em rascunho, o dossiê `asve_dossier` fornecido no arquivo de evidências e consulta posts e páginas publicados, paginados até 500 por tipo via REST somente leitura. O recibo é vinculado ao conteúdo examinado e guardado no relatório privado.
 - O executor relê o post e verifica o fingerprint depois da análise; se o rascunho mudou, falha e exige nova execução.
 - Nenhuma operação da ASVE altera corpo, metadados, status ou publicação do WordPress. A opção anterior `--submit-quality` é separada e não publica o artigo; deve continuar sujeita às salvaguardas do Gate.
 
@@ -129,7 +129,7 @@ O adaptador utiliza o cliente e orçamento compartilhados já disponíveis. A ch
 - `tests/test_wp_quality_executor.py`: flag opt-in, recibo, páginas publicadas e uso de cliente simulado.
 - `tests/test_fila_pautas.py`: idempotência do backlog e ausência de escrita WordPress.
 
-Foram adicionados 36 casos focados: 14 para ASVE, 7 para o catálogo de fontes, 6 para a integração do Revisor Único, 6 para o executor WordPress e 3 para o backlog P2. **A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
+Foram adicionados 38 casos focados: 14 para ASVE, 7 para o catálogo de fontes, 6 para a integração do Revisor Único, 8 para o executor WordPress e 3 para o backlog P2. **A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
 
 ## Homologação editorial
 
