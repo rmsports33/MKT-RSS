@@ -83,11 +83,15 @@ class TestFilaPautas(unittest.TestCase):
         banco = self.db
 
         def fake_turso(sql, args=()):
-            with sqlite3.connect(banco) as con:
-                cur = con.execute(sql, args)
-                if cur.description:
-                    return {"rows": [list(row) for row in cur.fetchall()], "affected": 0}
-                return {"rows": [], "affected": cur.rowcount}
+            con = sqlite3.connect(banco)
+            try:
+                with con:
+                    cur = con.execute(sql, args)
+                    if cur.description:
+                        return {"rows": [list(row) for row in cur.fetchall()], "affected": 0}
+                    return {"rows": [], "affected": cur.rowcount}
+            finally:
+                con.close()
 
         with patch.object(fila.cloud_db, "turso_enabled", return_value=True), \
              patch.object(fila.cloud_db, "turso_execute", side_effect=fake_turso):

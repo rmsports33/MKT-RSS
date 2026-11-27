@@ -265,13 +265,17 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
                     db_path=topic_db_path,
                 )
                 report["asve_future_topics_registered"].append(saved_topic)
-    with _private_db(db_path) as conn:
-        conn.execute("""INSERT INTO quality_reviews
-          (wp_post_id, fingerprint, status, checked_at, report_json)
-          VALUES (?, ?, ?, ?, ?)""",
-          (post_id, report["fingerprint"], report["veredito"],
-           datetime.now(timezone.utc).isoformat(),
-           json.dumps(report, ensure_ascii=False, sort_keys=True)))
+    conn = _private_db(db_path)
+    try:
+        with conn:
+            conn.execute("""INSERT INTO quality_reviews
+              (wp_post_id, fingerprint, status, checked_at, report_json)
+              VALUES (?, ?, ?, ?, ?)""",
+              (post_id, report["fingerprint"], report["veredito"],
+               datetime.now(timezone.utc).isoformat(),
+               json.dumps(report, ensure_ascii=False, sort_keys=True)))
+    finally:
+        conn.close()
     response = None
     if submit_quality:
         if report["veredito"] != "APTO_PARA_APROVACAO":

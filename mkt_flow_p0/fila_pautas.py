@@ -64,9 +64,13 @@ def _exec(sql, args=(), db_path=None):
             raise RuntimeError("Persistência remota indisponível: " + result["erro"])
         return result.get("rows", []), result.get("affected", 0)
     db = Path(db_path) if db_path is not None else DEFAULT_DB
-    with sqlite3.connect(db) as con:
-        cur = con.execute(sql, args)
-        return cur.fetchall() if cur.description else [], cur.rowcount
+    con = sqlite3.connect(db)
+    try:
+        with con:
+            cur = con.execute(sql, args)
+            return cur.fetchall() if cur.description else [], cur.rowcount
+    finally:
+        con.close()
 
 
 NOTAS_SCHEMA = """CREATE TABLE IF NOT EXISTS rss_notas_editoriais (

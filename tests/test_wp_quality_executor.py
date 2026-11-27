@@ -3,6 +3,7 @@ import json
 import tempfile
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from mkt_flow_p0.wp_quality_executor import WPReadError, WPClient, _NoRedirect, review_once, _private_db
 from mkt_flow_p0.revisor_qualidade_unico import _sha, _txt
@@ -155,17 +156,29 @@ class TestCloudAdapter(unittest.TestCase):
             self.assertEqual(client.writes, [])
             self.assertTrue((Path(root) / "private.db").exists())
             import sqlite3
-            with sqlite3.connect(str(Path(root) / "private.db")) as db:
+            db = sqlite3.connect(str(Path(root) / "private.db"))
+            try:
                 self.assertEqual(db.execute("select count(*) from quality_reviews").fetchone()[0], 1)
+            finally:
+                db.close()
 
     def test_sqlite_symlink_is_rejected_without_touching_target(self):
         with tempfile.TemporaryDirectory() as root:
             target = Path(root) / "real.sqlite"
             target.write_bytes(b"preserve-this")
             link = Path(root) / "private.sqlite"
-            link.symlink_to(target)
-            with self.assertRaisesRegex(ValueError, "Symlink DB forbidden"):
-                _private_db(str(link))
+            # Windows sem privilégio de symlink: exercita a mesma guarda com
+            # is_symlink simulado, sem criar link real nem tocar no alvo.
+            real_is_symlink = Path.is_symlink
+
+            def simulated(self):
+                if self.name == "private.sqlite":
+                    return True
+                return real_is_symlink(self)
+
+            with patch.object(Path, "is_symlink", simulated):
+                with self.assertRaisesRegex(ValueError, "Symlink DB forbidden"):
+                    _private_db(str(link))
             self.assertEqual(target.read_bytes(), b"preserve-this")
 
     def test_concurrent_edit_fails_before_save(self):
