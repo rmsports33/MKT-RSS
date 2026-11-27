@@ -1,6 +1,6 @@
 # Fontes de Origem e Análise Secundária de Valor Editorial (ASVE)
 
-**Contrato canônico:** Conexo OS v1.1 · SHA-256 `8d59e75e4fb03b899ceee73051d7a19794da2ff9b91b2870d4907a7b7c5b30b8`.
+**Contrato canônico:** Conexo OS v1.1 · SHA-256 `6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7`.
 
 ## Arquitetura preservada
 
