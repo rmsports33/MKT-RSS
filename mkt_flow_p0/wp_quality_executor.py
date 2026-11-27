@@ -69,30 +69,58 @@ class WPClient:
             raise WPReadError("Invalid WordPress response object")
         return result
 
-    def published_pages(self, limit=75):
-        """Read-only catalogue of real published posts for ASVE link validation."""
-        if type(limit) is not int or not 1 <= limit <= 75:
-            raise ValueError("Published page limit invalid")
-        rows = self.call(
-            "GET",
-            "wp/v2/posts?status=publish&per_page=" + str(limit) +
-            "&_fields=id,title,link,status"
-        )
-        if not isinstance(rows, list):
-            raise WPReadError("Published pages endpoint returned invalid data")
+    def published_pages(self, limit=500):
+        """Read-only, paginated catalogue of published posts AND pages.
+
+        Fails closed if either content type exceeds the cap; ASVE must not infer
+        that no internal article exists from an incomplete sample.
+        """
+        if type(limit) is not int or not 1 <= limit <= 500:
+            raise ValueError("Published content limit invalid")
         output = []
-        for row in rows:
-            if not isinstance(row, dict) or type(row.get("id")) is not int:
-                continue
-            title = row.get("title")
-            if isinstance(title, dict):
-                title = title.get("rendered", "")
-            output.append({
-                "page_id": str(row["id"]),
-                "title": str(title or "")[:240],
-                "url": row.get("link", ""),
-                "status": row.get("status", ""),
-            })
+        page_size = min(100, limit)
+        max_full_pages = (limit + page_size - 1) // page_size
+        for endpoint, prefix in (("posts", "post"), ("pages", "page")):
+            page_number = 1
+            while page_number <= max_full_pages:
+                rows = self.call(
+                    "GET",
+                    "wp/v2/" + endpoint + "?status=publish&per_page=" +
+                    str(page_size) + "&page=" + str(page_number) +
+                    "&_fields=id,title,link,status"
+                )
+                if not isinstance(rows, list):
+                    raise WPReadError("Published content endpoint returned invalid data")
+                for row in rows:
+                    if not isinstance(row, dict) or type(row.get("id")) is not int:
+                        continue
+                    title = row.get("title")
+                    if isinstance(title, dict):
+                        title = title.get("rendered", "")
+                    output.append({
+                        "page_id": prefix + ":" + str(row["id"]),
+                        "title": str(title or "")[:240],
+                        "url": row.get("link", ""),
+                        "status": row.get("status", ""),
+                        "content_type": prefix,
+                    })
+                if len(rows) < page_size:
+                    break
+                if page_number == max_full_pages:
+                    more = self.call(
+                        "GET",
+                        "wp/v2/" + endpoint + "?status=publish&per_page=1&page=" +
+                        str(page_number + 1) + "&_fields=id"
+                    )
+                    if not isinstance(more, list):
+                        raise WPReadError("Published content completeness check failed")
+                    if more:
+                        raise WPReadError(
+                            "Published content catalogue exceeds configured cap; "
+                            "increase the safe limit before running ASVE"
+                        )
+                    break
+                page_number += 1
         return output
 
     def post(self, post_id):
@@ -200,7 +228,7 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         if not isinstance(raw_content, dict) or not isinstance(raw_content.get("raw"), str):
             raise WPReadError("ASVE requires raw article content for exact version binding")
         from mkt_flow_p0.revisor_qualidade_unico import executar_revisao_com_asve
-        pages = client.published_pages(limit=75)
+        pages = client.published_pages(limit=500)
         asve_result = executar_revisao_com_asve(
             report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer,
             decisoes=asve_decisions, recibo_existente=asve_receipt
