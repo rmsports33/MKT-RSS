@@ -3,7 +3,7 @@
 ## O que é
 
 `mkt_flow_p0/editorial_quality_score.py` lê o contrato único copiado em
-`data/editorial-quality-v1.json` (hash `96631098…`) e produz um **recibo de qualidade**
+`data/editorial-quality-v1.json` (hash `e9158844…`) e produz um **recibo de qualidade**
 para cada artigo. Não é aprovação, não prova fatos e não publica.
 
 ## Como a nota é formada
@@ -68,7 +68,7 @@ Suíte relacionada executada: 107 testes aprovados, sem rede.
 
 ## Contrato 1.1 e ASVE
 
-Contrato canônico sincronizado: SHA-256 `966310987434eefb48ac6358fdb3eb01ade22ef37634902752ef081215dba701`.
+Contrato canônico sincronizado: SHA-256 `e915884437f1ddad629b59a575d312fcb2f36e18cb1c2b855880e4931c867512`.
 O contrato agora registra:
 - lema editorial oficial e princípio de conhecimento conectado;
 - pesquisa global antes do recorte brasileiro para temas de alcance mundial;
