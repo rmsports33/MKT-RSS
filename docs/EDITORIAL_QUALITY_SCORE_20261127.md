@@ -97,7 +97,7 @@ O conjunto começa **vazio**: nenhum artigo foi promovido sem sua nota humana.
 ## Contrato 1.1 e ASVE
 
 Contrato canônico sincronizado: SHA-256
-`8d59e75e4fb03b899ceee73051d7a19794da2ff9b91b2870d4907a7b7c5b30b8`.
+`6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7`.
 
 O contrato registra:
 - lema editorial oficial e princípio de conhecimento conectado;
