@@ -63,12 +63,18 @@ def _records(dossier: dict, pages: list[dict]):
         raise ValueError("EVIDENCE_SOURCES_INVALID")
     if not isinstance(claims, list) or len(claims) > 400:
         raise ValueError("EVIDENCE_CLAIMS_INVALID")
+    from mkt_flow_p0.primary_source_registry import (
+        validate_source_record, validate_claim_record,
+    )
     source_ids = set()
     for source in sources:
         if not isinstance(source, dict) or not isinstance(source.get("source_id"), str):
             raise ValueError("EVIDENCE_SOURCE_ID_INVALID")
         if source["source_id"] in source_ids or not _https_url(source.get("url", "")):
             raise ValueError("EVIDENCE_SOURCE_DUPLICATE_OR_URL_INVALID")
+        source_errors = validate_source_record(source)
+        if source_errors:
+            raise ValueError("EVIDENCE_SOURCE_RECORD_INCOMPLETE:" + ",".join(source_errors))
         source_ids.add(source["source_id"])
     claim_ids = set()
     for claim in claims:
@@ -76,6 +82,9 @@ def _records(dossier: dict, pages: list[dict]):
             raise ValueError("EVIDENCE_CLAIM_ID_INVALID")
         if claim["claim_id"] in claim_ids:
             raise ValueError("EVIDENCE_CLAIM_DUPLICATE")
+        claim_result = validate_claim_record(claim, sources)
+        if claim_result["status"] != "STRUCTURED_ONLY":
+            raise ValueError("EVIDENCE_CLAIM_RECORD_INCOMPLETE:" + ",".join(claim_result["errors"]))
         claim_ids.add(claim["claim_id"])
     if not isinstance(pages, list) or len(pages) > 500:
         raise ValueError("INTERNAL_PAGE_CATALOG_INVALID")
