@@ -119,6 +119,22 @@ evidências, julgamento editorial e autorização do Gate.
 
 Os achados P2 são encaminhados para `mkt_flow_p0.fila_pautas.registrar_topico_asve`, somente quando `--register-asve-topics` for explicitamente informado e depois de a releitura do WordPress confirmar o mesmo fingerprint do rascunho, usando o mesmo armazenamento SQLite/Turso da fila editorial atual. Sem essa segunda flag, o P2 permanece apenas no recibo ASVE e nenhuma gravação na fila compartilhada ocorre. A chave idempotente combina ID do artigo, hash da versão e ID do achado. Não cria um URL falso, RSS artificial, tabela de pauta duplicada ou nova fila. O status inicial é `DESCOBERTA`; o tema não é automaticamente selecionado ou produzido.
 
+
+## Sidecar de rastreabilidade para o Gate
+
+Módulo: `mkt_flow_p0.editorial_gate_traceability`.
+
+A implementação atual do Gate RC10.5 valida `cxeg-package:v1` com manifesto de seis campos e rejeita campos adicionais. Não inserir ASVE, claims ou metadados extras dentro desse manifesto: isso quebraria a compatibilidade do contrato estrito existente.
+
+Para preservar a rastreabilidade sem alterar o Gate ativo:
+- o Revisor Único gera um sidecar independente `conexo-editorial-gate-traceability-sidecar/1`, vinculado ao SHA-256 do artigo, do contrato canônico, do dossiê de evidências, da revisão principal, do recibo ASVE e das decisões;
+- o sidecar lista IDs de fontes e claims, estados de verificação, IDs P0/P1/P2 e o estado do handoff;
+- o hash do sidecar permite detectar alterações posteriores, mas não é assinatura digital nem comprovação factual;
+- P0 exige nova versão do artigo; P1 exige decisão vinculada ao hash; P2 não bloqueia;
+- o executor pode exportar o sidecar por `--gate-traceability-output-file` (arquivo privado, sem sobrescrita).
+
+**Compatibilidade explícita:** o Gate atual `cxeg-package:v1` não consome nem valida o sidecar. O resultado `TRACEABILITY_COMPLETE_FOR_GATE_CONSUMER` significa que a trilha editorial está estruturalmente completa para um consumidor futuro; não significa Gate aprovado, publicação autorizada ou aprovação humana. A incorporação ao Gate exige uma evolução versionada do contrato e testes no harness RC10.5 isolado, sem adicionar campos ao manifesto v1 e sem tocar o plugin ativo.
+
 ## Controle de custos
 
 O adaptador utiliza o cliente e orçamento compartilhados já disponíveis. A chamada adicional só ocorre quando a ASVE é explicitamente solicitada por código/orquestrador ou pela flag `--secondary-analysis`. O modo offline continua sem chamada de modelo. Nenhum plano pago, API key ou serviço externo novo foi adicionado.
@@ -131,7 +147,7 @@ O adaptador utiliza o cliente e orçamento compartilhados já disponíveis. A ch
 - `tests/test_wp_quality_executor.py`: flag opt-in, recibo, páginas publicadas e uso de cliente simulado.
 - `tests/test_fila_pautas.py`: idempotência do backlog e ausência de escrita WordPress.
 
-Foram adicionados 38 casos focados: 14 para ASVE, 7 para o catálogo de fontes, 6 para a integração do Revisor Único, 8 para o executor WordPress e 3 para o backlog P2. **A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
+Foram adicionados 46 casos focados: 14 para ASVE, 7 para o catálogo de fontes, 6 para a integração do Revisor Único, 8 para o executor WordPress, 3 para o backlog P2 e 8 para o sidecar de rastreabilidade do Gate. **A execução destes testes ainda está pendente** porque esta sessão não tem checkout local do repositório e o projeto evita disparar GitHub Actions para testes rotineiros. Não declarar PASS até rodar a suíte focada e a suíte de regressão no ambiente de desenvolvimento.
 
 ## Homologação editorial
 
