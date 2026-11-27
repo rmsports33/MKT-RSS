@@ -174,7 +174,7 @@ def _canonical_sha(value):
 
 
 def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
-                run_asve=False, asve_analyzer=None):
+                run_asve=False, asve_analyzer=None, topic_db_path=None):
     if type(post_id) is not int or post_id <= 0:
         raise ValueError("post_id invalid")
     first = client.post(post_id)
@@ -218,6 +218,7 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
                     origin_article_id="wp:" + str(post_id),
                     origin_article_sha256=asve_result["secondary_analysis"]["article_sha256"],
                     finding_id=finding["finding_id"],
+                    db_path=topic_db_path,
                 )
                 report["asve_future_topics_registered"].append(saved_topic)
     with _private_db(db_path) as conn:
