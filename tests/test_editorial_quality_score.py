@@ -161,3 +161,29 @@ def test_mapa_canaltech_aplica_apenas_a_comparativos_e_reviews():
     # Não mencionar preço ou estoque não pode produzir uma falha artificial.
     assert "preco_datado" not in padrao_canaltech(TEXTO, genero="review")["checagens"]
 
+def test_pesquisa_fallback_e_manual_e_nao_gera_nameerror_ou_bloqueio():
+    r = avaliar_artigo(
+        TEXTO, brief=BRIEF, sources=FONTES, genero="analise",
+        title="Título", meta="M" * 70, image_rights=True,
+        review_status="PROMPT_APPLIED",
+    )
+    check = next(c for c in r["checks"] if c["id"] == "pesquisa_fallback")
+    assert check["status"] == "REVIEW_REQUIRED"
+    assert check["severidade"] == "advisory"
+    assert "pesquisa_fallback" not in r["bloqueios"]
+    assert "pesquisa_fallback" not in r["pendencias"]
+
+
+def test_urls_brasileiras_nao_contam_como_mencao_de_contexto_local():
+    texto = "# Tecnologia\\n\\nUm tema global, sem afirmação específica sobre o Brasil."
+    texto += "\\n\\nFonte: https://conexotech.com.br/materia/"
+    r = avaliar_artigo(
+        texto, brief=BRIEF, sources=FONTES, genero="analise",
+        title="Título", meta="M" * 70, image_rights=True,
+        review_status="PROMPT_APPLIED",
+    )
+    check = next(c for c in r["checks"] if c["id"] == "publico_brasileiro")
+    assert check["status"] == "PASS"
+    fallback = next(c for c in r["checks"] if c["id"] == "pesquisa_fallback")
+    assert fallback["status"] == "REVIEW_REQUIRED"
+
