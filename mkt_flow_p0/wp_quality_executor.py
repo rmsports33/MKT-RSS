@@ -174,7 +174,8 @@ def _canonical_sha(value):
 
 
 def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
-                run_asve=False, asve_analyzer=None, topic_db_path=None):
+                run_asve=False, asve_analyzer=None, topic_db_path=None,
+                asve_receipt=None, asve_decisions=None):
     if type(post_id) is not int or post_id <= 0:
         raise ValueError("post_id invalid")
     first = client.post(post_id)
@@ -199,7 +200,8 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         from mkt_flow_p0.revisor_qualidade_unico import executar_revisao_com_asve
         pages = client.published_pages(limit=75)
         asve_result = executar_revisao_com_asve(
-            report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer
+            report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer,
+            decisoes=asve_decisions, recibo_existente=asve_receipt
         )
         report = asve_result["review"]
         report["asve_receipt"] = asve_result["secondary_analysis"]
@@ -261,6 +263,12 @@ def main(argv=None):
     parser.add_argument("--db", default=os.environ.get("CONEXO_QUALITY_DB", "/tmp/conexo-private-quality.sqlite"))
     parser.add_argument("--secondary-analysis", action="store_true",
                         help="Run an independent ASVE pass using the existing provider budget")
+    parser.add_argument("--asve-receipt-file",
+                        help="Reuse a previous receipt for the exact article version; avoids another model call")
+    parser.add_argument("--asve-decisions-file",
+                        help="JSON list of owner decisions bound to the receipt article_sha256")
+    parser.add_argument("--asve-receipt-output-file",
+                        help="Write the new ASVE receipt to a new private JSON file (never overwrites)")
     parser.add_argument("--submit-quality", action="store_true",
                         help="Requires independent human-reviewer WordPress identity; does NOT publish")
     args = parser.parse_args(argv)
@@ -273,10 +281,44 @@ def main(argv=None):
     evidence = json.loads(file_path.read_text(encoding="utf-8"))
     if not isinstance(evidence, dict):
         parser.error("Evidence must be JSON object")
+    if (args.asve_receipt_file or args.asve_decisions_file or args.asve_receipt_output_file) and not args.secondary_analysis:
+        parser.error("ASVE receipt/decision files require --secondary-analysis")
+    if args.asve_decisions_file and not args.asve_receipt_file:
+        parser.error("--asve-decisions-file requires --asve-receipt-file")
+    cached_receipt = None
+    decisions = None
+    if args.asve_receipt_file:
+        receipt_path = Path(args.asve_receipt_file)
+        if not receipt_path.is_file() or receipt_path.stat().st_size > 200000:
+            parser.error("ASVE receipt file missing or too large")
+        cached_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    if args.asve_decisions_file:
+        decisions_path = Path(args.asve_decisions_file)
+        if not decisions_path.is_file() or decisions_path.stat().st_size > 50000:
+            parser.error("ASVE decisions file missing or too large")
+        decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
+        if not isinstance(decisions, list):
+            parser.error("ASVE decisions must be a JSON list")
     client = WPClient(site, user, password)
-    report, response = review_once(client, args.post_id, evidence, args.db,
-                                   submit_quality=args.submit_quality,
-                                   run_asve=args.secondary_analysis)
+    report, response = review_once(
+        client, args.post_id, evidence, args.db,
+        submit_quality=args.submit_quality, run_asve=args.secondary_analysis,
+        asve_receipt=cached_receipt, asve_decisions=decisions
+    )
+    if args.asve_receipt_output_file:
+        if not args.secondary_analysis or "asve_receipt" not in report:
+            parser.error("No ASVE receipt available to export")
+        output_path = Path(args.asve_receipt_output_file).expanduser()
+        if output_path.exists() or output_path.is_symlink():
+            parser.error("ASVE receipt output exists; refusing overwrite")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        fd = os.open(str(output_path), flags, stat.S_IRUSR | stat.S_IWUSR)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(report["asve_receipt"], handle, ensure_ascii=False, sort_keys=True)
+            handle.write("\\n")
     # Only status/fingerprint/check names; no confidential evidence or secrets in logs.
     print(json.dumps({
         "post_id": report["post_id"],
