@@ -277,6 +277,10 @@ def validate_dispositions(analysis: dict, decisions: list[dict]) -> dict:
     unresolved = []
     for finding in analysis.get("findings", []):
         decision = by_id.get(finding["finding_id"])
+        # P2 is a non-blocking research lead; the WP orchestration records it
+        # in the existing topic queue. An owner disposition is optional.
+        if finding["priority"] == "P2" and decision is None:
+            continue
         allowed = DECISIONS[finding["priority"]]
         if not decision or decision.get("disposition") not in allowed:
             unresolved.append(finding["finding_id"])
