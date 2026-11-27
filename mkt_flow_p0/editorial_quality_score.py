@@ -80,26 +80,49 @@ def _br_afirmativo(texto):
     return False
 
 
-def padrao_canaltech(markdown):
-    """Compara com o mapa de raciocínio salvo; nunca copia texto ou template."""
+def padrao_canaltech(markdown, *, genero=None):
+    """Compara apenas gêneros compatíveis com o mapa de raciocínio de reviews.
+
+    A referência é um mapa de raciocínio, não um template universal. Para
+    notícia, guia, análise e nota breve, retorna diagnóstico não aplicável e
+    não deve reduzir a nota estrutural. Títulos em forma de pergunta são
+    informativos, nunca requisito de qualidade.
+    """
+    if genero is not None and genero not in {"comparativo", "review"}:
+        return {
+            "aplicavel": False,
+            "genero": genero,
+            "checagens": {},
+            "cobertura": None,
+            "total": 0,
+            "motivo": "referencia_especifica_para_comparativos_e_reviews",
+        }
+
     texto = str(markdown or "")
     titulos = [linha for linha in texto.splitlines() if linha.lstrip().startswith("#")]
     padroes = {
         "tese_condicional": r"\b(depende|condi[çc][aã]o|desde que|desde que saiba|vale a pena se|só compensa)\b",
-        "perfis_de_leitor": r"\b(para quem|perfil|quem deve|quem n[aã]o deve)\b",
-        "consequencia_pratica": r"\b(significa|implica|impacta|afeta|consequ[êe]ncia|na pr[aá]tica)\b",
-        "concessoes": r"\b(mas|por[eé]m|limita[çc][aã]o|ressalva|por outro lado)\b",
-        "procedencia": r"\b(segundo|fonte|estudo|medição|teste de terceiros|documenta[çc][aã]o)\b",
-        "perguntas_reais": r"\?",
-        "veredito_proporcional": r"\b(veredito|conclus[aã]o|em s[ií]ntese|recomenda[çc][aã]o)\b",
-        "preco_datado": r"\b(pre[çc]o|disponibilidade)\b.{0,80}\b(20\d\d|hoje|atual)\b",
+        "perfis_de_leitor": r"\b(para quem|perfil|quem deve|quem não deve)\b",
+        "consequencia_pratica": r"\b(significa|implica|impacta|afeta|consequ[êe]ncia|na prática)\b",
+        "concessoes": r"\b(mas|porém|limitação|ressalva|por outro lado)\b",
+        "procedencia": r"\b(segundo|fonte|estudo|medição|teste de terceiros|documentação)\b",
+        "veredito_proporcional": r"\b(veredito|conclusão|em síntese|recomendação)\b",
     }
-    avaliado = {nome: bool(re.search(padrao, texto, re.I)) for nome, padrao in padroes.items()}
-    avaliado["secoes_orientadas"] = any("?" in t for t in titulos)
-    total = len(avaliado)
-    return {"checagens": avaliado, "cobertura": round(sum(avaliado.values()) / total, 2),
-            "total": total}
+    # Preço/estoque só é avaliado quando o próprio artigo aborda esses temas.
+    if re.search(r"\b(preço|disponibilidade)\b", texto, re.I):
+        padroes["preco_datado"] = r"\b(preço|disponibilidade)\b.{0,80}\b(20\d\d|hoje|atual)\b"
 
+    avaliado = {nome: bool(re.search(padrao, texto, re.I)) for nome, padrao in padroes.items()}
+    # Questões nos títulos podem ajudar a navegação, mas não são obrigatórias.
+    avaliado["secoes_orientadas"] = any("?" in titulo for titulo in titulos)
+    total = len(padroes)
+    return {
+        "aplicavel": True,
+        "genero": genero or "comparativo_ou_review",
+        "checagens": avaliado,
+        "cobertura": round(sum(avaliado[nome] for nome in padroes) / total, 2),
+        "total": total,
+    }
 
 def checagens_deterministicas(*, markdown, sources, genero, title, meta,
                                image_rights, review_status, video_id=None):
@@ -119,8 +142,9 @@ def checagens_deterministicas(*, markdown, sources, genero, title, meta,
 
     add("multifonte", len(dominios) >= 2 or genero == "nota_breve",
         f"dominios_distintos={len(dominios)}")
+    # Três é uma recomendação editorial suave, nunca quota ou bloqueio.
     add("links_internos", len(internos) <= 3,
-        f"links_internos={len(internos)}", "blocker" if len(internos) > 3 else "warning")
+        f"links_internos={len(internos)}; recomendacao_maxima=3", "warning")
     add("imagem_direitos", bool(image_rights), "direitos_confirmados=" + str(bool(image_rights)))
     if genero == "review":
         add("video_review", bool(video_id) and len(str(video_id)) == 11,
@@ -168,10 +192,11 @@ def avaliar_artigo(markdown, *, brief=None, review=None, sources=None,
         image_rights=image_rights, review_status=review_status, video_id=video_id)
     bloqueios = [c["id"] for c in checks if c["status"] == "FAIL" and c["severidade"] == "blocker"]
     pendencias = [c["id"] for c in checks if c["status"] == "FAIL" and c["severidade"] == "warning"]
-    padrao = padrao_canaltech(markdown)
+    padrao = padrao_canaltech(markdown, genero=genero)
     penalidade = sum(25 for c in checks if c["status"] == "FAIL" and c["severidade"] == "blocker")
     penalidade += sum(5 for c in checks if c["status"] == "FAIL" and c["severidade"] == "warning")
-    penalidade += round((1 - padrao["cobertura"]) * 20)
+    if padrao["aplicavel"]:
+        penalidade += round((1 - padrao["cobertura"]) * 20)
     estrutural = max(0, 100 - penalidade)
     assistida, criterios, estado_revisao = _nota_assistida(review, brief, markdown)
     nota = round(PESO_ASSISTIDA * assistida + PESO_ESTRUTURA * estrutural)
