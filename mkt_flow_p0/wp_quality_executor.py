@@ -188,6 +188,7 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         evidencias=evidence.get("evidencias", {}),
         corpo_original_fonte=evidence.get("corpo_original_fonte"),
     )
+    asve_result = None
     if run_asve:
         dossier = evidence.get("asve_dossier")
         if not isinstance(dossier, dict):
@@ -198,17 +199,27 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         from mkt_flow_p0.revisor_qualidade_unico import executar_revisao_com_asve
         pages = client.published_pages(limit=75)
         asve = executar_revisao_com_asve(
-            report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer,
-            origin_article_id="wp:" + str(post_id),
-            persist_future_topics=True,
+            report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer
         )
         report = asve["review"]
         report["asve_receipt"] = asve["secondary_analysis"]
-        report["asve_future_topics_registered"] = asve["future_topics_registered"]
     # Detect concurrent edits between read and commit of the private report.
     latest = client.post(post_id)
     if not isinstance(latest, dict) or latest.get("status") != "draft" or not verificar_versao(report, latest):
         raise WPReadError("Article changed while reviewing; rerun")
+    # Persist P2 only after the exact WordPress version has been re-read and matched.
+    report["asve_future_topics_registered"] = []
+    if run_asve and asve_result:
+        from mkt_flow_p0.fila_pautas import registrar_topico_asve
+        for finding in asve_result["secondary_analysis"].get("findings", []):
+            if finding.get("priority") == "P2":
+                saved_topic = registrar_topico_asve(
+                    finding["future_topic"],
+                    origin_article_id="wp:" + str(post_id),
+                    origin_article_sha256=asve_result["secondary_analysis"]["article_sha256"],
+                    finding_id=finding["finding_id"],
+                )
+                report["asve_future_topics_registered"].append(saved_topic)
     with _private_db(db_path) as conn:
         conn.execute("""INSERT INTO quality_reviews
           (wp_post_id, fingerprint, status, checked_at, report_json)
