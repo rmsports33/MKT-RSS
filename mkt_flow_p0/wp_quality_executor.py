@@ -198,7 +198,9 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         from mkt_flow_p0.revisor_qualidade_unico import executar_revisao_com_asve
         pages = client.published_pages(limit=75)
         asve = executar_revisao_com_asve(
-            report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer
+            report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer,
+            origin_article_id="wp:" + str(post_id),
+            persist_future_topics=True,
         )
         report = asve["review"]
         report["asve_receipt"] = asve["secondary_analysis"]
