@@ -137,7 +137,7 @@ Depois dos testes locais, executar um piloto sem publicação com três a cinco 
 
 ### Regressões adicionais do avaliador de qualidade
 
-Foram acrescentados três testes em `tests/test_editorial_quality_score.py` para
+Foram acrescentados cinco testes em `tests/test_editorial_quality_score.py` para
 assegurar que o mapa de raciocínio seja aplicado somente a gêneros compatíveis,
 que links acima da recomendação não se tornem bloqueio e que uma URL de domínio
 brasileiro não valide automaticamente afirmações sobre o Brasil. Esses testes
