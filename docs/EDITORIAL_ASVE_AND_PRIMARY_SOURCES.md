@@ -87,7 +87,7 @@ O módulo não acessa rede e não chama modelo por conta própria. O analisador 
 - `tests/test_editorial_secondary_analysis.py`: contratos, hash, limites, P0/P1/P2, links internos publicados, rejeição de reescrita, decisões e preservação do veredito.
 - `tests/test_primary_source_registry.py`: catálogo, domínio conhecido como pista, TLD desconhecido sem confiança automática, HTTPS e estrutura de claims.
 
-Os arquivos de teste foram adicionados nesta branch. **A execução dos novos testes ainda não foi efetuada neste ambiente**; não declarar PASS até executar no checkout integral. A suíte anterior de PR #142 não substitui os novos testes nem uma homologação do fluxo de IA.
+Foram adicionados 23 casos de teste focados (13 ASVE, 7 catálogo de fontes, 3 integração com Revisor Único). **A execução dos novos testes ainda não foi efetuada neste ambiente**; não declarar PASS até executar no checkout integral. A suíte anterior de PR #142 não substitui os novos testes nem uma homologação do fluxo de IA.
 
 ## Homologação futura
 
