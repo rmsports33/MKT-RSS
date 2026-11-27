@@ -43,7 +43,24 @@ Nota assistida 100, estrutural 63, **nota final 69**. Bloqueio: `multifonte`
 Isso representa honestamente o artigo: bem avaliado pela rubrica assistida, mas
 ainda abaixo do padrão por falta de apuração multifonte.
 
+## Padrão vivo (opção 2)
+
+`mkt_flow_p0/editorial_golden_set.py` guarda, por gênero, até 3 artigos com
+**nota humana alta, aprovação explícita e fatos conferidos**. O prompt recebe só
+descritores de forma — tipo de abertura, funções das seções, movimentos
+Canaltech e padrão de veredito. Nunca entra frase ou parágrafo do artigo usado
+como referência.
+
+Regras:
+
+- nota assistida sozinha **não** registra padrão;
+- limite provisório: 70/100, até você confirmar a linha de corte;
+- registro por `tools/atualizar_golden_set.py`, após a nota no Gate;
+- se o contrato mudar, o padrão antigo é recusado por hash desatualizado.
+
+O conjunto começa **vazio**: nenhum artigo foi promovido sem sua nota humana.
+
 ## Testes
 
-`tests/test_editorial_quality_score.py` — 7 testes, sem rede. Suíte relacionada:
-82 testes aprovados.
+`tests/test_editorial_quality_score.py` (7) e `tests/test_editorial_golden_set.py` (5).
+Suíte relacionada executada: 107 testes aprovados, sem rede.
