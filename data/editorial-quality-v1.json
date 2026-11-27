@@ -297,8 +297,7 @@
       "P1": [
         "incorporated",
         "accepted_with_reason",
-        "rejected_with_reason",
-        "deferred_to_topic"
+        "rejected_with_reason"
       ],
       "P2": [
         "registered_as_future_topic",
@@ -325,5 +324,5 @@
     "version_binding": "Cada execução guarda contrato/hash do contrato, modelo, hash do briefing, hash do artigo, dossiê de fontes, resultado ASVE, decisões e pendências.",
     "quality_claim": "Não declarar homologação de qualidade sem piloto A/B cego com pelo menos três gêneros e avaliação humana independente."
   },
-  "contract_sha256": "e915884437f1ddad629b59a575d312fcb2f36e18cb1c2b855880e4931c867512"
+  "contract_sha256": "8d59e75e4fb03b899ceee73051d7a19794da2ff9b91b2870d4907a7b7c5b30b8"
 }
