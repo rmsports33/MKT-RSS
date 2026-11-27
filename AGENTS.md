@@ -110,7 +110,7 @@ MKT-RSS e o motor prioritario e o publicador; ChatGPT e apoio opcional. Fluxo e 
 - Não alegar testes, preço atual ou experiência pessoal do ConexoTech sem evidência própria; atribuir medições de terceiros e contextualizar preços por data/mercado/variante. A preferência anterior do proprietário por versões B é observação subjetiva separada do parecer A/B cego e não revela qual foi gerada com MDA.
 - Referência e critérios de aplicação: `docs/EDITORIAL_REFERENCE_CANALTECH_S26FE_20261110.md`. Não alterar o Gate, integrar nova persona, criar chamada IA nem homologar qualidade com base apenas nesta preferência.
 
-<!-- CONEXO_QUALITY_CONTRACT:START schema=conexo-editorial-quality-contract/1.1 hash=8d59e75e4fb03b899ceee73051d7a19794da2ff9b91b2870d4907a7b7c5b30b8
+<!-- CONEXO_QUALITY_CONTRACT:START schema=conexo-editorial-quality-contract/1.1 hash=6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7
 **Identidade editorial:** O objetivo é fazer do ConexoTech uma publicação que não apenas acompanha os acontecimentos tecnológicos, mas ajuda o leitor a compreender como eles se conectam.
 **Contrato canônico:** `conexo-os/docs/EDITORIAL_QUALITY_CONTRACT.md` / `conexo-os/contracts/editorial-quality-v1.json`. Fonte é avaliada por afirmação; domínio/TLD não prova suporte factual. Temas globais: panorama mundial, diferenças regionais relevantes e implicações brasileiras sustentadas.
 **Estrutura:** H1/H2/H3 específicos e lógicos, abertura com problema, narrativa fluida e parágrafos com desenvolvimento. Links internos reais, pertinentes e contextuais, sem quota mínima.
