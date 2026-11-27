@@ -298,6 +298,61 @@
         "https://www.sec.gov/search-filings/edgar-application-programming-interfaces"
       ],
       "notes": "Dados de emissores sujeitos à SEC; não cobre toda empresa global. Identificar formulário, data e período reportado."
+    },
+    {
+      "id": "br-planalto-laws",
+      "publisher": "Presidência da República — Portal da Legislação",
+      "jurisdiction": "BR",
+      "topics": [
+        "legislacao",
+        "leis",
+        "decretos",
+        "marcos regulatorios"
+      ],
+      "source_type": "official_legal_text",
+      "default_role": "primary_origin",
+      "access": "public",
+      "urls": [
+        "https://www.planalto.gov.br/ccivil_03/"
+      ],
+      "notes": "Preferir o texto legal consolidado e conferir alterações, vigência e publicação oficial."
+    },
+    {
+      "id": "br-dou",
+      "publisher": "Imprensa Nacional — Diário Oficial da União",
+      "jurisdiction": "BR",
+      "topics": [
+        "atos oficiais",
+        "portarias",
+        "resolucoes",
+        "nomeacoes",
+        "regulacao"
+      ],
+      "source_type": "official_gazette",
+      "default_role": "primary_origin",
+      "access": "public",
+      "urls": [
+        "https://www.in.gov.br/consulta"
+      ],
+      "notes": "Verificar edição, seção, página, data, retificações e eventual republicação."
+    },
+    {
+      "id": "br-falabr",
+      "publisher": "Controladoria-Geral da União — Fala.BR",
+      "jurisdiction": "BR",
+      "topics": [
+        "acesso a informacao",
+        "LAI",
+        "pedidos de dados publicos",
+        "apuração"
+      ],
+      "source_type": "public_information_request_channel",
+      "default_role": "discovery_lead",
+      "access": "public_free_registration",
+      "urls": [
+        "https://falabr.cgu.gov.br/web/home"
+      ],
+      "notes": "Canal para solicitar documentos e dados sob a LAI; o canal não é fonte factual em si. Preservar protocolo, pedido, resposta, anexos e eventuais restrições."
     }
   ]
 }
