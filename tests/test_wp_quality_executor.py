@@ -46,6 +46,10 @@ class FakeWP:
     def submit_quality(self, post_id, report, snapshot_sha):
         self.writes.append((post_id, snapshot_sha))
         return {"recorded": True, "post_id": post_id, "snapshot_sha256": snapshot_sha}
+    def published_pages(self, limit=75):
+        return [{"page_id":"101","title":"Redes elétricas e data centers",
+                 "url":"https://conexotech.com.br/redes-eletricas-data-centers/",
+                 "status":"publish"}][:limit]
 
 
 def complete_evidence(post):
@@ -201,6 +205,64 @@ class TestCloudAdapter(unittest.TestCase):
             with self.assertRaises(WPReadError):
                 review_once(client, 9768, {}, str(Path(root) / "private.db"), submit_quality=True)
             self.assertEqual(client.writes, [])
+
+    def test_opt_in_asve_uses_independent_analyzer_and_stores_bound_receipt(self):
+        from mkt_flow_p0.editorial_secondary_analysis import SCHEMA
+        with tempfile.TemporaryDirectory() as root:
+            client = FakeWP()
+            dossier = {
+                "sources": [{
+                    "source_id":"s1", "url":"https://www.epe.gov.br/pde", "publisher":"EPE",
+                    "source_type":"planning_document","source_role":"primary_origin",
+                    "published_at":"2026-11-01","reference_period":"2026-2036",
+                    "locator":"Caderno de demanda, tabela 1",
+                    "methodology":"Cenário EPE publicado",
+                    "limitations":"Projeção condicionada a premissas",
+                    "retrieved_at":"2026-11-27T10:00:00Z"
+                }],
+                "claims": [{
+                    "claim_id":"c1","claim_text":"A EPE projeta crescimento.",
+                    "source_ids":["s1"],"source_role":"primary_origin",
+                    "verification_status":"PROJETADA"
+                }]
+            }
+            seen = []
+            def analyzer(prompt):
+                seen.append(prompt)
+                import re
+                digest = re.search(r'"article_sha256":"([a-f0-9]{64})"', prompt).group(1)
+                return {"schema":SCHEMA,"article_sha256":digest,"findings":[]}
+            report, remote = review_once(
+                client, 9768, {**complete_evidence(client.p),"asve_dossier":dossier},
+                str(Path(root)/"private.db"), run_asve=True, asve_analyzer=analyzer
+            )
+            self.assertIsNone(remote)
+            self.assertEqual(len(seen),1)
+            self.assertEqual(report["secondary_analysis_status"],"NO_MATERIAL_FINDINGS")
+            self.assertEqual(report["secondary_analysis"]["finding_count"],0)
+            self.assertFalse(report["publication_authorized"])
+            self.assertEqual(client.writes,[])
+
+    def test_asve_opt_in_fails_closed_without_complete_source_dossier(self):
+        with tempfile.TemporaryDirectory() as root:
+            client=FakeWP()
+            with self.assertRaisesRegex(ValueError,"asve_dossier"):
+                review_once(client,9768,complete_evidence(client.p),
+                            str(Path(root)/"private.db"),run_asve=True)
+            self.assertEqual(client.writes,[])
+
+    def test_published_pages_catalog_uses_only_valid_published_same_site_rows(self):
+        client = object.__new__(WPClient)
+        client.call = lambda *args: [
+            {"id":12,"title":{"rendered":"Published page"},"link":"https://conexotech.com.br/a/","status":"publish"},
+            {"id":13,"title":{"rendered":"Draft"},"link":"https://conexotech.com.br/b/","status":"draft"},
+            {"id":"bad","title":"Bad ID","link":"https://conexotech.com.br/c/","status":"publish"},
+        ]
+        pages=client.published_pages()
+        self.assertEqual(len(pages),3)
+        from mkt_flow_p0.editorial_secondary_analysis import build_analysis_request
+        request=build_analysis_request("Texto",{"sources":[],"claims":[]},pages)
+        self.assertEqual(request["allowed_internal_page_ids"],["12"])
 
 
 if __name__ == "__main__":
