@@ -259,10 +259,10 @@ class TestCloudAdapter(unittest.TestCase):
             {"id":"bad","title":"Bad ID","link":"https://conexotech.com.br/c/","status":"publish"},
         ]
         pages=client.published_pages()
-        self.assertEqual(len(pages),2)
+        self.assertEqual(len(pages),4)
         from mkt_flow_p0.editorial_secondary_analysis import build_analysis_request
         request=build_analysis_request("Texto",{"sources":[],"claims":[]},pages)
-        self.assertEqual(request["allowed_internal_page_ids"],["12"])
+        self.assertEqual(request["allowed_internal_page_ids"],["page:12","post:12"])
 
     def test_wp_executor_registers_p2_only_after_version_recheck(self):
         from mkt_flow_p0.editorial_secondary_analysis import SCHEMA
@@ -397,6 +397,31 @@ class TestCloudAdapter(unittest.TestCase):
             self.assertFalse(Path(queue).exists())
             self.assertNotIn("asve_future_topics_registered",report)
             self.assertEqual(report["secondary_analysis_status"],"P2_BACKLOG_ONLY")
+
+
+    def test_published_content_catalog_includes_posts_and_pages(self):
+        client=object.__new__(WPClient)
+        calls=[]
+        def call(method,path):
+            calls.append(path)
+            return [{"id":20,"title":{"rendered":"Published"},"link":"https://conexotech.com.br/published/","status":"publish"}]
+        client.call=call
+        catalog=client.published_pages(limit=75)
+        self.assertEqual({item["content_type"] for item in catalog},{"post","page"})
+        self.assertIn("wp/v2/posts?",calls[0])
+        self.assertIn("wp/v2/pages?",calls[1])
+        self.assertEqual({item["page_id"] for item in catalog},{"post:20","page:20"})
+
+    def test_incomplete_published_content_catalog_fails_closed(self):
+        client=object.__new__(WPClient)
+        def call(method,path):
+            if "page=6" in path:
+                return [{"id":501}]
+            return [{"id":i,"title":"Published","link":"https://conexotech.com.br/a/","status":"publish"}
+                    for i in range(1,101)]
+        client.call=call
+        with self.assertRaisesRegex(WPReadError,"exceeds configured cap"):
+            client.published_pages(limit=500)
 
 
 
