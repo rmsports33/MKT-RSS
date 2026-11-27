@@ -199,7 +199,8 @@ def validate_analysis_result(result, request: dict) -> dict:
         evidence_refs = finding.get("evidence_refs")
         claim_refs = finding.get("claim_refs")
         page_refs = finding.get("internal_page_refs")
-        if not all(isinstance(v, list) for v in (evidence_refs, claim_refs, page_refs)):
+        if not all(isinstance(v, list) and all(isinstance(item, str) and item for item in v)
+                   for v in (evidence_refs, claim_refs, page_refs)):
             raise ValueError("ASVE_REFERENCE_LIST_INVALID")
         if not set(evidence_refs) <= allowed_sources:
             raise ValueError("ASVE_UNKNOWN_EVIDENCE_REFERENCE")
@@ -235,6 +236,8 @@ def validate_analysis_result(result, request: dict) -> dict:
 def run_secondary_analysis(article_markdown: str, evidence_dossier: dict,
                            internal_pages: list[dict], analyzer) -> dict:
     """Call an injected analyzer. The caller must use an independent model pass."""
+    if not callable(analyzer):
+        raise ValueError("ASVE_ANALYZER_NOT_CALLABLE")
     request = build_analysis_request(article_markdown, evidence_dossier, internal_pages)
     raw = analyzer(request["prompt"])
     return validate_analysis_result(raw, request)
@@ -300,5 +303,6 @@ def attach_to_unique_reviewer(primary_review: dict, secondary_receipt: dict,
     output["secondary_analysis"] = deepcopy(secondary_receipt)
     output["secondary_analysis_status"] = secondary_receipt["status"]
     output["publication_authorized"] = False
+    output["publicacao_autorizada"] = False
     output["secondary_analysis_is_publication_approval"] = False
     return output
