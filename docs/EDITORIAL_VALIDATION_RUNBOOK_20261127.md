@@ -4,7 +4,7 @@
 
 **Contrato canônico:** ConexoTech v1.1, SHA-256 `6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7`.
 
-**Política de execução:** o MKT-RSS não usa GitHub Actions como executor padrão de testes. Usar workspace isolado/Codex Cloud ou ambiente de desenvolvimento equivalente. Não usar secrets, .env, credenciais WP, credenciais Turso ou chave Groq. As suítes abaixo devem funcionar com mocks/fixtures.
+**Política de execução:** o MKT-RSS não usa GitHub Actions como executor padrão de testes. Usar workspace isolado com OpenCode ou ambiente de desenvolvimento equivalente. Não usar secrets, .env, credenciais WP, credenciais Turso ou chave Groq. As suítes abaixo devem funcionar com mocks/fixtures.
 
 ---
 
@@ -83,32 +83,9 @@ Critérios:
 - Novo contrato inclui pesquisa global apenas quando pertinente, diferenças regionais materiais, Brasil sustentado, estrutura narrativa, fontes por claim e links internos sem quota.
 - Nenhuma chamada de geração de artigo/LLM é necessária para validar o prompt.
 
-## 3. Gate V2 — PR #87
+## 3. Gate V2 — descontinuado
 
-Repo: `rmsports33/-site-conexotech`  
-Branch: `feat/conexo-editorial-gate-v2-foundation-20261123`
-
-A suíte PHPUnit e PHP lint apresentaram checks verdes na execução consultada. Não repetir sem necessidade, salvo se o SHA mudar ou o teste de integração exigir.
-
-Para reprodução isolada no checkout:
-```bash
-cd plugins/conexo-editorial-gate-v2
-composer install --no-interaction --prefer-dist
-composer test
-```
-
-Para a integração WordPress, reproduzir **somente** os passos do job `wordpress-integration` em `.circleci/config.yml`, com WordPress e MariaDB descartáveis (localhost/container efêmero). O smoke test é:
-```bash
-php wp-cli.phar eval-file plugins/conexo-editorial-gate-v2/tests/integration/wordpress-smoke.php --path="$HOME/wordpress" --allow-root
-```
-
-Não usar URL, senha, banco ou usuário do site ativo. Localizar a primeira etapa que falha, capturar a mensagem/stack trace, corrigir a causa mínima e repetir apenas o job afetado, além de PHPUnit se código PHP mudar.
-
-Critérios:
-- PHP lint e PHPUnit verdes no mesmo SHA da alteração de política /2.
-- Smoke test WordPress passa no WordPress descartável.
-- Teste com 12 links internos permanece `REVIEW_REQUIRED`, sem bloqueio de contagem.
-- Política /2 e hash correspondente estão presentes no catálogo e nos Quality Records; recibo calculado sob política antiga não é reutilizado.
+O Gate V2 (`feat/conexo-editorial-gate-v2-foundation-20261123`, PR #87) foi descontinuado e encerrado sem merge. Não executar testes, integração WordPress, recuperação ou reativação deste componente. A referência vigente continua sendo o Gate V1 RC10.4 com o registro assinado do PR #137, e a trilha editorial permanece em `editorial_trace.py`.
 
 ## 4. Fechamento de integração
 
