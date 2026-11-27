@@ -353,6 +353,68 @@
         "https://falabr.cgu.gov.br/web/home"
       ],
       "notes": "Canal para solicitar documentos e dados sob a LAI; o canal não é fonte factual em si. Preservar protocolo, pedido, resposta, anexos e eventuais restrições."
+    },
+    {
+      "id": "global-itu",
+      "publisher": "International Telecommunication Union (ITU)",
+      "jurisdiction": "International",
+      "topics": [
+        "conectividade",
+        "telecomunicacoes",
+        "economia digital",
+        "infraestrutura ICT",
+        "ciberseguranca"
+      ],
+      "source_type": "intergovernmental_ict_statistics",
+      "default_role": "primary_origin",
+      "access": "public_datahub",
+      "urls": [
+        "https://datahub.itu.int/",
+        "https://www.itu.int/en/mediacentre/backgrounders/Pages/data-statistics.aspx"
+      ],
+      "notes": "A ITU coleta/valida dados enviados por governos, institutos estatísticos e reguladores e também produz estimativas. Para uma afirmação nacional específica, seguir até o produtor nacional quando possível."
+    },
+    {
+      "id": "global-world-bank",
+      "publisher": "World Bank — World Development Indicators",
+      "jurisdiction": "International",
+      "topics": [
+        "desenvolvimento",
+        "energia",
+        "economia",
+        "infraestrutura",
+        "populacao",
+        "indicadores globais"
+      ],
+      "source_type": "international_development_dataset",
+      "default_role": "primary_origin",
+      "access": "public_api",
+      "urls": [
+        "https://data.worldbank.org/",
+        "https://datahelpdesk.worldbank.org/knowledgebase/articles/1886701-sdmx-api-queries"
+      ],
+      "notes": "O WDI compila indicadores de fontes internacionais e oficiais reconhecidas, com estimativas e revisões possíveis. Registrar a fonte de origem e metadados de cada indicador; não tratar toda série como medição própria do Banco Mundial."
+    },
+    {
+      "id": "global-oecd",
+      "publisher": "Organisation for Economic Co-operation and Development (OECD)",
+      "jurisdiction": "International",
+      "topics": [
+        "economia",
+        "industria",
+        "inovacao",
+        "tecnologia",
+        "energia",
+        "politicas publicas"
+      ],
+      "source_type": "international_statistics_and_sdmx",
+      "default_role": "primary_origin",
+      "access": "public_api_free_subject_to_terms_and_rate_limits",
+      "urls": [
+        "https://www.oecd.org/en/data/",
+        "https://www.oecd.org/en/data/insights/data-explainers/2024/09/api.html"
+      ],
+      "notes": "API SDMX gratuita sujeita a termos e rate limits; verificar fonte nacional, definição, unidade, população, metodologia e revisões de cada indicador."
     }
   ]
 }
