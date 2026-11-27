@@ -10,13 +10,24 @@ def dossier():
     return {
         "sources": [
             {"source_id": "s1", "url": "https://www.epe.gov.br/pde",
-             "publisher": "EPE", "source_role": "primary_origin"},
+             "publisher": "EPE", "source_type": "planning_document",
+             "source_role": "primary_origin", "published_at": "2026-11-01",
+             "reference_period": "2026-2036", "locator": "Caderno de demanda, tabela 1",
+             "methodology": "Cenário de referência publicado pela EPE",
+             "limitations": "Projeção condicionada a premissas, não medição",
+             "retrieved_at": "2026-11-27T10:00:00Z"},
             {"source_id": "s2", "url": "https://dados.ons.org.br/",
-             "publisher": "ONS", "source_role": "independent_measurement"},
+             "publisher": "ONS", "source_type": "system_operator_data",
+             "source_role": "independent_measurement", "published_at": "2026-11-01",
+             "reference_period": "2026-11", "locator": "Dataset de carga, campo horário",
+             "methodology": "Série de operação consolidada do ONS",
+             "limitations": "Sujeita à revisão operacional; não é projeção",
+             "retrieved_at": "2026-11-27T10:00:00Z"},
         ],
         "claims": [
             {"claim_id": "c1", "claim_text": "A demanda projetada cresce.",
-             "source_ids": ["s1"], "verification_status": "PROJETADA"}
+             "source_ids": ["s1"], "source_role": "primary_origin",
+             "verification_status": "PROJETADA"}
         ],
     }
 
