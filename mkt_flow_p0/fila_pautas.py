@@ -73,6 +73,20 @@ NOTAS_SCHEMA = """CREATE TABLE IF NOT EXISTS rss_notas_editoriais (
  pauta_id TEXT PRIMARY KEY, nota INTEGER NOT NULL CHECK(nota BETWEEN 1 AND 10),
  justificativa TEXT NOT NULL, revisada_em TEXT NOT NULL)"""
 
+ASVE_TOPICS_SCHEMA = """CREATE TABLE IF NOT EXISTS editorial_topic_backlog (
+ id TEXT PRIMARY KEY,
+ origin_article_id TEXT NOT NULL,
+ origin_article_sha256 TEXT NOT NULL,
+ finding_id TEXT NOT NULL,
+ title TEXT NOT NULL,
+ rationale TEXT NOT NULL,
+ research_question TEXT NOT NULL,
+ estado TEXT NOT NULL CHECK(estado IN ('DESCOBERTA','SELECIONADA','EM_PRODUCAO','CONCLUIDA','DESCARTADA')),
+ created_at TEXT NOT NULL,
+ updated_at TEXT NOT NULL,
+ UNIQUE(origin_article_id, origin_article_sha256, finding_id)
+)"""
+
 MUTEX_SCHEMA = """CREATE TABLE IF NOT EXISTS rss_queue_mutex (
  name TEXT PRIMARY KEY, owner TEXT NOT NULL, expires_at INTEGER NOT NULL)"""
 
@@ -102,6 +116,7 @@ def _release_writer(owner, db_path=None):
 def init_queue(db_path=None):
     _exec(SCHEMA, db_path=db_path)
     _exec(NOTAS_SCHEMA, db_path=db_path)
+    _exec(ASVE_TOPICS_SCHEMA, db_path=db_path)
     _exec("CREATE INDEX IF NOT EXISTS idx_rss_pautas_estado ON rss_pautas(estado, pontuacao)",
           db_path=db_path)
 
@@ -240,3 +255,74 @@ def listar(estado="DESCOBERTA", limite=20, db_path=None):
                 "reasons": ["METADADOS_INCOMPLETOS"], "publication_authorized": False}
         result.append(item)
     return result
+
+
+def registrar_topico_asve(topic, *, origin_article_id, origin_article_sha256,
+                           finding_id, db_path=None):
+    """Persist an ASVE P2 research lead in the existing editorial queue database.
+
+    It does not invent a source URL or RSS candidate, change article state,
+    call WordPress, select the topic, or authorize publication. Idempotent by
+    origin article/version/finding. Uses the existing SQLite/Turso adapter.
+    """
+    if not isinstance(topic, dict) or set(topic) != {"title", "rationale", "research_question"}:
+        raise ValueError("Tópico ASVE inválido")
+    for key, limit in (("title", 240), ("rationale", 800), ("research_question", 800)):
+        value = topic.get(key)
+        if not isinstance(value, str) or not value.strip() or len(value.strip()) > limit:
+            raise ValueError("Campo de tópico ASVE inválido: " + key)
+    if not isinstance(origin_article_id, str) or not origin_article_id.strip() or len(origin_article_id) > 160:
+        raise ValueError("ID do artigo de origem inválido")
+    if not isinstance(origin_article_sha256, str) or not re.fullmatch(r"[a-f0-9]{64}", origin_article_sha256):
+        raise ValueError("Hash do artigo de origem inválido")
+    if not isinstance(finding_id, str) or not re.fullmatch(r"[A-Za-z0-9._:-]{1,80}", finding_id):
+        raise ValueError("ID do achado ASVE inválido")
+    init_queue(db_path)
+    uid = hashlib.sha256(
+        (origin_article_id + ":" + origin_article_sha256 + ":" + finding_id).encode("utf-8")
+    ).hexdigest()[:32]
+    now = _now()
+    _, affected = _exec(
+        """INSERT OR IGNORE INTO editorial_topic_backlog
+        (id, origin_article_id, origin_article_sha256, finding_id, title,
+         rationale, research_question, estado, created_at, updated_at)
+        VALUES (?,?,?,?,?,?,?,?,?,?)""",
+        (uid, origin_article_id, origin_article_sha256, finding_id,
+         topic["title"].strip(), topic["rationale"].strip(),
+         topic["research_question"].strip(), "DESCOBERTA", now, now),
+        db_path,
+    )
+    rows, _ = _exec(
+        """SELECT id, origin_article_id, origin_article_sha256, finding_id,
+           title, rationale, research_question, estado, created_at
+           FROM editorial_topic_backlog WHERE id=?""", (uid,), db_path
+    )
+    if not rows:
+        raise RuntimeError("Tópico ASVE não foi persistido")
+    row = rows[0]
+    return {
+        "id": row[0], "novo": affected > 0, "origin_article_id": row[1],
+        "origin_article_sha256": row[2], "finding_id": row[3],
+        "title": row[4], "rationale": row[5], "research_question": row[6],
+        "estado": row[7], "created_at": row[8],
+        "wordpress_written": False, "publication_authorized": False,
+    }
+
+
+def listar_topicos_asve(estado="DESCOBERTA", limite=50, db_path=None):
+    """Read-only view of ASVE topics in the same editorial queue datastore."""
+    valid = {"DESCOBERTA", "SELECIONADA", "EM_PRODUCAO", "CONCLUIDA", "DESCARTADA"}
+    if estado not in valid:
+        raise ValueError("Estado de tópico ASVE inválido")
+    init_queue(db_path)
+    rows, _ = _exec(
+        """SELECT id, origin_article_id, origin_article_sha256, finding_id,
+           title, rationale, research_question, estado, created_at
+           FROM editorial_topic_backlog WHERE estado=? ORDER BY created_at DESC LIMIT ?""",
+        (estado, max(1, min(int(limite), 100))), db_path
+    )
+    return [{
+        "id": row[0], "origin_article_id": row[1], "origin_article_sha256": row[2],
+        "finding_id": row[3], "title": row[4], "rationale": row[5],
+        "research_question": row[6], "estado": row[7], "created_at": row[8],
+    } for row in rows]
