@@ -198,11 +198,11 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
             raise WPReadError("ASVE requires raw article content for exact version binding")
         from mkt_flow_p0.revisor_qualidade_unico import executar_revisao_com_asve
         pages = client.published_pages(limit=75)
-        asve = executar_revisao_com_asve(
+        asve_result = executar_revisao_com_asve(
             report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer
         )
-        report = asve["review"]
-        report["asve_receipt"] = asve["secondary_analysis"]
+        report = asve_result["review"]
+        report["asve_receipt"] = asve_result["secondary_analysis"]
     # Detect concurrent edits between read and commit of the private report.
     latest = client.post(post_id)
     if not isinstance(latest, dict) or latest.get("status") != "draft" or not verificar_versao(report, latest):
