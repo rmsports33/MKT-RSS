@@ -1,7 +1,9 @@
 import unittest
 
 from mkt_flow_p0.editorial_secondary_analysis import SCHEMA, build_analysis_request, validate_analysis_result
-from mkt_flow_p0.revisor_qualidade_unico import incorporar_analise_secundaria
+from mkt_flow_p0.revisor_qualidade_unico import (
+    incorporar_analise_secundaria, executar_revisao_com_asve,
+)
 
 
 def data():
@@ -70,6 +72,21 @@ class UniqueReviewerASVETests(unittest.TestCase):
         result = incorporar_analise_secundaria(main,article,receipt)
         self.assertEqual(result["veredito"],"APTO_PARA_APROVACAO")
         self.assertEqual(result["secondary_analysis_status"],"P2_BACKLOG_ONLY")
+
+    def test_combined_orchestrator_uses_injected_independent_analyzer(self):
+        article, dossier = data()
+        called = []
+        def analyzer(prompt):
+            called.append(prompt)
+            request = build_analysis_request(article, dossier, [])
+            return {"schema": SCHEMA, "article_sha256": request["article_sha256"], "findings": []}
+        main = {"veredito":"APTO_PARA_APROVACAO","pendencias":[]}
+        result = executar_revisao_com_asve(main, article, dossier, [], analyzer=analyzer)
+        self.assertEqual(len(called), 1)
+        self.assertEqual(result["review"]["secondary_analysis_status"], "NO_MATERIAL_FINDINGS")
+        self.assertFalse(result["publication_authorized"])
+        self.assertTrue(result["analyzer_injected_by_orchestrator"])
+        self.assertFalse(result["existing_provider_invoked")
 
 
 if __name__ == "__main__":
