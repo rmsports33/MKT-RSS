@@ -125,9 +125,9 @@ def test_import_gera_recibo_e_resumo(tmp_path):
     resumo = editorial_import.resumo_execucao(resultado)
     assert "quality_score" in resumo
 
-def test_links_internos_acima_da_recomendacao_sao_aviso_nao_bloqueio():
+def test_internal_link_count_neither_penalizes_nor_caps_contextual_links():
     links = "\n\n" + " ".join(
-        f"[Matéria {i}](https://conexotech.com.br/materia-{i}/)" for i in range(4)
+        f"[Matéria {i}](https://conexotech.com.br/materia-{i}/)" for i in range(12)
     )
     r = avaliar_artigo(
         TEXTO + links, brief=BRIEF, sources=FONTES, genero="analise",
@@ -135,10 +135,10 @@ def test_links_internos_acima_da_recomendacao_sao_aviso_nao_bloqueio():
         review_status="PROMPT_APPLIED",
     )
     link_check = next(c for c in r["checks"] if c["id"] == "links_internos")
-    assert link_check["status"] == "FAIL"
-    assert link_check["severidade"] == "warning"
+    assert link_check["status"] == "REVIEW_REQUIRED"
+    assert link_check["severidade"] == "advisory"
     assert "links_internos" not in r["bloqueios"]
-    assert "links_internos" in r["pendencias"]
+    assert "links_internos" not in r["pendencias"]
 
 
 def test_mapa_canaltech_nao_penaliza_noticia_ou_analise():
