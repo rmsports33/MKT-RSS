@@ -192,3 +192,46 @@ def verificar_versao(parecer, post_atual):
                 parecer.get("schema") == VERSAO and
                 parecer.get("post_id") == _post(post_atual).get("id") and
                 parecer.get("fingerprint") == _sha(_post(post_atual)))
+
+
+def incorporar_analise_secundaria(parecer, artigo_markdown, recibo_asve, decisoes=None):
+    """Integra ASVE ao Revisor Único sem criar outro revisor ou liberar publicação.
+
+    P0 sempre exige correção e nova verificação da versão resultante. P1 exige
+    decisão vinculada à versão; P2 é pauta futura e não bloqueia. O parecer
+    principal é preservado em `veredito_revisao_principal`.
+    """
+    from mkt_flow_p0.editorial_secondary_analysis import (
+        attach_to_unique_reviewer, validate_dispositions,
+    )
+
+    combinado = attach_to_unique_reviewer(parecer, recibo_asve, artigo_markdown)
+    findings = recibo_asve.get("findings", [])
+    p0 = [f["finding_id"] for f in findings if f.get("priority") == "P0"]
+    p1 = [f["finding_id"] for f in findings if f.get("priority") == "P1"]
+    p2 = [f["finding_id"] for f in findings if f.get("priority") == "P2"]
+    decision_status = None
+    if decisoes is not None:
+        decision_status = validate_dispositions(recibo_asve, decisoes).get("status")
+
+    combinado["veredito_revisao_principal"] = parecer.get("veredito")
+    combinado["asve_p0_blockers"] = sorted(p0)
+    combinado["asve_p1_decisions_required"] = sorted(p1)
+    combinado["asve_p2_future_topics"] = sorted(p2)
+    combinado["asve_decision_status"] = decision_status
+    if p0 or (p1 and decision_status != "CLOSED"):
+        combinado["veredito"] = "REVISAO_NECESSARIA"
+        combinado["secondary_analysis_status"] = "EDITORIAL_DECISION_REQUIRED"
+        combinado["pendencias"] = list(combinado.get("pendencias", [])) + [
+            "asve_p0_requires_correction_and_version_recheck" if p0
+            else "asve_p1_requires_version_bound_editorial_decision"
+        ]
+    else:
+        combinado["secondary_analysis_status"] = (
+            "NO_MATERIAL_FINDINGS" if not findings else
+            "P2_BACKLOG_ONLY" if not (p0 or p1) else
+            "DECISIONS_RECORDED"
+        )
+    combinado["publication_authorized"] = False
+    combinado["publicacao_autorizada"] = False
+    return combinado
