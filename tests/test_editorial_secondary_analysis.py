@@ -174,6 +174,7 @@ class DecisionTests(unittest.TestCase):
     def test_p2_without_owner_disposition_does_not_keep_other_decisions_open(self):
         req=build_analysis_request("Artigo.",dossier(),[])
         p1=finding("P1")
+        p1["internal_page_refs"]=[]
         p2=finding("P2")
         p2["finding_id"]="f2"
         p2["evidence_refs"]=[]
