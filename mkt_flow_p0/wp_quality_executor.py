@@ -210,8 +210,8 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
     if not isinstance(latest, dict) or latest.get("status") != "draft" or not verificar_versao(report, latest):
         raise WPReadError("Article changed while reviewing; rerun")
     # Persist P2 only after the exact WordPress version has been re-read and matched.
-    report["asve_future_topics_registered"] = []
     if run_asve and asve_result:
+        report["asve_future_topics_registered"] = []
         from mkt_flow_p0.fila_pautas import registrar_topico_asve
         for finding in asve_result["secondary_analysis"].get("findings", []):
             if finding.get("priority") == "P2":
