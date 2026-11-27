@@ -171,6 +171,26 @@ class DecisionTests(unittest.TestCase):
         self.assertEqual(receipt["status"],"NO_MATERIAL_FINDINGS")
         self.assertNotIn("parecer da primeira revisão",captured["prompt"].lower())
 
+    def test_p2_without_owner_disposition_does_not_keep_other_decisions_open(self):
+        req=build_analysis_request("Artigo.",dossier(),[])
+        p1=finding("P1")
+        p2=finding("P2")
+        p2["finding_id"]="f2"
+        p2["evidence_refs"]=[]
+        p2["claim_refs"]=[]
+        p2["internal_page_refs"]=[]
+        receipt=validate_analysis_result({
+            "schema":SCHEMA,"article_sha256":req["article_sha256"],
+            "findings":[p1,p2]
+        },req)
+        decision={"finding_id":"f1","article_sha256":req["article_sha256"],
+                  "disposition":"accepted_with_reason",
+                  "rationale":"O contexto já está apresentado."}
+        outcome=validate_dispositions(receipt,[decision])
+        self.assertEqual(outcome["status"],"CLOSED")
+        self.assertEqual(outcome["unresolved_findings"],[])
+
+
 
 if __name__ == "__main__":
     unittest.main()
