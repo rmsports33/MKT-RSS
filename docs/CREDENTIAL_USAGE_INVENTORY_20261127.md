@@ -14,14 +14,53 @@ Somente **nomes de variáveis**, serviços e referências. Nenhum valor é regis
 | Imagens | `UNSPLASH_ACCESS_KEY`, `PIXABAY_API_KEY` | `image_handler.py`, `stock_media_multi_source.py`, testes |
 | Núcleo privado | `CONEXO_CORE_READ_TOKEN` | `.github/workflows/ci.yml` (somente leitura, opcional) |
 
-## Exposição já identificada e tratada
+## Exposição já identificada
 
-- `bot-redator-artigo/SESSAO_2026-09-22_MEMORIA.md`: chave OpenRouter, Application Password WordPress e senha de conta WordPress. Redigidas no commit `418be35` da branch do PR #6.
-- Dois commits de 23/09/2026 (`ac82ef13`, `86952ca5`) ainda contêm os valores no histórico Git. Histórico **não** foi reescrito.
-- A remoção do texto não resolve a exposição: rotação das credenciais ainda pendente de confirmação do proprietário.
+- `bot-redator-artigo/SESSAO_2026-09-22_MEMORIA.md`: chave OpenRouter, Application Password WordPress e senha de conta WordPress.
+- A redação existe no commit `418be35` da branch do PR #6, **mas não é ancestral de `main` e é parcial**.
+- Os commits de 23/09/2026 (`ac82ef13`, `86952ca5`) permanecem no histórico. Histórico **não** foi reescrito e nenhuma reescrita é autorizada nesta etapa.
+- Remover texto não resolve exposição: a rotação depende de confirmação do proprietário nas contas externas.
+
+## Estado documentado da rotação
+
+| Credencial | Estado com evidência documental | Evidência |
+|---|---|---|
+| Groq (chave antiga da sessão) | revogada | `bot-redator-artigo/SESSAO_2026-09-22_MEMORIA.md:46` |
+| Application Password WordPress antiga | revogada/expirada (401) | `bot-redator-artigo/SESSAO_2026-09-22_MEMORIA.md:48,148,269` |
+| Outra Application Password exposta em chat | pendente de rotação pelo proprietário | `site-conexotech-editorial-gate/docs/memoria/2026-09.md:1428` |
+| Senha da conta WordPress antiga | pendente de rotação | `bot-redator-artigo/SESSAO_2026-09-22_MEMORIA.md:49` |
+| OpenRouter | pendente / evidência conflitante | `bot-redator-artigo/SESSAO_2026-09-22_MEMORIA.md:47`; `site-conexotech-editorial-gate/docs/memoria/2026-09.md:803-807` |
+| Token da API Hostinger | rotacionado em 11/10, antigo revogado | `site-conexotech-editorial-gate/docs/PENDENCIAS_2026-10-10.md:247-257` |
+| Token antigo do bot Telegram | revogado no BotFather | `site-conexotech-editorial-gate/docs/memoria/2026-09.md:797` |
+| `GITHUB_TOKEN` / `TOKEN_TAP_GITHUB`, `EXA_API_KEY` | divergência não reconciliada; decisão do proprietário | `site-conexotech-editorial-gate/MEMORIA.md:4929-4940` |
+| `POLLINATIONS_API_KEY` | removida do `.env` local; rotação não documentada | esta seção |
+| `CONEXO_EDITORIAL_GATE_KEY`, `CONEXO_REVIEW_REGISTRY_KEY`, Turso, Groq atual, `WP_*` atual | sem evidência de exposição ou rotação nos documentos consultados | ausência de registro |
+
+`CONEXO_EDITORIAL_GATE_KEY` e `CONEXO_REVIEW_REGISTRY_KEY` são pendências de **provisionamento**, não de rotação, e devem ser tratadas em fila separada. As chaves do Gate devem ser distintas entre si.
+
+## Procedimento de rotação — execução do proprietário
+
+Para cada credencial, **nesta ordem**:
+
+1. Revogar/invalidar o valor antigo no provedor (WordPress, Groq, OpenRouter, Turso, Hostinger, Telegram ou outro).
+2. Gerar valor novo no provedor, com escopo mínimo e sem compartilhar em canal de texto.
+3. Atualizar **todos** os pontos de consumo: segredos de CI, `.env` local fora do Git, variáveis do terminal Hostinger e, quando aplicável, constantes ou opções do WordPress fora do repositório.
+4. No Gate V1, atualizar apenas o que estiver fora do repositório: a opção `cxrm_authorized_service_user_id`, o UUID autorizado `cxrm_authorized_application_password_uuid` e as chaves de registro. **Não ativar as constantes de remediação** sem autorização específica.
+5. Registrar neste documento a data e a confirmação do proprietário, **sem o valor**.
+6. Não reescrever histórico Git e não fazer force push.
+
+## Consumers e mudança de código
+
+- A maioria das credenciais é lida em tempo de execução por `os.getenv` ou `getenv`; **trocar o valor não exige código**.
+- Exige ajuste fora do valor: trocar o **nome** da variável, a identidade canônica do publicador (`conexo-mkt-rss`) ou o UUID autorizado no Gate.
+- Existem duas famílias de variáveis WordPress (`WP_*` e `CONEXO_WP_*`); a rotação não deve misturá-las.
+- `ops/hostinger/run_rss_queue.sh` rejeita `WP_USER`/`WP_APP_PASSWORD`: é escritor de fila, não publicador.
+- `MKTFLOW/site/bancada.html` pede a Application Password por `prompt` e a mantém só em memória da aba; trocar a senha não exige código, trocar o usuário exige.
+- Valores em testes, workflows e placeholders são sintéticos e **não** entram nesta rotação.
 
 ## Observações
 
-- `POLLINATIONS_API_KEY` foi removida do `.env` local em execução anterior e não aparece no inventário versionado.
-- Nenhuma credencial de produção foi usada nesta execução.
+- Nenhuma credencial de produção foi usada nesta operação.
 - Nenhuma configuração de produção foi alterada.
+- Não foi feita reescrita de histórico Git.
+- As rotas de remediação do Gate V1 permanecem bloqueadas por padrão; nenhuma constante, UUID ou opção foi provisionada.
