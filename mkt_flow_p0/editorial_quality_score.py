@@ -141,9 +141,14 @@ def checagens_deterministicas(*, markdown, sources, genero, title, meta,
 
     add("multifonte", len(dominios) >= 2 or genero == "nota_breve",
         f"dominios_distintos={len(dominios)}")
-    # Três é uma recomendação editorial suave, nunca quota ou bloqueio.
-    add("links_internos", len(internos) <= 3,
-        f"links_internos={len(internos)}; recomendacao_maxima=3", "warning")
+    # Quantidade não é critério. Links existentes recebem avaliação humana
+    # de pertinência; ausência de links é permitida e não gera penalidade.
+    checagens.append({
+        "id": "links_internos",
+        "status": "REVIEW_REQUIRED" if internos else "PASS",
+        "severidade": "advisory",
+        "evidencia": f"links_internos={len(internos)}; sem quota; conferir relevância e status publicado",
+    })
     add("imagem_direitos", bool(image_rights), "direitos_confirmados=" + str(bool(image_rights)))
     if genero == "review":
         add("video_review", bool(video_id) and len(str(video_id)) == 11,
