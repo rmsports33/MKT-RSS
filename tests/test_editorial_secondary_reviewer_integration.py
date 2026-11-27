@@ -7,8 +7,15 @@ from mkt_flow_p0.revisor_qualidade_unico import incorporar_analise_secundaria
 def data():
     article = "Artigo sobre energia e data centers."
     dossier = {
-        "sources": [{"source_id":"s1","url":"https://www.epe.gov.br/pde","publisher":"EPE"}],
-        "claims": [{"claim_id":"c1","claim_text":"Projeção","source_ids":["s1"]}],
+        "sources": [{"source_id":"s1","url":"https://www.epe.gov.br/pde","publisher":"EPE",
+                     "source_type":"planning_document","source_role":"primary_origin",
+                     "published_at":"2026-11-01","reference_period":"2026-2036",
+                     "locator":"Caderno de demanda, tabela 1",
+                     "methodology":"Cenário de referência publicado pela EPE",
+                     "limitations":"Projeção condicionada a premissas, não medição",
+                     "retrieved_at":"2026-11-27T10:00:00Z"}],
+        "claims": [{"claim_id":"c1","claim_text":"Projeção","source_ids":["s1"],
+                    "source_role":"primary_origin","verification_status":"PROJETADA"}],
     }
     return article, dossier
 
