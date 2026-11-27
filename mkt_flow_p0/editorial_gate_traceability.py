@@ -1,0 +1,141 @@
+"""Build a version-bound traceability sidecar for a future Gate consumer.
+
+This sidecar is deliberately separate from cxeg-package:v1. The RC10.5 Gate
+contract has an exact six-field manifest; adding fields would correctly fail
+its strict validator. This module therefore creates an auditable handoff
+artifact, never a Gate approval, WordPress write, signature, or publication.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+
+SCHEMA = "conexo-editorial-gate-traceability-sidecar/1"
+CONTRACT_SHA256 = "6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7"
+
+
+def canonical_json(value) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def digest(value) -> str:
+    return hashlib.sha256(canonical_json(value).encode("utf-8")).hexdigest()
+
+
+def build_gate_traceability_sidecar(
+    article_markdown: str,
+    evidence_dossier: dict,
+    primary_review: dict,
+    asve_receipt: dict,
+    internal_pages: list[dict],
+    decisions: list[dict] | None = None,
+    *,
+    contract_sha256: str = CONTRACT_SHA256,
+) -> dict:
+    """Create a hash-linked sidecar. Structural validation is not fact-checking."""
+    from mkt_flow_p0.editorial_secondary_analysis import (
+        RECEIPT_SCHEMA,
+        build_analysis_request,
+        validate_dispositions,
+    )
+    from mkt_flow_p0.primary_source_registry import (
+        validate_claim_record,
+        validate_source_record,
+    )
+
+    if not isinstance(contract_sha256, str) or not re.fullmatch(r"[a-f0-9]{64}", contract_sha256):
+        raise ValueError("GATE_TRACE_CONTRACT_HASH_INVALID")
+    request = build_analysis_request(article_markdown, evidence_dossier, internal_pages)
+    article_hash = request["article_sha256"]
+    if not isinstance(primary_review, dict) or not primary_review:
+        raise ValueError("GATE_TRACE_PRIMARY_REVIEW_REQUIRED")
+    if not isinstance(asve_receipt, dict) or asve_receipt.get("schema") != RECEIPT_SCHEMA:
+        raise ValueError("GATE_TRACE_ASVE_RECEIPT_REQUIRED")
+    if asve_receipt.get("article_sha256") != article_hash:
+        raise ValueError("GATE_TRACE_ARTICLE_VERSION_MISMATCH")
+
+    sources = evidence_dossier.get("sources", [])
+    claims = evidence_dossier.get("claims", [])
+    source_errors = []
+    for source in sources:
+        source_errors.extend(validate_source_record(source))
+    if source_errors:
+        raise ValueError("GATE_TRACE_SOURCE_DOSSIER_INCOMPLETE:" + ",".join(source_errors))
+    claim_errors = []
+    for claim in claims:
+        validated = validate_claim_record(claim, sources)
+        claim_errors.extend(validated["errors"])
+    if claim_errors:
+        raise ValueError("GATE_TRACE_CLAIMS_INCOMPLETE:" + ",".join(claim_errors))
+
+    decisions = decisions or []
+    disposition = validate_dispositions(asve_receipt, decisions)
+    findings = asve_receipt.get("findings", [])
+    p0 = [f["finding_id"] for f in findings if f.get("priority") == "P0"]
+    p1 = [f["finding_id"] for f in findings if f.get("priority") == "P1"]
+    p2 = [f["finding_id"] for f in findings if f.get("priority") == "P2"]
+    if p0:
+        handoff = "BLOCKED_P0_REQUIRES_NEW_ARTICLE_VERSION"
+    elif disposition["status"] != "CLOSED" or p1:
+        handoff = "EDITORIAL_DECISION_REQUIRED"
+    else:
+        handoff = "READY_FOR_GATE_REVIEW"
+
+    body = {
+        "schema": SCHEMA,
+        "contract_sha256": contract_sha256,
+        "article_sha256": article_hash,
+        "evidence_dossier_sha256": digest(evidence_dossier),
+        "primary_review_sha256": digest(primary_review),
+        "asve_receipt_sha256": digest(asve_receipt),
+        "decisions_sha256": digest(decisions),
+        "source_ids": sorted(source["source_id"] for source in sources),
+        "claim_ids": sorted(claim["claim_id"] for claim in claims),
+        "verification_statuses": sorted({
+            str(claim.get("verification_status")) for claim in claims
+        }),
+        "primary_review_verdict": str(primary_review.get("veredito") or
+                                       primary_review.get("veredito_revisao_principal") or "NOT_PROVIDED"),
+        "asve_finding_ids": {
+            "P0": sorted(p0), "P1": sorted(p1), "P2": sorted(p2)
+        },
+        "asve_decision_status": disposition["status"],
+        "handoff_status": handoff,
+        "gate_contract_compatibility": {
+            "current_contract": "cxeg-package:v1",
+            "current_gate_accepts_sidecar": False,
+            "transport": "separate_private_sidecar",
+            "requires_future_gate_consumer": True
+        },
+        "factuality_verified_by_sidecar": False,
+        "human_approval_verified_by_sidecar": False,
+        "publication_authorized": False
+    }
+    body["sidecar_sha256"] = digest(body)
+    return body
+
+
+def validate_gate_traceability_sidecar(sidecar: dict) -> dict:
+    if not isinstance(sidecar, dict) or sidecar.get("schema") != SCHEMA:
+        raise ValueError("GATE_TRACE_SCHEMA_INVALID")
+    expected = sidecar.get("sidecar_sha256")
+    body = {k: v for k, v in sidecar.items() if k != "sidecar_sha256"}
+    if not isinstance(expected, str) or not re.fullmatch(r"[a-f0-9]{64}", expected):
+        raise ValueError("GATE_TRACE_HASH_FORMAT_INVALID")
+    if digest(body) != expected:
+        raise ValueError("GATE_TRACE_HASH_MISMATCH")
+    if sidecar.get("publication_authorized") is not False:
+        raise ValueError("GATE_TRACE_PUBLICATION_FLAG_INVALID")
+    if sidecar.get("current_gate_accepts_sidecar") is True:
+        raise ValueError("GATE_TRACE_FALSE_GATE_COMPATIBILITY")
+    if sidecar.get("gate_contract_compatibility", {}).get("current_contract") != "cxeg-package:v1":
+        raise ValueError("GATE_TRACE_GATE_CONTRACT_INVALID")
+    return {
+        "valid": True,
+        "sidecar_sha256": expected,
+        "article_sha256": sidecar.get("article_sha256"),
+        "handoff_status": sidecar.get("handoff_status"),
+        "gate_acceptance": "NOT_IMPLEMENTED_IN_CXEG_PACKAGE_V1",
+        "publication_authorized": False,
+    }
