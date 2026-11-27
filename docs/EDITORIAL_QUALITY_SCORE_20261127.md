@@ -98,7 +98,8 @@ O conjunto começa **vazio**: nenhum artigo foi promovido sem sua nota humana.
 - `tests/test_editorial_quality_score.py`: 12 casos (inclui regressões para links sem quota ou penalidade, aplicação do mapa por gênero, ausência de PASS baseado em domínio, pesquisa contextual manual e exclusão de URLs na detecção territorial).
 - `tests/test_editorial_golden_set.py`: 5 casos.
 - A suíte anterior relacionada registrou 107 testes aprovados antes das alterações desta branch.
-- Os cinco testes de regressão editorial e as mudanças de scoring desta revisão **ainda não foram executados** em ambiente de desenvolvimento. Não declarar PASS com base apenas em inspeção estática.
+- Execução local no OpenCode, sem provedor de IA, WordPress ou Turso: `python -m pytest -q tests/test_editorial_quality_score.py tests/test_editorial_golden_set.py` → **17 aprovados** (12 de scoring + 5 de golden set).
+- As suítes não cobrem geração real, avaliação humana homologada nem publicação; a execução local não autoriza piloto nem publicação.
 
 ## Contrato 1.1 e ASVE
 
