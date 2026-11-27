@@ -21,10 +21,11 @@ resultados permanecem sujeitos à revisão humana e às verificações independe
 
 ## Links internos: pertinência, não quota
 
-O contrato não estabelece número mínimo de links internos. A ausência de link
-não reduz a nota. Mais de três links gera apenas um aviso suave para o editor
-examinar se todos são úteis, contextuais e realmente publicados. O aviso não é
-bloqueio e não implica que quatro links sejam automaticamente excessivos.
+O contrato não estabelece número mínimo ou máximo de links internos.
+A ausência de link não reduz a nota. Quando há links, o recibo marca
+`REVIEW_REQUIRED` em caráter consultivo, sem penalidade, para que o editor
+confira se cada destino existe, está publicado e é pertinente ao contexto. A
+quantidade não é usada como substituto de relevância.
 
 O avaliador não deve inventar destino nem considerar uma URL no texto como prova
 de que a página é pertinente. A ASVE recebe somente páginas reais publicadas
@@ -47,12 +48,17 @@ A detecção lexical de contexto brasileiro não comprova suporte documental. Um
 domínio `.gov.br` ou `.com.br`, a menção a “Brasil” ou a presença de uma fonte
 local não demonstram que aquela fonte sustenta uma afirmação específica.
 
-Quando o texto contém afirmações brasileiras, o recibo sinaliza
-`REVIEW_REQUIRED` em caráter consultivo, sem bloquear nem reduzir a nota. A
+Quando o texto menciona o Brasil ou contexto brasileiro — inclusive
+quando afirma que faltam dados — o recibo sinaliza `REVIEW_REQUIRED` em caráter
+consultivo, sem bloquear nem reduzir a nota. URLs são removidas da detecção:
+um link para `.com.br` não cria artificialmente um recorte brasileiro. A
 validação deve ocorrer por claim, com fonte, localização exata, escopo,
 metodologia e limitações no dossiê de evidências, além da revisão humana.
-A ausência de dados brasileiros pode ser um limite legítimo e deve ser
-explicitada, não tratada como falha automática.
+
+Quando um artigo não menciona o Brasil e não é uma nota breve, o campo
+`pesquisa_fallback` pede uma decisão humana: verificar se há uma implicação
+brasileira relevante ou registrar por que um recorte exclusivamente global é
+adequado. Essa avaliação é consultiva, sem penalidade automática.
 
 ## Integração
 
@@ -89,10 +95,10 @@ O conjunto começa **vazio**: nenhum artigo foi promovido sem sua nota humana.
 
 ## Testes e estado de validação
 
-- `tests/test_editorial_quality_score.py`: 10 casos (inclui regressões para links sem quota bloqueante, aplicação por gênero e ausência de PASS baseada somente em domínio).
+- `tests/test_editorial_quality_score.py`: 12 casos (inclui regressões para links sem quota ou penalidade, aplicação do mapa por gênero, ausência de PASS baseado em domínio, pesquisa contextual manual e exclusão de URLs na detecção territorial).
 - `tests/test_editorial_golden_set.py`: 5 casos.
 - A suíte anterior relacionada registrou 107 testes aprovados antes das alterações desta branch.
-- Os três novos testes de regressão e as mudanças de scoring desta revisão **ainda não foram executados** em ambiente de desenvolvimento. Não declarar PASS com base apenas em inspeção estática.
+- Os cinco testes de regressão editorial e as mudanças de scoring desta revisão **ainda não foram executados** em ambiente de desenvolvimento. Não declarar PASS com base apenas em inspeção estática.
 
 ## Contrato 1.1 e ASVE
 
