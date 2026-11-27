@@ -115,3 +115,40 @@ def test_import_gera_recibo_e_resumo(tmp_path):
     assert (tmp_path / "saida" / "quality-receipt.json").exists()
     resumo = editorial_import.resumo_execucao(resultado)
     assert "quality_score" in resumo
+
+def test_links_internos_acima_da_recomendacao_sao_aviso_nao_bloqueio():
+    links = "\n\n" + " ".join(
+        f"[Matéria {i}](https://conexotech.com.br/materia-{i}/)" for i in range(4)
+    )
+    r = avaliar_artigo(
+        TEXTO + links, brief=BRIEF, sources=FONTES, genero="analise",
+        title="Título", meta="M" * 70, image_rights=True,
+        review_status="PROMPT_APPLIED",
+    )
+    link_check = next(c for c in r["checks"] if c["id"] == "links_internos")
+    assert link_check["status"] == "FAIL"
+    assert link_check["severidade"] == "warning"
+    assert "links_internos" not in r["bloqueios"]
+    assert "links_internos" in r["pendencias"]
+
+
+def test_mapa_canaltech_nao_penaliza_noticia_ou_analise():
+    for genre in ("noticia", "analise", "guia", "nota_breve"):
+        r = avaliar_artigo(
+            TEXTO, brief={**BRIEF, "genre": genre}, sources=FONTES, genero=genre,
+            title="Título", meta="M" * 70, image_rights=True,
+            review_status="PROMPT_APPLIED",
+        )
+        assert r["padrao_canaltech"]["aplicavel"] is False
+        assert r["padrao_canaltech"]["cobertura"] is None
+        # O texto curto gera apenas o aviso de tamanho (5 pontos).
+        assert r["nota_estrutural"] == 95
+
+
+def test_mapa_canaltech_aplica_apenas_a_comparativos_e_reviews():
+    assert padrao_canaltech(TEXTO, genero="comparativo")["aplicavel"] is True
+    assert padrao_canaltech(TEXTO, genero="review")["aplicavel"] is True
+    assert padrao_canaltech(TEXTO, genero="noticia")["aplicavel"] is False
+    # Não mencionar preço ou estoque não pode produzir uma falha artificial.
+    assert "preco_datado" not in padrao_canaltech(TEXTO, genero="review")["checagens"]
+
