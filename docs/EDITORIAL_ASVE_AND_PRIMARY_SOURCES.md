@@ -99,7 +99,7 @@ O exemplo não representa uma afirmação verificada. Antes do uso real, substit
 
 ### Registro de P2 no backlog existente
 
-Os achados P2 são encaminhados para `mkt_flow_p0.fila_pautas.registrar_topico_asve`, usando o mesmo armazenamento SQLite/Turso da fila editorial atual. A chave idempotente combina ID do artigo, hash da versão e ID do achado. Não cria um URL falso, RSS artificial, tabela de pauta duplicada ou nova fila. O status inicial é `DESCOBERTA`; o tema não é automaticamente selecionado ou produzido.
+Os achados P2 são encaminhados para `mkt_flow_p0.fila_pautas.registrar_topico_asve`, somente depois de a releitura do WordPress confirmar o mesmo fingerprint do rascunho, usando o mesmo armazenamento SQLite/Turso da fila editorial atual. A chave idempotente combina ID do artigo, hash da versão e ID do achado. Não cria um URL falso, RSS artificial, tabela de pauta duplicada ou nova fila. O status inicial é `DESCOBERTA`; o tema não é automaticamente selecionado ou produzido.
 
 ## Controle de custos
 
