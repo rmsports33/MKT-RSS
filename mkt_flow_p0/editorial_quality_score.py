@@ -133,7 +133,6 @@ def checagens_deterministicas(*, markdown, sources, genero, title, meta,
     internos = [u for u in re.findall(r"https?://[^\s)\]\"'>]+", texto)
                 if SITE in _dominio(u)]
     br_texto = _br_afirmativo(texto)
-    br_fontes = any(_tem_br(" ".join(str(v) for v in f.values())) for f in fontes)
     checagens = []
 
     def add(id_, ok, evidencia, severidade="blocker"):
@@ -157,8 +156,18 @@ def checagens_deterministicas(*, markdown, sources, genero, title, meta,
         f"titulo={bool(title)} descricao_chars={len(str(meta or ''))}")
     palavras = len(texto.split())
     add("tamanho", palavras >= 400, f"palavras={palavras}", "warning")
-    add("publico_brasileiro", not (br_texto and not br_fontes),
-        f"br_no_texto={br_texto} br_nas_fontes={br_fontes}")
+    # A presença de Brasil no texto e de domínio .br na bibliografia não
+    # demonstra suporte semântico da fonte à afirmação. Exigir conferência
+    # por claim no dossiê/humano; não bloquear nem atribuir PASS automaticamente.
+    if br_texto:
+        checagens.append({
+            "id": "publico_brasileiro",
+            "status": "REVIEW_REQUIRED",
+            "severidade": "advisory",
+            "evidencia": "contexto_brasileiro_detectado; verificar suporte por claim no dossie",
+        })
+    else:
+        add("publico_brasileiro", True, "nenhuma_afirmacao_brasileira_detectada", "advisory")
     add("pesquisa_fallback", len(dominios) >= 2 or genero == "nota_breve",
         "fonte_br_ausente_e_artigo_multifonte" if not br_fontes else "contexto_br_presente",
         "warning")
