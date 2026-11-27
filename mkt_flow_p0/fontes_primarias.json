@@ -1,5 +1,5 @@
 {
-  "_comentario": "Lista positiva de fontes primárias do gate de valor (regra 14). Fail-closed: domínio ausente daqui não conta como fonte primária. Sufixos oficiais (.gov, .edu, .int, .pdf, arxiv.org, doi.org) são aceitos por formato, sem precisar de entrada.",
+  "_comentario": "Lista legada positiva de fabricantes e fornecedores para o gate de valor de produtos. Sufixos institucionais podem funcionar como pista formal de origem, mas domínio, TLD, PDF, arXiv ou DOI nunca comprovam uma afirmação. Para descoberta transversal use data/editorial-primary-source-registry-v1.json; cada claim exige localização, método, limites e revisão factual própria.",
   "oficiais": [
     "samsung.com",
     "apple.com",
