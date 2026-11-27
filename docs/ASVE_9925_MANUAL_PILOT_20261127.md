@@ -53,16 +53,21 @@ Esta leitura não reescreve o texto e não substitui a revisão principal, a ASV
 
 **Por que importa:** a EPE não projeta apenas crescimento do consumo. Ela também descreve ganhos de eficiência em hardware, software e refrigeração enquanto estima a expansão dos data centers. Essa coexistência é diretamente relevante para a discussão entre eficiência por operação e consumo agregado.
 
-**Evidência localizada no documento:**
-- Página impressa 60: data centers aparecem com 3 TWh em 2026 e 30 TWh em 2036; o documento também contextualiza essas cargas no conjunto das grandes cargas.
-- Página impressa 67: a EPE estima crescimento médio anual de 13,7% para data centers no horizonte até 2036 e descreve ganhos de eficiência em equipamentos de TI, software e sistemas auxiliares.
-- Página impressa 67: o documento explica que PUE mede a relação entre o consumo total da instalação e o consumo da carga de TI; por construção, não mede a eficiência energética dos próprios equipamentos de TI.
+**Evidência localizada nas fontes originais:**
+- Relatório Síntese PDE 2036, versão 1 para Consulta Pública, de outubro de 2026: a tabela/gráfico da página impressa 60 apresenta 3 TWh para data centers em 2026 e 30 TWh em 2036. A EPE afirma que os grandes empreendimentos tendem a buscar conexão direta à rede básica.
+- Caderno de Demanda de Energia PDE 2036, versão 1 publicada em 27/10/2026: a página impressa 36 repete 3 TWh em 2026 e 30 TWh em 2036 e informa que a projeção foi fundamentada no Planejamento da Operação Energética (PLAN) 2026–2030, considerando a evolução dos pedidos de acesso à rede básica.
+- **Ressalva estatística material:** o Relatório Síntese, p. 58 e p. 67, e o Caderno de Demanda, p. 22, também apresentam taxa média de crescimento anual de 13,7% para a demanda de data centers até 2036. Essa taxa não reconcilia aritmeticamente com a série de 3 para 30 TWh se ambas forem interpretadas como a mesma grandeza, base e período: 3 → 30 TWh em dez anos equivale a CAGR aproximado de 25,9%. As fontes consultadas não explicam explicitamente essa diferença. Não publicar as duas métricas como se fossem a mesma série até obter esclarecimento da EPE sobre escopo, base, período ou eventual revisão.
+- Caderno de Demanda, p. 36: a projeção de data centers corresponde a aproximadamente 3.400 MW médios no SIN em 2036, cerca de 3% da carga naquele ano. A nota explica que MW médio é uma carga média horária e permite conversão para TWh.
+- Relatório Síntese, p. 67–68: a EPE espera ganhos de eficiência em hardware, software, virtualização, compressão de modelos, gerenciamento de potência e refrigeração, inclusive refrigeração indireta a líquido. O próprio relatório ressalta que clima quente e úmido limita o aproveitamento do ar/água externos e eleva a dependência de refrigeração mecânica.
+- PUE mede o consumo total da instalação dividido pelo consumo dos equipamentos de TI. Portanto, mede a eficiência do uso de energia da instalação e dos sistemas auxiliares, não a eficiência computacional dos próprios servidores. O documento recomenda indicadores complementares que relacionem processamento e consumo dos equipamentos de TI.
+- O Relatório Síntese consultado é explicitamente V1 para Consulta Pública, divulgada em 07/10/2026. O MME informa que a consulta pública do PDE 2036 ocorreu de 08/10 a 06/11/2026; portanto, esse relatório não deve ser descrito como versão final aprovada. O Caderno de Demanda é V1, com publicação inicial em 27/10/2026.
 
-**Ação recomendada:** citar o PDE 2036 como fonte primária principal, apontando página e seção. Preservar a natureza projetada dos números. Acrescentar a informação de que a própria EPE espera melhorias de eficiência ao mesmo tempo que projeta forte aumento do consumo.
+**Ação recomendada:** usar os documentos originais da EPE como fontes primárias, indicar que são projeções da versão consultada do PDE 2036 e explicar o método/escopo quando disponível. Antes da publicação, pedir esclarecimento à EPE sobre a taxa de 13,7% versus a série 3→30 TWh. Incorporar a distinção entre eficiência de TI e PUE: é uma das contribuições mais relevantes para ligar a discussão de eficiência dos modelos à energia consumida pela instalação inteira.
 
-**Fonte de origem:**
-- EPE/MME — *Plano Decenal de Expansão de Energia 2036, Relatório Síntese*, outubro de 2026: https://epe.gov.br/sites-pt/publicacoes-dados-abertos/publicacoes/PublicacoesArquivos/publicacao-982/topico-860/PDE%202036_Relat%C3%B3rio%20S%C3%ADntese_rev3_2026-10-08.pdf
-- EPE — apresentação do Caderno de Demanda do PDE 2036: https://www.epe.gov.br/pt/imprensa/noticias/pde-projeta-avanco-da-demanda-de-energia-e-ganho-de-espaco-da-eletricidade-ate-2036
+**Fontes de origem:**
+- EPE/MME — *Plano Decenal de Expansão de Energia 2036, Relatório Síntese*, V1 para Consulta Pública, outubro de 2026: https://epe.gov.br/sites-pt/publicacoes-dados-abertos/publicacoes/PublicacoesArquivos/publicacao-982/topico-860/PDE%202036_Relat%C3%B3rio%20S%C3%ADntese_rev3_2026-10-08.pdf
+- EPE — *PDE 2036, Caderno de Demanda de Energia*, V1 publicada em 27/10/2026: https://www.epe.gov.br/sites-pt/publicacoes-dados-abertos/publicacoes/PublicacoesArquivos/publicacao-982/topico-851/PDE%202036_Caderno%20de%20Demanda%20de%20Energia_v1_2026-10-27.pdf
+- MME — abertura da consulta pública do PDE 2036 e prazo de contribuições até 06/11/2026: https://www.gov.br/mme/pt-br/assuntos/noticias/julho-26/mme-abre-consulta-publica-do-plano-decenal-de-expansao-de-energia-2036/
 
 ### P1-03 — Separar capacidade contratada, potência e energia efetivamente consumida
 
@@ -104,23 +109,31 @@ Esta leitura não reescreve o texto e não substitui a revisão principal, a ASV
 
 **Oportunidade:** aprofundar os requisitos de conexão, transmissão, carga contínua, disponibilidade, concentração geográfica e planejamento do sistema elétrico.
 
-**Valor editorial:** a EPE registra que data centers de grande porte tendem a buscar conexão à rede básica e exigem elevados níveis de confiabilidade e disponibilidade. O PDE 2036 também distribui os investimentos projetados de data centers de grande porte entre os subsistemas Sudeste/Centro-Oeste, Nordeste e Sul. É uma pauta autônoma que explica por que a localização e o acesso à rede são tão importantes quanto a geração nacional.
+**Valor editorial:** o Caderno de Demanda da EPE informa que a projeção de data centers corresponde a cerca de 3.400 MW médios no SIN em 2036 e que os projetos dependem de pedidos de acesso à rede básica. O Relatório Síntese indica que mais de 65% dos novos investimentos de grande porte são esperados no Sudeste/Centro-Oeste, quase 30% no Nordeste e cerca de 5% no Sul. Essa concentração permite investigar a diferença entre potencial de geração renovável regional e capacidade efetiva de conexão, transmissão e confiabilidade. A EPE também afirma que as grandes cargas exigem alta disponibilidade; é preciso separar confiabilidade do suprimento elétrico da redundância interna dos próprios data centers.
 
 **Possível ligação futura:** o artigo #9925 poderá apontar para essa matéria no trecho sobre infraestrutura; a nova matéria deverá retornar ao texto de contexto sobre eficiência e consumo.
 
-**Fonte de origem:** PDE 2036, especialmente páginas impressas 60, 62 e 101.
+**Fonte de origem:** Caderno de Demanda PDE 2036, p. 36; Relatório Síntese PDE 2036, p. 62 e p. 101.
 
 ### P2-02 — A água invisível da inteligência artificial: refrigeração, clima e eficiência dos data centers
 
 **Oportunidade:** investigar consumo de água, tecnologias de refrigeração, diferenças climáticas, uso de água por kWh e os requisitos regulatórios brasileiros.
 
-**Valor editorial:** o PDE 2036 explica que clima quente e úmido pode limitar o aproveitamento de ar ou água do ambiente para resfriamento e aumentar a dependência de refrigeração mecânica. O relatório também menciona compromissos de eficiência hídrica associados ao Redata.
+**Valor editorial:** o PDE 2036 explica que clima quente e úmido pode limitar o aproveitamento de ar ou água do ambiente para resfriamento e aumentar a dependência de refrigeração mecânica. Há também um gancho legal concreto: a Lei nº 15.504/2026 institui o Redata e estabelece, para pessoas jurídicas habilitadas ao regime, compromisso de apresentar WUE igual ou inferior a 0,05 L/kWh com aferição anual, além de publicar relatório de sustentabilidade com o WUE e as fontes de eletricidade utilizadas. Isso não é um limite geral para todo data center no país; aplica-se às condições de habilitação ao Redata e deve ser lido junto da regulamentação.
 
 **Possível ligação futura:** conectar essa matéria ao artigo #9925 pela discussão sobre recursos físicos necessários à expansão da IA.
 
-**Fonte de origem:** PDE 2036, capítulos de demanda e infraestrutura; legislação do Redata, a confirmar diretamente no texto legal consolidado antes da pauta virar artigo.
+**Fontes de origem:**
+- PDE 2036, páginas impressas 67–68 e 153.
+- Lei nº 15.504/2026, art. 11-B, §1º, inciso IV, e §10: https://planalto.gov.br/ccivil_03/_ato2023-2026/2026/lei/l15504.htm
 
 ---
+
+## Novo alerta de apuração material — esclarecer a taxa de 13,7%
+
+A taxa média de 13,7% a.a. aparece tanto no Relatório Síntese quanto no Caderno de Demanda para data centers. A mesma família de documentos apresenta a série de consumo elétrico de 3 TWh (2026), 23 TWh (2031) e 30 TWh (2036). A taxa de crescimento composta calculada entre 3 e 30 TWh em dez anos é cerca de 25,9% a.a., não 13,7%. Isso pode refletir bases/escopos distintos, mas a documentação consultada não deixa a distinção clara. Registrar como pergunta para a EPE, não como acusação de erro. Uma consulta institucional ou LAI deve pedir série, base inicial, período, unidade, definição de “demanda” e vínculo entre a taxa de 13,7% e a projeção em TWh. Até resposta ou esclarecimento documental, não misturar os números no mesmo argumento.
+
+O Relatório Síntese é identificado como versão 1 para Consulta Pública (07/10/2026). O prazo da Consulta Pública MME nº 235 terminou em 06/11/2026, mas a página da EPE consultada ainda identifica o Relatório Síntese como versão para Consulta Pública; não presumir que tenha sido publicada versão final apenas porque o prazo terminou.
 
 ## Continuidade editorial e links internos existentes
 
