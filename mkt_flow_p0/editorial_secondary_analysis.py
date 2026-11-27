@@ -24,7 +24,7 @@ DIMENSIONS = {
 }
 DECISIONS = {
     "P0": {"incorporated"},
-    "P1": {"incorporated", "accepted_with_reason", "rejected_with_reason", "deferred_to_topic"},
+    "P1": {"incorporated", "accepted_with_reason", "rejected_with_reason"},
     "P2": {"registered_as_future_topic", "not_pursued_with_reason"},
 }
 REQUIRED_FINDING_FIELDS = {
