@@ -123,6 +123,15 @@ class GateTraceabilityTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,"FALSE_GATE_COMPATIBILITY"):
             validate_gate_traceability_sidecar(changed)
 
+    def test_unapproved_primary_review_cannot_be_marked_gate_complete(self):
+        receipt=make_receipt(self.article)
+        primary={"veredito":"REVISAO_NECESSARIA","bloqueios":["fonte"]}
+        sidecar=build_gate_traceability_sidecar(
+            self.article,dossier(),primary,receipt,self.pages,[]
+        )
+        self.assertEqual(sidecar["handoff_status"],"PRIMARY_REVIEW_NOT_READY")
+
+
 
 if __name__=="__main__":
     unittest.main()
