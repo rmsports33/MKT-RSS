@@ -86,8 +86,11 @@ O módulo não acessa rede e não chama modelo por conta própria. O analisador 
 
 - `tests/test_editorial_secondary_analysis.py`: contratos, hash, limites, P0/P1/P2, links internos publicados, rejeição de reescrita, decisões e preservação do veredito.
 - `tests/test_primary_source_registry.py`: catálogo, domínio conhecido como pista, TLD desconhecido sem confiança automática, HTTPS e estrutura de claims.
+- `tests/test_editorial_secondary_reviewer_integration.py`: integração com o Revisor Único, invocação independente e registro de P2 na fila existente.
+- `tests/test_wp_quality_executor.py`: flag opt-in, hash, dossiê e páginas publicadas usando cliente WordPress simulado.
+- `tests/test_fila_pautas.py`: idempotência do backlog P2, versão exata do artigo e ausência de escrita no WordPress.
 
-Foram adicionados 23 casos de teste focados (13 ASVE, 7 catálogo de fontes, 3 integração com Revisor Único). **A execução dos novos testes ainda não foi efetuada neste ambiente**; não declarar PASS até executar no checkout integral. A suíte anterior de PR #142 não substitui os novos testes nem uma homologação do fluxo de IA.
+Foram adicionados 31 casos de teste focados (13 ASVE, 7 catálogo de fontes, 5 integração com Revisor Único, 3 executor WP e 3 fila de pautas). **A execução dos novos testes ainda não foi efetuada neste ambiente**; não declarar PASS até executar no checkout integral. A suíte anterior de PR #142 não substitui os novos testes nem uma homologação do fluxo de IA.
 
 ## Homologação futura
 
