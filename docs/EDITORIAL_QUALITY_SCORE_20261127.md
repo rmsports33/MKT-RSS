@@ -3,7 +3,7 @@
 ## O que é
 
 `mkt_flow_p0/editorial_quality_score.py` lê o contrato único copiado em
-`data/editorial-quality-v1.json` (hash `30ecf890…`) e produz um **recibo de qualidade**
+`data/editorial-quality-v1.json` (hash `96631098…`) e produz um **recibo de qualidade**
 para cada artigo. Não é aprovação, não prova fatos e não publica.
 
 ## Como a nota é formada
@@ -64,3 +64,22 @@ O conjunto começa **vazio**: nenhum artigo foi promovido sem sua nota humana.
 
 `tests/test_editorial_quality_score.py` (7) e `tests/test_editorial_golden_set.py` (5).
 Suíte relacionada executada: 107 testes aprovados, sem rede.
+
+
+## Contrato 1.1 e ASVE
+
+Contrato canônico sincronizado: SHA-256 `966310987434eefb48ac6358fdb3eb01ade22ef37634902752ef081215dba701`.
+O contrato agora registra:
+- lema editorial oficial e princípio de conhecimento conectado;
+- pesquisa global antes do recorte brasileiro para temas de alcance mundial;
+- papéis e estados de evidência por afirmação, sem confiança automática em domínio/TLD;
+- estrutura H1/H2/H3 específica e narrativa, sem metacomentários;
+- links internos contextuais, sem quota mínima;
+- ASVE com contexto independente, limite de 0–5 achados, P0/P1/P2, sem reescrita e sem autorização de publicação.
+
+Implementação associada:
+- `data/editorial-primary-source-registry-v1.json` e `mkt_flow_p0/primary_source_registry.py`;
+- `mkt_flow_p0/editorial_secondary_analysis.py`;
+- testes em `tests/test_primary_source_registry.py` e `tests/test_editorial_secondary_analysis.py`.
+
+O hash do contrato identifica a versão de regras; não demonstra que o artigo foi pesquisado, que uma fonte é verdadeira ou que a revisão foi executada. A ASVE usa um analisador injetado no orquestrador atual, sem segundo serviço/modelo automático e sem novo custo por padrão.
