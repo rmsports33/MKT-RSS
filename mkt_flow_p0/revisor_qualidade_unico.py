@@ -238,7 +238,9 @@ def incorporar_analise_secundaria(parecer, artigo_markdown, recibo_asve, decisoe
 
 
 def executar_revisao_com_asve(parecer_principal, artigo, dossie_evidencias,
-                              paginas_publicadas, *, analyzer=None, decisoes=None):
+                              paginas_publicadas, *, analyzer=None, decisoes=None,
+                              origin_article_id=None, persist_future_topics=False,
+                              topic_db_path=None):
     """Orchestrate the existing primary review plus one independent ASVE pass.
 
     When analyzer is omitted, the opt-in adapter uses the current MKT-RSS
@@ -256,9 +258,24 @@ def executar_revisao_com_asve(parecer_principal, artigo, dossie_evidencias,
     combinado = incorporar_analise_secundaria(
         parecer_principal, artigo, recibo, decisoes
     )
+    registered = []
+    if persist_future_topics:
+        if not isinstance(origin_article_id, str) or not origin_article_id.strip():
+            raise ValueError("ASVE topic registration requires an origin article ID")
+        from mkt_flow_p0.fila_pautas import registrar_topico_asve
+        for finding in recibo.get("findings", []):
+            if finding.get("priority") == "P2":
+                registered.append(registrar_topico_asve(
+                    finding["future_topic"],
+                    origin_article_id=origin_article_id,
+                    origin_article_sha256=recibo["article_sha256"],
+                    finding_id=finding["finding_id"],
+                    db_path=topic_db_path,
+                ))
     return {
         "review": combinado,
         "secondary_analysis": recibo,
+        "future_topics_registered": registered,
         "publication_authorized": False,
         "existing_provider_invoked": analyzer is None,
         "analyzer_injected_by_orchestrator": analyzer is not None,
