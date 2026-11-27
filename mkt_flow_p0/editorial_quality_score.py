@@ -64,10 +64,6 @@ def _fontes(sources):
     return out
 
 
-def _tem_br(texto):
-    return bool(BR_PADRAO.search(str(texto or "")))
-
-
 def _br_afirmativo(texto):
     """Só conta menção brasileira afirmativa; limite explicito não é invenção."""
     for frase in re.split(r"(?<=[.!?])\s+", str(texto or "")):
@@ -132,6 +128,9 @@ def checagens_deterministicas(*, markdown, sources, genero, title, meta,
     texto = str(markdown or "")
     internos = [u for u in re.findall(r"https?://[^\s)\]\"'>]+", texto)
                 if SITE in _dominio(u)]
+    # Detectar menção territorial no texto, nunca na URL/bibliografia.
+    texto_sem_urls = re.sub(r"https?://\\S+", " ", texto)
+    br_mencionado = bool(BR_PADRAO.search(texto_sem_urls))
     br_texto = _br_afirmativo(texto)
     checagens = []
 
@@ -161,21 +160,32 @@ def checagens_deterministicas(*, markdown, sources, genero, title, meta,
         f"titulo={bool(title)} descricao_chars={len(str(meta or ''))}")
     palavras = len(texto.split())
     add("tamanho", palavras >= 400, f"palavras={palavras}", "warning")
-    # A presença de Brasil no texto e de domínio .br na bibliografia não
-    # demonstra suporte semântico da fonte à afirmação. Exigir conferência
-    # por claim no dossiê/humano; não bloquear nem atribuir PASS automaticamente.
-    if br_texto:
+    # Domínio .br nunca valida afirmação. Qualquer menção territorial, inclusive
+    # alegações de ausência de dados, exige conferência contextual por claim.
+    if br_mencionado:
         checagens.append({
             "id": "publico_brasileiro",
             "status": "REVIEW_REQUIRED",
             "severidade": "advisory",
-            "evidencia": "contexto_brasileiro_detectado; verificar suporte por claim no dossie",
+            "evidencia": (
+                "contexto_brasileiro_detectado; verificar fonte e suporte por claim; "
+                f"afirmacao_positiva={br_texto}"
+            ),
         })
     else:
-        add("publico_brasileiro", True, "nenhuma_afirmacao_brasileira_detectada", "advisory")
-    add("pesquisa_fallback", len(dominios) >= 2 or genero == "nota_breve",
-        "fonte_br_ausente_e_artigo_multifonte" if not br_fontes else "contexto_br_presente",
-        "warning")
+        add("publico_brasileiro", True, "nenhuma_mencao_brasileira_detectada_no_texto", "advisory")
+
+    # A necessidade de um recorte nacional depende do tema; o avaliador não
+    # presume irrelevância nem usa presença de URL como prova. Decisão humana.
+    if not br_mencionado and genero != "nota_breve":
+        checagens.append({
+            "id": "pesquisa_fallback",
+            "status": "REVIEW_REQUIRED",
+            "severidade": "advisory",
+            "evidencia": "avaliar se ha implicacao brasileira relevante ou justificar recorte global",
+        })
+    else:
+        add("pesquisa_fallback", True, "recorte_brasileiro_ja_mencionado_ou_nota_breve", "advisory")
     return checagens
 
 
