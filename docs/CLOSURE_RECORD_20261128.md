@@ -7,11 +7,11 @@ Registro atualizado após auditoria cruzada dos quatro PRs e leitura direta dos 
 | PR | SHA atual verificado | Estado |
 |---|---|---|
 | Gate V1 #91 — `rmsports33/-site-conexotech` | `2b7180fa3de66b644372d3661a392852e728661c` | aberto, draft, não merged |
-| MKT-RSS #142 — `rmsports33/MKT-RSS` | `b8282af70b3887cad54d006089bcc7e226124220` | aberto, draft, não merged |
+| MKT-RSS #142 — `rmsports33/MKT-RSS` | commit que contém esta versão do registro (head do branch; consultar GitHub para SHA exato) | aberto, draft, não merged |
 | Bot Redator #6 — `rmsports33/bot-redator-artigo` | `418be3556d15c001e5882e8c345626b0d78ea138` | aberto, draft, não merged |
 | Conexo OS #86 — `rmsports33/conexo-os` | `c22f1dd8b2e9dc8d5065261928a8f61ecf51ed3c` | aberto, draft, não merged |
 
-O SHA `31a511e0ab4d5e00c2db3912a0f6a5edada33485` continua como referência histórica dos sete documentos inicialmente verificados. O SHA `9c08142b6b971d53c000f67c049def2d16fb4cbd` foi o head anterior à correção da especificação. O head atual do PR #142 é `b8282af`.
+O SHA `31a511e0ab4d5e00c2db3912a0f6a5edada33485` continua como referência histórica dos sete documentos inicialmente verificados. O SHA `9c08142b6b971d53c000f67c049def2d16fb4cbd` foi o head anterior à correção da especificação; `b8282af` contém a especificação reconciliada. Esta versão do registro acompanha o head do branch, portanto o SHA exato do head deve ser lido diretamente no PR antes de qualquer execução.
 
 ## Validações já comprovadas
 
