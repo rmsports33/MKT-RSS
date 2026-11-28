@@ -64,6 +64,32 @@ Credenciais rotacionadas; PRs homologados; parecer humano do #9925; piloto A/B c
 | Higienização | PARCIAL |
 | Produção | NOT STARTED |
 
+## Classificação de controle
+
+O registro oficial usa três situações:
+
+- **Concluído** — existe evidência verificável registrada.
+- **Pendente** — depende de decisão, pessoa ou ambiente.
+- **Não aplicável** — operação deliberadamente não habilitada.
+
+| Item | Classificação | Motivo |
+|---|---|---|
+| Validação local do Gate V1 em `2b7180f` | Concluído | sete testes aprovados individualmente |
+| Verificação dos sete documentos em `31a511e` | Concluído | leitura direta do commit |
+| Registro de fechamento | Concluído | versão versionada com as evidências acima |
+| Rotação das credenciais | Pendente | depende do proprietário nos provedores |
+| Decisão dos PRs #91, #142, #6 e #86 | Pendente | depende de decisão explícita |
+| Parecer humano do artigo #9925 | Pendente | depende de revisores |
+| Piloto A/B cego | Pendente | depende de avaliador humano |
+| Validação Linux do Bot Redator | Pendente | depende de ambiente |
+| Equivalência arquitetural autorizada | Pendente | depende de prova e autorização |
+| Recibo assinado válido do Gate V1 | Pendente | depende de operação de produção autorizada |
+| Escrita atômica no WordPress | Pendente | depende de implementação e validação autorizadas |
+| Provisionamento do Gate | Não aplicável | rotas de remediação permanecem desativadas; passa a Pendente se a ativação for autorizada |
+| Conclusão integral (0/9) | Pendente | sem evidência externa ou decisão explícita |
+
+Nenhuma mudança de status é feita sem evidência verificável ou decisão explícita do proprietário.
+
 ## Próxima ação segura
 
 Proprietário: iniciar a rotação das credenciais e decidir individualmente os quatro PRs, sem merge automático.
