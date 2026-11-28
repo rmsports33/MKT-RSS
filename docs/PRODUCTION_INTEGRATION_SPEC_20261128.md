@@ -10,7 +10,7 @@ A integração atual possui três operações diferentes, que não podem ser tra
 2. **Aprovação humana** — `POST /conexo/v1/editorial/review/approve`. Registra decisão, identidade do revisor, hash da versão e referência editorial. Não publica.
 3. **Envelope assinado de escrita** — `POST /conexo/v1/editorial/write`. O Gate decodifica `receipt` + `signature`, valida HMAC e o schema `conexo-editorial-write/1`, identidade, nonce, validade, intenção e `expected_sha256`; depois realiza a escrita protegida e readback.
 
-O `wp_quality_executor.py` atual executa leitura, parecer e, com `--submit-quality`, grava o parecer privado. Ele **não gera nem submete** o envelope HMAC de escrita. Portanto, não declarar que o recibo de qualidade equivale ao recibo assinado de escrita.
+O `wp_quality_executor.py` executa leitura, parecer e, com `--submit-quality`, grava o parecer privado. Ele **não gera nem submete** o envelope HMAC de escrita — essa separação é intencional e preservada. O envelope é produzido pelo caminho de publicação em `mkt_flow_p0/editorial_transport.py`, por meio de `core.prepare_write()`, com chave externa ao repositório e núcleo confiável verificado por `editorial_core.lock.json`. Tests com núcleo sintético confirmam o formato `receipt` + `signature`, nonce e readback; não provam chave de produção nem operação real. Portanto, não criar um segundo adaptador HMAC no executor de qualidade e não declarar que o recibo de qualidade equivale ao recibo assinado de escrita.
 
 ## 2. Estado real da proteção contra escrita concorrente
 
