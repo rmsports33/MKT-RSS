@@ -47,7 +47,7 @@ Isso comprova sincronização dos artefatos versionados, não execução integra
 2. **ASVE ainda não chega ao consumidor Gate.** O sidecar `editorial_gate_traceability.py` é produzido e validado no MKT-RSS, mas os testes e o contrato registram que `cxeg-package:v1` não o consome. A trilha ASVE está preparada, não integrada ao Gate.
 3. **Scoring 0–100 não está ligado ao executor WordPress.** `wp_quality_executor.py` importa o Revisor Único legado; não chama `editorial_quality_score.py`. O scoring aparece no fluxo de importação/offline. O contrato mantém escala não confirmada e limiar nulo.
 4. **Escrita condicional existe parcialmente no Gate V1.** O código do PR #91 tem lock por post, `expected_sha256`, nonce/idempotência e readback. Isso protege chamadas pela rota Gate, mas ainda exige prova contra escrita REST direta concorrente e falha parcial entre `wp_insert_post` e atualização de metadado. Não criar uma segunda função antes de testar e fechar essas lacunas.
-5. **O pacote ASVE precisa de extensão compatível e fail-closed**, sem criar outro ledger e sem transformar ASVE em aprovação humana ou autorização de publicação.
+5. **O pacote ASVE precisa de extensão compatível e fail-closed**, sem criar outro ledger e sem transformar ASVE em aprovação humana ou autorização de publicação.\n6. **A identidade humana do revisor não está demonstrada apenas por `reviewer_id != post_author`.** No modo `independent`, `cxeg_review_identity_valid()` não exclui explicitamente a conta de serviço. O Gate precisa distinguir identidades humanas autorizadas de atores de serviço e testar que MKT-RSS não pode registrar parecer nem aprovação humana.
 
 A especificação `docs/PRODUCTION_INTEGRATION_SPEC_20261128.md` foi corrigida para refletir esses fatos no commit `b8282af70b3887cad54d006089bcc7e226124220`. A descrição do PR #142 também foi atualizada para não sugerir trabalho com Gate V2.
 
@@ -75,7 +75,7 @@ Não foi possível executar as suítes nesta sessão: o ambiente de execução d
 | Testes completos do MKT-RSS no SHA atual | Pendente |
 | Testes do Bot Redator no SHA atual e em Linux | Pendente |
 | Testes de runtime do Conexo OS #86 | Pendente |
-| Readback autenticado real | Pendente |
+| Identidade humana do revisor separada da conta de serviço | Pendente |\n| Readback autenticado real | Pendente |
 | Envelope HMAC de escrita válido para versão atual | Pendente |
 | Escrita condicional contra bypass REST e falha parcial | Pendente |
 | Parecer humano do artigo #9925 e piloto A/B cego | Pendente |
