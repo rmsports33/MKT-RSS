@@ -76,7 +76,7 @@ Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções aci
 | Sincronização contrato/catálogo Conexo OS ↔ MKT-RSS | Concluído |
 | Sete documentos originais em `31a511e` | Concluído |
 | Especificação reconciliada no PR #142 | Concluído |
-| Homologação dos quatro PRs | Pendente |
+| Homologação dos quatro PRs | Parcial — #91, #142 e #86 homologados; #6 aguarda Linux |
 | ASVE integrada ao contrato consumido pelo Gate | Pendente |
 | Scoring 0–100 como diagnóstico no executor WordPress | Concluído |
 | Consumo do scoring e da ASVE pelo Gate | Pendente |
