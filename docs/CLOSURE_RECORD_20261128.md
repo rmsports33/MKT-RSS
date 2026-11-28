@@ -76,7 +76,7 @@ Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções aci
 | Sincronização contrato/catálogo Conexo OS ↔ MKT-RSS | Concluído |
 | Sete documentos originais em `31a511e` | Concluído |
 | Especificação reconciliada no PR #142 | Concluído |
-| Homologação dos quatro PRs | #91, #142 e #86 homologados; #6 com evidência Linux concluída e aguardando decisão de homologação |
+| Homologação dos quatro PRs | Concluído — #91 e #142 com ressalvas; #86 e #6 homologados como código; nenhum merge autorizado |
 | ASVE integrada ao contrato consumido pelo Gate | Pendente |
 | Scoring 0–100 como diagnóstico no executor WordPress | Concluído |
 | Consumo do scoring e da ASVE pelo Gate | Pendente |
@@ -91,6 +91,15 @@ Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções aci
 | Parecer humano do artigo #9925 e piloto A/B cego | Pendente |
 | Higienização arquitetural com provas de equivalência | Parcial |
 | Produção, merge, deploy, ativação e publicação | Não executados |
+
+## Checklist de conclusão integral — 2/9
+
+Itens com evidência verificável:
+
+1. **PRs #91, #142, #6 e #86 homologados por decisão explícita** — concluído.
+2. **Bot Redator validado em Linux** — concluído no SHA `418be35`.
+
+Pendentes: rotação das credenciais; parecer humano do #9925; piloto A/B cego; equivalência arquitetural autorizada; recibo Gate V1 válido; escrita atômica validada; provisionamento condicional do Gate (ou `NOT APPLICABLE` se as rotas permanecerem desativadas).
 
 ## Próximas execuções técnicas sem intervenção do proprietário
 
