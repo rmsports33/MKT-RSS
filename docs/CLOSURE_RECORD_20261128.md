@@ -86,20 +86,22 @@ Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções aci
 | Identidade humana do revisor separada da conta de serviço | Concluído |
 | Teste integrado ponta a ponta com WordPress efêmero | Não iniciado |
 | Readback autenticado real | Pendente |
-| Envelope HMAC de escrita válido para versão atual | Pendente |
+| Envelope HMAC de escrita válido para versão atual | Parcial — provado em teste PHP isolado com chave sintética; não provado em WordPress real nem com núcleo externo |
 | Escrita condicional contra bypass REST e falha parcial | Pendente |
+| Provisionamento do Gate (opções, UUID, chaves) | NOT APPLICABLE — rotas de remediação permanecem desativadas e não há autorização de ativação |
 | Parecer humano do artigo #9925 e piloto A/B cego | Pendente |
 | Higienização arquitetural com provas de equivalência | Parcial |
 | Produção, merge, deploy, ativação e publicação | Não executados |
 
-## Checklist de conclusão integral — 2/9
+## Checklist de conclusão integral — 3/9
 
 Itens com evidência verificável:
 
 1. **PRs #91, #142, #6 e #86 homologados por decisão explícita** — concluído.
 2. **Bot Redator validado em Linux** — concluído no SHA `418be35`.
+3. **Provisionamento do Gate** — `NOT APPLICABLE`: as rotas de remediação permanecem desativadas e não há autorização de ativação.
 
-Pendentes: rotação das credenciais; parecer humano do #9925; piloto A/B cego; equivalência arquitetural autorizada; recibo Gate V1 válido; escrita atômica validada; provisionamento condicional do Gate (ou `NOT APPLICABLE` se as rotas permanecerem desativadas).
+Pendentes: rotação das credenciais; parecer humano do #9925; piloto A/B cego; equivalência arquitetural autorizada; recibo Gate V1 válido em WordPress real; escrita atômica validada.
 
 ## Próximas execuções técnicas sem intervenção do proprietário
 
