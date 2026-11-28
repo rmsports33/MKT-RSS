@@ -1,34 +1,23 @@
 # Registro de fechamento — 28/11/2026
 
-Atualização do registro após a revisão do relatório de fechamento por etapas.
-Nenhuma alteração funcional, nenhuma operação de produção, nenhum merge ou deploy.
+Registro atualizado após auditoria cruzada dos quatro PRs e leitura direta dos contratos e caminhos de integração. Nenhuma alteração funcional, nenhuma operação de produção, nenhum merge ou deploy.
 
-## Referências de SHA
+## Referências atuais
 
-| PR | SHA de referência | Observação |
+| PR | SHA atual verificado | Estado |
 |---|---|---|
-| MKT-RSS #142 | `31a511e0ab4d5e00c2db3912a0f6a5edada33485` | SHA atual para revisão; substitui `aee13d9`. Evidências anteriores **não** são presumidas repetidas neste SHA |
-| Gate V1 #91 | `2b7180fa3de66b644372d3661a392852e728661c` | inalterado |
-| Bot Redator #6 | `418be3556d15c001e5882e8c345626b0d78ea138` | inalterado |
-| Conexo OS #86 | `c22f1dd8b2e9dc8d5065261928a8f61ecf51ed3c` | inalterado |
+| Gate V1 #91 — `rmsports33/-site-conexotech` | `2b7180fa3de66b644372d3661a392852e728661c` | aberto, draft, não merged |
+| MKT-RSS #142 — `rmsports33/MKT-RSS` | `b8282af70b3887cad54d006089bcc7e226124220` | aberto, draft, não merged |
+| Bot Redator #6 — `rmsports33/bot-redator-artigo` | `418be3556d15c001e5882e8c345626b0d78ea138` | aberto, draft, não merged |
+| Conexo OS #86 — `rmsports33/conexo-os` | `c22f1dd8b2e9dc8d5065261928a8f61ecf51ed3c` | aberto, draft, não merged |
 
-## Verificação dos sete documentos no SHA `31a511e`
+O SHA `31a511e0ab4d5e00c2db3912a0f6a5edada33485` continua como referência histórica dos sete documentos inicialmente verificados. O SHA `9c08142b6b971d53c000f67c049def2d16fb4cbd` foi o head anterior à correção da especificação. O head atual do PR #142 é `b8282af`.
 
-Todos os arquivos foram lidos diretamente do commit, por `git show`, e estavam presentes:
+## Validações já comprovadas
 
-| Documento | Linhas |
-|---|---:|
-| `docs/CREDENTIAL_ROTATION_CHECKLIST_20261128.md` | 41 |
-| `docs/PR_HOMOLOGATION_REPORT_20261128.md` | 23 |
-| `docs/EDITORIAL_HUMAN_PILOT_PACKAGE_20261128.md` | 45 |
-| `docs/EDITORIAL_AB_BLIND_PROTOCOL_20261128.md` | 46 |
-| `docs/LINUX_VALIDATION_PLAN_20261128.md` | 46 |
-| `docs/ARCHITECTURE_EQUIVALENCE_MAP_20261128.md` | 46 |
-| `docs/PRODUCTION_INTEGRATION_SPEC_20261128.md` | 57 |
+### Gate V1 — SHA exato `2b7180f`
 
-## Evidência individual do Gate V1 no SHA exato `2b7180f`
-
-Checkout limpo clonado do GitHub. Ambiente: Windows, Python 3.14.7, pytest 9.1.1 — **não é Linux**.
+Checkout limpo. Ambiente: Windows, Python 3.14.7, pytest 9.1.1 — não é Linux.
 
 ```
 test_conjunto_versionado_reproduz_artefato_instalado PASSED
@@ -41,56 +30,66 @@ test_funcao_de_app_password_indisponivel               PASSED
 7 passed
 ```
 
-Isso resolve a ressalva sobre a comprovação individual dos dois testes de drift: ambos estão nomeados e aprovados acima. O PASS continua limitado à validação local; não cobre produção nem Linux.
+A ressalva anterior dos dois testes de drift está resolvida. O PASS é local e não cobre produção nem Linux.
 
-## Correções ao registro anterior
+### Contrato editorial e catálogo
 
-- O SHA de referência do PR #142 é `31a511e`, não `aee13d9`.
-- Os 17 testes de scoring e golden set permanecem como evidência do SHA em que foram executados; não foram repetidos no SHA `31a511e` e não deve ser afirmado o contrário.
-- Item 9 do checklist: se o proprietário decidir manter as rotas de remediação desativadas, o estado correto é **NOT APPLICABLE — rotas desativadas**, com justificativa registrada. Nesse caso, o item não bloqueia a conclusão integral.
+Comparação direta dos arquivos nos heads de Conexo OS #86 e MKT-RSS #142:
+- JSON do contrato: conteúdo idêntico após excluir apenas o campo declarativo `contract_sha256`.
+- Catálogo de fontes primárias: conteúdo idêntico.
+- Hash canônico declarado: `6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7`.
 
-## Checklist de conclusão integral — 0/9
+Isso comprova sincronização dos artefatos versionados, não execução integrada dos consumidores.
 
-Credenciais rotacionadas; PRs homologados; parecer humano do #9925; piloto A/B cego; validação Linux; equivalência arquitetural autorizada; recibo Gate V1 válido; escrita atômica; provisionamento do Gate. Nenhum item possui evidência real de conclusão. Documentos preparatórios não são contabilizados como execução.
+## Auditoria cruzada — bloqueios técnicos encontrados
 
-## Estados
+1. **Três artefatos do Gate não podem ser confundidos.** O parecer de qualidade (`/quality/record`), a aprovação humana (`/review/approve`) e o envelope HMAC de escrita (`/editorial/write`) têm contratos distintos. O executor `wp_quality_executor.py` registra o parecer, mas não gera/submete o envelope HMAC de escrita.
+2. **ASVE ainda não chega ao consumidor Gate.** O sidecar `editorial_gate_traceability.py` é produzido e validado no MKT-RSS, mas os testes e o contrato registram que `cxeg-package:v1` não o consome. A trilha ASVE está preparada, não integrada ao Gate.
+3. **Scoring 0–100 não está ligado ao executor WordPress.** `wp_quality_executor.py` importa o Revisor Único legado; não chama `editorial_quality_score.py`. O scoring aparece no fluxo de importação/offline. O contrato mantém escala não confirmada e limiar nulo.
+4. **Escrita condicional existe parcialmente no Gate V1.** O código do PR #91 tem lock por post, `expected_sha256`, nonce/idempotência e readback. Isso protege chamadas pela rota Gate, mas ainda exige prova contra escrita REST direta concorrente e falha parcial entre `wp_insert_post` e atualização de metadado. Não criar uma segunda função antes de testar e fechar essas lacunas.
+5. **O pacote ASVE precisa de extensão compatível e fail-closed**, sem criar outro ledger e sem transformar ASVE em aprovação humana ou autorização de publicação.
 
-| Etapa | Estado |
+A especificação `docs/PRODUCTION_INTEGRATION_SPEC_20261128.md` foi corrigida para refletir esses fatos no commit `b8282af70b3887cad54d006089bcc7e226124220`. A descrição do PR #142 também foi atualizada para não sugerir trabalho com Gate V2.
+
+## Evidências ainda não executadas nos SHAs atuais
+
+- MKT-RSS #142: os 46 novos casos de teste descritos no PR não foram executados no head atual. Os 17 testes de scoring/golden set pertencem a execução anterior e não são atribuídos a este SHA.
+- Bot Redator #6: os três novos testes do contrato de prompt não têm execução comprovada no SHA atual; os 143 testes anteriores não substituem essa validação. Linux continua pendente.
+- Conexo OS #86: `py_compile` isolado do sincronizador foi reportado; testes de runtime não estão comprovados. O status de Actions foi `failure` sem logs/etapas disponíveis; não foi usado como executor nem interpretado como falha de código.
+- Gate V1 #91: sete testes locais aprovados no SHA exato. O status espelho de Actions aparece como `failure`; não foi usado como executor.
+- MKT-RSS #142: sem execução de workflow registrada para o SHA consultado.
+
+Não foi possível executar as suítes nesta sessão: o ambiente de execução disponível não tem acesso de rede ao GitHub para clonar os repositórios, e não há sessão/workspace OpenCode ou Railway conectada. Nenhum sandbox pago ou novo executor foi criado. Isso não substitui nem invalida a execução local pendente do OpenCode.
+
+## Estado de conclusão
+
+| Frente | Estado |
 |---|---|
-| Segurança | NOT STARTED |
-| Homologação | PARCIAL |
-| Qualidade editorial | NOT STARTED |
-| Linux | BLOCKED |
-| Higienização | PARCIAL |
-| Produção | NOT STARTED |
+| Gate V1 — sete testes locais | Concluído |
+| Sincronização contrato/catálogo Conexo OS ↔ MKT-RSS | Concluído |
+| Sete documentos originais em `31a511e` | Concluído |
+| Especificação reconciliada no PR #142 | Concluído |
+| Homologação dos quatro PRs | Pendente |
+| ASVE integrada ao contrato consumido pelo Gate | Pendente |
+| Scoring 0–100 no executor WordPress/Gate | Pendente |
+| Testes completos do MKT-RSS no SHA atual | Pendente |
+| Testes do Bot Redator no SHA atual e em Linux | Pendente |
+| Testes de runtime do Conexo OS #86 | Pendente |
+| Readback autenticado real | Pendente |
+| Envelope HMAC de escrita válido para versão atual | Pendente |
+| Escrita condicional contra bypass REST e falha parcial | Pendente |
+| Parecer humano do artigo #9925 e piloto A/B cego | Pendente |
+| Higienização arquitetural com provas de equivalência | Parcial |
+| Produção, merge, deploy, ativação e publicação | Não executados |
 
-## Classificação de controle
+## Próximas execuções técnicas sem intervenção do proprietário
 
-O registro oficial usa três situações:
+1. No OpenCode, checkout exato dos heads atuais e execução das suítes focadas descritas no runbook, sem Actions/CircleCI e sem credenciais.
+2. Corrigir falhas encontradas nos testes, com regressão mínima e completa, preservando alterações preexistentes.
+3. Implementar a extensão do pacote Gate V1 para consumir recibo ASVE e decisões versionadas, com testes de compatibilidade e rejeição fail-closed.
+4. Integrar o scoring ao executor WordPress como evidência diagnóstica, mantendo os 13 checks humanos e o aceite separado; não definir limiar editorial sem decisão do proprietário.
+5. Fechar as provas de concorrência e falha parcial do writer existente, incluindo tentativa de escrita REST fora da rota Gate.
+6. Executar piloto A/B técnico com fixtures existentes; avaliação humana e decisão editorial continuam sendo dependências humanas.
+7. Validar o sincronizador Conexo OS e a portabilidade Linux, sem criar infraestrutura paga.
 
-- **Concluído** — existe evidência verificável registrada.
-- **Pendente** — depende de decisão, pessoa ou ambiente.
-- **Não aplicável** — operação deliberadamente não habilitada.
-
-| Item | Classificação | Motivo |
-|---|---|---|
-| Validação local do Gate V1 em `2b7180f` | Concluído | sete testes aprovados individualmente |
-| Verificação dos sete documentos em `31a511e` | Concluído | leitura direta do commit |
-| Registro de fechamento | Concluído | versão versionada com as evidências acima |
-| Rotação das credenciais | Pendente | depende do proprietário nos provedores |
-| Decisão dos PRs #91, #142, #6 e #86 | Pendente | depende de decisão explícita |
-| Parecer humano do artigo #9925 | Pendente | depende de revisores |
-| Piloto A/B cego | Pendente | depende de avaliador humano |
-| Validação Linux do Bot Redator | Pendente | depende de ambiente |
-| Equivalência arquitetural autorizada | Pendente | depende de prova e autorização |
-| Recibo assinado válido do Gate V1 | Pendente | depende de operação de produção autorizada |
-| Escrita atômica no WordPress | Pendente | depende de implementação e validação autorizadas |
-| Provisionamento do Gate | Não aplicável | rotas de remediação permanecem desativadas; passa a Pendente se a ativação for autorizada |
-| Conclusão integral (0/9) | Pendente | sem evidência externa ou decisão explícita |
-
-Nenhuma mudança de status é feita sem evidência verificável ou decisão explícita do proprietário.
-
-## Próxima ação segura
-
-Proprietário: iniciar a rotação das credenciais e decidir individualmente os quatro PRs, sem merge automático.
-OpenCode: atualizar este registro com as confirmações recebidas; não iniciar novas alterações funcionais.
+Nenhuma mudança de status será atribuída sem execução e evidência no SHA correspondente. Gate V2 permanece descontinuado.
