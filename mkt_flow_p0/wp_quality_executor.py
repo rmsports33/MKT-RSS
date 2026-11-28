@@ -220,6 +220,29 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         evidencias=evidence.get("evidencias", {}),
         corpo_original_fonte=evidence.get("corpo_original_fonte"),
     )
+    # Nota 0-100: diagnostico complementar, vinculado ao texto exato lido do
+    # WordPress e ao fingerprint do parecer. Nunca substitui o Revisor Unico,
+    # os 13 controles humanos nem a aprovacao humana.
+    raw_primeiro = first.get("content")
+    if isinstance(raw_primeiro, dict) and isinstance(raw_primeiro.get("raw"), str):
+        from mkt_flow_p0.editorial_quality_score import avaliar_artigo as score_artigo
+        try:
+            diagnostico = score_artigo(
+                raw_primeiro["raw"],
+                brief=evidence.get("brief"),
+                review=report,
+                sources=evidence.get("fontes", []),
+                genero=evidence.get("genero", "analise"),
+                title=first.get("title") or "",
+                meta=first.get("meta") or {},
+                review_status=report.get("veredito"),
+            )
+            diagnostico["fingerprint"] = report["fingerprint"]
+            diagnostico["linked_content_sha256"] = diagnostico["content_sha256"]
+            report["quality_score_diagnostic"] = diagnostico
+        except ValueError:
+            # Genero desconhecido ou contrato incompativel nao pode alterar o parecer.
+            pass
     asve_result = None
     gate_traceability_sidecar = None
     primary_review_for_trace = deepcopy(report)

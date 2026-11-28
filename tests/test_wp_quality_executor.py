@@ -76,6 +76,20 @@ class TestCloudAdapter(unittest.TestCase):
             self.assertEqual(len(client.writes), 1)
             self.assertFalse(report["publicacao_autorizada"])
 
+    def test_quality_score_is_diagnostic_and_bound_to_reviewed_version(self):
+        with tempfile.TemporaryDirectory() as root:
+            client = FakeWP()
+            report, _ = review_once(client, 9768, complete_evidence(client.p),
+                                    str(Path(root) / "private.db"))
+            diagnostico = report["quality_score_diagnostic"]
+            self.assertEqual(diagnostico["fingerprint"], report["fingerprint"])
+            self.assertEqual(diagnostico["linked_content_sha256"],
+                             diagnostico["content_sha256"])
+            self.assertFalse(diagnostico["publication_authorized"])
+            self.assertFalse(diagnostico["factual_approval"])
+            self.assertFalse(report["publicacao_autorizada"])
+            self.assertEqual(report["veredito"], "APTO_PARA_APROVACAO")
+
     def test_mismatched_gate_snapshot_never_submits(self):
         for field, value in (("post_content", "different manuscript"),
                              ("post_author", 99), ("ID", 99),
