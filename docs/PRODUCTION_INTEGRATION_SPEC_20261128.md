@@ -44,11 +44,11 @@ Logo, a trilha ASVE está preparada e validável localmente, mas a integração 
 
 ## 4. Integração do scoring 0–100
 
-O módulo `editorial_quality_score.py` gera recibo diagnóstico no fluxo de importação offline. O executor WordPress `wp_quality_executor.py` ainda importa `avaliar_artigo` de `revisor_qualidade_unico.py`; esse caminho não chama diretamente o novo avaliador 0–100.
+**Estado corrigido no head atual do PR #142:** `wp_quality_executor.py` já chama `editorial_quality_score.avaliar_artigo()` sobre o texto bruto efetivamente lido do WordPress e anexa o resultado a `report["quality_score_diagnostic"]`. O recibo contém o fingerprint do Revisor Único e o `content_sha256` do texto avaliado, repetido como `linked_content_sha256`. O parecer enviado à rota de qualidade do Gate transporta esse campo dentro do relatório.
 
-Assim, não declarar o scoring 0–100 integrado ao fluxo WordPress/Gate até existir um adaptador explícito, com contrato e hash vinculados, testes e confirmação de que a nota não substitui os 13 checks humanos nem a aprovação humana.
+A integração, portanto, está concluída no **produtor/executor e no transporte do parecer**. O que continua pendente é o **consumo semântico pelo Gate**: o Gate ainda não valida nem interpreta esse campo como evidência diagnóstica. Não há bloqueio, aprovação, publicação ou limiar baseado na nota.
 
-O contrato canônico mantém escala `confirmed=false` e `publication_threshold=null`. Pesos e limiares não devem ser promovidos a política editorial obrigatória sem decisão do proprietário. Até lá, a nota é apenas diagnóstica.
+O contrato canônico mantém escala `confirmed=false` e `publication_threshold=null`. Pesos e limiares não devem ser promovidos a política editorial obrigatória sem decisão do proprietário. A nota permanece exclusivamente diagnóstica e não substitui o Revisor Único, os 13 controles humanos nem a aprovação humana.
 
 ## 5. Sequência mínima de validação inteligente
 
