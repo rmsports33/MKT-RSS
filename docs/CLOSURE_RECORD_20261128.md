@@ -6,8 +6,8 @@ Registro atualizado após auditoria cruzada dos quatro PRs e execução técnica
 
 | PR | SHA atual verificado | Estado |
 |---|---|---|
-| Gate V1 #91 — `rmsports33/-site-conexotech` | `3a74c289fcbd36d5f51cd3c6a3fd72be3beffc46` | aberto, draft, não merged |
-| MKT-RSS #142 — `rmsports33/MKT-RSS` | `fceb66e9088e20dbc806a8e8a95c667b385f9dca` (head funcional; o commit que contém este registro atualiza apenas documentação) | aberto, draft, não merged |
+| Gate V1 #91 — `rmsports33/-site-conexotech` | `3796bcf5185695a9ab8f0392a390225d9418b4e0` | aberto, draft, não merged |
+| MKT-RSS #142 — `rmsports33/MKT-RSS` | `2761f4ecf6416cd62c5f281087971723efbe1714` (head funcional; o commit que contém este registro atualiza apenas documentação) | aberto, draft, não merged |
 | Bot Redator #6 — `rmsports33/bot-redator-artigo` | `418be3556d15c001e5882e8c345626b0d78ea138` | aberto, draft, não merged |
 | Conexo OS #86 — `rmsports33/conexo-os` | `c22f1dd8b2e9dc8d5065261928a8f61ecf51ed3c` | aberto, draft, não merged |
 
@@ -124,3 +124,24 @@ Nenhuma mudança de status será atribuída sem execução e evidência no SHA c
 - Testes de writer usam stubs: não provam atomicidade de banco nem proteção contra bypass REST real.
 - Consumo do sidecar ocorre pelo parecer privado, dentro de `cxeg-package:v1`; nenhum campo novo foi inserido no manifesto estrito.
 - Não há WordPress efêmero, Linux, chave HMAC real nem aprovação humana. Produção, merge, deploy e ativação não foram executados.
+
+## Auditoria pós-implementação — 28/11/2026
+
+Matriz de conformidade sobre os SHAs auditados. **Não COMPROVADO** significa ausência de ambiente/prova, não falha de código.
+
+| Requisito | Estado | Evidência |
+|---|---|---|
+| Sidecar produzido no MKT-RSS e anexado ao parecer privado | PASS | `wp_quality_executor.review_once` → `report["gate_traceability_sidecar"]` |
+| Parecer chega ao consumidor Gate V1 | PASS | `submit_quality` envia `report`; `cxeg_quality_record` lê e persiste `asve_sidecar` |
+| Integridade verificada pelo Gate | PASS | `cxeg_asve_sidecar_valid()` recalcula `sidecar_sha256` com o mesmo JSON canônico |
+| Vínculo `run_id`, artigo, conteúdo e contrato | PASS | `run_id` obrigatório quando há sidecar; `article_sha256` vs snapshot; `contract_sha256` fixo |
+| Ausência permitida apenas em fluxo legado | PASS | sem `asve_required`, sidecar ausente permanece válido |
+| Fluxo obrigatório bloqueia sem sidecar | PASS (corrigido) | `asve_required=true` no produtor; Gate rejeita e `cxeg_quality_valid` retorna false |
+| Sidecar sem `run_id` em fluxo obrigatório | PASS | Gate exige `run_id` sempre que sidecar está presente |
+| Versão desconhecida/adulteração/hash divergente/evidência incompleta | PASS (parcial) | testes cobrem schema, hash, contrato, artigo, run_id e flags; validação de dossiê incompleto é feita no produtor |
+| Flags impedem ASVE como aprovação/publicação | PASS | `publication_authorized`, `human_approval_verified_by_sidecar` e `factuality_verified_by_sidecar` precisam ser `false` |
+| Concorrência REST real e atomicidade transacional | NÃO COMPROVADO | testes usam stubs; sem WordPress efêmero |
+| Proteção contra escrita por rotas externas ao Gate | NÃO COMPROVADO | fora do escopo do writer versionado |
+| Oito falhas da suíte Windows | PASS (classificadas) | 4 por expectativa de permissão POSIX (0o600/ grupos de modo), 1 por decoding `charmap`, 3 por `WinError 32` na limpeza de temporários; nenhuma é falha de assert funcional |
+
+Correção aplicada na auditoria: fluxos que declaram `asve_required` passaram a ser bloqueados pelo Gate quando o sidecar está ausente. Nenhum manifesto foi alterado e nenhum contrato v2 foi criado.
