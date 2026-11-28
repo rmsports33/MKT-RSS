@@ -41,6 +41,17 @@ Ajustar os nomes dos testes ao conteúdo real do checkout, sem inventar resultad
 
 Sistema operacional e versão; versão do Python; SHA do checkout; comandos executados; quantidade de testes aprovados; falhas e causa; presença de credenciais reais (deve ser **não**).
 
+## Tentativa local em 28/11/2026
+
+Opção escolhida pelo proprietário: Docker Desktop local. Executado:
+
+1. `Start-Process ...\Docker Desktop.exe` → `docker info` retornou `Docker Desktop is unable to start`.
+2. Log do backend: `engine linux/wsl failed to start: checking preconditions: WSL update required`.
+3. `wsl --update` → `O serviço não pode ser iniciado porque está desativado ou não tem dispositivos ativados associados`.
+4. Reinício do Docker Desktop → mesmo erro.
+
+Não foi possível iniciar o daemon. Habilitar o serviço WSL ou instalar uma distro exigiria mudança de configuração do sistema/administrador, que não foi autorizada. Nenhum contêiner foi criado e nenhum teste do Bot Redator foi executado.
+
 ## Estado da etapa
 
-**BLOCKED** — aguardando ambiente Linux. Nenhuma credencial de produção deve ser usada.
+**BLOCKED** — Docker Desktop local falhou por WSL desativado; nenhuma credencial de produção foi usada.
