@@ -1,57 +1,78 @@
-# Especificação técnica das operações de produção — 28/11/2026
+# Especificação técnica das operações de integração — 28/11/2026
 
-Documento de preparação. **Nada aqui foi implementado ou executado.** Toda operação de produção depende de autorização específica posterior.
+Documento de diagnóstico e preparação. Nenhuma operação de produção foi executada.
 
-## 1. Recibo assinado do Gate V1
+## 1. Separar os três artefatos do Gate V1
 
-Situação: o adaptador espera envelope `{record, signature}`, mas o artefato RC10.4 instalado retorna `{post_id, report, valid_for_current_version}`; não há recibo assinado vigente.
+A integração atual possui três operações diferentes, que não podem ser tratadas como um único recibo:
 
-Sequência prevista:
+1. **Parecer de qualidade** — `POST /conexo/v1/editorial/quality/record`. Registra o relatório privado e o fingerprint do snapshot. A leitura em `GET /conexo/v1/editorial/quality/{id}` retorna `post_id`, `valid_for_current_version` e `report`. Isso não é, por si só, um recibo HMAC de escrita.
+2. **Aprovação humana** — `POST /conexo/v1/editorial/review/approve`. Registra decisão, identidade do revisor, hash da versão e referência editorial. Não publica.
+3. **Envelope assinado de escrita** — `POST /conexo/v1/editorial/write`. O Gate decodifica `receipt` + `signature`, valida HMAC e o schema `conexo-editorial-write/1`, identidade, nonce, validade, intenção e `expected_sha256`; depois realiza a escrita protegida e readback.
 
-1. conferir a versão exata do artigo e seu hash;
-2. obter o hash do conteúdo efetivamente lido do WordPress;
-3. gerar o registro assinado pelo mecanismo **existente** do Gate V1, sem criar novo sistema;
-4. verificar assinatura, identidade do produtor, versão e hash;
-5. confirmar `valid_for_current_version=True` com readback autenticado.
+O `wp_quality_executor.py` atual executa leitura, parecer e, com `--submit-quality`, grava o parecer privado. Ele **não gera nem submete** o envelope HMAC de escrita. Portanto, não declarar que o recibo de qualidade equivale ao recibo assinado de escrita.
 
-Critério: nenhuma aprovação ou publicação sem assinatura válida para a versão exata.
+## 2. Estado real da proteção contra escrita concorrente
 
-## 2. Escrita atômica `commit_if_unchanged`
+O candidato Gate V1 no PR #91 já contém parte importante do mecanismo:
 
-Situação: é requisito em `docs/EDITORIAL_WORDPRESS_PUBLISH_GATE.md`; o backend não existe na integração atual.
+- lock por post via opção `cxeg_lock_<post_id>` (ou nonce para criação);
+- comparação do snapshot atual com `expected_sha256` antes da escrita;
+- reserva/idempotência por nonce em `cxeg_op_<nonce>`;
+- readback após `wp_insert_post` e comparação do hash do snapshot resultante.
 
-Fluxo previsto:
+Isso evita concorrência entre chamadas que usam a mesma rota do Gate para o mesmo post. **Não comprova atomicidade global**:
 
-1. ler o rascunho e registrar o hash;
-2. preparar a alteração;
-3. comparar o hash atual com o original imediatamente antes de gravar;
-4. se mudou, cancelar a escrita;
-5. se não mudou, realizar a operação protegida;
-6. fazer readback e verificar o conteúdo gravado.
+- a proteção precisa ser confrontada com todas as rotas REST e caminhos de escrita direta;
+- o guard atual permite edição REST convencional de posts em rascunho/pending, portanto uma escrita externa pode não participar do lock do Gate;
+- `wp_insert_post` e atualização de `_thumbnail_id` são operações separadas; falha parcial pode deixar alteração persistida e operação reservada para inspeção;
+- a verificação final detecta divergência, mas não constitui rollback transacional.
 
-Testes obrigatórios antes de homologar: concorrência entre duas escritas, falha parcial, repetição da mesma operação (idempotência) e confirmação de que versão alterada jamais é sobrescrita. Não basta criar uma função com esse nome.
+Não criar uma segunda implementação chamada `commit_if_unchanged` antes de fechar essas lacunas. Primeiro consolidar a proteção existente, bloquear bypasses e provar o comportamento em testes concorrentes e de falha parcial. Só implementar mecanismo adicional se a prova demonstrar necessidade.
 
-## 3. Provisionamento condicional do Gate
+## 3. Integração ASVE / rastreabilidade com Gate
 
-**Somente se** houver autorização explícita para ativar as rotas de remediação:
+O PR #142 cria `editorial_gate_traceability.py` como sidecar encadeado. O próprio contrato e os testes declaram que o pacote atual `cxeg-package:v1` **não consome esse sidecar**.
 
-- chaves distintas para registro e revisto; nunca a mesma chave;
-- usuário de serviço configurado fora do repositório;
-- UUID autorizado da Application Password configurado fora do repositório;
-- opções exigidas configuradas fora do repositório;
-- teste primeiro em ambiente isolado;
-- validação das restrições de identidade já cobertas no PR #91.
+Logo, a trilha ASVE está preparada e validável localmente, mas a integração com o Gate V1 ainda não está concluída. O fechamento deve reutilizar o envelope e a trilha canônica existentes, sem criar outro ledger:
 
-Se as rotas continuarem desativadas, **não provisionar nada**. Constantes, opções e UUID permanecem ausentes.
+- definir extensão compatível e versionada do pacote/envelope do Gate V1;
+- incluir hashes do contrato, dossiê, revisão principal, recibo ASVE e decisões;
+- fazer o Gate validar a integridade e a correspondência de versão desses dados;
+- manter a ASVE como evidência editorial, nunca como aprovação humana nem autorização de publicação;
+- preservar compatibilidade explícita com consumidores antigos ou rejeitar versões desconhecidas (fail-closed).
 
-## Limites
+## 4. Integração do scoring 0–100
+
+O módulo `editorial_quality_score.py` gera recibo diagnóstico no fluxo de importação offline. O executor WordPress `wp_quality_executor.py` ainda importa `avaliar_artigo` de `revisor_qualidade_unico.py`; esse caminho não chama diretamente o novo avaliador 0–100.
+
+Assim, não declarar o scoring 0–100 integrado ao fluxo WordPress/Gate até existir um adaptador explícito, com contrato e hash vinculados, testes e confirmação de que a nota não substitui os 13 checks humanos nem a aprovação humana.
+
+O contrato canônico mantém escala `confirmed=false` e `publication_threshold=null`. Pesos e limiares não devem ser promovidos a política editorial obrigatória sem decisão do proprietário. Até lá, a nota é apenas diagnóstica.
+
+## 5. Sequência mínima de validação inteligente
+
+Executar uma única matriz de testes de integração, em ambiente descartável e sem credenciais reais:
+
+1. contrato/catálogo canônico ↔ cópia operacional;
+2. MKT-RSS: Revisor Único + ASVE + scoring, incluindo hash e decisões P0/P1/P2;
+3. pacote ASVE ↔ envelope Gate V1, incluindo rejeição de sidecar não reconhecido;
+4. parecer de qualidade ↔ aprovação humana independente ↔ envelope HMAC;
+5. Gate writer: dois escritores simultâneos para o mesmo post, nonce repetido, escrita REST direta concorrente, falha entre post e metadado, readback divergente e recuperação;
+6. fluxo completo com WordPress efêmero: rascunho sintético, revisão, aprovação sintética de teste, escrita em rascunho e readback; nenhum post real.
+
+Registrar SHA, ambiente, comandos, resultados e limites. Não usar GitHub Actions ou CircleCI como executor.
+
+## 6. Limites de operação
 
 - Sem escrita em WordPress ou Turso de produção.
-- Sem publicação, aprovação ou agendamento.
+- Sem publicação, aprovação ou agendamento reais.
 - Sem ativação de plugin ou rotas.
-- Sem Actions ou CircleCI.
+- Sem provisionamento de chaves/opções/UUID.
 - Sem segredo no repositório.
+- Gate V2 permanece descontinuado e fora do escopo.
+- Nenhuma evidência humana pode ser simulada por teste automatizado.
 
-## Estado da etapa
+## Estado
 
-**NOT STARTED** — especificação pronta; implementação e execução dependem de autorização posterior.
+**BLOCKED PARA HOMOLOGAÇÃO INTEGRADA.** A proteção de escrita, ASVE, scoring e Gate existem parcialmente, mas seus contratos e consumidores ainda não estão comprovados como um único fluxo.
