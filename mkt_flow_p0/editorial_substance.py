@@ -51,7 +51,12 @@ def writing_instruction(brief, *, voice_variant="mda"):
         "sustentados pelos insumos. Explique por que uma opção serve e onde deixa de servir. "
         "Voz independente significa julgamento fundamentado, nunca bordões ou opinião inventada. "
         "Não invente experiência própria, contexto brasileiro, preços ou defeitos para dar personalidade. "
-        "Se faltarem dados para a contribuição pedida, explicite a lacuna; não preencha com volume.\n"
+        "Se faltarem dados para a contribuição pedida, explicite a lacuna; não preencha com volume.\\n"
+        "Para tema mundial: panorama global primeiro, diferenças regionais apenas quando relevantes e Brasil depois com dados próprios; não invente contexto local. "
+        "A abertura deve apresentar problema/tensão concreta. Títulos H2/H3 devem descrever o assunto, não o processo de escrita; use H3 só quando necessário. "
+        "Desenvolva raciocínio em parágrafos contínuos, evitando fragmentação em tópicos; listas são reservadas a comparações, etapas ou consulta. "
+        "Investigue contrapontos e relações adjacentes; assuntos que pedem outro aprofundamento viram pauta futura, sem alongar artificialmente esta matéria. "
+        "Não reescreva blocos em formato de resumo de fontes: conecte dados, causas, consequências e limites.\\n"
         + (writing_voice_guidance(brief) if voice_variant == "mda" else "")
     )
 

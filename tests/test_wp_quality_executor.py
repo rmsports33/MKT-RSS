@@ -3,6 +3,7 @@ import json
 import tempfile
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from mkt_flow_p0.wp_quality_executor import WPReadError, WPClient, _NoRedirect, review_once, _private_db
 from mkt_flow_p0.revisor_qualidade_unico import _sha, _txt
@@ -46,6 +47,10 @@ class FakeWP:
     def submit_quality(self, post_id, report, snapshot_sha):
         self.writes.append((post_id, snapshot_sha))
         return {"recorded": True, "post_id": post_id, "snapshot_sha256": snapshot_sha}
+    def published_pages(self, limit=75):
+        return [{"page_id":"101","title":"Redes elétricas e data centers",
+                 "url":"https://conexotech.com.br/redes-eletricas-data-centers/",
+                 "status":"publish"}][:limit]
 
 
 def complete_evidence(post):
@@ -70,6 +75,20 @@ class TestCloudAdapter(unittest.TestCase):
             self.assertTrue(response["recorded"])
             self.assertEqual(len(client.writes), 1)
             self.assertFalse(report["publicacao_autorizada"])
+
+    def test_quality_score_is_diagnostic_and_bound_to_reviewed_version(self):
+        with tempfile.TemporaryDirectory() as root:
+            client = FakeWP()
+            report, _ = review_once(client, 9768, complete_evidence(client.p),
+                                    str(Path(root) / "private.db"))
+            diagnostico = report["quality_score_diagnostic"]
+            self.assertEqual(diagnostico["fingerprint"], report["fingerprint"])
+            self.assertEqual(diagnostico["linked_content_sha256"],
+                             diagnostico["content_sha256"])
+            self.assertFalse(diagnostico["publication_authorized"])
+            self.assertFalse(diagnostico["factual_approval"])
+            self.assertFalse(report["publicacao_autorizada"])
+            self.assertEqual(report["veredito"], "APTO_PARA_APROVACAO")
 
     def test_mismatched_gate_snapshot_never_submits(self):
         for field, value in (("post_content", "different manuscript"),
@@ -151,17 +170,29 @@ class TestCloudAdapter(unittest.TestCase):
             self.assertEqual(client.writes, [])
             self.assertTrue((Path(root) / "private.db").exists())
             import sqlite3
-            with sqlite3.connect(str(Path(root) / "private.db")) as db:
+            db = sqlite3.connect(str(Path(root) / "private.db"))
+            try:
                 self.assertEqual(db.execute("select count(*) from quality_reviews").fetchone()[0], 1)
+            finally:
+                db.close()
 
     def test_sqlite_symlink_is_rejected_without_touching_target(self):
         with tempfile.TemporaryDirectory() as root:
             target = Path(root) / "real.sqlite"
             target.write_bytes(b"preserve-this")
             link = Path(root) / "private.sqlite"
-            link.symlink_to(target)
-            with self.assertRaisesRegex(ValueError, "Symlink DB forbidden"):
-                _private_db(str(link))
+            # Windows sem privilégio de symlink: exercita a mesma guarda com
+            # is_symlink simulado, sem criar link real nem tocar no alvo.
+            real_is_symlink = Path.is_symlink
+
+            def simulated(self):
+                if self.name == "private.sqlite":
+                    return True
+                return real_is_symlink(self)
+
+            with patch.object(Path, "is_symlink", simulated):
+                with self.assertRaisesRegex(ValueError, "Symlink DB forbidden"):
+                    _private_db(str(link))
             self.assertEqual(target.read_bytes(), b"preserve-this")
 
     def test_concurrent_edit_fails_before_save(self):
@@ -201,6 +232,227 @@ class TestCloudAdapter(unittest.TestCase):
             with self.assertRaises(WPReadError):
                 review_once(client, 9768, {}, str(Path(root) / "private.db"), submit_quality=True)
             self.assertEqual(client.writes, [])
+
+    def test_opt_in_asve_uses_independent_analyzer_and_stores_bound_receipt(self):
+        from mkt_flow_p0.editorial_secondary_analysis import SCHEMA
+        with tempfile.TemporaryDirectory() as root:
+            client = FakeWP()
+            dossier = {
+                "sources": [{
+                    "source_id":"s1", "url":"https://www.epe.gov.br/pde", "publisher":"EPE",
+                    "source_type":"planning_document","source_role":"primary_origin",
+                    "published_at":"2026-11-01","reference_period":"2026-2036",
+                    "locator":"Caderno de demanda, tabela 1",
+                    "methodology":"Cenário EPE publicado",
+                    "limitations":"Projeção condicionada a premissas",
+                    "retrieved_at":"2026-11-27T10:00:00Z"
+                }],
+                "claims": [{
+                    "claim_id":"c1","claim_text":"A EPE projeta crescimento.",
+                    "source_ids":["s1"],"source_role":"primary_origin",
+                    "verification_status":"PROJETADA"
+                }]
+            }
+            seen = []
+            def analyzer(prompt):
+                seen.append(prompt)
+                import re
+                digest = re.search(r'"article_sha256":"([a-f0-9]{64})"', prompt).group(1)
+                return {"schema":SCHEMA,"article_sha256":digest,"findings":[]}
+            report, remote = review_once(
+                client, 9768, {**complete_evidence(client.p),"asve_dossier":dossier},
+                str(Path(root)/"private.db"), run_asve=True, asve_analyzer=analyzer
+            )
+            self.assertIsNone(remote)
+            self.assertEqual(len(seen),1)
+            self.assertEqual(report["secondary_analysis_status"],"NO_MATERIAL_FINDINGS")
+            self.assertEqual(report["secondary_analysis"]["finding_count"],0)
+            self.assertEqual(report["gate_traceability_sidecar"]["article_sha256"],
+                             report["secondary_analysis"]["article_sha256"])
+            self.assertFalse(report["gate_traceability_sidecar"]["gate_contract_compatibility"]["current_gate_accepts_sidecar"])
+            self.assertFalse(report["publication_authorized"])
+            self.assertEqual(client.writes,[])
+
+    def test_asve_opt_in_fails_closed_without_complete_source_dossier(self):
+        with tempfile.TemporaryDirectory() as root:
+            client=FakeWP()
+            with self.assertRaisesRegex(ValueError,"asve_dossier"):
+                review_once(client,9768,complete_evidence(client.p),
+                            str(Path(root)/"private.db"),run_asve=True)
+            self.assertEqual(client.writes,[])
+
+    def test_published_pages_catalog_uses_only_valid_published_same_site_rows(self):
+        client = object.__new__(WPClient)
+        client.call = lambda *args: [
+            {"id":12,"title":{"rendered":"Published page"},"link":"https://conexotech.com.br/a/","status":"publish"},
+            {"id":13,"title":{"rendered":"Draft"},"link":"https://conexotech.com.br/b/","status":"draft"},
+            {"id":"bad","title":"Bad ID","link":"https://conexotech.com.br/c/","status":"publish"},
+        ]
+        pages=client.published_pages()
+        self.assertEqual(len(pages),4)
+        from mkt_flow_p0.editorial_secondary_analysis import build_analysis_request
+        request=build_analysis_request("Texto",{"sources":[],"claims":[]},pages)
+        self.assertEqual(request["allowed_internal_page_ids"],["page:12","post:12"])
+
+    def test_wp_executor_registers_p2_only_after_version_recheck(self):
+        from mkt_flow_p0.editorial_secondary_analysis import SCHEMA
+        from mkt_flow_p0.fila_pautas import listar_topicos_asve
+        with tempfile.TemporaryDirectory() as root:
+            client=FakeWP()
+            dossier={
+                "sources":[{
+                    "source_id":"s1","url":"https://www.epe.gov.br/pde","publisher":"EPE",
+                    "source_type":"planning_document","source_role":"primary_origin",
+                    "published_at":"2026-11-01","reference_period":"2026-2036",
+                    "locator":"Caderno de demanda, tabela 1",
+                    "methodology":"Cenário EPE publicado",
+                    "limitations":"Projeção condicionada a premissas",
+                    "retrieved_at":"2026-11-27T10:00:00Z"
+                }],
+                "claims":[{
+                    "claim_id":"c1","claim_text":"A projeção aumenta.",
+                    "source_ids":["s1"],"source_role":"primary_origin",
+                    "verification_status":"PROJETADA"
+                }]
+            }
+            def analyzer(prompt):
+                import re
+                digest=re.search(r'"article_sha256":"([a-f0-9]{64})"',prompt).group(1)
+                return {"schema":SCHEMA,"article_sha256":digest,"findings":[{
+                    "finding_id":"f-p2","priority":"P2","dimension":"conexoes_relevantes",
+                    "location":"Conclusão","observation":"A confiabilidade de rede merece pauta própria.",
+                    "reader_impact":"O aprofundamento amplia a cobertura sem alongar esta notícia.",
+                    "evidence_refs":[],"claim_refs":[],"recommended_action":"Registrar pauta futura.",
+                    "internal_page_refs":[],"future_topic":{
+                        "title":"Confiabilidade elétrica de data centers",
+                        "rationale":"Grandes cargas dependem de rede e disponibilidade.",
+                        "research_question":"Como transmissão e armazenamento acompanham novas cargas?"
+                    }
+                }]}
+            db=str(Path(root)/"reviews.db")
+            queue=str(Path(root)/"queue.db")
+            report,_=review_once(client,9768,{**complete_evidence(client.p),"asve_dossier":dossier},
+                db,run_asve=True,asve_analyzer=analyzer,topic_db_path=queue,
+                register_asve_topics=True)
+            topics=listar_topicos_asve(db_path=queue)
+            self.assertEqual(len(topics),1)
+            self.assertEqual(topics[0]["origin_article_id"],"wp:9768")
+            self.assertEqual(len(report["asve_future_topics_registered"]),1)
+            self.assertEqual(report["secondary_analysis_status"],"P2_BACKLOG_ONLY")
+
+    def test_wp_executor_does_not_register_p2_for_concurrently_changed_article(self):
+        from mkt_flow_p0.editorial_secondary_analysis import SCHEMA
+        with tempfile.TemporaryDirectory() as root:
+            client=FakeWP(mutate=True)
+            dossier={
+                "sources":[{
+                    "source_id":"s1","url":"https://www.epe.gov.br/pde","publisher":"EPE",
+                    "source_type":"planning_document","source_role":"primary_origin",
+                    "published_at":"2026-11-01","reference_period":"2026-2036",
+                    "locator":"Caderno de demanda, tabela 1",
+                    "methodology":"Cenário EPE publicado",
+                    "limitations":"Projeção condicionada a premissas",
+                    "retrieved_at":"2026-11-27T10:00:00Z"
+                }],
+                "claims":[{
+                    "claim_id":"c1","claim_text":"A projeção aumenta.",
+                    "source_ids":["s1"],"source_role":"primary_origin",
+                    "verification_status":"PROJETADA"
+                }]
+            }
+            def analyzer(prompt):
+                import re
+                digest=re.search(r'"article_sha256":"([a-f0-9]{64})"',prompt).group(1)
+                return {"schema":SCHEMA,"article_sha256":digest,"findings":[{
+                    "finding_id":"f-p2","priority":"P2","dimension":"conexoes_relevantes",
+                    "location":"Conclusão","observation":"A rede merece aprofundamento.",
+                    "reader_impact":"A pauta amplia o tema.",
+                    "evidence_refs":[],"claim_refs":[],"recommended_action":"Registrar pauta.",
+                    "internal_page_refs":[],"future_topic":{
+                        "title":"Rede para data centers",
+                        "rationale":"Tema adjacente de infraestrutura.",
+                        "research_question":"Como atender novas cargas?"
+                    }
+                }]}
+            queue=str(Path(root)/"queue.db")
+            with self.assertRaisesRegex(WPReadError,"changed while reviewing"):
+                review_once(client,9768,{**complete_evidence(client.p),"asve_dossier":dossier},
+                    str(Path(root)/"reviews.db"),run_asve=True,asve_analyzer=analyzer,topic_db_path=queue,
+                    register_asve_topics=True)
+            self.assertFalse(Path(queue).exists())
+
+
+    def test_wp_executor_keeps_p2_suggestions_out_of_shared_queue_by_default(self):
+        from mkt_flow_p0.editorial_secondary_analysis import SCHEMA
+        with tempfile.TemporaryDirectory() as root:
+            client=FakeWP()
+            dossier={
+                "sources":[{
+                    "source_id":"s1","url":"https://www.epe.gov.br/pde","publisher":"EPE",
+                    "source_type":"planning_document","source_role":"primary_origin",
+                    "published_at":"2026-11-01","reference_period":"2026-2036",
+                    "locator":"Caderno de demanda, tabela 1",
+                    "methodology":"Cenário EPE publicado",
+                    "limitations":"Projeção condicionada a premissas",
+                    "retrieved_at":"2026-11-27T10:00:00Z"
+                }],
+                "claims":[{
+                    "claim_id":"c1","claim_text":"A projeção aumenta.",
+                    "source_ids":["s1"],"source_role":"primary_origin",
+                    "verification_status":"PROJETADA"
+                }]
+            }
+            def analyzer(prompt):
+                import re
+                digest=re.search(r'"article_sha256":"([a-f0-9]{64})"',prompt).group(1)
+                return {"schema":SCHEMA,"article_sha256":digest,"findings":[{
+                    "finding_id":"f-p2","priority":"P2","dimension":"conexoes_relevantes",
+                    "location":"Conclusão","observation":"A rede merece aprofundamento.",
+                    "reader_impact":"A pauta amplia a compreensão.",
+                    "evidence_refs":[],"claim_refs":[],
+                    "recommended_action":"Avaliar criação de matéria separada.",
+                    "internal_page_refs":[],
+                    "future_topic":{
+                        "title":"Confiabilidade de redes elétricas",
+                        "rationale":"A nova demanda exige planejamento de infraestrutura.",
+                        "research_question":"Como a rede pode atender data centers?"
+                    }
+                }]}
+            queue=str(Path(root)/"shared-queue.db")
+            report,_=review_once(
+                client,9768,{**complete_evidence(client.p),"asve_dossier":dossier},
+                str(Path(root)/"reviews.db"),run_asve=True,asve_analyzer=analyzer,
+                topic_db_path=queue
+            )
+            self.assertFalse(Path(queue).exists())
+            self.assertNotIn("asve_future_topics_registered",report)
+            self.assertEqual(report["secondary_analysis_status"],"P2_BACKLOG_ONLY")
+
+
+    def test_published_content_catalog_includes_posts_and_pages(self):
+        client=object.__new__(WPClient)
+        calls=[]
+        def call(method,path):
+            calls.append(path)
+            return [{"id":20,"title":{"rendered":"Published"},"link":"https://conexotech.com.br/published/","status":"publish"}]
+        client.call=call
+        catalog=client.published_pages(limit=75)
+        self.assertEqual({item["content_type"] for item in catalog},{"post","page"})
+        self.assertIn("wp/v2/posts?",calls[0])
+        self.assertIn("wp/v2/pages?",calls[1])
+        self.assertEqual({item["page_id"] for item in catalog},{"post:20","page:20"})
+
+    def test_incomplete_published_content_catalog_fails_closed(self):
+        client=object.__new__(WPClient)
+        def call(method,path):
+            if "page=6" in path:
+                return [{"id":501}]
+            return [{"id":i,"title":"Published","link":"https://conexotech.com.br/a/","status":"publish"}
+                    for i in range(1,101)]
+        client.call=call
+        with self.assertRaisesRegex(WPReadError,"exceeds configured cap"):
+            client.published_pages(limit=500)
+
 
 
 if __name__ == "__main__":

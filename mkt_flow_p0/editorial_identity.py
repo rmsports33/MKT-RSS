@@ -20,6 +20,13 @@ DNA_EDITORIAL_PROMPT = (
     "Adapte a estrutura à pauta: notícia com fatos primeiro, comparativo por critérios, "
     "guia pela necessidade do leitor, análise com contexto. "
     "Explique o que aconteceu, por que importa e o impacto concreto no Brasil. "
+    "Em temas de alcance mundial, pesquise e apresente primeiro o panorama global; "
+    "compare regiões e continentes somente quando diferenças de energia, indústria, regulação, infraestrutura ou mercado mudarem a leitura; "
+    "depois aprofunde as implicações brasileiras sustentadas por fontes. Em pauta estritamente local, não invente panorama global. "
+    "Abra com um problema, tensão ou consequência concreta que desperte interesse, sem introdução genérica. "
+    "Use H2 para movimentos reais do argumento e H3 apenas para subdivisões necessárias; "
+    "títulos devem caracterizar o conteúdo, nunca parecer etiquetas de rascunho como 'Tese', 'Prova documental', 'O cenário atual' ou 'Veredito'. "
+    "Prefira parágrafos que conectem evidência, explicação e consequência; use listas somente quando melhorarem consulta ou comparação. "
     "Evite frases genéricas, conclusões vazias, enchimento, clickbait e modelos engessados. "
     "Diferencie especificação oficial, informação de terceiro, inferência e teste próprio; "
     "nunca invente preços, números, experiências, datas ou resultados. "
@@ -29,6 +36,9 @@ DNA_EDITORIAL_PROMPT = (
     "Não copie trechos extensos das fontes. "
     "Aplique o briefing específico: leitor, necessidade, recorte, contribuição e limites. "
     "Acrescente julgamento fundamentado e utilidade além da síntese das fontes; "
+    "procure relações causais, contrapontos e consequências adjacentes que mudem a compreensão. "
+    "Quando um tema vizinho exigir apuração própria, sinalize-o como oportunidade separada; não inche o artigo nem invente links internos. "
+    "Aplique o lema editorial: ajudar o leitor a compreender como os acontecimentos tecnológicos se conectam. "
     "sem briefing ou evidências suficientes, a redação fica pendente de desenvolvimento. "
     "Responda SOMENTE JSON com titulo_seo, meta_description, slug, tags, "
     "texto_markdown e, quando possível, referencias_traducao."
@@ -154,8 +164,23 @@ def normalizar_fontes_complementares(contexto):
     return normalized
 
 
+TIPOS_ORIGEM = frozenset(("RSS_LIVE", "QUEUED_RSS", "EXTERNAL_PAUTA", "EXTERNAL_CONTENT"))
+PRODUTORES = frozenset(("mkt_rss", "mkt_rss_adapted", "external"))
+
+
+def normalizar_producao(producer=None, origin_kind=None, evidence=None):
+    """Origem da pauta e produtor efetivo sao campos distintos e auditaveis."""
+    producer = producer or "external"
+    origin_kind = origin_kind or "EXTERNAL_CONTENT"
+    if producer not in PRODUTORES or origin_kind not in TIPOS_ORIGEM:
+        raise ValueError("producao editorial invalida")
+    ev = evidence if isinstance(evidence, dict) else {}
+    return {"producer": producer, "kind": origin_kind, "evidence": ev}
+
+
 def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_complementar=None,
-                          voice_application=None, editorial_brief=None, editorial_review=None):
+                          voice_application=None, editorial_brief=None, editorial_review=None,
+                          producer=None, origin_kind=None, producer_evidence=None):
     """Entrega metadata+Markdown compatíveis com editorial_core_offline.
 
     Não altera o conteúdo, não promove stage e não aproveita aceite prévio.
@@ -195,7 +220,8 @@ def criar_handoff_chatgpt(resultado, *, url_fonte, fonte_nome="", contexto_compl
             "human_editor": "Reinaldo Mendes", "dna_reference": DNA_REFERENCE
         },
         "editorial_voice_application": voice_application,
-        "origin": {"system": "MKT-RSS", "source_url": url_fonte},
+        "origin": {"system": "MKT-RSS", "source_url": url_fonte,
+                   **normalizar_producao(producer, origin_kind, producer_evidence)},
     }
     if editorial_brief is not None:
         from mkt_flow_p0.editorial_substance import normalize_brief
@@ -243,6 +269,16 @@ def validar_handoff_chatgpt(handoff):
             or not isinstance(seo.get("slug"), str)
             or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", seo["slug"])):
         raise ValueError("identidade, SEO ou origem inválida")
+    # Produtor interno so e aceito com evidencia ligada ao texto desta versao.
+    producao = normalizar_producao(origin.get("producer"), origin.get("kind"),
+                                   origin.get("evidence"))
+    if producao["producer"] in ("mkt_rss", "mkt_rss_adapted"):
+        ev = producao["evidence"]
+        atual = hashlib.sha256(markdown.encode("utf-8")).hexdigest()
+        if (ev.get("generation_status") != "PASS"
+                or not isinstance(ev.get("content_sha256"), str)
+                or not hmac.compare_digest(ev["content_sha256"], atual)):
+            raise ValueError("producao interna sem evidencia verificavel de geracao")
     try:
         voice_application = normalizar_aplicacao_voz(m.get("editorial_voice_application"))
     except (TypeError, ValueError):
@@ -334,6 +370,11 @@ def atualizar_handoff_revisao(handoff, markdown_final, *, related_articles=None,
         result["metadata"].pop("editorial_substance_review", None)
         if result["metadata"].get("editorial_voice_application", {}).get("status") in {"HUMAN_ADAPTED", "ASSISTED_ADAPTED"}:
             result["metadata"]["editorial_voice_application"] = normalizar_aplicacao_voz(None)
+    origem = result["metadata"].get("origin", {})
+    if (origem.get("producer") in ("mkt_rss", "mkt_rss_adapted")
+            and isinstance(origem.get("evidence"), dict)):
+        origem["evidence"]["content_sha256"] = hashlib.sha256(
+            markdown_final.encode("utf-8")).hexdigest()
     result["markdown"] = markdown_final
     payload = {"metadata": result["metadata"], "markdown": markdown_final}
     result["version_sha256"] = hashlib.sha256(json.dumps(

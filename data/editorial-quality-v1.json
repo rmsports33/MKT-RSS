@@ -1,0 +1,327 @@
+{
+  "schema": "conexo-editorial-quality-contract/1",
+  "version": "1.1",
+  "status": "canonical_draft_for_offline_implementation",
+  "source_of_truth": "conexo-os/docs/EDITORIAL_QUALITY_CONTRACT.md",
+  "scale": {
+    "min": 0,
+    "max": 100,
+    "confirmed": false,
+    "note": "Escala proposta; aguardando confirmação do proprietário."
+  },
+  "publication_threshold": null,
+  "notes": {
+    "assisted": {
+      "producer": "mkt_rss",
+      "authorizes_publication": false,
+      "description": "Nota automática orienta a revisão; nunca substitui aceite humano."
+    },
+    "human": {
+      "producer": "owner_in_gate",
+      "authorizes_publication": false,
+      "required_for_publication": true,
+      "description": "Nota do proprietário, vinculada ao hash da versão examinada."
+    }
+  },
+  "criteria": [
+    {
+      "id": "reader_need",
+      "label": "Necessidade do leitor",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    },
+    {
+      "id": "editorial_angle",
+      "label": "Recorte editorial",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    },
+    {
+      "id": "decision_support",
+      "label": "Contribuição para decidir",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    },
+    {
+      "id": "voice",
+      "label": "Voz editorial",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    },
+    {
+      "id": "source_limits",
+      "label": "Limites das fontes",
+      "weight": 20,
+      "legacy_rubric_score": "0..4"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "multifonte",
+      "rule": "Pelo menos 2 domínios de publicação distintos e verificáveis",
+      "severity": "blocker",
+      "applies_to": [
+        "noticia",
+        "guia",
+        "analise",
+        "comparativo",
+        "review"
+      ],
+      "exception": [
+        "nota_breve"
+      ]
+    },
+    {
+      "id": "links_internos",
+      "rule": "Links internos somente quando a página existente acrescentar contexto; pertinência humana e contextual, sem quota mínima ou máxima.",
+      "severity": "advisory"
+    },
+    {
+      "id": "imagem_direitos",
+      "rule": "Direitos confirmados, crédito e licença registrados",
+      "severity": "blocker"
+    },
+    {
+      "id": "video_review",
+      "rule": "Vídeo obrigatório somente em review de produto com youtube_id válido e aprovado por humano",
+      "severity": "blocker_when_applicable",
+      "applies_to": [
+        "review"
+      ],
+      "note": "Em outros artigos, vídeo só quando houver fonte fidedigna e necessário ao entendimento."
+    },
+    {
+      "id": "voz",
+      "rule": "PROMPT_APPLIED, ASSISTED_ADAPTED ou HUMAN_ADAPTED, com hash vinculado",
+      "severity": "blocker"
+    },
+    {
+      "id": "seo",
+      "rule": "Título, descrição e canonical coerentes com a versão examinada",
+      "severity": "blocker"
+    },
+    {
+      "id": "tamanho",
+      "rule": "Contagem de palavras conforme referência do gênero é aviso, não bloqueio",
+      "severity": "warning"
+    },
+    {
+      "id": "publico_brasileiro",
+      "rule": "Relevância para o leitor brasileiro verificável em fonte; nunca inventar contexto brasileiro",
+      "severity": "blocker_when_invented",
+      "warning_when_absent": true
+    },
+    {
+      "id": "pesquisa_fallback",
+      "rule": "Sem contexto brasileiro verificável, pesquisar notícia semelhante em sites tech ou afins que agregue informação nova, marcada PENDING_HUMAN_REVIEW",
+      "severity": "warning"
+    }
+  ],
+  "reference_pattern": {
+    "source_doc": "docs/EDITORIAL_REFERENCE_CANALTECH_S26FE_20261110.md",
+    "source_article": "https://canaltech.com.br/smartphone/galaxy-s26-fe-e-bom-mas-depende-de-desconto-para-fazer-sentido/",
+    "nature": "mapa de raciocínio usado para comparação; não copiar texto nem impor template",
+    "movements": [
+      "problema do leitor",
+      "tese ou recorte",
+      "evidências relevantes",
+      "consequências práticas",
+      "alternativas e trade-offs",
+      "recomendação condicionada aos fatos"
+    ],
+    "checks": [
+      "tese explícita e condicional",
+      "perfis de leitor: para quem a escolha faz ou não sentido",
+      "cada especificação produz consequência prática",
+      "concessões não escondidas",
+      "procedência explícita da evidência: própria, terceiros ou inferência",
+      "seções orientadas por perguntas reais do leitor",
+      "veredito proporcional às evidências",
+      "preço e disponibilidade com data, mercado e variante quando aplicável"
+    ]
+  },
+  "brazilian_focus": {
+    "rule": "O público brasileiro é a referência; relevância local deve ser verificada em fontes",
+    "never_invent": true,
+    "when_absent": "sem penalidade se não houver fonte brasileira; penalidade se contexto brasileiro for inventado"
+  },
+  "fallback_research": {
+    "when": "quando não houver contexto brasileiro verificável",
+    "action": "pesquisar notícias semelhantes em sites de tecnologia ou áreas afins que tragam informação nova ao artigo",
+    "label": "PENDING_HUMAN_REVIEW",
+    "require": [
+      "url https",
+      "data da publicação",
+      "nome da fonte",
+      "afirmações ligadas ao texto"
+    ],
+    "forbidden": [
+      "inventar pauta brasileira",
+      "copiar texto de terceiros",
+      "usar fonte única como artigo"
+    ]
+  },
+  "human_checks_count": 13,
+  "human_checks": [
+    "versao",
+    "titulo",
+    "categoria",
+    "capa",
+    "licenca_imagem",
+    "fontes",
+    "alegacoes",
+    "links_internos",
+    "seo",
+    "html",
+    "revisao_substantiva",
+    "visual_390",
+    "visual_1440"
+  ],
+  "editorial_identity": {
+    "motto": "O objetivo é fazer do ConexoTech uma publicação que não apenas acompanha os acontecimentos tecnológicos, mas ajuda o leitor a compreender como eles se conectam.",
+    "principles": [
+      "explicar conexões entre acontecimentos",
+      "não publicar apenas para preencher calendário",
+      "construir conhecimento acumulado com cobertura, análise e explicadores",
+      "preservar apuração independente, autoria humana e relevância para o Brasil"
+    ]
+  },
+  "global_context": {
+    "rule": "Para temas de alcance mundial, pesquisar o panorama global antes de aprofundar o recorte brasileiro.",
+    "sequence": [
+      "escopo global e evolução do tema",
+      "diferenças entre regiões/continentes quando materialmente relevantes",
+      "causas, interesses, infraestrutura e consequências adjacentes",
+      "o que os dados permitem e não permitem concluir",
+      "implicações e contexto brasileiro sustentados por fontes"
+    ],
+    "exceptions": "Temas estritamente locais podem começar pelo contexto local; não fabricar uma seção internacional sem relevância.",
+    "adjacent_topics": "Investigar conexões causais ou consequências relevantes; quando o aprofundamento exigir outro artigo, registrar pauta futura em vez de sobrecarregar a matéria atual."
+  },
+  "source_evidence": {
+    "rule": "Rastrear afirmações materiais até a origem adequada ao tipo de afirmação. Fonte primária é relativa à afirmação; um domínio ou TLD nunca comprova por si só a veracidade.",
+    "required_claim_fields": [
+      "claim_id",
+      "claim_text",
+      "source_ids",
+      "source_role",
+      "verification_status"
+    ],
+    "required_source_fields": [
+      "source_id",
+      "url",
+      "publisher",
+      "source_type",
+      "source_role",
+      "published_at",
+      "reference_period",
+      "locator",
+      "methodology",
+      "limitations",
+      "retrieved_at"
+    ],
+    "source_roles": [
+      "primary_origin",
+      "independent_measurement",
+      "secondary_analysis",
+      "interested_party_statement",
+      "discovery_lead"
+    ],
+    "verification_statuses": [
+      "CONFIRMADA",
+      "CORROBORADA",
+      "ATRIBUIDA",
+      "PROJETADA",
+      "NAO_VERIFICADA"
+    ],
+    "rules": [
+      "Distinguir fato observado, declaração, estimativa, projeção e interpretação.",
+      "Registrar página, seção, tabela, endpoint ou identificador onde o dado aparece.",
+      "Procurar uma hipótese alternativa ou evidência contrária para a tese central.",
+      "Fontes que reproduzem o mesmo comunicado não contam como corroboração independente.",
+      "Um comunicado de parte interessada comprova que a declaração foi feita; não valida automaticamente a alegação subjacente.",
+      "Preprints devem ser identificados e não apresentados como consenso revisado por pares.",
+      "Datas de publicação, consulta e período de referência são campos distintos."
+    ]
+  },
+  "secondary_analysis": {
+    "schema": "conexo-editorial-secondary-analysis/1",
+    "name": "Análise Secundária de Valor Editorial (ASVE)",
+    "purpose": "Identificar somente melhorias materiais que ampliem a compreensão, a precisão ou a continuidade editorial, sem reescrever o artigo.",
+    "independent_context": [
+      "artigo e hash exato",
+      "dossiê de evidências",
+      "catálogo de páginas internas publicadas"
+    ],
+    "excluded_inputs": [
+      "parecer da revisão principal",
+      "propostas de reescrita de etapas anteriores"
+    ],
+    "dimensions": [
+      "contexto_global",
+      "conexoes_relevantes",
+      "contrapontos_e_limitacoes",
+      "valor_original_para_o_leitor",
+      "continuidade_editorial"
+    ],
+    "priorities": {
+      "P0": "bloqueio factual, metodológico ou editorial que exige correção antes da aprovação",
+      "P1": "melhoria material que deve receber decisão editorial antes da publicação",
+      "P2": "pauta futura ou aprofundamento separado; não bloqueia o artigo atual"
+    },
+    "finding_fields": [
+      "finding_id",
+      "priority",
+      "location",
+      "observation",
+      "reader_impact",
+      "evidence_refs",
+      "claim_refs",
+      "recommended_action",
+      "internal_page_refs",
+      "future_topic"
+    ],
+    "limits": {
+      "max_findings": 5,
+      "zero_findings_allowed": true,
+      "rewrite_article": false,
+      "cosmetic_feedback": false,
+      "invent_internal_links": false,
+      "authorize_publication": false
+    },
+    "disposition_rules": {
+      "P0": [
+        "incorporated"
+      ],
+      "P1": [
+        "incorporated",
+        "accepted_with_reason",
+        "rejected_with_reason"
+      ],
+      "P2": [
+        "registered_as_future_topic",
+        "not_pursued_with_reason"
+      ]
+    },
+    "closure": "Após decisão, verificar somente apontamentos afetados e hash da versão nova; não reiniciar análise ampla sem mudança material de escopo."
+  },
+  "article_structure": {
+    "h1": "Um H1 principal, claro e específico, alinhado à promessa real do artigo.",
+    "h2": "Seções principais que expressem movimentos do argumento, não metacomentários.",
+    "h3": "Subdivisões apenas quando necessárias e subordinadas ao H2 correspondente.",
+    "opening": "Apresentar problema, tensão, relevância e motivo para continuar a leitura.",
+    "body": "Preferir parágrafos que desenvolvam raciocínio; usar listas apenas quando melhorarem comparação, sequência ou consulta.",
+    "headings": "Títulos literais, específicos e informativos; não existe fórmula de headings que, isoladamente, garanta retenção.",
+    "flow": "Construir progressão lógica entre pergunta, evidência, explicação, consequência e conclusão."
+  },
+  "internal_linking": {
+    "rule": "Linkar apenas páginas existentes, publicadas e pertinentes; âncora deve descrever o destino e a relação contextual.",
+    "no_quota": true,
+    "bidirectional": "Quando fizer sentido editorial, relacionar página central, explicadores e notícias novas nos dois sentidos, sem automatizar links irrelevantes."
+  },
+  "history": {
+    "version_binding": "Cada execução guarda contrato/hash do contrato, modelo, hash do briefing, hash do artigo, dossiê de fontes, resultado ASVE, decisões e pendências.",
+    "quality_claim": "Não declarar homologação de qualidade sem piloto A/B cego com pelo menos três gêneros e avaliação humana independente."
+  },
+  "contract_sha256": "6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7"
+}

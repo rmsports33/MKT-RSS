@@ -1,0 +1,423 @@
+{
+  "schema": "conexo-editorial-primary-source-registry/1",
+  "version": "1.0",
+  "purpose": "Pontos de entrada para localizar documentos e dados originais. A correspondência não certifica fatos nem transforma o domínio automaticamente em fonte primária.",
+  "matching_policy": {
+    "https_only": true,
+    "exact_host_or_explicit_subdomain": true,
+    "domain_match_is_not_verification": true,
+    "source_role_is_claim_specific": true
+  },
+  "sources": [
+    {
+      "id": "br-epe",
+      "publisher": "Empresa de Pesquisa Energética (EPE)",
+      "jurisdiction": "BR",
+      "topics": [
+        "energia",
+        "planejamento",
+        "balanco energetico",
+        "demanda",
+        "projecoes"
+      ],
+      "source_type": "public_planning_and_statistics",
+      "default_role": "primary_origin",
+      "access": "public",
+      "urls": [
+        "https://www.epe.gov.br/pt/publicacoes-dados-abertos/dados-abertos",
+        "https://www.epe.gov.br/pt/publicacoes-dados-abertos/ferramentas-interativas",
+        "https://epe.gov.br/sites-pt/publicacoes-dados-abertos/publicacoes/PublicacoesArquivos/publicacao-982/topico-860/PDE%202036_Relat%C3%B3rio%20S%C3%ADntese_rev3_2026-10-08.pdf",
+        "https://www.epe.gov.br/sites-pt/publicacoes-dados-abertos/publicacoes/PublicacoesArquivos/publicacao-982/topico-851/PDE%202036_Caderno%20de%20Demanda%20de%20Energia_v1_2026-10-27.pdf"
+      ],
+      "notes": "Preferir caderno, tabela e versão originais do PDE/BEN. Incluir Relatório Síntese PDE 2036 (v1/consulta pública, out/2026) e Caderno de Demanda (v1, 27/10/2026); projeções devem manter cenário, premissas e horizonte. Conferir taxas de crescimento contra valores de início e fim, unidade e escopo antes de publicar."
+    },
+    {
+      "id": "br-ons",
+      "publisher": "Operador Nacional do Sistema Elétrico (ONS)",
+      "jurisdiction": "BR",
+      "topics": [
+        "operacao eletrica",
+        "carga",
+        "geracao",
+        "reservatorios",
+        "rede",
+        "transmissao"
+      ],
+      "source_type": "system_operator_data",
+      "default_role": "primary_origin",
+      "access": "public_open_data",
+      "urls": [
+        "https://dados.ons.org.br/"
+      ],
+      "notes": "Distinguir carga verificada, prevista e programada; registrar período, granularidade e revisão."
+    },
+    {
+      "id": "br-aneel",
+      "publisher": "Agência Nacional de Energia Elétrica (ANEEL)",
+      "jurisdiction": "BR",
+      "topics": [
+        "regulacao eletrica",
+        "geracao",
+        "transmissao",
+        "tarifas",
+        "distribuicao"
+      ],
+      "source_type": "regulatory_records_and_open_data",
+      "default_role": "primary_origin",
+      "access": "public_open_data",
+      "urls": [
+        "https://dadosabertos.aneel.gov.br/pt_BR/"
+      ],
+      "notes": "Consultar dataset, dicionário de dados, licença e data de atualização."
+    },
+    {
+      "id": "br-ccee",
+      "publisher": "Câmara de Comercialização de Energia Elétrica (CCEE)",
+      "jurisdiction": "BR",
+      "topics": [
+        "mercado de energia",
+        "geracao",
+        "consumo",
+        "precos",
+        "contratos"
+      ],
+      "source_type": "market_operator_data",
+      "default_role": "primary_origin",
+      "access": "public_dashboards_and_open_data",
+      "urls": [
+        "https://www.ccee.org.br/dados-e-analises",
+        "https://www.ccee.org.br/dados-e-analises/dados-geracao"
+      ],
+      "notes": "Dados horários podem ter defasagem de consolidação; preservar mês de referência."
+    },
+    {
+      "id": "br-anatel",
+      "publisher": "Agência Nacional de Telecomunicações (Anatel)",
+      "jurisdiction": "BR",
+      "topics": [
+        "telecomunicacoes",
+        "conectividade",
+        "banda larga",
+        "espectro",
+        "infraestrutura digital"
+      ],
+      "source_type": "regulatory_records_and_statistics",
+      "default_role": "primary_origin",
+      "access": "public",
+      "urls": [
+        "https://www.gov.br/anatel/pt-br/dados"
+      ],
+      "notes": "Distinguir dados informados por operadoras de medições ou fiscalizações próprias da Agência."
+    },
+    {
+      "id": "br-mcom",
+      "publisher": "Ministério das Comunicações (MCom)",
+      "jurisdiction": "BR",
+      "topics": [
+        "politica digital",
+        "telecomunicacoes",
+        "inclusao digital",
+        "Funttel",
+        "data centers"
+      ],
+      "source_type": "government_policy_and_open_data",
+      "default_role": "primary_origin",
+      "access": "public_open_data",
+      "urls": [
+        "https://www.gov.br/mcom/pt-br/acesso-a-informacao/dados-abertos",
+        "https://www.gov.br/mcom/pt-br/acesso-a-informacao/dados-abertos/bases-abertas"
+      ],
+      "notes": "Para números atribuídos a associações/empresas, procurar também o levantamento de origem."
+    },
+    {
+      "id": "br-ibge",
+      "publisher": "Instituto Brasileiro de Geografia e Estatística (IBGE)",
+      "jurisdiction": "BR",
+      "topics": [
+        "populacao",
+        "economia",
+        "territorio",
+        "indicadores sociais",
+        "estatisticas"
+      ],
+      "source_type": "official_statistics",
+      "default_role": "primary_origin",
+      "access": "public_api_and_downloads",
+      "urls": [
+        "https://www.ibge.gov.br/",
+        "https://servicodados.ibge.gov.br/api/docs/"
+      ],
+      "notes": "Registrar pesquisa, tabela, recorte geográfico, período e metodologia."
+    },
+    {
+      "id": "global-iea",
+      "publisher": "International Energy Agency (IEA)",
+      "jurisdiction": "International",
+      "topics": [
+        "energia",
+        "data centers",
+        "eficiencia",
+        "emissoes",
+        "projecoes"
+      ],
+      "source_type": "intergovernmental_statistics_and_analysis",
+      "default_role": "primary_origin",
+      "access": "public_pages_and_data_tools",
+      "urls": [
+        "https://www.iea.org/data-and-statistics"
+      ],
+      "notes": "Fonte original para estatísticas e cenários da IEA; distinguir observação de estimativa e cenário."
+    },
+    {
+      "id": "global-ember",
+      "publisher": "Ember",
+      "jurisdiction": "International",
+      "topics": [
+        "eletricidade",
+        "geracao",
+        "renovaveis",
+        "emissoes",
+        "demanda"
+      ],
+      "source_type": "research_dataset_and_analysis",
+      "default_role": "primary_origin",
+      "access": "public_datasets_api_key_may_be_required",
+      "urls": [
+        "https://ember-energy.org/data/",
+        "https://ember-energy.org/data/api/",
+        "https://api.ember-energy.org/v1/docs"
+      ],
+      "notes": "Consultar método, cobertura, estimativas, licença e requisitos de API; a API pode exigir cadastro/chave."
+    },
+    {
+      "id": "us-eia",
+      "publisher": "U.S. Energy Information Administration (EIA)",
+      "jurisdiction": "US/International",
+      "topics": [
+        "energia",
+        "geracao",
+        "consumo",
+        "precos",
+        "projecoes"
+      ],
+      "source_type": "government_energy_statistics",
+      "default_role": "primary_origin",
+      "access": "public_api_key",
+      "urls": [
+        "https://www.eia.gov/opendata/documentation.php"
+      ],
+      "notes": "API usa chave; confirmar limites, endpoint, unidade, frequência e revisões."
+    },
+    {
+      "id": "eu-eurostat",
+      "publisher": "Eurostat",
+      "jurisdiction": "EU",
+      "topics": [
+        "estatisticas europeias",
+        "energia",
+        "economia",
+        "industria",
+        "sociedade"
+      ],
+      "source_type": "official_regional_statistics",
+      "default_role": "primary_origin",
+      "access": "public_api",
+      "urls": [
+        "https://ec.europa.eu/eurostat/data/web-services"
+      ],
+      "notes": "API pública SDMX/JSON-stat; consultar metadados e revisões do conjunto."
+    },
+    {
+      "id": "research-crossref",
+      "publisher": "Crossref",
+      "jurisdiction": "International",
+      "topics": [
+        "publicacoes cientificas",
+        "DOI",
+        "autoria",
+        "financiamento",
+        "correcoes"
+      ],
+      "source_type": "scholarly_metadata_registry",
+      "default_role": "discovery_lead",
+      "access": "public_rest_api_no_signup",
+      "urls": [
+        "https://www.crossref.org/documentation/retrieve-metadata/rest-api/",
+        "https://api.crossref.org/"
+      ],
+      "notes": "Metadados são depositados por membros; Crossref é descoberta/registro, não substitui artigo, método ou dados originais."
+    },
+    {
+      "id": "research-openalex",
+      "publisher": "OpenAlex",
+      "jurisdiction": "International",
+      "topics": [
+        "literatura cientifica",
+        "autores",
+        "instituicoes",
+        "temas"
+      ],
+      "source_type": "scholarly_discovery_index",
+      "default_role": "discovery_lead",
+      "access": "api_access_check_current_terms",
+      "urls": [
+        "https://help.openalex.org/api/"
+      ],
+      "notes": "Usar para descoberta; validar estudo original e termos/limites vigentes da API."
+    },
+    {
+      "id": "us-nist-nvd",
+      "publisher": "National Vulnerability Database (NVD/NIST)",
+      "jurisdiction": "US/International",
+      "topics": [
+        "ciberseguranca",
+        "vulnerabilidades",
+        "CVE",
+        "software"
+      ],
+      "source_type": "government_vulnerability_database",
+      "default_role": "primary_origin",
+      "access": "public_api_key_optional_rate_limits_apply",
+      "urls": [
+        "https://nvd.nist.gov/developers/vulnerabilities"
+      ],
+      "notes": "CVE/NVD são registros; confrontar com aviso do fabricante e relatório técnico quando necessário."
+    },
+    {
+      "id": "us-sec-edgar",
+      "publisher": "U.S. Securities and Exchange Commission (SEC) EDGAR",
+      "jurisdiction": "US",
+      "topics": [
+        "demonstracoes financeiras",
+        "empresas abertas",
+        "mercado",
+        "filings"
+      ],
+      "source_type": "regulatory_corporate_filings",
+      "default_role": "primary_origin",
+      "access": "public_api_no_key",
+      "urls": [
+        "https://www.sec.gov/search-filings/edgar-application-programming-interfaces"
+      ],
+      "notes": "Dados de emissores sujeitos à SEC; não cobre toda empresa global. Identificar formulário, data e período reportado."
+    },
+    {
+      "id": "br-planalto-laws",
+      "publisher": "Presidência da República — Portal da Legislação",
+      "jurisdiction": "BR",
+      "topics": [
+        "legislacao",
+        "leis",
+        "decretos",
+        "marcos regulatorios"
+      ],
+      "source_type": "official_legal_text",
+      "default_role": "primary_origin",
+      "access": "public",
+      "urls": [
+        "https://www.planalto.gov.br/ccivil_03/",
+        "https://planalto.gov.br/ccivil_03/_ato2023-2026/2026/lei/l15504.htm"
+      ],
+      "notes": "Preferir texto legal consolidado e conferir alterações, vigência e publicação oficial. Lei 15.504/2026 institui o Redata; verificar requisitos legais e regulamentação vigente antes de afirmar condições de habilitação."
+    },
+    {
+      "id": "br-dou",
+      "publisher": "Imprensa Nacional — Diário Oficial da União",
+      "jurisdiction": "BR",
+      "topics": [
+        "atos oficiais",
+        "portarias",
+        "resolucoes",
+        "nomeacoes",
+        "regulacao"
+      ],
+      "source_type": "official_gazette",
+      "default_role": "primary_origin",
+      "access": "public",
+      "urls": [
+        "https://www.in.gov.br/consulta"
+      ],
+      "notes": "Verificar edição, seção, página, data, retificações e eventual republicação."
+    },
+    {
+      "id": "br-falabr",
+      "publisher": "Controladoria-Geral da União — Fala.BR",
+      "jurisdiction": "BR",
+      "topics": [
+        "acesso a informacao",
+        "LAI",
+        "pedidos de dados publicos",
+        "apuração"
+      ],
+      "source_type": "public_information_request_channel",
+      "default_role": "discovery_lead",
+      "access": "public_free_registration",
+      "urls": [
+        "https://falabr.cgu.gov.br/web/home"
+      ],
+      "notes": "Canal para solicitar documentos e dados sob a LAI; o canal não é fonte factual em si. Preservar protocolo, pedido, resposta, anexos e eventuais restrições."
+    },
+    {
+      "id": "global-itu",
+      "publisher": "International Telecommunication Union (ITU)",
+      "jurisdiction": "International",
+      "topics": [
+        "conectividade",
+        "telecomunicacoes",
+        "economia digital",
+        "infraestrutura ICT",
+        "ciberseguranca"
+      ],
+      "source_type": "intergovernmental_ict_statistics",
+      "default_role": "primary_origin",
+      "access": "public_datahub",
+      "urls": [
+        "https://datahub.itu.int/",
+        "https://www.itu.int/en/mediacentre/backgrounders/Pages/data-statistics.aspx"
+      ],
+      "notes": "A ITU coleta/valida dados enviados por governos, institutos estatísticos e reguladores e também produz estimativas. Para uma afirmação nacional específica, seguir até o produtor nacional quando possível."
+    },
+    {
+      "id": "global-world-bank",
+      "publisher": "World Bank — World Development Indicators",
+      "jurisdiction": "International",
+      "topics": [
+        "desenvolvimento",
+        "energia",
+        "economia",
+        "infraestrutura",
+        "populacao",
+        "indicadores globais"
+      ],
+      "source_type": "international_development_dataset",
+      "default_role": "primary_origin",
+      "access": "public_api",
+      "urls": [
+        "https://data.worldbank.org/",
+        "https://datahelpdesk.worldbank.org/knowledgebase/articles/1886701-sdmx-api-queries"
+      ],
+      "notes": "O WDI compila indicadores de fontes internacionais e oficiais reconhecidas, com estimativas e revisões possíveis. Registrar a fonte de origem e metadados de cada indicador; não tratar toda série como medição própria do Banco Mundial."
+    },
+    {
+      "id": "global-oecd",
+      "publisher": "Organisation for Economic Co-operation and Development (OECD)",
+      "jurisdiction": "International",
+      "topics": [
+        "economia",
+        "industria",
+        "inovacao",
+        "tecnologia",
+        "energia",
+        "politicas publicas"
+      ],
+      "source_type": "international_statistics_and_sdmx",
+      "default_role": "primary_origin",
+      "access": "public_api_free_subject_to_terms_and_rate_limits",
+      "urls": [
+        "https://www.oecd.org/en/data/",
+        "https://www.oecd.org/en/data/insights/data-explainers/2024/09/api.html"
+      ],
+      "notes": "API SDMX gratuita sujeita a termos e rate limits; verificar fonte nacional, definição, unidade, população, metodologia e revisões de cada indicador."
+    }
+  ]
+}

@@ -1,0 +1,159 @@
+# Registro de fechamento — 28/11/2026
+
+Registro atualizado após auditoria cruzada dos quatro PRs e execução técnica local integrada. Nenhuma operação de produção, nenhum merge, deploy, ativação ou provisionamento.
+
+## Referências atuais
+
+| PR | SHA atual verificado | Estado |
+|---|---|---|
+| Gate V1 #91 — `rmsports33/-site-conexotech` | `1510a80093be244c51af906839897a9b9270f8e6` (código validado em `3796bcf`) | aberto, draft, não merged |
+| MKT-RSS #142 — `rmsports33/MKT-RSS` | `2761f4ecf6416cd62c5f281087971723efbe1714` (head funcional; o commit que contém este registro atualiza apenas documentação) | aberto, draft, não merged |
+| Bot Redator #6 — `rmsports33/bot-redator-artigo` | `f514e5db653156793bb1fc6c44790c4399d15d45` (SHA validado em Linux: `418be35`) | aberto, draft, não merged |
+| Conexo OS #86 — `rmsports33/conexo-os` | `c22f1dd8b2e9dc8d5065261928a8f61ecf51ed3c` | aberto, draft, não merged |
+
+O SHA `31a511e0ab4d5e00c2db3912a0f6a5edada33485` continua como referência histórica dos sete documentos inicialmente verificados. O SHA `9c08142b6b971d53c000f67c049def2d16fb4cbd` foi o head anterior à correção da especificação; `b8282af` contém a especificação reconciliada. Esta versão do registro acompanha o head do branch, portanto o SHA exato do head deve ser lido diretamente no PR antes de qualquer execução.
+
+## Validações já comprovadas
+
+### Gate V1 — SHA exato `2b7180f`
+
+Checkout limpo. Ambiente: Windows, Python 3.14.7, pytest 9.1.1 — não é Linux.
+
+```
+test_conjunto_versionado_reproduz_artefato_instalado PASSED
+test_excecoes_estao_declaradas                        PASSED
+test_substituicao_de_credenciais_e_fail_closed        PASSED
+test_identidade_do_executor_autorizado                 PASSED
+test_rejeicao_de_demais_cenarios                       PASSED
+test_uuid_autorizado_ausente_ou_vazio                  PASSED
+test_funcao_de_app_password_indisponivel               PASSED
+7 passed
+```
+
+A ressalva anterior dos dois testes de drift está resolvida. O PASS é local e não cobre produção nem Linux.
+
+### Execução técnica integrada — SHAs atuais
+
+- **Gate V1 #91, SHA `491061f`:** checkout limpo clonado do GitHub; 8 testes aprovados em `tests/test_gate_v1_drift.py`, incluindo o novo teste de identidade do revisor; PHP lint 0 falhas. Inventário: 17 `MATCH`, 2 divergências documentadas, 1 credencial, 1 duplicata, 0 inexplicadas. Correção: `cxeg_review_identity_valid()` passou a rejeitar autor, proprietário em modo independente, conta de serviço configurada e identidade canônica do broker.
+- **MKT-RSS #142, SHA funcional `4e94f09`:** 39 testes focados aprovados (20 subtests) em `test_wp_quality_executor.py`, `test_editorial_quality_score.py` e `test_editorial_golden_set.py`. A nota 0–100 passou a ser anexada ao parecer como diagnóstico, com `fingerprint` e `content_sha256` do texto lido; não substitui o Revisor Único nem autoriza publicação.
+- **MKT-RSS, suíte completa no SHA `acecf02`:** 1540 aprovados, 1 ignorado, 72 subtests; 8 falhas por `PermissionError [WinError 32]` ao limpar diretórios temporários no Windows. Não é falha funcional comprovada, mas impede declarar suíte verde neste ambiente. Não foi repetida após `4e94f09`.
+- **Conexo OS #86, SHA `c22f1dd`:** 154 aprovados, 1 ignorado, 69 subtests. Nenhuma credencial real usada.
+- **Bot Redator #6, SHA `418be35`:** validado em Linux no container `python:3.11-slim`: 16 testes focados e 143 completos aprovados. Evidência no PR #6, commit `f514e5d`.
+
+### Contrato editorial e catálogo
+
+Comparação direta dos arquivos nos heads de Conexo OS #86 e MKT-RSS #142:
+- JSON do contrato: conteúdo idêntico após excluir apenas o campo declarativo `contract_sha256`.
+- Catálogo de fontes primárias: conteúdo idêntico.
+- Hash canônico declarado: `6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7`.
+
+Isso comprova sincronização dos artefatos versionados, não execução integrada dos consumidores.
+
+## Auditoria cruzada — bloqueios técnicos encontrados
+
+1. **Três artefatos do Gate não podem ser confundidos.** O parecer de qualidade (`/quality/record`), a aprovação humana (`/review/approve`) e o envelope HMAC de escrita (`/editorial/write`) têm contratos distintos. O executor `wp_quality_executor.py` registra o parecer e não gera envelope — separação intencional. O envelope existe no caminho de publicação (`editorial_transport.py` → `core.prepare_write`), com chave externa e núcleo verificado por hash; 10 testes focados aprovados em `test_editorial_transport.py` e `test_publish_owner_approved.py` comprovam o formato e o readback com núcleo sintético. Não foi criado segundo adaptador HMAC; falta apenas prova com chave e WordPress reais, o que depende de produção.
+2. **ASVE ainda não chega ao consumidor Gate.** O sidecar `editorial_gate_traceability.py` é produzido e validado no MKT-RSS, mas os testes e o contrato registram que `cxeg-package:v1` não o consome. A trilha ASVE está preparada, não integrada ao Gate.
+3. **Scoring 0–100 integrado como diagnóstico, mas ainda não consumido pelo Gate.** `wp_quality_executor.py` passou a anexar o recibo ao parecer, vinculado ao fingerprint e ao hash exatos. O Gate ainda não consome esse campo; escala e limiar continuam sem confirmação editorial.
+4. **Escrita condicional existe parcialmente no Gate V1.** O código do PR #91 tem lock por post, `expected_sha256`, nonce/idempotência e readback. Isso protege chamadas pela rota Gate, mas ainda exige prova contra escrita REST direta concorrente e falha parcial entre `wp_insert_post` e atualização de metadado. Não criar uma segunda função antes de testar e fechar essas lacunas.
+5. **O pacote ASVE precisa de extensão compatível e fail-closed**, sem criar outro ledger e sem transformar ASVE em aprovação humana ou autorização de publicação.\n6. **Identidade humana do revisor reforçada e testada.** `cxeg_review_identity_valid()` agora rejeita autor, proprietário em modo independente, conta de serviço configurada e identidade canônica do broker; o modo owner continua separado. Nove casos sintéticos aprovados no SHA `491061f`. Ainda depende de confirmação humana das identidades autorizadas reais.
+
+A especificação `docs/PRODUCTION_INTEGRATION_SPEC_20261128.md` foi reconciliada no commit `b8282af70b3887cad54d006089bcc7e226124220` e recebeu correção adicional no commit `7301914b3e11ef4b331fdb527d778ea26e5eb5cb`: o executor WordPress já anexa a nota diagnóstica 0–100 ao parecer, vinculada ao fingerprint e ao hash do texto; o Gate ainda não a consome semanticamente. A descrição do PR #142 também foi atualizada para não sugerir trabalho com Gate V2.
+
+## Evidências ainda não executadas nos SHAs atuais
+
+- MKT-RSS #142: a suíte completa foi executada em `acecf02`, não no head que contém este registro; 8 falhas de limpeza de arquivo temporário no Windows permanecem sem correção. Não repetir sem necessidade.
+- Bot Redator #6: suíte completa executada em Linux, no SHA `418be35`; 143 aprovados, 0 falhas. Nenhuma credencial real usada.
+- Gate V1 #91: oito testes aprovados em checkout limpo no SHA `491061f`; o status espelho de Actions falha por cobrança e não foi usado como executor.
+- Integração ponta a ponta com WordPress efêmero, envelope HMAC e recibo ASVE consumido pelo Gate: **não executada**. Não há plugin ativo descartável nem chave de teste provisionada; criar isso exigiria produção ou nova infraestrutura.
+
+Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções acima foram locais, com dados sintéticos e sem credenciais reais.
+
+## Estado de conclusão
+
+| Frente | Estado |
+|---|---|
+| Gate V1 — oito testes locais no SHA `491061f` | Concluído |
+| Sincronização contrato/catálogo Conexo OS ↔ MKT-RSS | Concluído |
+| Sete documentos originais em `31a511e` | Concluído |
+| Especificação reconciliada no PR #142 | Concluído |
+| Homologação dos quatro PRs | Concluído — #91 e #142 com ressalvas; #86 e #6 homologados como código; nenhum merge autorizado |
+| ASVE integrada ao contrato consumido pelo Gate | Pendente |
+| Scoring 0–100 como diagnóstico no executor WordPress | Concluído |
+| Consumo do scoring e da ASVE pelo Gate | Pendente |
+| Testes completos do MKT-RSS no SHA atual | Parcial — 8 falhas de ambiente no Windows |
+| Testes do Bot Redator no SHA atual e em Linux | Concluído — 16 focados e 143 completos aprovados em `418be35`, container Linux/Python 3.11; evidência no PR #6, commit `f514e5d` |
+| Testes de runtime do Conexo OS #86 | Concluído |
+| Identidade humana do revisor separada da conta de serviço | Concluído |
+| Teste integrado ponta a ponta com WordPress efêmero | Parcial — recibo assinado e escrita/readback provados; fluxo completo com ASVE/nucléo externo não executado |
+| Readback autenticado real | Pendente |
+| Envelope HMAC de escrita válido para versão atual | Concluído em WordPress efêmero — STATUS 200 com assinatura, `expected_sha256` e readback válidos (PR #91, `1510a80`); autenticação HTTP por Application Password e núcleo externo permanecem não provados |
+| Escrita condicional contra bypass REST e falha parcial | Pendente |
+| Provisionamento do Gate (opções, UUID, chaves) | NOT APPLICABLE — rotas de remediação permanecem desativadas e não há autorização de ativação |
+| Parecer humano do artigo #9925 e piloto A/B cego | Pendente |
+| Higienização arquitetural com provas de equivalência | Parcial |
+| Produção, merge, deploy, ativação e publicação | Não executados |
+
+## Checklist de conclusão integral — 4/9
+
+Itens com evidência verificável:
+
+1. **PRs #91, #142, #6 e #86 homologados por decisão explícita** — concluído.
+2. **Bot Redator validado em Linux** — concluído no SHA `418be35`.
+3. **Provisionamento do Gate** — `NOT APPLICABLE`: as rotas de remediação permanecem desativadas e não há autorização de ativação.
+4. **Recibo assinado do Gate V1** — concluído em WordPress efêmero no SHA `3796bcf`, com STATUS 200, assinatura, hash de versão e readback.
+
+Pendentes: rotação das credenciais; parecer humano do #9925; piloto A/B cego; equivalência arquitetural autorizada; escrita atômica validada em WordPress real.
+
+## Próximas execuções técnicas sem intervenção do proprietário
+
+1. No OpenCode, checkout exato dos heads atuais e execução das suítes focadas descritas no runbook, sem Actions/CircleCI e sem credenciais.
+2. Corrigir as 8 falhas de limpeza de arquivo temporário no Windows apenas se houver impacto funcional; não são falhas de contrato.
+3. Implementar a extensão do pacote Gate V1 para consumir recibo ASVE e decisões versionadas, com testes de compatibilidade e rejeição fail-closed.
+4. Fazer o Gate consumir o recibo de scoring diagnóstico sem transformar nota em aprovação; não definir limiar editorial sem decisão do proprietário.
+5. Fechar as provas de concorrência e falha parcial do writer existente, incluindo tentativa de escrita REST fora da rota Gate.
+6. Executar cenário integrado descartável: pauta → produção → revisão → ASVE → recibos → Gate → rascunho → readback, sem WordPress real.
+7. Portabilidade Linux do Bot Redator validada em contêiner local; nenhuma infraestrutura paga foi criada.
+
+Nenhuma mudança de status será atribuída sem execução e evidência no SHA correspondente. Gate V2 permanece descontinuado.
+
+## Execução estrutural final — 28/11/2026
+
+### Gate V1 — SHA `3a74c28`
+
+- `conexo-editorial-gate-core.php`: consumidor retrocompatível de sidecar ASVE no parecer privado; valida schema, hash canônico, `contract_sha256`, `run_id`, `article_sha256` e as flags de não autorização. Sidecars ausentes continuam válidos. Nenhum campo foi adicionado ao manifesto `cxeg-package:v1` e nenhum contrato v2 foi criado.
+- Novos testes PHP isolados: `test_gate_v1_asve_sidecar.php` e `test_gate_v1_writer_isolado.php`. O writer cobre lock ocupado, nonce repetido, hash divergente, falha em `wp_insert_post`, falha em `update_post_meta`, estado parcial, readback divergente, limpeza de lock após sucesso e exceção.
+- Verificação: 10 testes aprovados em checkout limpo clonado do GitHub; PHP lint 0 falhas. Inventário mantém 17 `MATCH`, 2 divergências documentadas, 1 credencial e 1 duplicata.
+
+### MKT-RSS — SHA funcional `fceb66e`
+
+- `editorial_gate_traceability.py`: `run_id` opcional, validado e vinculado ao digest do sidecar; ausência permanece retrocompatível.
+- `wp_quality_executor.py`: passa `run_id` do evidence ou o fingerprint do parecer.
+- `test_integrated_closure_20261128.py`: única matriz integrada, com produtor → revisão → scoring → ASVE → sidecar → validação → consumidor Gate → writer sintético → readback, incluindo contraprova de sidecar adulterado.
+- Verificação focada: 43 aprovados, 1 ignorado, 20 subtests. Suíte completa no SHA final: 1544 aprovados, 1 ignorado, 72 subtests e as mesmas 8 falhas de limpeza de arquivo temporário no Windows.
+
+### Limitações que permanecem
+
+- Testes de writer usam stubs: não provam atomicidade de banco nem proteção contra bypass REST real.
+- Consumo do sidecar ocorre pelo parecer privado, dentro de `cxeg-package:v1`; nenhum campo novo foi inserido no manifesto estrito.
+- Há validação Linux do Bot Redator, mas não há WordPress efêmero, chave HMAC real nem aprovação humana. Produção, merge, deploy e ativação não foram executados.
+
+## Auditoria pós-implementação — 28/11/2026
+
+Matriz de conformidade sobre os SHAs auditados. **Não COMPROVADO** significa ausência de ambiente/prova, não falha de código.
+
+| Requisito | Estado | Evidência |
+|---|---|---|
+| Sidecar produzido no MKT-RSS e anexado ao parecer privado | PASS | `wp_quality_executor.review_once` → `report["gate_traceability_sidecar"]` |
+| Parecer chega ao consumidor Gate V1 | PASS | `submit_quality` envia `report`; `cxeg_quality_record` lê e persiste `asve_sidecar` |
+| Integridade verificada pelo Gate | PASS | `cxeg_asve_sidecar_valid()` recalcula `sidecar_sha256` com o mesmo JSON canônico |
+| Vínculo `run_id`, artigo, conteúdo e contrato | PASS | `run_id` obrigatório quando há sidecar; `article_sha256` vs snapshot; `contract_sha256` fixo |
+| Ausência permitida apenas em fluxo legado | PASS | sem `asve_required`, sidecar ausente permanece válido |
+| Fluxo obrigatório bloqueia sem sidecar | PASS (corrigido) | `asve_required=true` no produtor; Gate rejeita e `cxeg_quality_valid` retorna false |
+| Sidecar sem `run_id` em fluxo obrigatório | PASS | Gate exige `run_id` sempre que sidecar está presente |
+| Versão desconhecida/adulteração/hash divergente/evidência incompleta | PASS (parcial) | testes cobrem schema, hash, contrato, artigo, run_id e flags; validação de dossiê incompleto é feita no produtor |
+| Flags impedem ASVE como aprovação/publicação | PASS | `publication_authorized`, `human_approval_verified_by_sidecar` e `factuality_verified_by_sidecar` precisam ser `false` |
+| Concorrência REST real e atomicidade transacional | NÃO COMPROVADO | testes usam stubs; sem WordPress efêmero |
+| Proteção contra escrita por rotas externas ao Gate | NÃO COMPROVADO | fora do escopo do writer versionado |
+| Oito falhas da suíte Windows | PASS (classificadas) | 4 por expectativa de permissão POSIX (0o600/ grupos de modo), 1 por decoding `charmap`, 3 por `WinError 32` na limpeza de temporários; nenhuma é falha de assert funcional |
+
+Correção aplicada na auditoria: fluxos que declaram `asve_required` passaram a ser bloqueados pelo Gate quando o sidecar está ausente. Nenhum manifesto foi alterado e nenhum contrato v2 foi criado.

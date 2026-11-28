@@ -98,6 +98,12 @@ def montar_prompt(titulo_original: str, texto_original: str, fonte_nome: str = "
         raise ValueError("variante editorial inválida")
     briefing_instruction = writing_instruction(editorial_brief, voice_variant=voice_variant) if editorial_brief is not None else (
         "\nBriefing específico ausente: gerar apenas candidato pendente, nunca declarar qualidade aprovada.\n")
+    if editorial_brief is not None:
+        try:
+            from mkt_flow_p0.editorial_golden_set import bloco_prompt
+            briefing_instruction += bloco_prompt(editorial_brief.get("genre", ""))
+        except Exception:
+            pass  # padrão ausente não altera o contrato nem bloqueia a geração
     if len(texto_original) > 60000:
         raise ValueError("insumo excede 60000 caracteres; dividir apuração sem truncar silenciosamente")
     if editorial_feedback is not None:
@@ -181,6 +187,9 @@ def reescrever_materia(
     editorial_brief: dict = None,
     editorial_feedback=None,
     genre: str = None,
+    *,
+    origin_kind: str = "RSS_LIVE",
+    producer: str = "mkt_rss",
 ) -> dict:
     """
     Reescreve 1 matéria. Gate de entrada: texto <100 palavras = {"erro"}
@@ -302,6 +311,13 @@ def reescrever_materia(
                     "method": "mkt_flow_p0.rewriter.system_prompt",
                     "dna_prompt_sha256": DNA_PROMPT_SHA256,
                     "prompt_sha256": prompt_sha256,
+                },
+                producer=producer, origin_kind=origin_kind,
+                producer_evidence={
+                    "generation_status": "PASS",
+                    "modelo": modelo,
+                    "prompt_sha256": prompt_sha256,
+                    "content_sha256": hashlib.sha256(texto.encode("utf-8")).hexdigest(),
                 })
         except ValueError as exc:
             # Um erro no intercâmbio consultivo não pode apagar artigo gerado.

@@ -83,11 +83,15 @@ class TestFilaPautas(unittest.TestCase):
         banco = self.db
 
         def fake_turso(sql, args=()):
-            with sqlite3.connect(banco) as con:
-                cur = con.execute(sql, args)
-                if cur.description:
-                    return {"rows": [list(row) for row in cur.fetchall()], "affected": 0}
-                return {"rows": [], "affected": cur.rowcount}
+            con = sqlite3.connect(banco)
+            try:
+                with con:
+                    cur = con.execute(sql, args)
+                    if cur.description:
+                        return {"rows": [list(row) for row in cur.fetchall()], "affected": 0}
+                    return {"rows": [], "affected": cur.rowcount}
+            finally:
+                con.close()
 
         with patch.object(fila.cloud_db, "turso_enabled", return_value=True), \
              patch.object(fila.cloud_db, "turso_execute", side_effect=fake_turso):
@@ -145,6 +149,58 @@ class TestFilaPautas(unittest.TestCase):
             with self.assertRaises(ValueError):
                 fila.registrar(self.a, self.db)
         self.assertTrue(fila.registrar(self.a, self.db)["novo"])
+    def test_asve_p2_topic_uses_existing_queue_store_idempotently(self):
+        topic = {
+            "title": "Confiabilidade das redes para data centers",
+            "rationale": "A expansão de grandes cargas depende de transmissão e estabilidade.",
+            "research_question": "Quais reforços de rede e regras de conexão são necessários?"
+        }
+        digest = "a" * 64
+        first = fila.registrar_topico_asve(
+            topic, origin_article_id="post-9925", origin_article_sha256=digest,
+            finding_id="asve-f2", db_path=self.db)
+        second = fila.registrar_topico_asve(
+            topic, origin_article_id="post-9925", origin_article_sha256=digest,
+            finding_id="asve-f2", db_path=self.db)
+        self.assertTrue(first["novo"])
+        self.assertFalse(second["novo"])
+        self.assertEqual(first["id"], second["id"])
+        self.assertEqual(first["estado"], "DESCOBERTA")
+        self.assertFalse(first["wordpress_written"])
+        self.assertFalse(first["publication_authorized"])
+        listed = fila.listar_topicos_asve(db_path=self.db)
+        self.assertEqual(len(listed), 1)
+        self.assertEqual(listed[0]["origin_article_sha256"], digest)
+        self.assertEqual(listed[0]["research_question"], topic["research_question"])
+
+    def test_asve_p2_deduplicates_only_same_article_version_and_finding(self):
+        topic = {
+            "title": "Infraestrutura elétrica",
+            "rationale": "Tema adjacente precisa de apuração.",
+            "research_question": "Como a transmissão acompanha a demanda?"
+        }
+        first = fila.registrar_topico_asve(
+            topic, origin_article_id="post-9925", origin_article_sha256="a"*64,
+            finding_id="f1", db_path=self.db)
+        second = fila.registrar_topico_asve(
+            topic, origin_article_id="post-9925", origin_article_sha256="b"*64,
+            finding_id="f1", db_path=self.db)
+        self.assertNotEqual(first["id"], second["id"])
+        self.assertEqual(len(fila.listar_topicos_asve(db_path=self.db)), 2)
+
+    def test_invalid_asve_future_topic_fails_closed(self):
+        with self.assertRaises(ValueError):
+            fila.registrar_topico_asve(
+                {"title": "Topic", "rationale": "reason", "research_question": ""},
+                origin_article_id="post-9925", origin_article_sha256="a"*64,
+                finding_id="f1", db_path=self.db)
+        with self.assertRaises(ValueError):
+            fila.registrar_topico_asve(
+                {"title": "Topic", "rationale": "reason", "research_question": "How?"},
+                origin_article_id="post-9925", origin_article_sha256="wrong",
+                finding_id="f1", db_path=self.db)
+
+
 
 if __name__ == "__main__":
     unittest.main()

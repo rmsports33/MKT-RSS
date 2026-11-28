@@ -146,14 +146,10 @@ def avaliar_artigo(post, *, media=None, fontes=None, evidencias=None,
     else:
         checks["alegacoes"] = _check("NAO_VERIFICADO", "texto_original_para_confronto_ausente")
     internos = [link for link in links if urlparse(link).hostname in (HOST, "www." + HOST)]
-    # Quantidade nao basta: pertinencia precisa de revisao substantiva.
-    # The DNA permits UP TO 3 genuinely related links, not a quota of 3.
-    # Relevance and deliberate absence require version-bound human evidence.
-    if len(set(internos)) > 3:
-        checks["links_internos"] = _check("REPROVADO", "mais_de_tres_links_internos",
-                                          sorted(set(internos)))
-    else:
-        checks["links_internos"] = _evidence(evidencias, "links_internos", fingerprint)
+    # Quantidade nao comprova nem reprova relevancia. Nao ha quota minima
+    # nem limite numerico; a pertinencia e a decisao deliberada de nao linkar
+    # dependem de evidencia humana vinculada ao fingerprint desta versao.
+    checks["links_internos"] = _evidence(evidencias, "links_internos", fingerprint)
     slug = _str(post.get("slug"))
     checks["seo"] = _check(
         "VERIFICADO" if 20 <= len(slug) <= 100 and len(excerpt) >= 80 and
@@ -192,3 +188,96 @@ def verificar_versao(parecer, post_atual):
                 parecer.get("schema") == VERSAO and
                 parecer.get("post_id") == _post(post_atual).get("id") and
                 parecer.get("fingerprint") == _sha(_post(post_atual)))
+
+
+def incorporar_analise_secundaria(parecer, artigo_markdown, recibo_asve, decisoes=None):
+    """Integra ASVE ao Revisor Único sem criar outro revisor ou liberar publicação.
+
+    P0 sempre exige correção e nova verificação da versão resultante. P1 exige
+    decisão vinculada à versão; P2 é pauta futura e não bloqueia. O parecer
+    principal é preservado em `veredito_revisao_principal`.
+    """
+    from mkt_flow_p0.editorial_secondary_analysis import (
+        attach_to_unique_reviewer, validate_dispositions,
+    )
+
+    combinado = attach_to_unique_reviewer(parecer, recibo_asve, artigo_markdown)
+    findings = recibo_asve.get("findings", [])
+    p0 = [f["finding_id"] for f in findings if f.get("priority") == "P0"]
+    p1 = [f["finding_id"] for f in findings if f.get("priority") == "P1"]
+    p2 = [f["finding_id"] for f in findings if f.get("priority") == "P2"]
+    decision_status = None
+    if decisoes is not None:
+        decision_status = validate_dispositions(recibo_asve, decisoes).get("status")
+
+    combinado["veredito_revisao_principal"] = parecer.get("veredito")
+    combinado["asve_p0_blockers"] = sorted(p0)
+    combinado["asve_p1_decisions_required"] = sorted(p1)
+    combinado["asve_p2_future_topics"] = sorted(p2)
+    combinado["asve_decision_status"] = decision_status
+    if p0 or (p1 and decision_status != "CLOSED"):
+        combinado["veredito"] = "REVISAO_NECESSARIA"
+        combinado["secondary_analysis_status"] = "EDITORIAL_DECISION_REQUIRED"
+        combinado["pendencias"] = list(combinado.get("pendencias", [])) + [
+            "asve_p0_requires_correction_and_version_recheck" if p0
+            else "asve_p1_requires_version_bound_editorial_decision"
+        ]
+    else:
+        combinado["secondary_analysis_status"] = (
+            "NO_MATERIAL_FINDINGS" if not findings else
+            "P2_BACKLOG_ONLY" if not (p0 or p1) else
+            "DECISIONS_RECORDED"
+        )
+    combinado["publication_authorized"] = False
+    combinado["publicacao_autorizada"] = False
+    return combinado
+
+
+def executar_revisao_com_asve(parecer_principal, artigo, dossie_evidencias,
+                              paginas_publicadas, *, analyzer=None, decisoes=None,
+                              origin_article_id=None, persist_future_topics=False,
+                              topic_db_path=None, recibo_existente=None):
+    """Orchestrate the existing primary review plus one independent ASVE pass.
+
+    When analyzer is omitted, the opt-in adapter uses the current MKT-RSS
+    provider and shared budget. This function is not called implicitly by
+    article import or WordPress; the authorized orchestrator must invoke it.
+    """
+    from mkt_flow_p0.editorial_secondary_analysis import (
+        analisar_com_provedor_editorial_existente,
+        build_analysis_request, run_secondary_analysis, validate_analysis_result,
+    )
+    if recibo_existente is not None:
+        request = build_analysis_request(artigo, dossie_evidencias, paginas_publicadas)
+        recibo = validate_analysis_result(recibo_existente, request)
+    else:
+        callback = analyzer or analisar_com_provedor_editorial_existente
+        recibo = run_secondary_analysis(
+            artigo, dossie_evidencias, paginas_publicadas, callback
+        )
+    combinado = incorporar_analise_secundaria(
+        parecer_principal, artigo, recibo, decisoes
+    )
+    registered = []
+    if persist_future_topics:
+        if not isinstance(origin_article_id, str) or not origin_article_id.strip():
+            raise ValueError("ASVE topic registration requires an origin article ID")
+        from mkt_flow_p0.fila_pautas import registrar_topico_asve
+        for finding in recibo.get("findings", []):
+            if finding.get("priority") == "P2":
+                registered.append(registrar_topico_asve(
+                    finding["future_topic"],
+                    origin_article_id=origin_article_id,
+                    origin_article_sha256=recibo["article_sha256"],
+                    finding_id=finding["finding_id"],
+                    db_path=topic_db_path,
+                ))
+    return {
+        "review": combinado,
+        "secondary_analysis": recibo,
+        "future_topics_registered": registered,
+        "publication_authorized": False,
+        "existing_provider_invoked": recibo_existente is None and analyzer is None,
+        "analyzer_injected_by_orchestrator": analyzer is not None,
+        "cached_receipt_used": recibo_existente is not None,
+    }

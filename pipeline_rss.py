@@ -9,6 +9,7 @@ Uso: python pipeline_rss.py [--limit 2] [--fonte tecnoblog] [--dry-run]
 Env (.env) carregado dentro do main() — nunca no import.
 """
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -114,7 +115,8 @@ def processar_pacote_editorial(package, *, core_root, actor_id, intent="stage", 
 def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict = None, capturas_aprovadas: dict = None,
                    pacote_editorial=None, core_root=None, actor_id=None, contexto_complementar=None, handoff_only=False,
                    featured_media_id=None, media_rights_confirmed=False,
-                   image_batch_used=None, image_batch_media_used=None) -> dict:
+                   image_batch_used=None, image_batch_media_used=None,
+                   origin_kind: str = "RSS_LIVE") -> dict:
     """Processa RSS: rascunho WP, handoff offline ou bloqueio sem publicar."""
     if (featured_media_id is not None and image_batch_media_used is not None
             and featured_media_id in image_batch_media_used):
@@ -229,7 +231,8 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
                                 keywords=kws, evidencias_aprovadas=evidencias_aprovadas,
                                 contexto_complementar=contexto_pesquisa,
                                 editorial_brief=brief, editorial_feedback=feedback,
-                                genre=item.get("genero", "noticia"))
+                                genre=item.get("genero", "noticia"),
+                                origin_kind=origin_kind)
         if "erro" in rw:
             from mkt_flow_p0.editorial_trace import make_trace
             trace = make_trace(url_fonte, "", error=rw["erro"])
@@ -405,14 +408,24 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
         except ValueError:
             return {"acao": "falha", "motivo": "handoff_editorial_invalido",
                     "url": url_fonte, "escreveu": False}
-        from mkt_flow_p0.wp_draft_staging import stage_rss_draft
-        staged = stage_rss_draft(
-            title=rw["titulo_seo"], content=html, source_url=url_fonte,
-            wp_url=os.environ.get("WP_URL", ""), wp_user=os.environ.get("WP_USER", ""),
-            wp_password=os.environ.get("WP_APP_PASSWORD", ""),
-            featured_media_id=featured_media_id,
-            media_rights_confirmed=media_rights_confirmed,
-        )
+        if pacote_editorial is not None and core_root and actor_id:
+            # Rascunho privado pelo transporte canônico quando o pacote existe.
+            from mkt_flow_p0.editorial_transport import publish_package
+            staged = publish_package(
+                pacote_editorial, core_root=core_root,
+                wp_url=os.environ.get("WP_URL", ""),
+                wp_user=os.environ.get("WP_USER", ""),
+                wp_password=os.environ.get("WP_APP_PASSWORD", ""),
+                actor_id=actor_id, intent="draft", timeout=15)
+        else:
+            from mkt_flow_p0.wp_draft_staging import stage_rss_draft
+            staged = stage_rss_draft(
+                title=rw["titulo_seo"], content=html, source_url=url_fonte,
+                wp_url=os.environ.get("WP_URL", ""), wp_user=os.environ.get("WP_USER", ""),
+                wp_password=os.environ.get("WP_APP_PASSWORD", ""),
+                featured_media_id=featured_media_id,
+                media_rights_confirmed=media_rights_confirmed,
+            )
         # Vínculo auxiliar somente após readback positivo pelo adaptador WP.
         # Não tenta criar pauta nem permite publicação. Falha é auditável,
         # sem alterar recibo WordPress já confirmado.
@@ -428,7 +441,21 @@ def processar_item(item: dict, dry_run: bool = False, evidencias_aprovadas: dict
             url_fonte, texto_final, generated=rw, readiness=qualidade_editorial,
             post_id=staged.get("post_id") if type(staged.get("post_id")) is int else None,
             wp_readback=confirmar_readback_trilha(staged))
+        origem = handoff.get("metadata", {}).get("origin", {})
         return {**staged,
+                "editorial_provenance": {
+                    "origin_kind": origem.get("kind"),
+                    "producer": origem.get("producer"),
+                    "version_sha256": handoff.get("version_sha256"),
+                    "content_sha256": hashlib.sha256(html.encode("utf-8")).hexdigest(),
+                "run_id": staged_trace.get("run_id"),
+                "eventos": [
+                    {"stage": e.get("stage"), "module_id": e.get("module_id"),
+                     "status": e.get("status"),
+                     "evidence_ref": e.get("evidence_ref")}
+                    for e in staged_trace.get("events", [])
+                ],
+                },
                 "product_link": staged_link,
                 "editorial_trace": staged_trace,
                 "qualidade_editorial": qualidade_editorial,
@@ -614,6 +641,7 @@ def main():
     ap.add_argument("--publication-reference", help="Referência real da ordem específica de publicar/agendar")
     ap.add_argument("--operation-nonce", help="Retoma somente consulta da operação anterior; nunca repete escrita")
     ap.add_argument("--trace-run-id", help="Execução no Turso homologada para preflight de publicação assinada")
+    ap.add_argument("--pauta-id", help="ID de rss_pautas para produção explícita")
     args = ap.parse_args()
     if args.import_article:
         if (not args.handoff_only or args.handoff_dir is None or args.fonte
@@ -727,6 +755,44 @@ def main():
         if resultado.get("falhas"):
             sys.exit(1)
         return
+
+    if args.pauta_id:
+        import re as _re
+        if not _re.fullmatch(r"[a-f0-9]{16,64}", args.pauta_id):
+            print(json.dumps({"erro": "pauta_id_invalido"}))
+            sys.exit(2)
+        from mkt_flow_p0 import fila_pautas
+        rows, _ = fila_pautas._exec(
+            "SELECT id,url,titulo,estado,fonte FROM rss_pautas WHERE id=?",
+            (args.pauta_id,))
+        if not rows:
+            print(json.dumps({"erro": "pauta_inexistente"}))
+            sys.exit(1)
+        pauta_id, url_pauta, titulo_pauta, estado_pauta, fonte_pauta = rows[0]
+        if estado_pauta not in ("DESCOBERTA", "SELECIONADA"):
+            print(json.dumps({"erro": "pauta_ja_em_processamento", "estado": estado_pauta}))
+            sys.exit(1)
+        try:
+            if estado_pauta == "DESCOBERTA":
+                fila_pautas.mudar_estado(pauta_id, "SELECIONADA", "producao_explicita")
+            fila_pautas.mudar_estado(pauta_id, "EM_PRODUCAO", "producao_explicita")
+        except (ValueError, RuntimeError, KeyError) as exc:
+            print(json.dumps({"erro": "conflito_estado_pauta", "detalhe": str(exc)}))
+            sys.exit(1)
+        item_pauta = {"link": url_pauta, "titulo": titulo_pauta,
+                      "fonte": fonte_pauta or "fila", "resumo": ""}
+        resultado = processar_item(item_pauta, dry_run=args.dry_run,
+                                   handoff_only=args.handoff_only,
+                                   origin_kind="QUEUED_RSS")
+        destino = "BLOQUEADA" if resultado.get("acao") == "falha" or resultado.get("erro") else "EM_REVISAO"
+        try:
+            fila_pautas.mudar_estado(pauta_id, destino, "producao_explicita")
+        except (ValueError, RuntimeError, KeyError):
+            destino = "TRANSICAO_PENDENTE"
+        print(json.dumps({"pauta_id": pauta_id, "estado": destino,
+                          "acao": resultado.get("acao"), "escreveu": resultado.get("escreveu", False)},
+                         ensure_ascii=False))
+        return 0
 
     from mkt_flow_p0.rss_ingestor import FEEDS_PADRAO, buscar_novidades
     alvos = {k: v for k, v in FEEDS_PADRAO.items() if not args.fonte or k == args.fonte}

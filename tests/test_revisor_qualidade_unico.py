@@ -194,12 +194,15 @@ class TestRevisorUnico(unittest.TestCase):
         self.assertEqual(report["checks"]["links_internos"]["estado"], "VERIFICADO")
         self.assertNotIn("links_internos", report["pendencias"])
 
-    def test_link_extra_violates_max_three_even_with_attestation(self):
+    def test_more_than_three_internal_links_are_not_rejected_by_count(self):
         p = artigo()
-        p["content"] += '<a href="https://conexotech.com.br/quarto-artigo/">Outro</a>'
+        p["content"] += (
+            '<a href="https://conexotech.com.br/quarto-artigo/">Outro</a>'
+            '<a href="https://conexotech.com.br/quinto-artigo/">Mais contexto</a>'
+        )
         report = avaliar_artigo(p, media=media(), fontes=fontes(), evidencias=evidencias(p))
-        self.assertEqual(report["checks"]["links_internos"]["estado"], "REPROVADO")
-        self.assertIn("links_internos", report["bloqueios"])
+        self.assertEqual(report["checks"]["links_internos"]["estado"], "VERIFICADO")
+        self.assertNotIn("links_internos", report["bloqueios"])
 
     def test_nao_muta_snapshot(self):
         p = artigo()

@@ -17,6 +17,7 @@ import stat
 import sys
 import urllib.parse
 import urllib.request
+from copy import deepcopy
 from datetime import datetime, timezone
 
 from mkt_flow_p0.revisor_qualidade_unico import avaliar_artigo, verificar_versao
@@ -65,9 +66,63 @@ class WPClient:
             result = json.loads(data)
         except (ValueError, UnicodeError) as exc:
             raise WPReadError("Invalid WordPress response") from exc
-        if not isinstance(result, dict):
-            raise WPReadError("Invalid WordPress object")
+        if not isinstance(result, (dict, list)):
+            raise WPReadError("Invalid WordPress response object")
         return result
+
+    def published_pages(self, limit=500):
+        """Read-only, paginated catalogue of published posts AND pages.
+
+        Fails closed if either content type exceeds the cap; ASVE must not infer
+        that no internal article exists from an incomplete sample.
+        """
+        if type(limit) is not int or not 1 <= limit <= 500:
+            raise ValueError("Published content limit invalid")
+        output = []
+        page_size = min(100, limit)
+        max_full_pages = (limit + page_size - 1) // page_size
+        for endpoint, prefix in (("posts", "post"), ("pages", "page")):
+            page_number = 1
+            while page_number <= max_full_pages:
+                rows = self.call(
+                    "GET",
+                    "wp/v2/" + endpoint + "?status=publish&per_page=" +
+                    str(page_size) + "&page=" + str(page_number) +
+                    "&_fields=id,title,link,status"
+                )
+                if not isinstance(rows, list):
+                    raise WPReadError("Published content endpoint returned invalid data")
+                for row in rows:
+                    if not isinstance(row, dict) or type(row.get("id")) is not int:
+                        continue
+                    title = row.get("title")
+                    if isinstance(title, dict):
+                        title = title.get("rendered", "")
+                    output.append({
+                        "page_id": prefix + ":" + str(row["id"]),
+                        "title": str(title or "")[:240],
+                        "url": row.get("link", ""),
+                        "status": row.get("status", ""),
+                        "content_type": prefix,
+                    })
+                if len(rows) < page_size:
+                    break
+                if page_number == max_full_pages:
+                    more = self.call(
+                        "GET",
+                        "wp/v2/" + endpoint + "?status=publish&per_page=1&page=" +
+                        str(page_number + 1) + "&_fields=id"
+                    )
+                    if not isinstance(more, list):
+                        raise WPReadError("Published content completeness check failed")
+                    if more:
+                        raise WPReadError(
+                            "Published content catalogue exceeds configured cap; "
+                            "increase the safe limit before running ASVE"
+                        )
+                    break
+                page_number += 1
+        return output
 
     def post(self, post_id):
         return self.call("GET", "wp/v2/posts/" + str(post_id) + "?context=edit")
@@ -147,9 +202,13 @@ def _canonical_sha(value):
     return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
 
 
-def review_once(client, post_id, evidence, db_path, *, submit_quality=False):
+def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
+                run_asve=False, asve_analyzer=None, topic_db_path=None,
+                register_asve_topics=False, asve_receipt=None, asve_decisions=None):
     if type(post_id) is not int or post_id <= 0:
         raise ValueError("post_id invalid")
+    if register_asve_topics and not run_asve:
+        raise ValueError("ASVE topic registration requires run_asve=True")
     first = client.post(post_id)
     if not isinstance(first, dict) or first.get("status") != "draft" or first.get("id") != post_id:
         raise WPReadError("WordPress post is not the requested draft")
@@ -161,17 +220,89 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False):
         evidencias=evidence.get("evidencias", {}),
         corpo_original_fonte=evidence.get("corpo_original_fonte"),
     )
+    # Nota 0-100: diagnostico complementar, vinculado ao texto exato lido do
+    # WordPress e ao fingerprint do parecer. Nunca substitui o Revisor Unico,
+    # os 13 controles humanos nem a aprovacao humana.
+    raw_primeiro = first.get("content")
+    if isinstance(raw_primeiro, dict) and isinstance(raw_primeiro.get("raw"), str):
+        from mkt_flow_p0.editorial_quality_score import avaliar_artigo as score_artigo
+        try:
+            diagnostico = score_artigo(
+                raw_primeiro["raw"],
+                brief=evidence.get("brief"),
+                review=report,
+                sources=evidence.get("fontes", []),
+                genero=evidence.get("genero", "analise"),
+                title=first.get("title") or "",
+                meta=first.get("meta") or {},
+                review_status=report.get("veredito"),
+            )
+            diagnostico["fingerprint"] = report["fingerprint"]
+            diagnostico["linked_content_sha256"] = diagnostico["content_sha256"]
+            report["quality_score_diagnostic"] = diagnostico
+        except ValueError:
+            # Genero desconhecido ou contrato incompativel nao pode alterar o parecer.
+            pass
+    asve_result = None
+    gate_traceability_sidecar = None
+    primary_review_for_trace = deepcopy(report)
+    if run_asve:
+        dossier = evidence.get("asve_dossier")
+        if not isinstance(dossier, dict):
+            raise ValueError("ASVE requires a complete asve_dossier in the evidence file")
+        raw_content = first.get("content")
+        if not isinstance(raw_content, dict) or not isinstance(raw_content.get("raw"), str):
+            raise WPReadError("ASVE requires raw article content for exact version binding")
+        from mkt_flow_p0.revisor_qualidade_unico import executar_revisao_com_asve
+        pages = client.published_pages(limit=500)
+        asve_result = executar_revisao_com_asve(
+            report, raw_content["raw"], dossier, pages, analyzer=asve_analyzer,
+            decisoes=asve_decisions, recibo_existente=asve_receipt
+        )
+        report = asve_result["review"]
+        report["asve_receipt"] = asve_result["secondary_analysis"]
+        # Marca o fluxo como exigente de ASVE. O Gate bloqueia pareceres que
+        # declaram exigência e chegam sem sidecar íntegro.
+        report["asve_required"] = True
+        from mkt_flow_p0.editorial_gate_traceability import build_gate_traceability_sidecar
+        gate_traceability_sidecar = build_gate_traceability_sidecar(
+            raw_content["raw"], dossier, primary_review_for_trace,
+            asve_result["secondary_analysis"], pages, asve_decisions,
+            run_id=evidence.get("run_id") or report["fingerprint"]
+        )
     # Detect concurrent edits between read and commit of the private report.
     latest = client.post(post_id)
     if not isinstance(latest, dict) or latest.get("status") != "draft" or not verificar_versao(report, latest):
         raise WPReadError("Article changed while reviewing; rerun")
-    with _private_db(db_path) as conn:
-        conn.execute("""INSERT INTO quality_reviews
-          (wp_post_id, fingerprint, status, checked_at, report_json)
-          VALUES (?, ?, ?, ?, ?)""",
-          (post_id, report["fingerprint"], report["veredito"],
-           datetime.now(timezone.utc).isoformat(),
-           json.dumps(report, ensure_ascii=False, sort_keys=True)))
+    # Persist receipts and optional sidecar only after the exact WordPress version
+    # has been re-read and matched. The sidecar is NOT accepted by Gate v1.
+    if gate_traceability_sidecar is not None:
+        report["gate_traceability_sidecar"] = gate_traceability_sidecar
+    # Persist P2 only after the exact WordPress version has been re-read and matched.
+    if run_asve and asve_result and register_asve_topics:
+        report["asve_future_topics_registered"] = []
+        from mkt_flow_p0.fila_pautas import registrar_topico_asve
+        for finding in asve_result["secondary_analysis"].get("findings", []):
+            if finding.get("priority") == "P2":
+                saved_topic = registrar_topico_asve(
+                    finding["future_topic"],
+                    origin_article_id="wp:" + str(post_id),
+                    origin_article_sha256=asve_result["secondary_analysis"]["article_sha256"],
+                    finding_id=finding["finding_id"],
+                    db_path=topic_db_path,
+                )
+                report["asve_future_topics_registered"].append(saved_topic)
+    conn = _private_db(db_path)
+    try:
+        with conn:
+            conn.execute("""INSERT INTO quality_reviews
+              (wp_post_id, fingerprint, status, checked_at, report_json)
+              VALUES (?, ?, ?, ?, ?)""",
+              (post_id, report["fingerprint"], report["veredito"],
+               datetime.now(timezone.utc).isoformat(),
+               json.dumps(report, ensure_ascii=False, sort_keys=True)))
+    finally:
+        conn.close()
     response = None
     if submit_quality:
         if report["veredito"] != "APTO_PARA_APROVACAO":
@@ -203,6 +334,18 @@ def main(argv=None):
     parser.add_argument("--post-id", type=int, required=True)
     parser.add_argument("--evidence-file", required=True)
     parser.add_argument("--db", default=os.environ.get("CONEXO_QUALITY_DB", "/tmp/conexo-private-quality.sqlite"))
+    parser.add_argument("--secondary-analysis", action="store_true",
+                        help="Run an independent ASVE pass using the existing provider budget")
+    parser.add_argument("--register-asve-topics", action="store_true",
+                        help="Explicitly persist P2 findings to the shared existing editorial queue")
+    parser.add_argument("--asve-receipt-file",
+                        help="Reuse a previous receipt for the exact article version; avoids another model call")
+    parser.add_argument("--asve-decisions-file",
+                        help="JSON list of owner decisions bound to the receipt article_sha256")
+    parser.add_argument("--asve-receipt-output-file",
+                        help="Write the new ASVE receipt to a new private JSON file (never overwrites)")
+    parser.add_argument("--gate-traceability-output-file",
+                        help="Export a hash-linked Gate sidecar; current cxeg-package:v1 does not consume it")
     parser.add_argument("--submit-quality", action="store_true",
                         help="Requires independent human-reviewer WordPress identity; does NOT publish")
     args = parser.parse_args(argv)
@@ -215,9 +358,64 @@ def main(argv=None):
     evidence = json.loads(file_path.read_text(encoding="utf-8"))
     if not isinstance(evidence, dict):
         parser.error("Evidence must be JSON object")
+    if (args.register_asve_topics and not args.secondary_analysis):
+        parser.error("--register-asve-topics requires --secondary-analysis")
+    if (args.gate_traceability_output_file and not args.secondary_analysis):
+        parser.error("--gate-traceability-output-file requires --secondary-analysis")
+    if (args.asve_receipt_file or args.asve_decisions_file or args.asve_receipt_output_file) and not args.secondary_analysis:
+        parser.error("ASVE receipt/decision files require --secondary-analysis")
+    if args.asve_decisions_file and not args.asve_receipt_file:
+        parser.error("--asve-decisions-file requires --asve-receipt-file")
+    cached_receipt = None
+    decisions = None
+    if args.asve_receipt_file:
+        receipt_path = Path(args.asve_receipt_file)
+        if not receipt_path.is_file() or receipt_path.stat().st_size > 200000:
+            parser.error("ASVE receipt file missing or too large")
+        cached_receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    if args.asve_decisions_file:
+        decisions_path = Path(args.asve_decisions_file)
+        if not decisions_path.is_file() or decisions_path.stat().st_size > 50000:
+            parser.error("ASVE decisions file missing or too large")
+        decisions = json.loads(decisions_path.read_text(encoding="utf-8"))
+        if not isinstance(decisions, list):
+            parser.error("ASVE decisions must be a JSON list")
     client = WPClient(site, user, password)
-    report, response = review_once(client, args.post_id, evidence, args.db,
-                                   submit_quality=args.submit_quality)
+    report, response = review_once(
+        client, args.post_id, evidence, args.db,
+        submit_quality=args.submit_quality, run_asve=args.secondary_analysis,
+        register_asve_topics=args.register_asve_topics,
+        asve_receipt=cached_receipt, asve_decisions=decisions
+    )
+    if args.asve_receipt_output_file:
+        if not args.secondary_analysis or "asve_receipt" not in report:
+            parser.error("No ASVE receipt available to export")
+        output_path = Path(args.asve_receipt_output_file).expanduser()
+        if output_path.exists() or output_path.is_symlink():
+            parser.error("ASVE receipt output exists; refusing overwrite")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        fd = os.open(str(output_path), flags, stat.S_IRUSR | stat.S_IWUSR)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(report["asve_receipt"], handle, ensure_ascii=False, sort_keys=True)
+            handle.write("\n")
+    if args.gate_traceability_output_file:
+        sidecar = report.get("gate_traceability_sidecar")
+        if not isinstance(sidecar, dict):
+            parser.error("No Gate traceability sidecar available")
+        output_path = Path(args.gate_traceability_output_file).expanduser()
+        if output_path.exists() or output_path.is_symlink():
+            parser.error("Gate traceability output exists; refusing overwrite")
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL
+        if hasattr(os, "O_NOFOLLOW"):
+            flags |= os.O_NOFOLLOW
+        fd = os.open(str(output_path), flags, stat.S_IRUSR | stat.S_IWUSR)
+        with os.fdopen(fd, "w", encoding="utf-8") as handle:
+            json.dump(sidecar, handle, ensure_ascii=False, sort_keys=True)
+            handle.write("\\n")
     # Only status/fingerprint/check names; no confidential evidence or secrets in logs.
     print(json.dumps({
         "post_id": report["post_id"],
@@ -226,6 +424,13 @@ def main(argv=None):
         "bloqueios": report["bloqueios"], "pendencias": report["pendencias"],
         "stored_private": True,
         "sent_to_gate": response is not None,
+        "asve_status": report.get("secondary_analysis_status", "NOT_RUN"),
+        "asve_findings": report.get("secondary_analysis", {}).get("finding_count", 0),
+        "asve_future_topics_registered": len(report.get("asve_future_topics_registered", [])),
+        "asve_topic_persistence_enabled": args.register_asve_topics,
+        "gate_traceability_status": report.get("gate_traceability_sidecar", {}).get("handoff_status", "NOT_CREATED"),
+        "gate_sidecar_exported": bool(args.gate_traceability_output_file),
+        "gate_current_contract_consumes_sidecar": False,
     }, ensure_ascii=False))
     return 0 if report["veredito"] == "APTO_PARA_APROVACAO" else 2
 

@@ -30,3 +30,7 @@ A lista de módulos executados não significa que todos passaram. Pendências de
 RSS e importação já usam o mesmo módulo `editorial_readiness`; este gate adiciona evidência da persona a essa decisão comum. O importador offline continua sem IA, rede ou escrita no WordPress. Uma importação sem prova da voz permanece pendente em vez de receber aprovação inventada. O caminho de geração registra a aplicação do prompt compartilhado; a adequação efetiva ainda é objeto da avaliação editorial humana.
 
 Rascunho remoto, revisão humana e autorização para publicação continuam estados separados. Este gate não publica nem altera a política de autorização.
+
+## Atualização 27/11/2026 — Gate V2 descontinuado
+
+O trabalho no Gate V2 (`feat/conexo-editorial-gate-v2-foundation-20261123`, PR #87) está **descontinuado e fora de escopo**. O PR permanece como registro histórico, sem merge, sem testes adicionais e sem integrações. A autoridade de aprovação continua sendo o Gate V1 RC10.4, com o registro assinado do PR #137; a trilha do MKT-RSS continua em `editorial_trace.py`. Nenhuma terceira implementação de recibo deve ser criada.

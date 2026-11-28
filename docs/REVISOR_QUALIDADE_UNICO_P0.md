@@ -82,3 +82,18 @@ Resultado editorial final do #9798: BLOQUEADO pela categoria padrão [1]. Pendê
 Falha de classificação corrigida: uma ilustração declarada como gerada por IA não precisa inventar URL de licença de banco. Para esse caso, o atestado licenca_imagem exige tipo_origem=gerada_ia, reviewer, fingerprint, aprovado=true e referências de proveniência/uso verificadas; declaração na mídia sozinha permanece NAO_VERIFICADO. Sem origem declarada ou ALT, o bloqueio permanece. Não foi criado atestado humano para a mídia real.
 
 Validação da correção: 48 testes e 25 subtestes locais aprovados. Continuação editorial depende de categoria adequada e evidências reais; o piloto técnico de leitura está concluído.
+
+
+## Modalidade ASVE — Análise Secundária de Valor Editorial
+
+O Revisor Único mantém um único executor e um veredito principal. A ASVE é uma segunda passagem independente em contexto, implementada por `mkt_flow_p0.editorial_secondary_analysis` e integrada por `incorporar_analise_secundaria` neste módulo. A passagem ASVE não recebe o parecer principal, não reescreve, não acessa rede, não escreve no WordPress e não autoriza publicação.
+
+- Entrada: artigo e SHA-256 exato, dossiê de evidências e páginas internas publicadas do ConexoTech.
+- Saída: 0–5 apontamentos materiais P0/P1/P2; zero é válido.
+- P0: exige correção e nova verificação sobre a versão revisada; continua em `REVISAO_NECESSARIA` enquanto o achado permanecer.
+- P1: exige decisão editorial vinculada ao hash examinado; rejeição/aceitação precisa de justificativa.
+- P2: oportunidade de pauta; não bloqueia o artigo.
+- URLs internas são aceitas somente quando correspondem a páginas publicadas em `conexotech.com.br` fornecidas no catálogo.
+- O veredito principal é preservado em `veredito_revisao_principal`; a integração acrescenta status ASVE e nunca define publicação como autorizada.
+
+A ASVE é consultiva e não substitui o Gate ou a revisão factual humana. O analisador é injetado pelo orquestrador, de modo que não se cria nova chave, provedor, serviço ou despesa automática. A execução real ainda requer que o orquestrador invoque esta modalidade com uma passagem separada e registre o recibo.

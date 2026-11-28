@@ -33,8 +33,9 @@
 - Adaptação feita por Codex/ChatGPT pode usar ASSISTED_ADAPTED com hash do conteúdo;
   nunca usar HUMAN_ADAPTED para personificar o proprietário nem alegar chamada de
   system prompt externo que não ocorreu. Edição invalida a avaliação textual.
-- Aplicar até três links internos realmente relacionados; não completar quota com
-  links irrelevantes. Links internos presentes sem verificação continuam pendentes.
+- Aplicar links internos somente quando acrescentarem contexto real e estiverem
+  publicados; não existe quota mínima ou máxima. Links presentes sem verificação
+  continuam pendentes.
 - No workflow manual, github.sha fixa o código da própria execução e evita rodar
   um snapshot antigo depois de corrigir o motor. Não ativa cron nem publicação.
 - Critério técnico não certifica fatos nem padrão acima da média. Artigo final e
@@ -109,3 +110,8 @@ MKT-RSS e o motor prioritario e o publicador; ChatGPT e apoio opcional. Fluxo e 
 - O proprietário indicou a análise Canaltech sobre Galaxy S26 FE (04/11/2026) como possível exemplo de boa escrita. Aprendizado: tese explícita, evidência rastreável, consequência prática de cada especificação, trade-offs, perfis de leitor e veredito condicionado aos fatos — **não** reproduzir estrutura ou texto de terceiros nem impor template a todo gênero.
 - Não alegar testes, preço atual ou experiência pessoal do ConexoTech sem evidência própria; atribuir medições de terceiros e contextualizar preços por data/mercado/variante. A preferência anterior do proprietário por versões B é observação subjetiva separada do parecer A/B cego e não revela qual foi gerada com MDA.
 - Referência e critérios de aplicação: `docs/EDITORIAL_REFERENCE_CANALTECH_S26FE_20261110.md`. Não alterar o Gate, integrar nova persona, criar chamada IA nem homologar qualidade com base apenas nesta preferência.
+
+<!-- CONEXO_QUALITY_CONTRACT:START schema=conexo-editorial-quality-contract/1.1 hash=6b55c87c15b004169a77a73d3064fb02072c1cc370e7c9be68bee20e9abde9f7
+**Identidade editorial:** O objetivo é fazer do ConexoTech uma publicação que não apenas acompanha os acontecimentos tecnológicos, mas ajuda o leitor a compreender como eles se conectam.
+**Contrato canônico:** `conexo-os/docs/EDITORIAL_QUALITY_CONTRACT.md` / `conexo-os/contracts/editorial-quality-v1.json`. Fontes por afirmação; domínio/TLD não prova fato. Temas globais: panorama mundial, diferenças regionais relevantes e implicações brasileiras sustentadas. H1/H2/H3 específicos, abertura com problema e narrativa fluida. Links internos apenas quando acrescentam contexto, sem quota mínima ou máxima. **ASVE:** segunda leitura independente, até cinco apontamentos P0/P1/P2, zero permitido, sem reescrita, sem links inventados e sem autorização de publicação. A nota assistida é diagnóstica; Gate e aceite humano continuam separados.
+<!-- CONEXO_QUALITY_CONTRACT:END -->

@@ -101,7 +101,8 @@ def test_fallback_para_pixabay_quando_unsplash_vazio(monkeypatch):
 
 
 def test_sem_chave_pixabay_falha_segura(monkeypatch):
-    monkeypatch.delenv("PIXABAY_API_KEY", raising=False)
+    # Chave vazia explícita impede que o load_dotenv interno recarregue o .env local.
+    monkeypatch.setenv("PIXABAY_API_KEY", "")
     out = sm.buscar_pixabay("x", session=_Session({}), usar_cache=False)
     assert out.get("erro") == "PIXABAY_KEY_AUSENTE"
 
