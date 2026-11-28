@@ -75,6 +75,25 @@ class GateTraceabilityTests(unittest.TestCase):
         self.assertFalse(sidecar["publication_authorized"])
         self.assertFalse(sidecar["factuality_verified_by_sidecar"])
 
+    def test_run_id_is_bound_to_sidecar_digest(self):
+        receipt=make_receipt(self.article)
+        sidecar=build_gate_traceability_sidecar(
+            self.article,dossier(),self.primary,receipt,self.pages,
+            run_id="run_123456789"
+        )
+        self.assertEqual(sidecar["run_id"],"run_123456789")
+        self.assertTrue(validate_gate_traceability_sidecar(sidecar)["valid"])
+        alterado=dict(sidecar); alterado["run_id"]="run_outro_valor"
+        with self.assertRaisesRegex(ValueError,"HASH_MISMATCH"):
+            validate_gate_traceability_sidecar(alterado)
+
+    def test_invalid_run_id_is_rejected(self):
+        receipt=make_receipt(self.article)
+        with self.assertRaisesRegex(ValueError,"RUN_ID_INVALID"):
+            build_gate_traceability_sidecar(
+                self.article,dossier(),self.primary,receipt,self.pages,run_id="x"
+            )
+
     def test_article_hash_mismatch_is_rejected(self):
         receipt=make_receipt(self.article)
         with self.assertRaisesRegex(ValueError,"VERSION_MISMATCH"):

@@ -264,7 +264,8 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         from mkt_flow_p0.editorial_gate_traceability import build_gate_traceability_sidecar
         gate_traceability_sidecar = build_gate_traceability_sidecar(
             raw_content["raw"], dossier, primary_review_for_trace,
-            asve_result["secondary_analysis"], pages, asve_decisions
+            asve_result["secondary_analysis"], pages, asve_decisions,
+            run_id=evidence.get("run_id") or report["fingerprint"]
         )
     # Detect concurrent edits between read and commit of the private report.
     latest = client.post(post_id)

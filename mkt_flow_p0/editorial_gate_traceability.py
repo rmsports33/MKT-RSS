@@ -32,6 +32,7 @@ def build_gate_traceability_sidecar(
     decisions: list[dict] | None = None,
     *,
     contract_sha256: str = CONTRACT_SHA256,
+    run_id: str | None = None,
 ) -> dict:
     """Create a hash-linked sidecar. Structural validation is not fact-checking."""
     from mkt_flow_p0.editorial_secondary_analysis import (
@@ -135,6 +136,10 @@ def build_gate_traceability_sidecar(
         "human_approval_verified_by_sidecar": False,
         "publication_authorized": False
     }
+    if run_id is not None:
+        if not isinstance(run_id, str) or not re.fullmatch(r"[A-Za-z0-9_-]{8,80}", run_id):
+            raise ValueError("GATE_TRACE_RUN_ID_INVALID")
+        body["run_id"] = run_id
     body["sidecar_sha256"] = digest(body)
     return body
 
@@ -155,6 +160,10 @@ def validate_gate_traceability_sidecar(sidecar: dict) -> dict:
         raise ValueError("GATE_TRACE_FALSE_GATE_COMPATIBILITY")
     if compatibility.get("current_contract") != "cxeg-package:v1":
         raise ValueError("GATE_TRACE_GATE_CONTRACT_INVALID")
+    if "run_id" in sidecar and (
+            not isinstance(sidecar["run_id"], str)
+            or not re.fullmatch(r"[A-Za-z0-9_-]{8,80}", sidecar["run_id"])):
+        raise ValueError("GATE_TRACE_RUN_ID_INVALID")
     return {
         "valid": True,
         "sidecar_sha256": expected,
