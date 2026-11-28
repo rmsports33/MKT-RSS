@@ -6,7 +6,7 @@ Registro atualizado após auditoria cruzada dos quatro PRs e execução técnica
 
 | PR | SHA atual verificado | Estado |
 |---|---|---|
-| Gate V1 #91 — `rmsports33/-site-conexotech` | `3796bcf5185695a9ab8f0392a390225d9418b4e0` | aberto, draft, não merged |
+| Gate V1 #91 — `rmsports33/-site-conexotech` | `1510a80093be244c51af906839897a9b9270f8e6` (código validado em `3796bcf`) | aberto, draft, não merged |
 | MKT-RSS #142 — `rmsports33/MKT-RSS` | `2761f4ecf6416cd62c5f281087971723efbe1714` (head funcional; o commit que contém este registro atualiza apenas documentação) | aberto, draft, não merged |
 | Bot Redator #6 — `rmsports33/bot-redator-artigo` | `f514e5db653156793bb1fc6c44790c4399d15d45` (SHA validado em Linux: `418be35`) | aberto, draft, não merged |
 | Conexo OS #86 — `rmsports33/conexo-os` | `c22f1dd8b2e9dc8d5065261928a8f61ecf51ed3c` | aberto, draft, não merged |
@@ -84,24 +84,25 @@ Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções aci
 | Testes do Bot Redator no SHA atual e em Linux | Concluído — 16 focados e 143 completos aprovados em `418be35`, container Linux/Python 3.11; evidência no PR #6, commit `f514e5d` |
 | Testes de runtime do Conexo OS #86 | Concluído |
 | Identidade humana do revisor separada da conta de serviço | Concluído |
-| Teste integrado ponta a ponta com WordPress efêmero | Não iniciado |
+| Teste integrado ponta a ponta com WordPress efêmero | Parcial — recibo assinado e escrita/readback provados; fluxo completo com ASVE/nucléo externo não executado |
 | Readback autenticado real | Pendente |
-| Envelope HMAC de escrita válido para versão atual | Parcial — provado em teste PHP isolado com chave sintética; não provado em WordPress real nem com núcleo externo |
+| Envelope HMAC de escrita válido para versão atual | Concluído em WordPress efêmero — STATUS 200 com assinatura, `expected_sha256` e readback válidos (PR #91, `1510a80`); autenticação HTTP por Application Password e núcleo externo permanecem não provados |
 | Escrita condicional contra bypass REST e falha parcial | Pendente |
 | Provisionamento do Gate (opções, UUID, chaves) | NOT APPLICABLE — rotas de remediação permanecem desativadas e não há autorização de ativação |
 | Parecer humano do artigo #9925 e piloto A/B cego | Pendente |
 | Higienização arquitetural com provas de equivalência | Parcial |
 | Produção, merge, deploy, ativação e publicação | Não executados |
 
-## Checklist de conclusão integral — 3/9
+## Checklist de conclusão integral — 4/9
 
 Itens com evidência verificável:
 
 1. **PRs #91, #142, #6 e #86 homologados por decisão explícita** — concluído.
 2. **Bot Redator validado em Linux** — concluído no SHA `418be35`.
 3. **Provisionamento do Gate** — `NOT APPLICABLE`: as rotas de remediação permanecem desativadas e não há autorização de ativação.
+4. **Recibo assinado do Gate V1** — concluído em WordPress efêmero no SHA `3796bcf`, com STATUS 200, assinatura, hash de versão e readback.
 
-Pendentes: rotação das credenciais; parecer humano do #9925; piloto A/B cego; equivalência arquitetural autorizada; recibo Gate V1 válido em WordPress real; escrita atômica validada.
+Pendentes: rotação das credenciais; parecer humano do #9925; piloto A/B cego; equivalência arquitetural autorizada; escrita atômica validada em WordPress real.
 
 ## Próximas execuções técnicas sem intervenção do proprietário
 
