@@ -81,7 +81,7 @@ Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções aci
 | Scoring 0–100 como diagnóstico no executor WordPress | Concluído |
 | Consumo do scoring e da ASVE pelo Gate | Pendente |
 | Testes completos do MKT-RSS no SHA atual | Parcial — 8 falhas de ambiente no Windows |
-| Testes do Bot Redator no SHA atual e em Linux | Pendente |
+| Testes do Bot Redator no SHA atual e em Linux | Diferida por decisão do proprietário em 28/11/2026 — outras pendências primeiro; nenhum ambiente criado |
 | Testes de runtime do Conexo OS #86 | Concluído |
 | Identidade humana do revisor separada da conta de serviço | Concluído |
 | Teste integrado ponta a ponta com WordPress efêmero | Não iniciado |
