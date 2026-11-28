@@ -57,7 +57,7 @@ Isso comprova sincronização dos artefatos versionados, não execução integra
 4. **Escrita condicional existe parcialmente no Gate V1.** O código do PR #91 tem lock por post, `expected_sha256`, nonce/idempotência e readback. Isso protege chamadas pela rota Gate, mas ainda exige prova contra escrita REST direta concorrente e falha parcial entre `wp_insert_post` e atualização de metadado. Não criar uma segunda função antes de testar e fechar essas lacunas.
 5. **O pacote ASVE precisa de extensão compatível e fail-closed**, sem criar outro ledger e sem transformar ASVE em aprovação humana ou autorização de publicação.\n6. **Identidade humana do revisor reforçada e testada.** `cxeg_review_identity_valid()` agora rejeita autor, proprietário em modo independente, conta de serviço configurada e identidade canônica do broker; o modo owner continua separado. Nove casos sintéticos aprovados no SHA `491061f`. Ainda depende de confirmação humana das identidades autorizadas reais.
 
-A especificação `docs/PRODUCTION_INTEGRATION_SPEC_20261128.md` foi corrigida para refletir esses fatos no commit `b8282af70b3887cad54d006089bcc7e226124220`. A descrição do PR #142 também foi atualizada para não sugerir trabalho com Gate V2.
+A especificação `docs/PRODUCTION_INTEGRATION_SPEC_20261128.md` foi reconciliada no commit `b8282af70b3887cad54d006089bcc7e226124220` e recebeu correção adicional no commit `7301914b3e11ef4b331fdb527d778ea26e5eb5cb`: o executor WordPress já anexa a nota diagnóstica 0–100 ao parecer, vinculada ao fingerprint e ao hash do texto; o Gate ainda não a consome semanticamente. A descrição do PR #142 também foi atualizada para não sugerir trabalho com Gate V2.
 
 ## Evidências ainda não executadas nos SHAs atuais
 
