@@ -6,8 +6,8 @@ Registro atualizado após auditoria cruzada dos quatro PRs e execução técnica
 
 | PR | SHA atual verificado | Estado |
 |---|---|---|
-| Gate V1 #91 — `rmsports33/-site-conexotech` | `491061f67e43be882b23951e2d455a28bbf5f688` | aberto, draft, não merged |
-| MKT-RSS #142 — `rmsports33/MKT-RSS` | correção funcional em `4e94f09985ddef4cc3dff52a090dbd896d6b171f`; head atual é o commit que contém este registro | aberto, draft, não merged |
+| Gate V1 #91 — `rmsports33/-site-conexotech` | `3a74c289fcbd36d5f51cd3c6a3fd72be3beffc46` | aberto, draft, não merged |
+| MKT-RSS #142 — `rmsports33/MKT-RSS` | `fceb66e9088e20dbc806a8e8a95c667b385f9dca` (head funcional; o commit que contém este registro atualiza apenas documentação) | aberto, draft, não merged |
 | Bot Redator #6 — `rmsports33/bot-redator-artigo` | `418be3556d15c001e5882e8c345626b0d78ea138` | aberto, draft, não merged |
 | Conexo OS #86 — `rmsports33/conexo-os` | `c22f1dd8b2e9dc8d5065261928a8f61ecf51ed3c` | aberto, draft, não merged |
 
@@ -103,3 +103,24 @@ Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções aci
 7. Validar portabilidade Linux do Bot Redator quando houver ambiente, sem criar infraestrutura paga.
 
 Nenhuma mudança de status será atribuída sem execução e evidência no SHA correspondente. Gate V2 permanece descontinuado.
+
+## Execução estrutural final — 28/11/2026
+
+### Gate V1 — SHA `3a74c28`
+
+- `conexo-editorial-gate-core.php`: consumidor retrocompatível de sidecar ASVE no parecer privado; valida schema, hash canônico, `contract_sha256`, `run_id`, `article_sha256` e as flags de não autorização. Sidecars ausentes continuam válidos. Nenhum campo foi adicionado ao manifesto `cxeg-package:v1` e nenhum contrato v2 foi criado.
+- Novos testes PHP isolados: `test_gate_v1_asve_sidecar.php` e `test_gate_v1_writer_isolado.php`. O writer cobre lock ocupado, nonce repetido, hash divergente, falha em `wp_insert_post`, falha em `update_post_meta`, estado parcial, readback divergente, limpeza de lock após sucesso e exceção.
+- Verificação: 10 testes aprovados em checkout limpo clonado do GitHub; PHP lint 0 falhas. Inventário mantém 17 `MATCH`, 2 divergências documentadas, 1 credencial e 1 duplicata.
+
+### MKT-RSS — SHA funcional `fceb66e`
+
+- `editorial_gate_traceability.py`: `run_id` opcional, validado e vinculado ao digest do sidecar; ausência permanece retrocompatível.
+- `wp_quality_executor.py`: passa `run_id` do evidence ou o fingerprint do parecer.
+- `test_integrated_closure_20261128.py`: única matriz integrada, com produtor → revisão → scoring → ASVE → sidecar → validação → consumidor Gate → writer sintético → readback, incluindo contraprova de sidecar adulterado.
+- Verificação focada: 43 aprovados, 1 ignorado, 20 subtests. Suíte completa no SHA final: 1544 aprovados, 1 ignorado, 72 subtests e as mesmas 8 falhas de limpeza de arquivo temporário no Windows.
+
+### Limitações que permanecem
+
+- Testes de writer usam stubs: não provam atomicidade de banco nem proteção contra bypass REST real.
+- Consumo do sidecar ocorre pelo parecer privado, dentro de `cxeg-package:v1`; nenhum campo novo foi inserido no manifesto estrito.
+- Não há WordPress efêmero, Linux, chave HMAC real nem aprovação humana. Produção, merge, deploy e ativação não foram executados.
