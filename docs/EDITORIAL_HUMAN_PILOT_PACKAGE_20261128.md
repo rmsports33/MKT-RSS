@@ -40,6 +40,24 @@ Panorama global antes do recorte brasileiro; uso da PDE 2036 original em vez de 
 - Não publicar, aprovar ou agendar.
 - Nova edição do texto invalida o parecer e exige novo hash.
 
+## Execução preparada — sem acesso a produção
+
+O OpenCode não recupera o rascunho nem lê credenciais. O proprietário executa a leitura autenticada e entrega apenas o HTML bruto exportado.
+
+1. Exportar o conteúdo bruto do rascunho `9925` para um arquivo local, sem alterá-lo.
+2. Confirmar a versão antes de qualquer avaliação:
+
+```bash
+python3 -c "import hashlib,sys; print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" artigo9925.html
+```
+
+O resultado precisa ser exatamente `7cdd3e4e3b6abd6d18ced7769c8491f151b517e3ee9539b8ef1f583840354ece`. Se divergir, parar — é outra versão.
+
+3. Preparar duas cópias cegas: somente o texto, sem nota automática, sem apontamentos anteriores e sem identificação de produtor.
+4. Entregar a cópia A ao revisor 1 e a cópia B ao revisor 2, sem comunicação entre eles.
+5. Preencher um formulário por revisor com os campos da tabela acima.
+6. Só depois comparar os pareceres e registrar divergências.
+
 ## Estado da etapa
 
-**NOT STARTED** — depende de revisores humanos. Este arquivo é apenas o protocolo.
+**AGUARDANDO EXECUÇÃO HUMANA** — pacote, hash de referência e formulários preparados. Nenhum parecer foi simulado; nenhum artigo foi lido, alterado ou publicado pelo OpenCode.
