@@ -8,7 +8,7 @@ Registro atualizado após auditoria cruzada dos quatro PRs e execução técnica
 |---|---|---|
 | Gate V1 #91 — `rmsports33/-site-conexotech` | `3796bcf5185695a9ab8f0392a390225d9418b4e0` | aberto, draft, não merged |
 | MKT-RSS #142 — `rmsports33/MKT-RSS` | `2761f4ecf6416cd62c5f281087971723efbe1714` (head funcional; o commit que contém este registro atualiza apenas documentação) | aberto, draft, não merged |
-| Bot Redator #6 — `rmsports33/bot-redator-artigo` | `418be3556d15c001e5882e8c345626b0d78ea138` | aberto, draft, não merged |
+| Bot Redator #6 — `rmsports33/bot-redator-artigo` | `f514e5db653156793bb1fc6c44790c4399d15d45` (SHA validado em Linux: `418be35`) | aberto, draft, não merged |
 | Conexo OS #86 — `rmsports33/conexo-os` | `c22f1dd8b2e9dc8d5065261928a8f61ecf51ed3c` | aberto, draft, não merged |
 
 O SHA `31a511e0ab4d5e00c2db3912a0f6a5edada33485` continua como referência histórica dos sete documentos inicialmente verificados. O SHA `9c08142b6b971d53c000f67c049def2d16fb4cbd` foi o head anterior à correção da especificação; `b8282af` contém a especificação reconciliada. Esta versão do registro acompanha o head do branch, portanto o SHA exato do head deve ser lido diretamente no PR antes de qualquer execução.
@@ -38,7 +38,7 @@ A ressalva anterior dos dois testes de drift está resolvida. O PASS é local e 
 - **MKT-RSS #142, SHA funcional `4e94f09`:** 39 testes focados aprovados (20 subtests) em `test_wp_quality_executor.py`, `test_editorial_quality_score.py` e `test_editorial_golden_set.py`. A nota 0–100 passou a ser anexada ao parecer como diagnóstico, com `fingerprint` e `content_sha256` do texto lido; não substitui o Revisor Único nem autoriza publicação.
 - **MKT-RSS, suíte completa no SHA `acecf02`:** 1540 aprovados, 1 ignorado, 72 subtests; 8 falhas por `PermissionError [WinError 32]` ao limpar diretórios temporários no Windows. Não é falha funcional comprovada, mas impede declarar suíte verde neste ambiente. Não foi repetida após `4e94f09`.
 - **Conexo OS #86, SHA `c22f1dd`:** 154 aprovados, 1 ignorado, 69 subtests. Nenhuma credencial real usada.
-- **Bot Redator #6, SHA `418be35`:** não repetido; evidência anterior preservada. Linux continua sem ambiente disponível.
+- **Bot Redator #6, SHA `418be35`:** validado em Linux no container `python:3.11-slim`: 16 testes focados e 143 completos aprovados. Evidência no PR #6, commit `f514e5d`.
 
 ### Contrato editorial e catálogo
 
@@ -62,7 +62,7 @@ A especificação `docs/PRODUCTION_INTEGRATION_SPEC_20261128.md` foi reconciliad
 ## Evidências ainda não executadas nos SHAs atuais
 
 - MKT-RSS #142: a suíte completa foi executada em `acecf02`, não no head que contém este registro; 8 falhas de limpeza de arquivo temporário no Windows permanecem sem correção. Não repetir sem necessidade.
-- Bot Redator #6: os testes do contrato de prompt não foram reexecutados nesta rodada; a evidência anterior de 143 testes permanece separada. Linux continua sem ambiente disponível.
+- Bot Redator #6: suíte completa executada em Linux, no SHA `418be35`; 143 aprovados, 0 falhas. Nenhuma credencial real usada.
 - Gate V1 #91: oito testes aprovados em checkout limpo no SHA `491061f`; o status espelho de Actions falha por cobrança e não foi usado como executor.
 - Integração ponta a ponta com WordPress efêmero, envelope HMAC e recibo ASVE consumido pelo Gate: **não executada**. Não há plugin ativo descartável nem chave de teste provisionada; criar isso exigiria produção ou nova infraestrutura.
 
@@ -76,12 +76,12 @@ Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções aci
 | Sincronização contrato/catálogo Conexo OS ↔ MKT-RSS | Concluído |
 | Sete documentos originais em `31a511e` | Concluído |
 | Especificação reconciliada no PR #142 | Concluído |
-| Homologação dos quatro PRs | Parcial — #91, #142 e #86 homologados; #6 aguarda Linux |
+| Homologação dos quatro PRs | #91, #142 e #86 homologados; #6 com evidência Linux concluída e aguardando decisão de homologação |
 | ASVE integrada ao contrato consumido pelo Gate | Pendente |
 | Scoring 0–100 como diagnóstico no executor WordPress | Concluído |
 | Consumo do scoring e da ASVE pelo Gate | Pendente |
 | Testes completos do MKT-RSS no SHA atual | Parcial — 8 falhas de ambiente no Windows |
-| Testes do Bot Redator no SHA atual e em Linux | Diferida por decisão do proprietário em 28/11/2026 — outras pendências primeiro; nenhum ambiente criado |
+| Testes do Bot Redator no SHA atual e em Linux | Concluído — 16 focados e 143 completos aprovados em `418be35`, container Linux/Python 3.11; evidência no PR #6, commit `f514e5d` |
 | Testes de runtime do Conexo OS #86 | Concluído |
 | Identidade humana do revisor separada da conta de serviço | Concluído |
 | Teste integrado ponta a ponta com WordPress efêmero | Não iniciado |
@@ -100,7 +100,7 @@ Nenhum sandbox pago, Actions ou CircleCI foi criado ou usado. As execuções aci
 4. Fazer o Gate consumir o recibo de scoring diagnóstico sem transformar nota em aprovação; não definir limiar editorial sem decisão do proprietário.
 5. Fechar as provas de concorrência e falha parcial do writer existente, incluindo tentativa de escrita REST fora da rota Gate.
 6. Executar cenário integrado descartável: pauta → produção → revisão → ASVE → recibos → Gate → rascunho → readback, sem WordPress real.
-7. Validar portabilidade Linux do Bot Redator quando houver ambiente, sem criar infraestrutura paga.
+7. Portabilidade Linux do Bot Redator validada em contêiner local; nenhuma infraestrutura paga foi criada.
 
 Nenhuma mudança de status será atribuída sem execução e evidência no SHA correspondente. Gate V2 permanece descontinuado.
 
@@ -123,7 +123,7 @@ Nenhuma mudança de status será atribuída sem execução e evidência no SHA c
 
 - Testes de writer usam stubs: não provam atomicidade de banco nem proteção contra bypass REST real.
 - Consumo do sidecar ocorre pelo parecer privado, dentro de `cxeg-package:v1`; nenhum campo novo foi inserido no manifesto estrito.
-- Não há WordPress efêmero, Linux, chave HMAC real nem aprovação humana. Produção, merge, deploy e ativação não foram executados.
+- Há validação Linux do Bot Redator, mas não há WordPress efêmero, chave HMAC real nem aprovação humana. Produção, merge, deploy e ativação não foram executados.
 
 ## Auditoria pós-implementação — 28/11/2026
 

@@ -31,7 +31,7 @@ git checkout 418be3556d15c001e5882e8c345626b0d78ea138
 python3 --version
 python3 -m pip install -r requirements.txt
 python3 -m pytest -q tests/test_editorial_prompt_contract.py \
-  tests/test_fundamental_identity.py tests/test_ponte_editorial.py
+  tests/test_fundational_identity.py tests/test_ponte_editorial.py
 python3 -m pytest -q
 ```
 
@@ -52,6 +52,18 @@ Opção escolhida pelo proprietário: Docker Desktop local. Executado:
 
 Não foi possível iniciar o daemon. Habilitar o serviço WSL ou instalar uma distro exigiria mudança de configuração do sistema/administrador, que não foi autorizada. Nenhum contêiner foi criado e nenhum teste do Bot Redator foi executado.
 
+## Resolução em 28/11/2026
+
+Após instalação do WSL 2 com Ubuntu e reinício do Docker Desktop, a validação foi executada em contêiner `python:3.11-slim`:
+
+- Linux `6.18.58.1-microsoft-standard-WSL2`, Python 3.11.18;
+- SHA `418be3556d15c001e5882e8c345626b0d78ea138`;
+- testes focados: **16 aprovados**;
+- suíte completa: **143 aprovados**;
+- nenhuma credencial real usada.
+
+Evidência versionada no PR #6: `bot-redator-artigo/docs/LINUX_VALIDATION_EVIDENCE_20261128.md`, commit `f514e5d`.
+
 ## Estado da etapa
 
-**BLOCKED** — Docker Desktop local falhou por WSL desativado; nenhuma credencial de produção foi usada.
+**PASS para ambiente Linux.** Homologação e merge do PR #6 continuam dependendo de decisão explícita do proprietário.
