@@ -261,6 +261,9 @@ def review_once(client, post_id, evidence, db_path, *, submit_quality=False,
         )
         report = asve_result["review"]
         report["asve_receipt"] = asve_result["secondary_analysis"]
+        # Marca o fluxo como exigente de ASVE. O Gate bloqueia pareceres que
+        # declaram exigência e chegam sem sidecar íntegro.
+        report["asve_required"] = True
         from mkt_flow_p0.editorial_gate_traceability import build_gate_traceability_sidecar
         gate_traceability_sidecar = build_gate_traceability_sidecar(
             raw_content["raw"], dossier, primary_review_for_trace,

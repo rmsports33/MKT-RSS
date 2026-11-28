@@ -57,6 +57,7 @@ def test_cadeia_integrada_com_consumidor_gate_e_writer_sintetico():
         )
     assert remoto is None
     assert parecer["veredito"] == "APTO_PARA_APROVACAO"
+    assert parecer["asve_required"] is True
     assert not parecer["publicacao_autorizada"]
 
     # Scoring diagnóstico vinculado ao parecer e ao texto exato.
